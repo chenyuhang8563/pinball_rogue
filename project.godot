@@ -37,6 +37,7 @@ enabled=PackedStringArray("res://addons/hasturoperationgd/plugin.cfg")
 [global_group]
 
 marbles=""
+enemies=""
 
 [input]
 

@@ -6,7 +6,8 @@ class_name Marble
 
 enum MARBLE_TYPE {
     DEFAULT,
-    BROWN
+    BROWN,
+    BOMB
 }
 
 @export var marble_type: MARBLE_TYPE = MARBLE_TYPE.DEFAULT

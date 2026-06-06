@@ -1,7 +1,7 @@
 extends Node
 
 const EFFECT_SCRIPTS: Dictionary = {
-	Item.EffectType.LIGHTNING_CHAIN: preload("res://Effects/lightning.gd"),
+	Item.EffectType.LIGHTNING_CHAIN: preload("res://Effects/lightning_effect/lightning.gd"),
 }
 
 var _active_effects: Dictionary = {}

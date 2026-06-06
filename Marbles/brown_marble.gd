@@ -1,3 +1,5 @@
+# 棕色弹珠，击中后会叠加回声效果，达到一定层数后会增加伤害
+
 extends Marble
 class_name BrownMarble
 

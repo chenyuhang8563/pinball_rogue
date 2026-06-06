@@ -2,6 +2,7 @@ extends Node2D
 
 const MARBLE_SCENE: PackedScene = preload("../Marbles/marble.tscn")
 const BROWN_MARBLE_SCENE: PackedScene = preload("../Marbles/brown_marble.tscn")
+const BOMB_MARBLE_SCENE: PackedScene = preload("../Marbles/bomb_marble.tscn")
 
 @onready var marbles: Node2D = $Marbles
 
@@ -16,6 +17,8 @@ func _spawn_marble(marble: RigidBody2D) -> void:
     match marble.marble_type:
         Marble.MARBLE_TYPE.BROWN:
             marble_scene = BROWN_MARBLE_SCENE
+        Marble.MARBLE_TYPE.BOMB:
+            marble_scene = BOMB_MARBLE_SCENE
 
     var new_marble: RigidBody2D = marble_scene.instantiate()
     new_marble.position = marble.init_position

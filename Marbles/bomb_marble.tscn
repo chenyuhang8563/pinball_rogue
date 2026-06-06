@@ -1,0 +1,14 @@
+[gd_scene format=3 uid="uid://fw3pu4ke7cno"]
+
+[ext_resource type="PackedScene" uid="uid://bc1a5ngike1g8" path="res://Marbles/marble.tscn" id="1_84eq8"]
+[ext_resource type="Script" uid="uid://bpayifsucsipn" path="res://Marbles/bomb_marble.gd" id="2_psmfl"]
+[ext_resource type="Texture2D" uid="uid://gsjeaoplfocu" path="res://Assets/Marbles/bomb_marble.png" id="2_yweuo"]
+
+[node name="BombMarble" unique_id=2021599556 instance=ExtResource("1_84eq8")]
+script = ExtResource("2_psmfl")
+explosion_radius = 100.0
+explosion_damage = 5
+shockwave_impulse = 120.0
+
+[node name="Sprite2D" parent="." index="0" unique_id=1959844409]
+texture = ExtResource("2_yweuo")
