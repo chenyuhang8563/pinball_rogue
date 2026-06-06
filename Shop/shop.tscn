@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://fjioorpo70mx"]
+
+[ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="1_3weqf"]
+[ext_resource type="Script" uid="uid://buhl2nbgd233p" path="res://Shop/shop.gd" id="1_qlv7h"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Items/item.gd" id="2_nunvh"]
+[ext_resource type="Resource" uid="uid://y6hstamuojv7" path="res://Resources/lightning.tres" id="3_u3phx"]
+
+[node name="Shop" type="Control" unique_id=395620655 node_paths=PackedStringArray("shop_container")]
+layout_mode = 3
+anchors_preset = 0
+script = ExtResource("1_qlv7h")
+shop_items = Array[ExtResource("2_nunvh")]([ExtResource("3_u3phx"), ExtResource("3_u3phx")])
+shop_container = NodePath("UI/Panel/ScrollContainer/ShopInventory")
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=1475380502]
+
+[node name="Panel" type="Panel" parent="UI" unique_id=1521898696]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Label" type="Label" parent="UI/Panel" unique_id=1354368329]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -16.0
+offset_top = 16.0
+offset_right = 24.0
+offset_bottom = 39.0
+grow_horizontal = 2
+text = "Shop"
+label_settings = ExtResource("1_3weqf")
+
+[node name="ScrollContainer" type="ScrollContainer" parent="UI/Panel" unique_id=1845394202]
+layout_mode = 0
+offset_top = 48.0
+offset_right = 240.0
+offset_bottom = 320.0
+mouse_filter = 2
+
+[node name="ShopInventory" type="GridContainer" parent="UI/Panel/ScrollContainer" unique_id=666337156]
+layout_mode = 2
+size_flags_horizontal = 4
+mouse_filter = 2
+theme_override_constants/h_separation = 72
+theme_override_constants/v_separation = 36
+columns = 3
+
+[node name="Coins" type="Label" parent="UI" unique_id=1066180551]
+offset_right = 40.0
+offset_bottom = 23.0
+label_settings = ExtResource("1_3weqf")

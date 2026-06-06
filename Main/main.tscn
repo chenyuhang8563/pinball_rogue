@@ -1,0 +1,151 @@
+[gd_scene format=3 uid="uid://cbbk5l2e1na0y"]
+
+[ext_resource type="Script" uid="uid://bsino3h1ad0fx" path="res://Main/main.gd" id="1_eunhr"]
+[ext_resource type="Shader" uid="uid://cba25h8vxpxv4" path="res://Main/crt.gdshader" id="1_f6fdm"]
+[ext_resource type="PackedScene" uid="uid://d364y1s1k3n6j" path="res://Marbles/brown_marble.tscn" id="2_2w1kt"]
+[ext_resource type="PackedScene" uid="uid://bc1a5ngike1g8" path="res://Marbles/marble.tscn" id="3_ib3t1"]
+[ext_resource type="PackedScene" uid="uid://cryddal4ywmf" path="res://Fliper/flipper.tscn" id="4_eunhr"]
+[ext_resource type="Script" uid="uid://bu4i20qayb4y1" path="res://Main/kill_zone.gd" id="5_k3v36"]
+[ext_resource type="PackedScene" uid="uid://cw0103st1p7ap" path="res://Enemies/enemy.tscn" id="5_liyct"]
+[ext_resource type="PackedScene" uid="uid://dd087hymsfsw" path="res://Platform/platform.tscn" id="6_liyct"]
+[ext_resource type="Texture2D" uid="uid://cm7xu42fdrmlk" path="res://Assets/Walls/walls.png" id="9_rj11h"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_eunhr"]
+size = Vector2(80, 16)
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_eunhr"]
+bounce = 0.3
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_k3v36"]
+size = Vector2(240, 12)
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_ib3t1"]
+bounce = 1.0
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_liyct"]
+bounce = 1.0
+absorbent = true
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_f6fdm"]
+shader = ExtResource("1_f6fdm")
+shader_parameter/resolution = Vector2(320, 180)
+shader_parameter/scan_line_amount = 1.0
+shader_parameter/warp_amount = 0.1
+shader_parameter/noise_amount = 0.03
+shader_parameter/interference_amount = 0.2
+shader_parameter/grille_amount = 0.1
+shader_parameter/grille_size = 1.0
+shader_parameter/vignette_amount = 0.6
+shader_parameter/vignette_intensity = 0.4
+shader_parameter/aberation_amount = 0.5
+shader_parameter/roll_line_amount = 0.0
+shader_parameter/roll_speed = 1.0
+shader_parameter/scan_line_strength = -8.0
+shader_parameter/pixel_strength = -2.0
+
+[node name="Main" type="Node2D" unique_id=1204434413]
+script = ExtResource("1_eunhr")
+metadata/_edit_horizontal_guides_ = [208.0]
+
+[node name="WallSprite" type="Sprite2D" parent="." unique_id=918237892]
+position = Vector2(120, 160)
+texture = ExtResource("9_rj11h")
+
+[node name="Marbles" type="Node2D" parent="." unique_id=2013848348]
+
+[node name="Marble1" parent="Marbles" unique_id=2021599556 instance=ExtResource("2_2w1kt")]
+position = Vector2(56, 72)
+continuous_cd = 0
+max_contacts_reported = 4
+
+[node name="Marble2" parent="Marbles" unique_id=1982067755 instance=ExtResource("3_ib3t1")]
+position = Vector2(56, 48)
+
+[node name="KillZone" type="Area2D" parent="." unique_id=580004618]
+position = Vector2(112, 312)
+collision_mask = 2
+script = ExtResource("5_k3v36")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="KillZone" unique_id=1619468347]
+position = Vector2(8, -32)
+shape = SubResource("RectangleShape2D_eunhr")
+
+[node name="LFlipper" parent="." unique_id=42033138 instance=ExtResource("4_eunhr")]
+position = Vector2(79.99999, 248)
+rotation = 0.5235988
+snap_time = 0.05
+snap_angle = -65
+
+[node name="RFlipper" parent="." unique_id=35970917 instance=ExtResource("4_eunhr")]
+position = Vector2(160, 248.00002)
+rotation = 2.6179938
+keycode = "ui_right"
+snap_time = 0.05
+snap_angle = 65
+
+[node name="Walls" type="StaticBody2D" parent="." unique_id=160946941]
+collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_eunhr")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Walls" unique_id=693128715]
+position = Vector2(8, 0)
+polygon = PackedVector2Array(0, 0, 0, 72, 16, 128, 40, 192, 40, 240, 40, 320, -8, 320, -8, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls" unique_id=1424319608]
+position = Vector2(120, -6)
+shape = SubResource("RectangleShape2D_k3v36")
+
+[node name="CollisionPolygon2D2" type="CollisionPolygon2D" parent="Walls" unique_id=564458978]
+position = Vector2(232, 0)
+rotation = 3.1415927
+scale = Vector2(1, -1)
+polygon = PackedVector2Array(0, 0, 0, 72, 39.999985, 192, 39.99997, 320, -8, 320, -8, 0)
+
+[node name="Enemies" type="Node2D" parent="." unique_id=1557868648]
+
+[node name="Enemy1" parent="Enemies" unique_id=666898646 instance=ExtResource("5_liyct")]
+position = Vector2(152, 72)
+
+[node name="Enemy4" parent="Enemies" unique_id=503945892 instance=ExtResource("5_liyct")]
+position = Vector2(184, 144)
+
+[node name="Enemy5" parent="Enemies" unique_id=2060794820 instance=ExtResource("5_liyct")]
+position = Vector2(96, 176)
+
+[node name="Enemy2" parent="Enemies" unique_id=1024730384 instance=ExtResource("5_liyct")]
+position = Vector2(80, 112)
+
+[node name="Enemy3" parent="Enemies" unique_id=500135733 instance=ExtResource("5_liyct")]
+position = Vector2(96, 40)
+
+[node name="Platforms" type="Node2D" parent="." unique_id=1680760151]
+
+[node name="Platform" parent="Platforms" unique_id=1324038840 instance=ExtResource("6_liyct")]
+position = Vector2(120, 152)
+physics_material_override = SubResource("PhysicsMaterial_ib3t1")
+
+[node name="BouncelessWall" type="StaticBody2D" parent="." unique_id=650453500]
+collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_liyct")
+
+[node name="CollisionPolygon2D3" type="CollisionPolygon2D" parent="BouncelessWall" unique_id=1095855192]
+position = Vector2(49.75, 196.75)
+scale = Vector2(0.8125, 1.0208334)
+polygon = PackedVector2Array(0, 0, 0, 120, 40, 120, 40, 40)
+
+[node name="CollisionPolygon2D4" type="CollisionPolygon2D" parent="BouncelessWall" unique_id=541304290]
+position = Vector2(200, 200)
+rotation = 3.1415927
+scale = Vector2(1, -1)
+polygon = PackedVector2Array(8, -8, 7.9999847, 119.999985, 40, 120, 40, 40)
+
+[node name="CrtLayer" type="CanvasLayer" parent="." unique_id=1475341812]
+
+[node name="ColorRect" type="ColorRect" parent="CrtLayer" unique_id=2088465450]
+material = SubResource("ShaderMaterial_f6fdm")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2

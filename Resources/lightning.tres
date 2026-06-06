@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Item" format=3 uid="uid://y6hstamuojv7"]
+
+[ext_resource type="Texture2D" uid="uid://bnd1706vb34kx" path="res://Assets/Items/Icon50.png" id="1_bmi1k"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Items/item.gd" id="2_x0rfe"]
+
+[resource]
+script = ExtResource("2_x0rfe")
+id = "01"
+title = "lightning"
+icon = ExtResource("1_bmi1k")
+price = 20
+description = "碰撞敌人时，发出一道闪电链"
+effect_type = 1
+metadata/_custom_type_script = "uid://cbxvjrptlxvsm"

@@ -1,0 +1,36 @@
+[gd_scene load_steps=7 format=3 uid="uid://d364y1s1k3n6j"]
+
+[ext_resource type="PackedScene" uid="uid://bc1a5ngike1g8" path="res://Marbles/marble.tscn" id="1_b40pw"]
+[ext_resource type="Script" uid="uid://byagm6wr7lxxr" path="res://Marbles/brown_marble.gd" id="2_82p1v"]
+[ext_resource type="Texture2D" uid="uid://dxftyig6gun07" path="res://Assets/Marbles/brown_marble.png" id="3_82p1v"]
+[ext_resource type="Shader" path="res://Marbles/orbit_debris.gdshader" id="4_debris"]
+
+[sub_resource type="PlaceholderTexture2D" id="PlaceholderTexture2D_debris"]
+size = Vector2(64, 64)
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_debris"]
+shader = ExtResource("4_debris")
+shader_parameter/debris_color = Color(0.95, 0.55, 0.2, 1)
+shader_parameter/glow_color = Color(1, 0.78, 0.28, 0.45)
+shader_parameter/orbit_radius = 0.34
+shader_parameter/orbit_width = 0.035
+shader_parameter/debris_size = 0.022
+shader_parameter/debris_count = 14.0
+shader_parameter/spin_speed = 1.7
+shader_parameter/jitter = 0.45
+shader_parameter/alpha = 1.0
+shader_parameter/show_source_texture = false
+
+[node name="BrownMarble" unique_id=2021599556 instance=ExtResource("1_b40pw")]
+script = ExtResource("2_82p1v")
+max_echo_stacks = 3
+echo_bonus_damage = 2
+echo_timeout = 5.0
+
+[node name="Sprite2D" parent="." index="0" unique_id=1959844409]
+texture = ExtResource("3_82p1v")
+
+[node name="DebrisOrbit" type="Sprite2D" parent="." index="2" unique_id=2020651385]
+z_index = 1
+material = SubResource("ShaderMaterial_debris")
+texture = SubResource("PlaceholderTexture2D_debris")

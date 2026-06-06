@@ -1,0 +1,49 @@
+[gd_scene format=3 uid="uid://cw0103st1p7ap"]
+
+[ext_resource type="Texture2D" uid="uid://dxyoaq8ier8ws" path="res://Enemies/red_marble.png" id="1_8hjb8"]
+[ext_resource type="Script" uid="uid://1kywgp3v2xwl" path="res://Enemies/enemy.gd" id="1_572h1"]
+[ext_resource type="Shader" uid="uid://xwfud13h1mq4" path="res://Enemies/enemy.gdshader" id="2_lawal"]
+[ext_resource type="Script" uid="uid://jos4pct5bhu0" path="res://Enemies/hit_flash.gd" id="4_fy0xy"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_l2g5i"]
+resource_local_to_scene = true
+shader = ExtResource("2_lawal")
+shader_parameter/percent = 0.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_8hjb8"]
+radius = 8.0
+
+[node name="Enemy" type="RigidBody2D" unique_id=666898646]
+collision_layer = 8
+collision_mask = 3
+gravity_scale = 0.0
+freeze = true
+freeze_mode = 1
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_572h1")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1055102396]
+material = SubResource("ShaderMaterial_l2g5i")
+texture = ExtResource("1_8hjb8")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=184974671]
+shape = SubResource("CircleShape2D_8hjb8")
+
+[node name="HitFlash" type="Node" parent="." unique_id=1580385932]
+script = ExtResource("4_fy0xy")
+
+[node name="HealthLabel" type="Label" parent="." unique_id=238119258]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_right = 20.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_font_sizes/font_size = 12
+text = "100"
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]
