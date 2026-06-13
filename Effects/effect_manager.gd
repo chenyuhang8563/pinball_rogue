@@ -30,7 +30,7 @@ func _sync_active_effects() -> void:
 
 func _get_owned_effect_types() -> Array[int]:
 	var owned_effects: Array[int] = []
-	for item in Inventory.items:
+	for item in Inventory.relic_items:
 		if item == null:
 			continue
 		if item.effect_type == Item.EffectType.NONE:

@@ -5,10 +5,11 @@
 
 [resource]
 script = ExtResource("2_x0rfe")
-id = "01"
+id = "lightning"
 title = "lightning"
 icon = ExtResource("1_bmi1k")
 price = 20
 description = "碰撞敌人时，发出一道闪电链"
 effect_type = 1
+type = 2
 metadata/_custom_type_script = "uid://cbxvjrptlxvsm"

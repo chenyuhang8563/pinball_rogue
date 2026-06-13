@@ -12,10 +12,6 @@ func _ready() -> void:
     if event_bus != null and event_bus.has_signal(&"marble_fell"):
         _connect_once(event_bus, &"marble_fell", Callable(self, "_on_marble_fell"))
 
-    var inventory: Node = _get_autoload_node(&"Inventory")
-    if inventory != null and inventory.has_signal(&"item_added"):
-        _connect_once(inventory, &"item_added", Callable(self, "_on_item_added"))
-
 func _on_marble_fell(body: RigidBody2D) -> void:
     var marble: Marble = body as Marble
     if marble == null:
@@ -28,12 +24,6 @@ func _spawn_marble(marble: Marble) -> void:
     var new_marble: RigidBody2D = marble_scene.instantiate()
     new_marble.position = marble.init_position
     marbles.call_deferred("add_child", new_marble)
-
-
-func _on_item_added(item: Item) -> void:
-    if item == null or item.effect_type != Item.EffectType.BOMB_MARBLE:
-        return
-    _spawn_marble_type(Marble.MARBLE_TYPE.BOMB, purchased_marble_spawn_position)
 
 
 func _spawn_marble_type(marble_type: Marble.MARBLE_TYPE, spawn_position: Vector2) -> void:

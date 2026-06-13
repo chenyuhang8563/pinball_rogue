@@ -4,7 +4,12 @@ class_name Item
 enum EffectType {
 	NONE,
 	LIGHTNING_CHAIN,
-	BOMB_MARBLE,
+}
+
+enum ItemType {
+	NONE,
+	MARBLE,
+	RELIC,
 }
 
 @export var id: String = ""
@@ -13,3 +18,4 @@ enum EffectType {
 @export var price: int = 1
 @export var description: String = ""
 @export var effect_type: EffectType = EffectType.NONE
+@export var type: ItemType = ItemType.NONE

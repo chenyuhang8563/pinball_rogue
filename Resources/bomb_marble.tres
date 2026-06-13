@@ -10,5 +10,5 @@ title = "Bomb Marble"
 icon = ExtResource("1_bomb")
 price = 30
 description = "Unlocks bomb marble refills."
-effect_type = 2
+type = 1
 metadata/_custom_type_script = "uid://cbxvjrptlxvsm"
