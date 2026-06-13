@@ -4,6 +4,7 @@ class_name Item
 enum EffectType {
 	NONE,
 	LIGHTNING_CHAIN,
+	BOMB_MARBLE,
 }
 
 @export var id: String = ""

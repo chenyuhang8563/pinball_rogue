@@ -7,7 +7,6 @@
 [ext_resource type="PackedScene" uid="uid://cryddal4ywmf" path="res://Fliper/flipper.tscn" id="4_eunhr"]
 [ext_resource type="Script" uid="uid://bu4i20qayb4y1" path="res://Main/kill_zone.gd" id="5_k3v36"]
 [ext_resource type="PackedScene" uid="uid://cw0103st1p7ap" path="res://Enemies/enemy.tscn" id="5_liyct"]
-[ext_resource type="PackedScene" uid="uid://fw3pu4ke7cno" path="res://Marbles/bomb_marble.tscn" id="5_qac2q"]
 [ext_resource type="PackedScene" uid="uid://dd087hymsfsw" path="res://Platform/platform.tscn" id="6_liyct"]
 [ext_resource type="Texture2D" uid="uid://cm7xu42fdrmlk" path="res://Assets/Walls/walls.png" id="9_rj11h"]
 
@@ -61,12 +60,6 @@ max_contacts_reported = 4
 
 [node name="Marble2" parent="Marbles" unique_id=1982067755 instance=ExtResource("3_ib3t1")]
 position = Vector2(56, 48)
-
-[node name="BombMarble" parent="Marbles" unique_id=2099776489 instance=ExtResource("5_qac2q")]
-position = Vector2(32, 64)
-explosion_radius = 50.0
-explosion_damage = 5
-shockwave_impulse = 120.0
 
 [node name="KillZone" type="Area2D" parent="." unique_id=580004618]
 position = Vector2(112, 312)

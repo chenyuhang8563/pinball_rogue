@@ -18,12 +18,15 @@ var mode: MODE = MODE.OFF:
 		mode = value
 		if value == MODE.ON:
 			$UI.show()
+			get_tree().paused = true
 			#if inventory
 			#Inventory.grid.show()
 		elif value == MODE.OFF:
 			$UI.hide()
+			get_tree().paused = false
 
 func _ready() -> void:
+	process_mode = Node.PROCESS_MODE_ALWAYS
 	$UI.hide()
 	set_initial_gold()
 	load_shop_inventory()

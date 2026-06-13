@@ -3,6 +3,8 @@
 /android/
 # Godot 4.2+ specific ignores
 ~*.dll
+*.gd.uid
+*.gdshader.uid
 
 # Godot 4+ specific ignores
 .nomedia

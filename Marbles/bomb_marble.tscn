@@ -12,3 +12,13 @@ shockwave_impulse = 120.0
 
 [node name="Sprite2D" parent="." index="0" unique_id=1959844409]
 texture = ExtResource("2_yweuo")
+
+[node name="GPUParticles2D" type="CPUParticles2D" parent="." index="2" unique_id=1664174278]
+position = Vector2(10, -10)
+lifetime = 0.2
+emission_shape = 1
+emission_sphere_radius = 4.5
+gravity = Vector2(0, 0)
+linear_accel_min = 10.0
+linear_accel_max = 10.0
+color = Color(1, 1, 0, 1)
