@@ -46,14 +46,7 @@ func _spawn_marble_type(marble_type: Marble.MARBLE_TYPE, spawn_position: Vector2
 func _get_next_marble_type(marble: Marble) -> Marble.MARBLE_TYPE:
     if marble == null:
         return Marble.MARBLE_TYPE.DEFAULT
-    if marble.marble_type == Marble.MARBLE_TYPE.DEFAULT and _can_spawn_bomb_marble():
-        return Marble.MARBLE_TYPE.BOMB
     return marble.marble_type
-
-
-func _can_spawn_bomb_marble() -> bool:
-    var inventory: Node = _get_autoload_node(&"Inventory")
-    return inventory != null and inventory.has_method(&"has_effect") and inventory.has_effect(Item.EffectType.BOMB_MARBLE)
 
 
 func _get_marble_scene_for_type(marble_type: Marble.MARBLE_TYPE) -> PackedScene:
