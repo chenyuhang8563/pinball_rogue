@@ -2,8 +2,6 @@
 
 [ext_resource type="Script" uid="uid://bsino3h1ad0fx" path="res://Main/main.gd" id="1_eunhr"]
 [ext_resource type="Shader" uid="uid://cba25h8vxpxv4" path="res://Main/crt.gdshader" id="1_f6fdm"]
-[ext_resource type="PackedScene" uid="uid://d364y1s1k3n6j" path="res://Marbles/brown_marble.tscn" id="2_2w1kt"]
-[ext_resource type="PackedScene" uid="uid://bc1a5ngike1g8" path="res://Marbles/marble.tscn" id="3_ib3t1"]
 [ext_resource type="PackedScene" uid="uid://cryddal4ywmf" path="res://Fliper/flipper.tscn" id="4_eunhr"]
 [ext_resource type="Script" uid="uid://bu4i20qayb4y1" path="res://Main/kill_zone.gd" id="5_k3v36"]
 [ext_resource type="PackedScene" uid="uid://cw0103st1p7ap" path="res://Enemies/enemy.tscn" id="5_liyct"]
@@ -52,14 +50,6 @@ position = Vector2(120, 160)
 texture = ExtResource("9_rj11h")
 
 [node name="Marbles" type="Node2D" parent="." unique_id=2013848348]
-
-[node name="Marble1" parent="Marbles" unique_id=2021599556 instance=ExtResource("2_2w1kt")]
-position = Vector2(56, 72)
-continuous_cd = 0
-max_contacts_reported = 4
-
-[node name="Marble2" parent="Marbles" unique_id=1982067755 instance=ExtResource("3_ib3t1")]
-position = Vector2(56, 48)
 
 [node name="KillZone" type="Area2D" parent="." unique_id=580004618]
 position = Vector2(112, 312)

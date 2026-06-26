@@ -66,7 +66,7 @@ func _remove_from_array(collection: Array, item: Item) -> bool:
 
 
 func has_effect(effect_type: Item.EffectType) -> bool:
-	for item in relic_items:
+	for item in items:
 		if item != null and item.effect_type == effect_type:
 			return true
 	return false
