@@ -21,6 +21,7 @@ Event="*uid://drugq0ej64rno"
 Shop="*uid://fjioorpo70mx"
 Inventory="*uid://dt1roo6rgl6kg"
 EffectManager="*res://Effects/effect_manager.gd"
+EffectRegistry="*res://Items/effect_registry.gd"
 
 [display]
 

@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="MarbleSpec" format=3]
+
+[ext_resource type="PackedScene" path="res://Marbles/marble.tscn" id="1_marble"]
+[ext_resource type="Script" path="res://Items/marble_spec.gd" id="2_spec"]
+
+[resource]
+script = ExtResource("2_spec")
+marble_type = 0
+scene = ExtResource("1_marble")

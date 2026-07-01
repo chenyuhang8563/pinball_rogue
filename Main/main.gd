@@ -1,12 +1,5 @@
 extends Node2D
 
-const MARBLE_SCENE: PackedScene = preload("../Marbles/marble.tscn")
-const BROWN_MARBLE_SCENE: PackedScene = preload("../Marbles/brown_marble.tscn")
-const BOMB_MARBLE_SCENE: PackedScene = preload("../Marbles/bomb_marble.tscn")
-const MARBLE_EFFECT_TYPES: Dictionary = {
-	Item.EffectType.BOMB_MARBLE: Marble.MARBLE_TYPE.BOMB,
-}
-
 @onready var marbles: Node2D = $Marbles
 @export var purchased_marble_spawn_position: Vector2 = Vector2(56, 48)
 @export var starting_marble_spawn_positions: Array[Vector2] = [
@@ -18,6 +11,9 @@ func _ready() -> void:
 	var event_bus: Node = _get_autoload_node(&"Event")
 	if event_bus != null and event_bus.has_signal(&"marble_fell"):
 		_connect_once(event_bus, &"marble_fell", Callable(self, "_on_marble_fell"))
+	if event_bus != null and event_bus.has_signal(&"dash_skill_activated"):
+		_connect_once(event_bus, &"dash_skill_activated", Callable(self, "_on_dash_skill_activated"))
+	_connect_inventory_change()
 	_spawn_starting_marbles()
 
 func _on_marble_fell(body: RigidBody2D) -> void:
@@ -26,50 +22,108 @@ func _on_marble_fell(body: RigidBody2D) -> void:
 		return
 	_spawn_marble(marble)
 
-func _spawn_marble(marble: Marble) -> void:
-	var marble_scene: PackedScene = _get_marble_scene_for_type(_get_next_marble_type(marble))
+func _on_dash_skill_activated() -> void:
+	var marble: Marble = _get_active_marble()
+	if marble == null:
+		return
+	if $Enemies.get_child_count() <= 0:
+		return
 
-	var new_marble: RigidBody2D = marble_scene.instantiate()
+	var target: Vector2 = _find_nearest_enemy(marble.global_position)
+	var direction: Vector2 = (target - marble.global_position).normalized()
+	marble.dash_toward(direction)
+
+
+func _get_active_marble() -> Marble:
+	for child: Node in marbles.get_children():
+		if child is Marble:
+			return child
+	return null
+
+
+func _find_nearest_enemy(from: Vector2) -> Vector2:
+	var nearest_pos: Vector2 = Vector2.ZERO
+	var nearest_dist: float = INF
+	for enemy: Node in $Enemies.get_children():
+		if enemy is Node2D:
+			var pos: Vector2 = enemy.global_position
+			var dist: float = from.distance_squared_to(pos)
+			if dist < nearest_dist:
+				nearest_dist = dist
+				nearest_pos = pos
+	return nearest_pos
+
+func _spawn_marble(marble: Marble) -> void:
+	var spec: MarbleSpec = _get_next_marble_spec(marble)
+	if spec == null or spec.scene == null:
+		return
+
+	var new_marble: RigidBody2D = spec.scene.instantiate()
 	new_marble.position = marble.init_position
 	marbles.call_deferred("add_child", new_marble)
 
 
-func _spawn_marble_type(marble_type: Marble.MARBLE_TYPE, spawn_position: Vector2) -> void:
-	var marble_scene: PackedScene = _get_marble_scene_for_type(marble_type)
-	var new_marble: RigidBody2D = marble_scene.instantiate()
+func _spawn_marble_from_spec(spec: MarbleSpec, spawn_position: Vector2) -> void:
+	if spec == null or spec.scene == null:
+		return
+	var new_marble: RigidBody2D = spec.scene.instantiate()
 	new_marble.position = spawn_position
 	marbles.add_child(new_marble)
 
 
-func _get_next_marble_type(marble: Marble) -> Marble.MARBLE_TYPE:
-	var inventory_marble_types: Array[Marble.MARBLE_TYPE] = _get_inventory_marble_types()
-	if inventory_marble_types.is_empty():
-		return Marble.MARBLE_TYPE.DEFAULT
-	if marble != null and inventory_marble_types.has(marble.marble_type):
-		return marble.marble_type
-	return inventory_marble_types[0]
-
-
-func _get_marble_scene_for_type(marble_type: Marble.MARBLE_TYPE) -> PackedScene:
-	match marble_type:
-		Marble.MARBLE_TYPE.BROWN:
-			return BROWN_MARBLE_SCENE
-		Marble.MARBLE_TYPE.BOMB:
-			return BOMB_MARBLE_SCENE
-		_:
-			return MARBLE_SCENE
+func _get_next_marble_spec(marble: Marble) -> MarbleSpec:
+	var specs: Array[MarbleSpec] = _get_inventory_marble_specs()
+	if specs.is_empty():
+		return _get_default_marble_spec()
+	if marble != null:
+		for spec in specs:
+			if spec.marble_type == marble.marble_type:
+				return spec
+	return specs[0]
 
 
 func _spawn_starting_marbles() -> void:
-	if marbles == null or marbles.get_child_count() > 0:
+	if marbles == null:
 		return
 
-	var marble_types: Array[Marble.MARBLE_TYPE] = _get_inventory_marble_types()
-	if marble_types.is_empty():
-		marble_types.append(Marble.MARBLE_TYPE.DEFAULT)
+	var specs: Array[MarbleSpec] = _get_inventory_marble_specs()
+	if specs.is_empty():
+		var default_spec := _get_default_marble_spec()
+		if default_spec != null:
+			specs.append(default_spec)
 
-	for index: int in range(marble_types.size()):
-		_spawn_marble_type(marble_types[index], _get_starting_spawn_position(index))
+	for index: int in range(specs.size()):
+		_spawn_marble_from_spec(specs[index], _get_starting_spawn_position(index))
+
+
+func _on_inventory_changed() -> void:
+	_spawn_missing_marbles()
+
+
+func _spawn_missing_marbles() -> void:
+	if marbles == null:
+		return
+
+	var specs: Array[MarbleSpec] = _get_inventory_marble_specs()
+	if specs.is_empty():
+		return
+
+	for index: int in range(specs.size()):
+		if not _has_marble_of_type(specs[index].marble_type):
+			_spawn_marble_from_spec(specs[index], _get_starting_spawn_position(index))
+
+
+func _has_marble_of_type(marble_type: Marble.MARBLE_TYPE) -> bool:
+	for child: Node in marbles.get_children():
+		if child is Marble and child.marble_type == marble_type:
+			return true
+	return false
+
+
+func _connect_inventory_change() -> void:
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	if inventory != null and inventory.has_signal(&"inventory_changed"):
+		_connect_once(inventory, &"inventory_changed", Callable(self, "_on_inventory_changed"))
 
 
 func _get_starting_spawn_position(index: int) -> Vector2:
@@ -78,16 +132,26 @@ func _get_starting_spawn_position(index: int) -> Vector2:
 	return purchased_marble_spawn_position + Vector2(0, 24 * index)
 
 
-func _get_inventory_marble_types() -> Array[Marble.MARBLE_TYPE]:
-	var marble_types: Array[Marble.MARBLE_TYPE] = []
+func _get_inventory_marble_specs() -> Array[MarbleSpec]:
+	var specs: Array[MarbleSpec] = []
 	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null or not inventory.has_method("has_effect"):
-		return marble_types
+	var effect_registry: Node = _get_autoload_node(&"EffectRegistry")
+	if inventory == null or effect_registry == null:
+		return specs
 
-	for effect_type: int in MARBLE_EFFECT_TYPES.keys():
-		if inventory.call("has_effect", effect_type):
-			marble_types.append(MARBLE_EFFECT_TYPES[effect_type])
-	return marble_types
+	var owned_effects: Array = effect_registry.get_marble_effect_types(inventory)
+	for effect_type in owned_effects:
+		var spec: MarbleSpec = effect_registry.get_marble_spec(effect_type)
+		if spec != null and spec.scene != null:
+			specs.append(spec)
+	return specs
+
+
+func _get_default_marble_spec() -> MarbleSpec:
+	var effect_registry: Node = _get_autoload_node(&"EffectRegistry")
+	if effect_registry == null:
+		return null
+	return effect_registry.get_marble_spec(Item.EffectType.DARK_MARBLE)
 
 
 func _get_autoload_node(node_name: StringName) -> Node:
