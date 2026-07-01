@@ -80,7 +80,8 @@ func _on_marble_fell(body: RigidBody2D) -> void:
 	if body == marble_chain.head:
 		marble_chain.queue_free()
 		marble_chain = null
-		_spawn_chain()
+		# 延迟到物理帧结束后再重建链，避免在 flush queries 阶段操作物理体
+		call_deferred(&"_spawn_chain")
 
 
 ## Dash 技能激活。仅瞄准 Head（链中唯一物理体）。
