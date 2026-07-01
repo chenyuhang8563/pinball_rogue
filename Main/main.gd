@@ -7,6 +7,13 @@ extends Node2D
 	Vector2(56, 72),
 ]
 
+## 链重生时的基准生成位置。
+@export var chain_spawn_position: Vector2 = Vector2(56, 48)
+
+## 当前活跃的弹珠链。由 _spawn_chain() 创建，整条链只有一个 RigidBody2D（Head）。
+var marble_chain: MarbleChain = null
+
+
 func _ready() -> void:
 	var event_bus: Node = _get_autoload_node(&"Event")
 	if event_bus != null and event_bus.has_signal(&"marble_fell"):
@@ -14,30 +21,93 @@ func _ready() -> void:
 	if event_bus != null and event_bus.has_signal(&"dash_skill_activated"):
 		_connect_once(event_bus, &"dash_skill_activated", Callable(self, "_on_dash_skill_activated"))
 	_connect_inventory_change()
-	_spawn_starting_marbles()
+	_spawn_chain()
 
-func _on_marble_fell(body: RigidBody2D) -> void:
-	var marble: Marble = body as Marble
-	if marble == null:
+
+# ---- 链生成 ----
+
+## 用库存中的弹珠规格构建 MarbleChain。
+## Head 永远为 DEFAULT（Dark），Body 段按 chain_order 排序。
+func _spawn_chain() -> void:
+	if marbles == null:
 		return
-	_spawn_marble(marble)
 
+	# 清理旧链
+	if marble_chain != null and is_instance_valid(marble_chain):
+		marble_chain.queue_free()
+	marble_chain = null
+
+	var specs: Array = _get_chain_specs()
+	if specs.is_empty():
+		return
+
+	marble_chain = MarbleChain.new()
+	marble_chain.name = "MarbleChain"
+	marbles.add_child(marble_chain)
+	marble_chain.build_chain(specs, chain_spawn_position)
+
+
+## 获取按 chain_order 排序的规格列表：Head 第一位，Body 段按 chain_order 升序。
+## 确保 dark marble 始终作为 Head（即使库存中没有）。
+func _get_chain_specs() -> Array:
+	var raw_specs: Array[MarbleSpec] = _get_inventory_marble_specs()
+
+	# 确保 dark marble 始终存在作为 Head
+	var has_dark: bool = false
+	for spec in raw_specs:
+		if spec.marble_type == Marble.MARBLE_TYPE.DEFAULT:
+			has_dark = true
+			break
+
+	if not has_dark:
+		var default_spec: MarbleSpec = _get_default_marble_spec()
+		if default_spec != null:
+			raw_specs.append(default_spec)
+
+	# 排序：chain_order 升序（-1 head first, 0, 1, 2...）
+	raw_specs.sort_custom(func(a: MarbleSpec, b: MarbleSpec): return a.chain_order < b.chain_order)
+	return raw_specs
+
+
+# ---- 事件处理 ----
+
+## 弹珠掉入 KillZone。Head 仍是 RigidBody2D 且在 "marbles" group，检测逻辑不变。
+## 整条链重建而非单独重建一个弹珠。
+func _on_marble_fell(body: RigidBody2D) -> void:
+	if marble_chain == null or not is_instance_valid(marble_chain):
+		return
+	# 确认掉落的确实是 Head
+	if body == marble_chain.head:
+		marble_chain.queue_free()
+		marble_chain = null
+		_spawn_chain()
+
+
+## Dash 技能激活。仅瞄准 Head（链中唯一物理体）。
 func _on_dash_skill_activated() -> void:
-	var marble: Marble = _get_active_marble()
-	if marble == null:
+	if marble_chain == null or not is_instance_valid(marble_chain):
+		return
+	var head_marble: Marble = marble_chain.head
+	if head_marble == null or not is_instance_valid(head_marble):
 		return
 	if $Enemies.get_child_count() <= 0:
 		return
 
-	var target: Vector2 = _find_nearest_enemy(marble.global_position)
-	var direction: Vector2 = (target - marble.global_position).normalized()
-	marble.dash_toward(direction)
+	var target: Vector2 = _find_nearest_enemy(head_marble.global_position)
+	var direction: Vector2 = (target - head_marble.global_position).normalized()
+	head_marble.dash_toward(direction)
 
 
+func _on_inventory_changed() -> void:
+	_spawn_chain()
+
+
+# ---- 辅助方法 ----
+
+## 返回链的 Head（Dash 等系统使用）。
 func _get_active_marble() -> Marble:
-	for child: Node in marbles.get_children():
-		if child is Marble:
-			return child
+	if marble_chain != null and is_instance_valid(marble_chain):
+		return marble_chain.head
 	return null
 
 
@@ -52,84 +122,6 @@ func _find_nearest_enemy(from: Vector2) -> Vector2:
 				nearest_dist = dist
 				nearest_pos = pos
 	return nearest_pos
-
-func _spawn_marble(marble: Marble) -> void:
-	var spec: MarbleSpec = _get_next_marble_spec(marble)
-	if spec == null or spec.scene == null:
-		return
-
-	var new_marble: RigidBody2D = spec.scene.instantiate()
-	new_marble.position = marble.init_position
-	marbles.call_deferred("add_child", new_marble)
-
-
-func _spawn_marble_from_spec(spec: MarbleSpec, spawn_position: Vector2) -> void:
-	if spec == null or spec.scene == null:
-		return
-	var new_marble: RigidBody2D = spec.scene.instantiate()
-	new_marble.position = spawn_position
-	marbles.add_child(new_marble)
-
-
-func _get_next_marble_spec(marble: Marble) -> MarbleSpec:
-	var specs: Array[MarbleSpec] = _get_inventory_marble_specs()
-	if specs.is_empty():
-		return _get_default_marble_spec()
-	if marble != null:
-		for spec in specs:
-			if spec.marble_type == marble.marble_type:
-				return spec
-	return specs[0]
-
-
-func _spawn_starting_marbles() -> void:
-	if marbles == null:
-		return
-
-	var specs: Array[MarbleSpec] = _get_inventory_marble_specs()
-	if specs.is_empty():
-		var default_spec := _get_default_marble_spec()
-		if default_spec != null:
-			specs.append(default_spec)
-
-	for index: int in range(specs.size()):
-		_spawn_marble_from_spec(specs[index], _get_starting_spawn_position(index))
-
-
-func _on_inventory_changed() -> void:
-	_spawn_missing_marbles()
-
-
-func _spawn_missing_marbles() -> void:
-	if marbles == null:
-		return
-
-	var specs: Array[MarbleSpec] = _get_inventory_marble_specs()
-	if specs.is_empty():
-		return
-
-	for index: int in range(specs.size()):
-		if not _has_marble_of_type(specs[index].marble_type):
-			_spawn_marble_from_spec(specs[index], _get_starting_spawn_position(index))
-
-
-func _has_marble_of_type(marble_type: Marble.MARBLE_TYPE) -> bool:
-	for child: Node in marbles.get_children():
-		if child is Marble and child.marble_type == marble_type:
-			return true
-	return false
-
-
-func _connect_inventory_change() -> void:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory != null and inventory.has_signal(&"inventory_changed"):
-		_connect_once(inventory, &"inventory_changed", Callable(self, "_on_inventory_changed"))
-
-
-func _get_starting_spawn_position(index: int) -> Vector2:
-	if index >= 0 and index < starting_marble_spawn_positions.size():
-		return starting_marble_spawn_positions[index]
-	return purchased_marble_spawn_position + Vector2(0, 24 * index)
 
 
 func _get_inventory_marble_specs() -> Array[MarbleSpec]:
@@ -164,3 +156,9 @@ func _get_autoload_node(node_name: StringName) -> Node:
 func _connect_once(source: Object, signal_name: StringName, callable: Callable) -> void:
 	if not source.is_connected(signal_name, callable):
 		source.connect(signal_name, callable)
+
+
+func _connect_inventory_change() -> void:
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	if inventory != null and inventory.has_signal(&"inventory_changed"):
+		_connect_once(inventory, &"inventory_changed", Callable(self, "_on_inventory_changed"))

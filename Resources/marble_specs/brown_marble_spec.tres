@@ -1,9 +1,11 @@
 [gd_resource type="Resource" script_class="MarbleSpec" format=3 uid="uid://bvqfu25c1bffw"]
 
 [ext_resource type="PackedScene" uid="uid://d364y1s1k3n6j" path="res://Marbles/brown_marble.tscn" id="1_7wvy3"]
-[ext_resource type="Script" path="res://Items/marble_spec.gd" id="2_vuldl"]
+[ext_resource type="Script" uid="uid://n4oafl2eu8y5" path="res://Items/marble_spec.gd" id="2_vuldl"]
 
 [resource]
 script = ExtResource("2_vuldl")
 marble_type = 1
 scene = ExtResource("1_7wvy3")
+chain_order = 0
+segment_damage = 2
