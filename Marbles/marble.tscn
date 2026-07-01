@@ -19,7 +19,7 @@ radius = 8.0
 
 [node name="Marble" type="RigidBody2D" unique_id=2021599556 groups=["marbles"]]
 collision_layer = 2
-collision_mask = 15
+collision_mask = 13
 mass = 0.2
 physics_material_override = SubResource("PhysicsMaterial_1lr24")
 gravity_scale = 0.3

@@ -9,3 +9,9 @@ class_name MarbleSpec
 @export var marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT
 @export var scene: PackedScene
 @export var spawn_position: Vector2 = Vector2(56, 48)
+
+## 链中排序：-1 = Head，0+ = Body 段位置（越小越靠前/靠近 Head）。
+@export var chain_order: int = -1
+
+## 该段贡献的接触伤害。BOMB 设为 0（伤害来自爆炸）。
+@export var segment_damage: int = 1

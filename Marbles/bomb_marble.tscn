@@ -8,7 +8,6 @@
 script = ExtResource("2_psmfl")
 explosion_radius = 100.0
 explosion_damage = 5
-shockwave_impulse = 120.0
 
 [node name="Sprite2D" parent="." index="0" unique_id=1959844409]
 texture = ExtResource("2_yweuo")
