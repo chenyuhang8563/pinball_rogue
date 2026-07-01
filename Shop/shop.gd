@@ -35,6 +35,7 @@ func _ready() -> void:
 	load_shop_inventory()
 	_connect_collection_slot_inputs()
 	_connect_inventory()
+	_grant_starting_marbles()
 	refresh_collection_rows()
 
 func _input(event) -> void:
@@ -182,6 +183,15 @@ func _on_collection_slot_gui_input(event: InputEvent, slot: Node) -> void:
 	var item: Item = slot.get_meta("item") as Item
 	if sell_item(item):
 		print("Sold " + item.title)
+
+
+func _grant_starting_marbles() -> void:
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	if inventory == null or not inventory.has_method("has_effect"):
+		return
+	if not inventory.call("has_effect", Item.EffectType.DARK_MARBLE):
+		var dark_marble_item: Item = preload("res://Resources/dark_marble.tres")
+		inventory.call("add_item", dark_marble_item)
 
 
 func _connect_inventory() -> void:
