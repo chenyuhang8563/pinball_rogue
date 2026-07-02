@@ -4,7 +4,7 @@ signal item_added(item: Item)
 signal inventory_changed
 
 @export var items: Array[Item] = []
-@export var marble_capacity: int = 2
+@export var marble_capacity: int = 3
 @export var relic_capacity: int = 3
 
 var marble_items: Array[Item] = []

@@ -5,6 +5,7 @@ extends Node2D
 @export var starting_marble_spawn_positions: Array[Vector2] = [
 	Vector2(56, 48),
 	Vector2(56, 72),
+	Vector2(56, 96),
 ]
 
 ## 链重生时的基准生成位置。
