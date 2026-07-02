@@ -26,8 +26,6 @@ func _on_gui_input(event) -> void:
 	var inventory: Node = _get_autoload_node(&"Inventory")
 	if inventory == null:
 		return
-	if inventory.has_method("can_add_item") and not inventory.call("can_add_item", item):
-		return
 
 	if shop.has_method("purchase_item"):
 		if shop.call("purchase_item", item):

@@ -3,10 +3,19 @@
 ## Godot Runtime
 
 - The project uses Godot 4.6.1. On this machine the executable is `C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe`; `godot` is not on `PATH`.
-- Run headless checks with:
+- Headless runs may be used only for quick startup/load checks. Do not cite headless output as evidence that tests passed.
+- Quick headless startup checks, when useful:
   - `& 'C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe' --headless --path . --quit-after 1`
   - `& 'C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe' --headless --path . -s res://tests/<test_file>.gd`
 - A shader compiler message like `Condition "!actions.custom_samplers.has(...)" is true` appears during headless startup. Do not treat it as caused by unrelated gameplay/shop changes unless the change touches shaders or rendering setup.
+
+## Verification Workflow
+
+- Do not use headless runs as proof that tests passed.
+- Run the test suite with GUT and use the successful GUT result as the test evidence.
+- After GUT tests pass, run the game in Godot.
+- Once the game is running, stop the current conversation and ask the user to manually pause the SceneTree.
+- Only after the user confirms the SceneTree has been paused, use the `godot-screenshot` skill/tool to capture a screenshot as evidence that the running game is normal.
 
 ## Autoloads And Tests
 

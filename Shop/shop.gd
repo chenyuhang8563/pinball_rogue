@@ -72,6 +72,8 @@ func purchase_item(item: Item) -> bool:
 	if inventory == null or not inventory.has_method("add_item"):
 		return false
 	if inventory.has_method("can_add_item") and not inventory.call("can_add_item", item):
+		if item.type == Item.ItemType.MARBLE:
+			print("弹珠槽位已满，无法获得")
 		return false
 	if not _spend_gold_for_item(item):
 		return false

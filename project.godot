@@ -23,6 +23,8 @@ Inventory="*uid://dt1roo6rgl6kg"
 EffectManager="*res://Effects/effect_manager.gd"
 EffectRegistry="*res://Items/effect_registry.gd"
 GameExecutor="*uid://7yjc3ixh2laf"
+BuffManager="*res://Buffs/buff_manager.gd"
+BuffRegistry="*res://Buffs/buff_registry.gd"
 
 [display]
 
@@ -34,7 +36,7 @@ window/stretch/mode="canvas_items"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/hasturoperationgd/plugin.cfg")
+enabled=PackedStringArray("res://addons/gut/plugin.cfg", "res://addons/hasturoperationgd/plugin.cfg")
 
 [global_group]
 

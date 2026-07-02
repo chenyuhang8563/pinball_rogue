@@ -181,6 +181,8 @@ func _on_head_body_entered(collided_body: Node) -> void:
 	if collided_body == null:
 		return
 
+	_emit_chain_collision(collided_body)
+
 	if collided_body.is_in_group("enemies"):
 		# 炸弹弹珠：碰敌即爆
 		_try_trigger_bomb()
@@ -267,10 +269,33 @@ func get_total_damage(_target: Node) -> int:
 	for seg: ChainSegment in body:
 		if seg == null or not is_instance_valid(seg):
 			continue
+		if seg.segment_type == Marble.MARBLE_TYPE.GREEN:
+			GreenMarble.apply_poison_to_enemy(_target)
 		total += seg.damage
 		total += seg.get_echo_damage()
 
-	return total
+	return roundi(float(total) * _get_damage_multiplier())
+
+
+func _get_damage_multiplier() -> float:
+	var manager: Node = get_node_or_null("/root/BuffManager")
+	if manager == null or not manager.has_method("get_damage_multiplier"):
+		return 1.0
+	return float(manager.call("get_damage_multiplier"))
+
+
+func _emit_chain_collision(collided_body: Node) -> void:
+	var event_bus: Node = get_node_or_null("/root/Event")
+	if event_bus == null or not event_bus.has_signal(&"chain_collision"):
+		return
+
+	var collision_type: String = "wall"
+	if collided_body.is_in_group("enemies"):
+		collision_type = "enemy"
+	elif collided_body.is_in_group("flipper"):
+		collision_type = "flipper"
+
+	event_bus.emit_signal(&"chain_collision", collided_body, collision_type)
 
 
 # ---- 轨迹 & 跟随 ----

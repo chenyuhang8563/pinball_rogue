@@ -4,19 +4,16 @@
 [ext_resource type="Script" uid="uid://buhl2nbgd233p" path="res://Shop/shop.gd" id="1_qlv7h"]
 [ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Items/item.gd" id="2_nunvh"]
 [ext_resource type="Resource" uid="uid://y6hstamuojv7" path="res://Resources/lightning.tres" id="3_u3phx"]
-[ext_resource type="Resource" path="res://Resources/bomb_marble.tres" id="4_bomb"]
+[ext_resource type="Resource" uid="uid://bncjg26lqnokw" path="res://Resources/bomb_marble.tres" id="4_bomb"]
 [ext_resource type="PackedScene" uid="uid://bx6h7a1u1u7xb" path="res://Inventory/inventory.tscn" id="5_inventory"]
-[ext_resource type="Resource" path="res://Resources/brown_marble.tres" id="6_brown"]
-
-[sub_resource type="Resource" id="Resource_so0yi"]
-script = ExtResource("2_nunvh")
-metadata/_custom_type_script = "uid://cbxvjrptlxvsm"
+[ext_resource type="Resource" uid="uid://q7t1651xon8y" path="res://Resources/brown_marble.tres" id="6_brown"]
+[ext_resource type="Resource" uid="uid://c2jbto0wkkqhs" path="res://Resources/green_marble.tres" id="7_green"]
 
 [node name="Shop" type="Control" unique_id=395620655 node_paths=PackedStringArray("shop_container", "marble_box_container", "relic_bar_container")]
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_qlv7h")
-shop_items = Array[ExtResource("2_nunvh")]([ExtResource("3_u3phx"), ExtResource("4_bomb"), ExtResource("6_brown"), SubResource("Resource_so0yi")])
+shop_items = Array[ExtResource("2_nunvh")]([ExtResource("3_u3phx"), ExtResource("4_bomb"), ExtResource("6_brown"), ExtResource("7_green")])
 shop_container = NodePath("UI/Panel/ScrollContainer/ShopInventory")
 marble_box_container = NodePath("UI/Panel/CollectionRows/MarbleBox")
 relic_bar_container = NodePath("UI/Panel/CollectionRows/RelicBar")

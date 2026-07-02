@@ -25,6 +25,9 @@ mono_crash.*.json
 
 # test ignores
 /tests
-
 # agent ignores
 .claude
+prompts
+
+#addons ignores
+addons

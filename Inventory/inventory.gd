@@ -6,9 +6,11 @@ signal inventory_changed
 @export var items: Array[Item] = []
 @export var marble_capacity: int = 3
 @export var relic_capacity: int = 3
+@export var buff_capacity: int = 3
 
 var marble_items: Array[Item] = []
 var relic_items: Array[Item] = []
+var buff_items: Array[Item] = []
 
 func add_item(item: Item) -> bool:
 	if not can_add_item(item):
@@ -19,6 +21,9 @@ func add_item(item: Item) -> bool:
 		marble_items.append(item)
 	elif item.type == Item.ItemType.RELIC:
 		relic_items.append(item)
+	elif item.type == Item.ItemType.BUFF:
+		buff_items.append(item)
+		_add_item_buff(item)
 
 	item_added.emit(item)
 	inventory_changed.emit()
@@ -35,6 +40,9 @@ func remove_item(item: Item) -> bool:
 		_remove_from_array(marble_items, item)
 	elif item.type == Item.ItemType.RELIC:
 		_remove_from_array(relic_items, item)
+	elif item.type == Item.ItemType.BUFF:
+		_remove_from_array(buff_items, item)
+		_remove_item_buff(item)
 
 	inventory_changed.emit()
 	return true
@@ -47,6 +55,8 @@ func can_add_item(item: Item) -> bool:
 		return marble_items.size() < marble_capacity
 	if item.type == Item.ItemType.RELIC:
 		return relic_items.size() < relic_capacity
+	if item.type == Item.ItemType.BUFF:
+		return buff_items.size() < buff_capacity
 	return true
 
 
@@ -70,3 +80,26 @@ func has_effect(effect_type: Item.EffectType) -> bool:
 		if item != null and item.effect_type == effect_type:
 			return true
 	return false
+
+
+func _add_item_buff(item: Item) -> void:
+	var manager: Node = _get_buff_manager()
+	if manager == null or not manager.has_method("add_buff"):
+		return
+	var id: String = item.buff_id if item.buff_id != "" else item.id
+	manager.call("add_buff", id, max(1, item.buff_stacks))
+
+
+func _remove_item_buff(item: Item) -> void:
+	var manager: Node = _get_buff_manager()
+	if manager == null or not manager.has_method("remove_buff"):
+		return
+	var id: String = item.buff_id if item.buff_id != "" else item.id
+	manager.call("remove_buff", id)
+
+
+func _get_buff_manager() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("BuffManager")
