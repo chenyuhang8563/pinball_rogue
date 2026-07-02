@@ -52,11 +52,11 @@ func can_add_item(item: Item) -> bool:
 	if item == null:
 		return false
 	if item.type == Item.ItemType.MARBLE:
-		return marble_items.size() < marble_capacity
+		return marble_items.size() < _get_capacity("marble_slot_count", marble_capacity)
 	if item.type == Item.ItemType.RELIC:
-		return relic_items.size() < relic_capacity
+		return relic_items.size() < _get_capacity("relic_slot_count", relic_capacity)
 	if item.type == Item.ItemType.BUFF:
-		return buff_items.size() < buff_capacity
+		return buff_items.size() < _get_capacity("buff_slot_count", buff_capacity)
 	return true
 
 
@@ -103,3 +103,17 @@ func _get_buff_manager() -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null("BuffManager")
+
+
+func _get_capacity(stat_id: String, fallback: int) -> int:
+	var stat_system: Node = _get_stat_system()
+	if stat_system == null or not stat_system.has_method("get_stat"):
+		return fallback
+	return int(stat_system.call("get_stat", stat_id, "player"))
+
+
+func _get_stat_system() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("StatSystem")

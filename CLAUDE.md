@@ -39,6 +39,7 @@ A shader-compiler warning like `Condition "!actions.custom_samplers.has(...)" is
 | `EffectManager`  | `Effects/effect_manager.gd`             | Instantiates/dispatches relic effect scripts on combat events. |
 | `EffectRegistry` | `Items/effect_registry.gd`             | Single source of truth: `effect_type → relic script` and `effect_type → MarbleSpec`. |
 | `GameExecutor`   | `addons/hasturoperationgd/...`          | Remote-execution plugin (Hastur).                          |
+| `StatSystem`     | `Stats/stat_system.gd`                  | Data-driven stat definitions, modifiers, formulas, and final-value queries. |
 
 Autoloads resolve before the main scene. In standalone `-s` test scripts, autoload singletons are **not** guaranteed to exist as global identifiers — resolve via `get_node_or_null("/root/Event")` etc. (see `Main/main.gd::_get_autoload_node` for the helper used throughout).
 
@@ -52,6 +53,21 @@ New content flows through one path: **`Shop → Slot → Inventory.add_item()`**
 - **New relic effect** → add entry to `Item.EffectType`, create a `RefCounted` script under `Effects/` with callback methods (e.g. `on_enemy_hit_by_marble`), register it in `EffectRegistry.RELIC_EFFECT_SCRIPTS`.
 
 `main.gd` reads marble specs from the registry to build the chain. `EffectManager` reads relic scripts from the registry to dispatch combat events. Neither file should contain per-type `match`/`if` branches.
+
+### Stat system
+
+Final gameplay values flow through `StatSystem.get_stat(stat_id, entity_id, context)`. Static bases live in `Resources/stats/**/*.tres` as `StatDef` resources; runtime changes are `StatModifier`s attached to an entity id such as `marble_chain`, `player`, or `enemy_<instance_id>`.
+
+Current integrated paths:
+
+- Marble-chain contact damage aggregates head/segment/echo base damage, then asks `final_damage`.
+- Enemy damage asks `damage_received`, then stores the result back into `current_health`.
+- BuffManager owns buff lifetime but writes stat modifiers for damage, speed, dash speed, and shield charges.
+- Shop buy/sell prices use `buy_price_multiplier` and `sell_price_multiplier`.
+- Inventory capacities use `marble_slot_count`, `relic_slot_count`, and `buff_slot_count`.
+- Marble speed and dash values use `max_speed`, `dash_impulse`, `dash_max_speed`, `dash_duration`, `marble_speed_multiplier`, and `dash_speed_multiplier`.
+
+When adding a new stat, create a `StatDef` resource, register its path in `Stats/stat_registry.gd`, and query it through `StatSystem`; avoid adding new hard-coded numeric getters to gameplay managers.
 
 ### Marble chain
 
@@ -98,4 +114,3 @@ MarbleChain (Node2D)
 ## Worktree / dirty-file hygiene
 
 Before editing, run `git status --short` and distinguish pre-existing user changes from agent changes. `Marbles/bomb_marble.tscn`, `Main/util.gd`, and `Main/util.gd.uid` may already be dirty or untracked from user work — do not revert or fold them into unrelated fixes without explicit instruction.
-

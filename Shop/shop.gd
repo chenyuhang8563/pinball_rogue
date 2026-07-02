@@ -56,7 +56,7 @@ func sell_item(item: Item) -> bool:
 	if not inventory.call("remove_item", item):
 		return false
 
-	gold += floori(float(item.price) / 2.0)
+	gold += get_sell_price(item)
 	refresh_collection_rows()
 	return true
 
@@ -78,7 +78,7 @@ func purchase_item(item: Item) -> bool:
 	if not _spend_gold_for_item(item):
 		return false
 	if not inventory.call("add_item", item):
-		gold += item.price
+		gold += get_buy_price(item)
 		return false
 
 	_remove_shop_item(item)
@@ -89,16 +89,42 @@ func purchase_item(item: Item) -> bool:
 func _spend_gold_for_item(item: Item) -> bool:
 	if item == null:
 		return false
-	if item.price > gold:
+	var buy_price: int = get_buy_price(item)
+	if buy_price > gold:
 		return false
 
-	gold -= item.price
+	gold -= buy_price
 	return true
+
+
+func get_buy_price(item: Item) -> int:
+	return _get_stat_price(item, "buy_price_multiplier", 1.0, true)
+
+
+func get_sell_price(item: Item) -> int:
+	return _get_stat_price(item, "sell_price_multiplier", 0.5, false)
+
+
+func _get_stat_price(item: Item, stat_id: String, fallback_multiplier: float, round_to_nearest: bool) -> int:
+	if item == null:
+		return 0
+
+	var multiplier: float = fallback_multiplier
+	var stat_system: Node = _get_autoload_node(&"StatSystem")
+	if stat_system != null and stat_system.has_method("get_stat"):
+		multiplier = float(stat_system.call("get_stat", stat_id, "player"))
+
+	var price: float = float(item.price) * multiplier
+	return max(0, roundi(price) if round_to_nearest else floori(price))
 
 func free_previous_slots():
 	for slot in shop_container.get_children():
-		shop_container.remove_child(slot)
-		slot.queue_free()
+		if slot.is_inside_tree():
+			slot.hide()
+			slot.queue_free()
+		else:
+			shop_container.remove_child(slot)
+			slot.free()
 
 func load_shop_inventory():
 	for item in shop_items:

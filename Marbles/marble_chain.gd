@@ -23,6 +23,7 @@
 extends Node2D
 class_name MarbleChain
 
+const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
 
 # ---- 导出调参 ----
 
@@ -214,8 +215,8 @@ func _find_segment(marble_type: Marble.MARBLE_TYPE) -> ChainSegment:
 
 
 func _damage_enemies_in_radius(center: Vector2) -> void:
-	const EXPLOSION_RADIUS: float = 100.0
-	const EXPLOSION_DAMAGE: int = 5
+	var explosion_radius: float = _get_stat_float("explosion_radius", 100.0)
+	var explosion_damage: int = roundi(_get_stat_float("explosion_damage", 5.0))
 
 	for enemy: Node in get_tree().get_nodes_in_group("enemies"):
 		if enemy == null or not is_instance_valid(enemy):
@@ -223,10 +224,10 @@ func _damage_enemies_in_radius(center: Vector2) -> void:
 		if not enemy is Node2D:
 			continue
 		var enemy_node: Node2D = enemy as Node2D
-		if enemy_node.global_position.distance_to(center) > EXPLOSION_RADIUS:
+		if enemy_node.global_position.distance_to(center) > explosion_radius:
 			continue
 		if enemy_node.has_method("take_damage"):
-			enemy_node.take_damage(EXPLOSION_DAMAGE)
+			enemy_node.take_damage(explosion_damage)
 
 
 func _apply_head_knockback(explosion_center: Vector2) -> void:
@@ -260,7 +261,7 @@ func _try_add_echo() -> void:
 # ---- 伤害聚合 ----
 
 ## 敌人碰撞时调用此方法，聚合 Head 基础伤害 + 所有 Body 段贡献。
-func get_total_damage(_target: Node) -> int:
+func get_total_damage(target: Node) -> int:
 	var total: int = 0
 
 	if head != null and is_instance_valid(head):
@@ -270,18 +271,35 @@ func get_total_damage(_target: Node) -> int:
 		if seg == null or not is_instance_valid(seg):
 			continue
 		if seg.segment_type == Marble.MARBLE_TYPE.GREEN:
-			GreenMarble.apply_poison_to_enemy(_target)
+			GreenMarble.apply_poison_to_enemy(target)
 		total += seg.damage
 		total += seg.get_echo_damage()
 
-	return roundi(float(total) * _get_damage_multiplier())
+	var stat_system: Node = _get_autoload_node(&"StatSystem")
+	if stat_system == null or not stat_system.has_method("get_stat"):
+		return total
+
+	var context: RefCounted = StatContextScript.new(
+		"marble_chain",
+		target.name if target != null else "",
+		"marble_hit",
+		{"base_damage": total}
+	)
+	return int(stat_system.call("get_stat", "final_damage", "marble_chain", context))
 
 
-func _get_damage_multiplier() -> float:
-	var manager: Node = get_node_or_null("/root/BuffManager")
-	if manager == null or not manager.has_method("get_damage_multiplier"):
-		return 1.0
-	return float(manager.call("get_damage_multiplier"))
+func _get_autoload_node(node_name: StringName) -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null(NodePath(node_name))
+
+
+func _get_stat_float(stat_id: String, fallback: float) -> float:
+	var stat_system: Node = _get_autoload_node(&"StatSystem")
+	if stat_system == null or not stat_system.has_method("get_stat"):
+		return fallback
+	return float(stat_system.call("get_stat", stat_id, "marble_chain"))
 
 
 func _emit_chain_collision(collided_body: Node) -> void:

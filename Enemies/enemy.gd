@@ -1,5 +1,7 @@
 extends RigidBody2D
 
+const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
+
 @export var health: int = 100:
 	set(value):
 		health = max(0, value)
@@ -13,10 +15,20 @@ extends RigidBody2D
 @onready var health_label: Label = $HealthLabel
 @onready var buff_host: BuffHost = $BuffHost
 
+var _entity_id: String = ""
+
 
 func _ready() -> void:
 	add_to_group("enemies")
-	health_label.text = str(health)
+	_entity_id = "enemy_%d" % get_instance_id()
+	_register_stat_entity()
+	_update_health_label()
+
+
+func _exit_tree() -> void:
+	var stat_system: Node = _get_stat_system()
+	if stat_system != null and stat_system.has_method("unregister_entity") and _entity_id != "":
+		stat_system.call("unregister_entity", _entity_id)
 
 
 func _on_body_entered(body: Node) -> void:
@@ -27,7 +39,22 @@ func _on_body_entered(body: Node) -> void:
 
 
 func take_damage(amount: int, flash_color: Color = Color.WHITE) -> void:
-	health -= amount
+	var final_damage: int = amount
+	var stat_system: Node = _get_stat_system()
+	if stat_system != null and stat_system.has_method("get_stat") and _entity_id != "":
+		var context: RefCounted = StatContextScript.new(
+			_entity_id,
+			"",
+			"take_damage",
+			{"raw_damage": amount}
+		)
+		final_damage = int(stat_system.call("get_stat", "damage_received", _entity_id, context))
+		var current_health: int = int(stat_system.call("get_stat", "current_health", _entity_id))
+		stat_system.call("set_stat_base", _entity_id, "current_health", current_health - final_damage)
+		health = int(stat_system.call("get_stat", "current_health", _entity_id))
+	else:
+		health -= final_damage
+
 	flash_hit_mask(flash_color)
 
 	if health <= 0:
@@ -59,3 +86,28 @@ func _get_active_buff_flash_color() -> Color:
 	if buff_host == null:
 		return Color.WHITE
 	return buff_host.get_active_flash_color()
+
+
+func get_stat_entity_id() -> String:
+	return _entity_id
+
+
+func _register_stat_entity() -> void:
+	var stat_system: Node = _get_stat_system()
+	if stat_system == null or not stat_system.has_method("register_entity"):
+		return
+	stat_system.call("register_entity", _entity_id, ["max_health", "current_health", "armor"])
+	stat_system.call("set_stat_base", _entity_id, "max_health", float(health))
+	stat_system.call("set_stat_base", _entity_id, "current_health", float(health))
+
+
+func _update_health_label() -> void:
+	if health_label != null:
+		health_label.text = str(health)
+
+
+func _get_stat_system() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("StatSystem")
