@@ -1,0 +1,10 @@
+[gd_scene format=3 uid="uid://d1nyycae6ks4h"]
+
+[ext_resource type="Script" uid="uid://dfguwylgcn2md" path="res://Marbles/marble_chain.gd" id="1_script"]
+
+[node name="MarbleChain" type="Node2D" unique_id=1762869057]
+script = ExtResource("1_script")
+trail_point_spacing = 24.0
+body_follow_lerp = 0.5
+
+[node name="BodyContainer" type="Node2D" parent="." unique_id=656261527]

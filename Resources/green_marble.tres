@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Item" format=3 uid="uid://c2jbto0wkkqhs"]
+
+[ext_resource type="Texture2D" uid="uid://duwkeoorfjr8f" path="res://Assets/Marbles/green_marble.png" id="1_1xaem"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Items/item.gd" id="1_c17y6"]
+
+[resource]
+script = ExtResource("1_c17y6")
+id = "green_marble"
+title = "Green Marble"
+icon = ExtResource("1_1xaem")
+price = 25
+description = "Poisons enemies for 10 seconds."
+type = 1
+marble_type = 3
+metadata/_custom_type_script = "uid://cbxvjrptlxvsm"
