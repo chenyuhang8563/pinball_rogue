@@ -40,6 +40,14 @@ border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.55, 0.53, 0.47, 1)
 
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_marble3"]
+bg_color = Color(0.08, 0.08, 0.1, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.53, 0.47, 1)
+
 [node name="Inventory" type="VBoxContainer" unique_id=933844377]
 anchors_preset = 12
 anchor_top = 1.0
@@ -80,6 +88,21 @@ size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_uov6c")
 
 [node name="Icon" type="TextureRect" parent="MarbleBox/MarbleSlot2" unique_id=232817990]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MarbleSlot3" type="Panel" parent="MarbleBox" unique_id=1546262332]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_marble3")
+
+[node name="Icon" type="TextureRect" parent="MarbleBox/MarbleSlot3" unique_id=1944830099]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
