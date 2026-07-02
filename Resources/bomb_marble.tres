@@ -1,6 +1,6 @@
-[gd_resource type="Resource" script_class="Item" format=3]
+[gd_resource type="Resource" script_class="Item" format=3 uid="uid://bncjg26lqnokw"]
 
-[ext_resource type="Texture2D" path="res://Assets/Marbles/bomb_marble.png" id="1_bomb"]
+[ext_resource type="Texture2D" uid="uid://gsjeaoplfocu" path="res://Assets/Marbles/bomb_marble.png" id="1_bomb"]
 [ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Items/item.gd" id="2_item"]
 
 [resource]
@@ -12,4 +12,6 @@ price = 30
 description = "Unlocks bomb marble refills."
 effect_type = 2
 type = 1
+marble_type = 2
+marble_segment_damage = 0
 metadata/_custom_type_script = "uid://cbxvjrptlxvsm"

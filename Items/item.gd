@@ -5,7 +5,7 @@ enum EffectType {
 	NONE,
 	# --- 遗物效果 —— 由 EffectManager 在战斗事件中分发 ---
 	LIGHTNING_CHAIN,
-	# --- 弹珠解锁效果 —— 由 EffectRegistry 提供生成数据，main.gd 启动/补球时读取 ---
+	# --- 弹珠解锁效果 —— Item 自身携带弹珠链数据，main.gd 启动/补球时读取 ---
 	BOMB_MARBLE,
 	BROWN_MARBLE,
 	DARK_MARBLE,  # 默认黑色弹珠，初始即拥有
@@ -24,3 +24,5 @@ enum ItemType {
 @export var description: String = ""
 @export var effect_type: EffectType = EffectType.NONE
 @export var type: ItemType = ItemType.NONE
+@export var marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT
+@export var marble_segment_damage: int = 1

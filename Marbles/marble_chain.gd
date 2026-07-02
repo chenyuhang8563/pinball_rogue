@@ -26,8 +26,11 @@ class_name MarbleChain
 
 # ---- 导出调参 ----
 
-## 轨迹点采样间距（像素）。值越小链越紧，越大越松散。
-@export var trail_point_spacing: float = 10.0
+## 轨迹点采样间距（像素）。和 Main 的出生点间距保持一致，避免开局收缩。
+@export var trail_point_spacing: float = 24.0
+
+## Head 移动多少像素记录一次轨迹点。采样要比链段间距密，避免 Body 目标点跳变。
+@export var trail_sample_spacing: float = 2.0
 
 ## Body 段跟随的 lerp 系数（0-1）。越大跟随越紧，越小越有弹性延迟感。
 @export var body_follow_lerp: float = 0.3
@@ -59,18 +62,21 @@ var _chain_length: int = 1
 ## 爆炸特效预加载。
 var _explosion_effect_scene: PackedScene = preload("res://Effects/explosion_effect/explosion_effect.tscn")
 
+## Head 弹珠场景。Head 固定为基础 dark marble。
+var _head_scene: PackedScene = preload("res://Marbles/marble.tscn")
+
 ## ChainSegment 场景预加载。
 var _segment_scene: PackedScene = preload("res://Marbles/chain_segment.tscn")
 
 
 # ---- 链构建 ----
 
-## 用一组 [MarbleSpec] 构建链。specs[0] 固定为 Head（DEFAULT），后续为 Body 段。
-## 调用方负责传入已排序的 specs 和初始生成位置。
-func build_chain(specs: Array, spawn_position: Vector2) -> void:
+## 用一组弹珠 Item 构建链。items[0] 固定为 Head（DEFAULT），后续为 Body 段。
+## items 顺序对应 spawn_positions 顺序，调用方负责把槽位顺序映射到出生点。
+func build_chain(items: Array[Item], spawn_positions: Array[Vector2]) -> void:
 	_clear_chain()
 
-	if specs.is_empty():
+	if items.is_empty() or spawn_positions.is_empty():
 		return
 
 	# 创建 Body 容器
@@ -79,21 +85,35 @@ func build_chain(specs: Array, spawn_position: Vector2) -> void:
 	add_child(_body_container)
 
 	# Head
-	var head_spec: MarbleSpec = specs[0] as MarbleSpec
-	head = _create_head(head_spec, spawn_position)
+	head = _create_head(_get_spawn_position(spawn_positions, 0))
 	add_child(head)
 
 	# Body 段
-	for i: int in range(1, specs.size()):
-		var spec: MarbleSpec = specs[i] as MarbleSpec
-		var segment: ChainSegment = _create_segment(spec, spawn_position)
+	for i: int in range(1, items.size()):
+		var item: Item = items[i]
+		var segment: ChainSegment = _create_segment(item, _get_spawn_position(spawn_positions, i))
 		body.append(segment)
 		_body_container.add_child(segment)
 
 	_chain_length = 1 + body.size()
+	_prime_trail_from_spawn_positions(spawn_positions)
 
 	# 连接 Head 的碰撞信号
 	_head_connect_signals()
+
+
+func _get_spawn_position(spawn_positions: Array[Vector2], index: int) -> Vector2:
+	var pos_idx: int = mini(index, spawn_positions.size() - 1)
+	return spawn_positions[pos_idx]
+
+
+func _prime_trail_from_spawn_positions(spawn_positions: Array[Vector2]) -> void:
+	_trail.clear()
+	for i: int in range(_chain_length):
+		_trail.append({
+			"pos": _get_spawn_position(spawn_positions, i),
+			"rot": 0.0,
+		})
 
 
 ## 销毁旧链内容。
@@ -118,8 +138,8 @@ func _clear_chain() -> void:
 
 
 ## 创建 Head（唯一 RigidBody2D）。
-func _create_head(spec: MarbleSpec, spawn_pos: Vector2) -> Marble:
-	var instance: Node = spec.scene.instantiate()
+func _create_head(spawn_pos: Vector2) -> Marble:
+	var instance: Node = _head_scene.instantiate()
 	var marble: Marble = instance as Marble
 	marble.global_position = spawn_pos
 	marble.marble_type = Marble.MARBLE_TYPE.DEFAULT
@@ -128,30 +148,17 @@ func _create_head(spec: MarbleSpec, spawn_pos: Vector2) -> Marble:
 
 
 ## 创建一段 Body（ChainSegment，纯视觉）。
-func _create_segment(spec: MarbleSpec, spawn_pos: Vector2) -> ChainSegment:
+func _create_segment(item: Item, spawn_pos: Vector2) -> ChainSegment:
 	var segment: ChainSegment = _segment_scene.instantiate() as ChainSegment
-	segment.segment_type = spec.marble_type
-	segment.damage = spec.segment_damage
+	segment.segment_type = item.marble_type
+	segment.damage = item.marble_segment_damage
 	segment.global_position = spawn_pos
 
-	# 按弹珠类型换贴图（通过 get_node 而非 @onready sprite，避免节点未入树时的时序问题）
-	var texture_path: String = _get_texture_for_type(spec.marble_type)
-	if not texture_path.is_empty() and ResourceLoader.exists(texture_path):
-		var sprite_node: Sprite2D = segment.get_node_or_null("Sprite2D")
-		if sprite_node != null:
-			sprite_node.texture = load(texture_path)
+	var sprite_node: Sprite2D = segment.get_node_or_null("Sprite2D")
+	if sprite_node != null and item.icon != null:
+		sprite_node.texture = item.icon
 
 	return segment
-
-
-func _get_texture_for_type(marble_type: Marble.MARBLE_TYPE) -> String:
-	match marble_type:
-		Marble.MARBLE_TYPE.BOMB:
-			return "res://Assets/Marbles/bomb_marble.png"
-		Marble.MARBLE_TYPE.BROWN:
-			return "res://Assets/Marbles/brown_marble.png"
-		_:
-			return "res://Assets/Marbles/dark_marble.png"
 
 
 # ---- Head 碰撞信号 ----
@@ -275,7 +282,7 @@ func _physics_process(_delta: float) -> void:
 	_update_body_segments()
 
 
-## 在 Head 当前位置记录轨迹点。仅当移动距离 ≥ trail_point_spacing 时才写入。
+## 在 Head 当前位置记录轨迹点。采样密度和链段间距分离，避免视觉段一格一格跳。
 func _record_trail() -> void:
 	if _trail.is_empty():
 		_trail.push_front({"pos": head.global_position, "rot": head.rotation})
@@ -283,7 +290,7 @@ func _record_trail() -> void:
 
 	var last: Dictionary = _trail[0]
 	var dist: float = head.global_position.distance_to(last["pos"])
-	if dist >= trail_point_spacing:
+	if dist >= trail_sample_spacing:
 		_trail.push_front({"pos": head.global_position, "rot": head.rotation})
 
 	# 限制缓冲区大小

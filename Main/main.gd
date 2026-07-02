@@ -3,9 +3,9 @@ extends Node2D
 @onready var marbles: Node2D = $Marbles
 @export var purchased_marble_spawn_position: Vector2 = Vector2(56, 48)
 @export var starting_marble_spawn_positions: Array[Vector2] = [
-	Vector2(56, 48),
-	Vector2(56, 72),
 	Vector2(56, 96),
+	Vector2(56, 72),
+	Vector2(56, 48),
 ]
 
 ## 链重生时的基准生成位置。
@@ -27,8 +27,8 @@ func _ready() -> void:
 
 # ---- 链生成 ----
 
-## 用库存中的弹珠规格构建 MarbleChain。
-## Head 永远为 DEFAULT（Dark），Body 段按 chain_order 排序。
+## 用库存中的弹珠 Item 构建 MarbleChain。
+## Head 永远为 DEFAULT（Dark），Body 段按 Shop 槽位顺序排序。
 func _spawn_chain() -> void:
 	if marbles == null:
 		return
@@ -38,36 +38,41 @@ func _spawn_chain() -> void:
 		marble_chain.queue_free()
 	marble_chain = null
 
-	var specs: Array = _get_chain_specs()
-	if specs.is_empty():
+	var chain_items: Array[Item] = _get_chain_items()
+	if chain_items.is_empty():
 		return
 
 	marble_chain = MarbleChain.new()
 	marble_chain.name = "MarbleChain"
 	marbles.add_child(marble_chain)
-	marble_chain.build_chain(specs, chain_spawn_position)
+	marble_chain.build_chain(chain_items, starting_marble_spawn_positions)
 
 
-## 获取按 chain_order 排序的规格列表：Head 第一位，Body 段按 chain_order 升序。
-## 确保 dark marble 始终作为 Head（即使库存中没有）。
-func _get_chain_specs() -> Array:
-	var raw_specs: Array[MarbleSpec] = _get_inventory_marble_specs()
+## 获取按 Shop MarbleBox 槽位从左到右排序的 Item 列表。
+## 生成时该顺序映射到出生点自下而上，Head 始终使用 dark marble。
+func _get_chain_items() -> Array[Item]:
+	var ordered_items: Array[Item] = _get_shop_marble_box_items()
+	if ordered_items.is_empty():
+		ordered_items = _get_inventory_marble_items()
 
-	# 确保 dark marble 始终存在作为 Head
-	var has_dark: bool = false
-	for spec in raw_specs:
-		if spec.marble_type == Marble.MARBLE_TYPE.DEFAULT:
-			has_dark = true
-			break
+	var head_item: Item = null
+	var body_items: Array[Item] = []
+	for item: Item in ordered_items:
+		if item == null or item.type != Item.ItemType.MARBLE:
+			continue
+		if item.marble_type == Marble.MARBLE_TYPE.DEFAULT and head_item == null:
+			head_item = item
+		else:
+			body_items.append(item)
 
-	if not has_dark:
-		var default_spec: MarbleSpec = _get_default_marble_spec()
-		if default_spec != null:
-			raw_specs.append(default_spec)
+	if head_item == null:
+		head_item = _get_default_marble_item()
 
-	# 排序：chain_order 升序（-1 head first, 0, 1, 2...）
-	raw_specs.sort_custom(func(a: MarbleSpec, b: MarbleSpec): return a.chain_order < b.chain_order)
-	return raw_specs
+	var result: Array[Item] = []
+	if head_item != null:
+		result.append(head_item)
+	result.append_array(body_items)
+	return result
 
 
 # ---- 事件处理 ----
@@ -81,7 +86,7 @@ func _on_marble_fell(body: RigidBody2D) -> void:
 	if body == marble_chain.head:
 		marble_chain.queue_free()
 		marble_chain = null
-		_spawn_chain()
+		call_deferred(&"_spawn_chain")
 
 
 ## Dash 技能激活。仅瞄准 Head（链中唯一物理体）。
@@ -125,26 +130,41 @@ func _find_nearest_enemy(from: Vector2) -> Vector2:
 	return nearest_pos
 
 
-func _get_inventory_marble_specs() -> Array[MarbleSpec]:
-	var specs: Array[MarbleSpec] = []
+func _get_shop_marble_box_items() -> Array[Item]:
+	var items: Array[Item] = []
+	var shop: Node = _get_autoload_node(&"Shop")
+	if shop == null:
+		return items
+
+	var marble_box: Node = shop.get_node_or_null("UI/Panel/CollectionRows/MarbleBox")
+	if marble_box == null:
+		return items
+
+	for index: int in range(marble_box.get_child_count()):
+		var slot: Node = marble_box.get_child(index)
+		if not slot.has_meta("item"):
+			continue
+		var item: Item = slot.get_meta("item") as Item
+		if item != null and item.type == Item.ItemType.MARBLE:
+			items.append(item)
+	return items
+
+
+func _get_inventory_marble_items() -> Array[Item]:
+	var items: Array[Item] = []
 	var inventory: Node = _get_autoload_node(&"Inventory")
-	var effect_registry: Node = _get_autoload_node(&"EffectRegistry")
-	if inventory == null or effect_registry == null:
-		return specs
+	if inventory == null or not inventory.has("marble_items"):
+		return items
 
-	var owned_effects: Array = effect_registry.get_marble_effect_types(inventory)
-	for effect_type in owned_effects:
-		var spec: MarbleSpec = effect_registry.get_marble_spec(effect_type)
-		if spec != null and spec.scene != null:
-			specs.append(spec)
-	return specs
+	var marble_items: Array = inventory.get("marble_items")
+	for item: Item in marble_items:
+		if item != null and item.type == Item.ItemType.MARBLE:
+			items.append(item)
+	return items
 
 
-func _get_default_marble_spec() -> MarbleSpec:
-	var effect_registry: Node = _get_autoload_node(&"EffectRegistry")
-	if effect_registry == null:
-		return null
-	return effect_registry.get_marble_spec(Item.EffectType.DARK_MARBLE)
+func _get_default_marble_item() -> Item:
+	return preload("res://Resources/dark_marble.tres") as Item
 
 
 func _get_autoload_node(node_name: StringName) -> Node:
