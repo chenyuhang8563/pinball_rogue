@@ -27,10 +27,12 @@ class_name MarbleChain
 # ---- 导出调参 ----
 
 ## 轨迹点采样间距（像素）。值越小链越紧，越大越松散。
-@export var trail_point_spacing: float = 10.0
+## 原值 10.0 在 head 来回移动时因轨迹弯曲导致段太近。改为 15.0 补偿弯曲。
+@export var trail_point_spacing: float = 15.0
 
 ## Body 段跟随的 lerp 系数（0-1）。越大跟随越紧，越小越有弹性延迟感。
-@export var body_follow_lerp: float = 0.3
+## 原值 0.2 导致段跟不上目标位置，链太紧凑。改为 0.35 平衡跟随速度和弹性感。
+@export var body_follow_lerp: float = 0.35
 
 ## 轨迹缓冲区最大条目数（自动计算：chain_length * trail_point_spacing * 2）。
 const TRAIL_MULTIPLIER: int = 3
@@ -41,7 +43,7 @@ const TRAIL_MULTIPLIER: int = 3
 ## 头部弹珠——链中唯一的 RigidBody2D。
 var head: Marble = null
 
-## Body 段数组，从尾到头排列：body[0] = TAIL, body[-1] = NECK。
+## Body 段数组，从头到尾排列：body[0] = NECK（最接近 Head），body[-1] = TAIL（最远离 Head）。
 var body: Array[ChainSegment] = []
 
 ## Body 段容器。
@@ -66,11 +68,11 @@ var _segment_scene: PackedScene = preload("res://Marbles/chain_segment.tscn")
 # ---- 链构建 ----
 
 ## 用一组 [MarbleSpec] 构建链。specs[0] 固定为 Head（DEFAULT），后续为 Body 段。
-## 调用方负责传入已排序的 specs 和初始生成位置。
-func build_chain(specs: Array, spawn_position: Vector2) -> void:
+## spawn_positions 为每段提供独立的初始位置（下标越界时截断到最后一个）。
+func build_chain(specs: Array, spawn_positions: Array[Vector2]) -> void:
 	_clear_chain()
 
-	if specs.is_empty():
+	if specs.is_empty() or spawn_positions.is_empty():
 		return
 
 	# 创建 Body 容器
@@ -80,13 +82,18 @@ func build_chain(specs: Array, spawn_position: Vector2) -> void:
 
 	# Head
 	var head_spec: MarbleSpec = specs[0] as MarbleSpec
-	head = _create_head(head_spec, spawn_position)
+	head = _create_head(head_spec, spawn_positions[0])
 	add_child(head)
 
-	# Body 段
+	# Body 段：按顺序分配位置，确保生成点连续
+	# specs[0] (Head) → positions[0]
+	# specs[1] (body[0]) → positions[1]
+	# specs[2] (body[1]) → positions[2]
+	var last_pos_idx: int = spawn_positions.size() - 1
 	for i: int in range(1, specs.size()):
 		var spec: MarbleSpec = specs[i] as MarbleSpec
-		var segment: ChainSegment = _create_segment(spec, spawn_position)
+		var pos_idx: int = mini(i, last_pos_idx)
+		var segment: ChainSegment = _create_segment(spec, spawn_positions[pos_idx])
 		body.append(segment)
 		_body_container.add_child(segment)
 
@@ -264,7 +271,8 @@ func _physics_process(_delta: float) -> void:
 	_update_body_segments()
 
 
-## 在 Head 当前位置记录轨迹点。仅当移动距离 ≥ trail_point_spacing 时才写入。
+## 在 Head 当前位置记录轨迹点。仅当移动距离 ≥ 1px 时才写入。
+## 使用较小的阈值（1px）确保轨迹点足够密集，所有段都能找到目标点。
 func _record_trail() -> void:
 	if _trail.is_empty():
 		_trail.push_front({"pos": head.global_position, "rot": head.rotation})
@@ -272,7 +280,7 @@ func _record_trail() -> void:
 
 	var last: Dictionary = _trail[0]
 	var dist: float = head.global_position.distance_to(last["pos"])
-	if dist >= trail_point_spacing:
+	if dist >= 1.0:  # 降低阈值，从 trail_point_spacing (10px) 改为 1px
 		_trail.push_front({"pos": head.global_position, "rot": head.rotation})
 
 	# 限制缓冲区大小
@@ -301,10 +309,15 @@ func _update_body_segments() -> void:
 
 
 ## 沿轨迹缓冲区查找距离为 target_distance 的点（从头开始累计距离）。
+## 如果轨迹不够长，沿最后两个点的方向外推。
 func _get_trail_point_at_distance(target_distance: float) -> Dictionary:
-	if _trail.size() < 2:
-		return _trail[0] if not _trail.is_empty() else {}
+	if _trail.is_empty():
+		return {}
 
+	if _trail.size() < 2:
+		return _trail[0]
+
+	# 先尝试在轨迹内查找
 	var accumulated: float = 0.0
 	for i: int in range(_trail.size() - 1):
 		var seg_len: float = _trail[i]["pos"].distance_to(_trail[i + 1]["pos"])
@@ -316,5 +329,17 @@ func _get_trail_point_at_distance(target_distance: float) -> Dictionary:
 			}
 		accumulated += seg_len
 
-	# 轨迹不够长，返回最远的点
-	return _trail[-1]
+	# 轨迹不够长，沿最后两个点的方向外推
+	var last_point: Dictionary = _trail[-1]
+	var second_last: Dictionary = _trail[-2]
+	var direction: Vector2 = (last_point["pos"] - second_last["pos"]).normalized()
+	if direction.length() < 0.001:
+		# 如果方向为零，使用默认方向（向下）
+		direction = Vector2(0, 1)
+
+	var remaining_distance: float = target_distance - accumulated
+	var extrapolated_pos: Vector2 = last_point["pos"] + direction * remaining_distance
+	return {
+		"pos": extrapolated_pos,
+		"rot": last_point["rot"],
+	}

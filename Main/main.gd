@@ -1,15 +1,11 @@
 extends Node2D
 
 @onready var marbles: Node2D = $Marbles
-@export var purchased_marble_spawn_position: Vector2 = Vector2(56, 48)
 @export var starting_marble_spawn_positions: Array[Vector2] = [
-	Vector2(56, 48),
-	Vector2(56, 72),
 	Vector2(56, 96),
+	Vector2(56, 72),
+	Vector2(56, 48),
 ]
-
-## 链重生时的基准生成位置。
-@export var chain_spawn_position: Vector2 = Vector2(56, 48)
 
 ## 当前活跃的弹珠链。由 _spawn_chain() 创建，整条链只有一个 RigidBody2D（Head）。
 var marble_chain: MarbleChain = null
@@ -42,32 +38,58 @@ func _spawn_chain() -> void:
 	if specs.is_empty():
 		return
 
-	marble_chain = MarbleChain.new()
+	var scene: PackedScene = load("res://Marbles/marble_chain.tscn")
+	marble_chain = scene.instantiate() as MarbleChain
 	marble_chain.name = "MarbleChain"
 	marbles.add_child(marble_chain)
-	marble_chain.build_chain(specs, chain_spawn_position)
+	marble_chain.build_chain(specs, starting_marble_spawn_positions)
 
 
-## 获取按 chain_order 排序的规格列表：Head 第一位，Body 段按 chain_order 升序。
-## 确保 dark marble 始终作为 Head（即使库存中没有）。
+## 获取按 shop marble 槽顺序排列的规格列表：Head 第一位，Body 段按槽位从左到右排列。
+## Shop 槽位从左到右对应 Y 轴从上到下（第一个槽位在最上面）。
 func _get_chain_specs() -> Array:
-	var raw_specs: Array[MarbleSpec] = _get_inventory_marble_specs()
+	var shop: Node = _get_autoload_node(&"Shop")
+	var effect_registry: Node = _get_autoload_node(&"EffectRegistry")
+	if shop == null or effect_registry == null:
+		return []
 
-	# 确保 dark marble 始终存在作为 Head
-	var has_dark: bool = false
-	for spec in raw_specs:
+	# 从 shop 的 MarbleBox 读取槽位顺序
+	var marble_box: Node = shop.get_node_or_null("UI/Panel/CollectionRows/MarbleBox")
+	if marble_box == null:
+		return []
+
+	var specs: Array[MarbleSpec] = []
+	var head_spec: MarbleSpec = null
+
+	# 按槽位从左到右遍历
+	for i: int in range(marble_box.get_child_count()):
+		var slot: Node = marble_box.get_child(i)
+		if not slot.has_meta("item"):
+			continue
+		var item = slot.get_meta("item")
+		if item == null:
+			continue
+
+		var effect_type = item.effect_type
+		var spec: MarbleSpec = effect_registry.get_marble_spec(effect_type)
+		if spec == null or spec.scene == null:
+			continue
+
 		if spec.marble_type == Marble.MARBLE_TYPE.DEFAULT:
-			has_dark = true
-			break
+			head_spec = spec
+		else:
+			specs.append(spec)
 
-	if not has_dark:
-		var default_spec: MarbleSpec = _get_default_marble_spec()
-		if default_spec != null:
-			raw_specs.append(default_spec)
+	# 如果槽位中没有 dark marble，添加默认的作为 Head
+	if head_spec == null:
+		head_spec = _get_default_marble_spec()
 
-	# 排序：chain_order 升序（-1 head first, 0, 1, 2...）
-	raw_specs.sort_custom(func(a: MarbleSpec, b: MarbleSpec): return a.chain_order < b.chain_order)
-	return raw_specs
+	# 组装：Head 在前，其余按槽位顺序
+	var result: Array[MarbleSpec] = []
+	if head_spec != null:
+		result.append(head_spec)
+	result.append_array(specs)
+	return result
 
 
 # ---- 事件处理 ----
@@ -101,7 +123,8 @@ func _on_dash_skill_activated() -> void:
 
 
 func _on_inventory_changed() -> void:
-	_spawn_chain()
+	# 延迟到下一帧重建链，确保 shop UI 槽位已更新
+	call_deferred(&"_spawn_chain")
 
 
 # ---- 辅助方法 ----
