@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="StatDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Stats/stat_def.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+id = "sell_price_multiplier"
+display_name = "Sell Price Multiplier"
+category = "economy"
+base_value = 0.5
+min_value = 0.0
+max_value = 999999999.0
