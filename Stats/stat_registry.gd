@@ -27,6 +27,8 @@ const MOVE_SPEED: String = "move_speed"
 const MARBLE_SPEED_MULTIPLIER: String = "marble_speed_multiplier"
 const DASH_SPEED_MULTIPLIER: String = "dash_speed_multiplier"
 
+const BOUNCELESS_WALL_BOUNCE: String = "bounceless_wall_bounce"
+
 const SHIELD_CHARGES: String = "shield_charges"
 const DODGE_RATE: String = "dodge_rate"
 
@@ -60,6 +62,7 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Resources/stats/enemy/move_speed.tres",
 	"res://Resources/stats/movement/marble_speed_multiplier.tres",
 	"res://Resources/stats/movement/dash_speed_multiplier.tres",
+	"res://Resources/stats/physics/bounceless_wall_bounce.tres",
 	"res://Resources/stats/defense/shield_charges.tres",
 	"res://Resources/stats/defense/dodge_rate.tres",
 	"res://Resources/stats/economy/sell_price_multiplier.tres",

@@ -28,6 +28,3 @@ mono_crash.*.json
 # agent ignores
 .claude
 prompts
-
-#addons ignores
-addons
