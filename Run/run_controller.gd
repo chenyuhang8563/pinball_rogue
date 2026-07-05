@@ -1,0 +1,413 @@
+extends Node
+class_name RunController
+
+signal run_node_completed(node_kind: String)
+signal battle_started(group_id: String)
+signal battle_completed(group_id: String)
+signal run_completed
+
+const BattleGroupDefScript: GDScript = preload("res://Run/battle_group_def.gd")
+const RunNodeOptionScript: GDScript = preload("res://Run/run_node_option.gd")
+const BattleSpawnerScript: GDScript = preload("res://Run/battle_spawner.gd")
+const EnemyScene: PackedScene = preload("res://Enemies/enemy.tscn")
+const DEFAULT_REWARD_ITEM_PATHS: PackedStringArray = [
+	"res://Resources/brown_marble.tres",
+	"res://Resources/green_marble.tres",
+	"res://Resources/bomb_marble.tres",
+	"res://Resources/lightning.tres",
+]
+const NORMAL_BATTLE_OPTION_WEIGHT: int = 30
+const EVENT_OPTION_WEIGHT: int = 30
+const ELITE_OPTION_WEIGHT: int = 20
+const UPGRADE_OPTION_WEIGHT: int = 10
+const SHOP_MODE_ON: int = 0
+const SHOP_MODE_OFF: int = 1
+const NORMAL_BATTLE_GOLD_MIN: int = 15
+const NORMAL_BATTLE_GOLD_MAX: int = 20
+const ELITE_BATTLE_GOLD_MIN: int = 35
+const ELITE_BATTLE_GOLD_MAX: int = 40
+
+@export var boss_node_index: int = 6
+@export var enemy_container: Node2D
+@export var battle_spawner: BattleSpawner
+@export var node_choice_panel: Control
+@export var draft_reward_panel: Control
+
+var current_node_index: int = 0
+var choice_wave_index: int = 0
+var run_is_complete: bool = false
+var reset_battle_state_callable: Callable = Callable()
+
+
+func _ready() -> void:
+	_ensure_battle_spawner()
+	_connect_panels()
+
+
+func start_run() -> void:
+	_ensure_battle_spawner()
+	_connect_panels()
+	current_node_index = 0
+	choice_wave_index = 0
+	run_is_complete = false
+	_start_next_node()
+
+
+func build_node_options() -> Array[RunNodeOption]:
+	choice_wave_index += 1
+	return build_node_options_for_wave(choice_wave_index)
+
+
+func build_node_options_for_wave(wave_index: int) -> Array[RunNodeOption]:
+	var options: Array[RunNodeOption] = []
+	if wave_index == 4:
+		options.append(_make_shop_option())
+
+	while options.size() < 3:
+		var option: RunNodeOption = _make_weighted_node_option()
+		if not _options_have_kind_id(options, option.kind_id):
+			options.append(option)
+	return options
+
+
+func get_option_weights() -> Dictionary:
+	return {
+		"battle": NORMAL_BATTLE_OPTION_WEIGHT,
+		"event": EVENT_OPTION_WEIGHT,
+		"elite": ELITE_OPTION_WEIGHT,
+		"upgrade": UPGRADE_OPTION_WEIGHT,
+	}
+
+
+func choose_option(option: RunNodeOption) -> void:
+	if option == null or run_is_complete:
+		return
+
+	run_node_completed.emit(option.kind_id)
+	if node_choice_panel != null:
+		node_choice_panel.hide()
+
+	match option.kind:
+		RunNodeOption.Kind.BATTLE:
+			_begin_battle(option.battle_group)
+		RunNodeOption.Kind.ELITE:
+			_begin_battle(option.battle_group)
+		RunNodeOption.Kind.EVENT:
+			_show_event_draft()
+		RunNodeOption.Kind.REWARD:
+			_show_reward_draft()
+		RunNodeOption.Kind.UPGRADE:
+			_show_upgrade_placeholder()
+		RunNodeOption.Kind.SHOP:
+			_show_shop()
+		_:
+			_show_node_choices()
+
+
+func continue_after_draft() -> void:
+	_start_next_node()
+
+
+func _start_next_node() -> void:
+	if run_is_complete:
+		return
+
+	current_node_index += 1
+	if current_node_index >= boss_node_index:
+		_begin_battle(_make_boss_group())
+		return
+
+	if current_node_index == 1:
+		_begin_battle(_make_weak_group())
+	else:
+		_show_node_choices()
+
+
+func _begin_battle(group: BattleGroupDef) -> void:
+	if group == null:
+		return
+
+	_ensure_battle_spawner()
+	battle_started.emit(group.id)
+	_reset_battle_state()
+	if battle_spawner != null:
+		battle_spawner.start_battle(group)
+
+
+func _on_battle_completed(group_id: String) -> void:
+	battle_completed.emit(group_id)
+
+	if group_id.contains("boss"):
+		run_is_complete = true
+		run_completed.emit()
+		_show_run_completed_message()
+		return
+
+	_grant_battle_gold(group_id)
+	_show_node_choices()
+
+
+func _show_node_choices() -> void:
+	if node_choice_panel == null:
+		return
+	if node_choice_panel.has_method("show_options"):
+		node_choice_panel.call("show_options", build_node_options())
+
+
+func _show_reward_draft() -> void:
+	if draft_reward_panel == null:
+		_start_next_node()
+		return
+	if draft_reward_panel.has_method("show_item_draft"):
+		draft_reward_panel.call("show_item_draft", _pick_reward_items())
+
+
+func _show_event_draft() -> void:
+	if draft_reward_panel == null:
+		_start_next_node()
+		return
+	if draft_reward_panel.has_method("show_item_draft"):
+		draft_reward_panel.call("show_item_draft", _pick_event_items())
+
+
+func _show_run_completed_message() -> void:
+	if node_choice_panel != null and node_choice_panel.has_method("show_message"):
+		node_choice_panel.call("show_message", "Run Complete", "Boss defeated. This v1 flow is complete.")
+
+
+func _show_upgrade_placeholder() -> void:
+	if node_choice_panel != null and node_choice_panel.has_method("show_message"):
+		if node_choice_panel.has_signal(&"message_dismissed"):
+			var continue_callable: Callable = Callable(self, "continue_after_draft")
+			if not node_choice_panel.is_connected(&"message_dismissed", continue_callable):
+				node_choice_panel.connect(&"message_dismissed", continue_callable, CONNECT_ONE_SHOT)
+		node_choice_panel.call("show_message", "Upgrade", "Placeholder")
+	else:
+		_start_next_node()
+
+
+func _show_shop() -> void:
+	var shop: Node = _get_autoload_node(&"Shop")
+	if shop == null:
+		_start_next_node()
+		return
+
+	shop.set("mode", SHOP_MODE_ON)
+	_watch_shop_close(shop)
+
+
+func _pick_reward_items() -> Array[Item]:
+	var default_items: Array[Item] = _get_default_reward_items()
+	var result: Array[Item] = []
+	for index: int in range(mini(3, default_items.size())):
+		result.append(default_items[index])
+	return result
+
+
+func _pick_event_items() -> Array[Item]:
+	var default_items: Array[Item] = _get_default_reward_items()
+	var result: Array[Item] = []
+	for index: int in range(default_items.size() - 1, -1, -1):
+		result.append(default_items[index])
+		if result.size() >= 3:
+			break
+	return result
+
+
+func _get_default_reward_items() -> Array[Item]:
+	var result: Array[Item] = []
+	for path: String in DEFAULT_REWARD_ITEM_PATHS:
+		var item: Item = load(path) as Item
+		if item != null:
+			result.append(item)
+	return result
+
+
+func _grant_battle_gold(group_id: String) -> void:
+	if group_id.contains("elite"):
+		_add_gold(randi_range(ELITE_BATTLE_GOLD_MIN, ELITE_BATTLE_GOLD_MAX))
+	elif group_id.contains("normal"):
+		_add_gold(randi_range(NORMAL_BATTLE_GOLD_MIN, NORMAL_BATTLE_GOLD_MAX))
+
+
+func _add_gold(amount: int) -> void:
+	var shop: Node = _get_autoload_node(&"Shop")
+	if shop == null:
+		return
+	shop.set("gold", int(shop.get("gold")) + amount)
+
+
+func _pick_normal_battle_group() -> BattleGroupDef:
+	if current_node_index <= 1:
+		return _make_weak_group()
+	return _make_strong_group()
+
+
+func _make_weighted_node_option() -> RunNodeOption:
+	var total_weight: int = NORMAL_BATTLE_OPTION_WEIGHT + EVENT_OPTION_WEIGHT + ELITE_OPTION_WEIGHT + UPGRADE_OPTION_WEIGHT
+	var roll: int = randi_range(1, total_weight)
+	if roll <= NORMAL_BATTLE_OPTION_WEIGHT:
+		return _make_normal_battle_option()
+	if roll <= NORMAL_BATTLE_OPTION_WEIGHT + EVENT_OPTION_WEIGHT:
+		return _make_event_option()
+	if roll <= NORMAL_BATTLE_OPTION_WEIGHT + EVENT_OPTION_WEIGHT + ELITE_OPTION_WEIGHT:
+		return _make_elite_option()
+	return _make_upgrade_option()
+
+
+func _make_normal_battle_option() -> RunNodeOption:
+	return _make_option(RunNodeOption.Kind.BATTLE, "battle", "Battle", "", _make_strong_group())
+
+
+func _make_event_option() -> RunNodeOption:
+	return _make_option(RunNodeOption.Kind.EVENT, "event", "Event", "", null)
+
+
+func _make_elite_option() -> RunNodeOption:
+	return _make_option(RunNodeOption.Kind.ELITE, "elite", "Elite", "", _make_elite_group())
+
+
+func _make_upgrade_option() -> RunNodeOption:
+	return _make_option(RunNodeOption.Kind.UPGRADE, "upgrade", "Upgrade", "", null)
+
+
+func _make_shop_option() -> RunNodeOption:
+	return _make_option(RunNodeOption.Kind.SHOP, "shop", "Shop", "", null)
+
+
+func _make_weak_group() -> BattleGroupDef:
+	var entries: Array[BattleGroupDef.EnemyEntry] = [
+		_enemy_entry(Vector2(72, 48), 30),
+		_enemy_entry(Vector2(120, 72), 30),
+		_enemy_entry(Vector2(168, 48), 30),
+	]
+	return _make_group("weak_normal_%d" % current_node_index, "Weak Fight", BattleGroupDef.Kind.WEAK_NORMAL, entries)
+
+
+func _make_strong_group() -> BattleGroupDef:
+	var entries: Array[BattleGroupDef.EnemyEntry] = [
+		_enemy_entry(Vector2(64, 48), 42),
+		_enemy_entry(Vector2(104, 88), 42),
+		_enemy_entry(Vector2(144, 48), 42),
+		_enemy_entry(Vector2(184, 88), 42),
+		_enemy_entry(Vector2(120, 132), 42),
+	]
+	return _make_group("strong_normal_%d" % current_node_index, "Strong Fight", BattleGroupDef.Kind.STRONG_NORMAL, entries)
+
+
+func _make_elite_group() -> BattleGroupDef:
+	var entries: Array[BattleGroupDef.EnemyEntry] = [
+		_enemy_entry(Vector2(120, 64), 120),
+		_enemy_entry(Vector2(80, 124), 36),
+		_enemy_entry(Vector2(160, 124), 36),
+	]
+	return _make_group("elite_%d" % current_node_index, "Elite Fight", BattleGroupDef.Kind.ELITE, entries)
+
+
+func _make_boss_group() -> BattleGroupDef:
+	var entries: Array[BattleGroupDef.EnemyEntry] = [
+		_enemy_entry(Vector2(120, 64), 240),
+		_enemy_entry(Vector2(72, 128), 50),
+		_enemy_entry(Vector2(168, 128), 50),
+	]
+	return _make_group("boss_%d" % current_node_index, "Boss Fight", BattleGroupDef.Kind.BOSS, entries)
+
+
+func _make_group(id: String, title: String, kind: BattleGroupDef.Kind, entries: Array[BattleGroupDef.EnemyEntry]) -> BattleGroupDef:
+	var group: BattleGroupDef = BattleGroupDefScript.new()
+	group.id = id
+	group.title = title
+	group.kind = kind
+	group.enemy_entries = entries
+	return group
+
+
+func _enemy_entry(position: Vector2, health: int) -> BattleGroupDef.EnemyEntry:
+	var entry: BattleGroupDef.EnemyEntry = BattleGroupDef.EnemyEntry.new()
+	entry.scene = EnemyScene
+	entry.position = position
+	entry.health = health
+	return entry
+
+
+func _make_option(
+	kind: RunNodeOption.Kind,
+	kind_id: String,
+	title: String,
+	description: String,
+	battle_group: BattleGroupDef
+) -> RunNodeOption:
+	var option: RunNodeOption = RunNodeOptionScript.new()
+	option.kind = kind
+	option.kind_id = kind_id
+	option.title = title
+	option.description = description
+	option.battle_group = battle_group
+	return option
+
+
+func _options_have_kind_id(options: Array[RunNodeOption], kind_id: String) -> bool:
+	for option: RunNodeOption in options:
+		if option.kind_id == kind_id:
+			return true
+	return false
+
+
+func _reset_battle_state() -> void:
+	if reset_battle_state_callable.is_valid():
+		reset_battle_state_callable.call()
+
+
+func _watch_shop_close(shop: Node) -> void:
+	var timer: Timer = Timer.new()
+	timer.name = "ShopCloseWatcher"
+	timer.wait_time = 0.1
+	timer.one_shot = false
+	timer.process_callback = Timer.TIMER_PROCESS_IDLE
+	timer.process_mode = Node.PROCESS_MODE_ALWAYS
+	add_child(timer)
+	timer.timeout.connect(func() -> void:
+		if not is_instance_valid(shop):
+			timer.queue_free()
+			_start_next_node()
+			return
+		if int(shop.get("mode")) != SHOP_MODE_OFF:
+			return
+		timer.queue_free()
+		_start_next_node()
+	)
+	timer.start()
+
+
+func _get_autoload_node(node_name: StringName) -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null(NodePath(node_name))
+
+
+func _ensure_battle_spawner() -> void:
+	if battle_spawner == null:
+		battle_spawner = get_node_or_null("BattleSpawner") as BattleSpawner
+	if battle_spawner == null:
+		battle_spawner = BattleSpawnerScript.new()
+		battle_spawner.name = "BattleSpawner"
+		add_child(battle_spawner)
+	if battle_spawner.enemy_container == null:
+		battle_spawner.enemy_container = enemy_container
+
+	var callable: Callable = Callable(self, "_on_battle_completed")
+	if not battle_spawner.battle_completed.is_connected(callable):
+		battle_spawner.battle_completed.connect(callable)
+
+
+func _connect_panels() -> void:
+	if node_choice_panel != null and node_choice_panel.has_signal(&"option_selected"):
+		var option_callable: Callable = Callable(self, "choose_option")
+		if not node_choice_panel.is_connected(&"option_selected", option_callable):
+			node_choice_panel.connect(&"option_selected", option_callable)
+
+	if draft_reward_panel != null and draft_reward_panel.has_signal(&"draft_closed"):
+		var draft_callable: Callable = Callable(self, "continue_after_draft")
+		if not draft_reward_panel.is_connected(&"draft_closed", draft_callable):
+			draft_reward_panel.connect(&"draft_closed", draft_callable)

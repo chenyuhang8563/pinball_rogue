@@ -20,10 +20,14 @@ func get_relic_script(effect_type: int) -> GDScript:
 
 func get_relic_effect_types(inventory: Node) -> Array[int]:
 	var owned: Array[int] = []
-	if inventory == null or not inventory.has_method("get") or not inventory.has("relic_items"):
+	if inventory == null:
 		return owned
 
-	var relic_items: Array = inventory.get("relic_items")
+	var raw_relic_items: Variant = inventory.get("relic_items")
+	if not raw_relic_items is Array:
+		return owned
+
+	var relic_items: Array = raw_relic_items
 	for item: Item in relic_items:
 		if item == null:
 			continue

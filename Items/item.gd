@@ -15,7 +15,6 @@ enum ItemType {
 	NONE,
 	MARBLE,
 	RELIC,
-	BUFF,
 }
 
 @export var id: String = ""
@@ -27,5 +26,3 @@ enum ItemType {
 @export var type: ItemType = ItemType.NONE
 @export var marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT
 @export var marble_segment_damage: int = 1
-@export var buff_id: String = ""
-@export var buff_stacks: int = 1

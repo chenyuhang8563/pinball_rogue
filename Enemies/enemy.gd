@@ -16,6 +16,7 @@ const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
 @onready var buff_host: BuffHost = $BuffHost
 
 var _entity_id: String = ""
+var _death_emitted: bool = false
 
 
 func _ready() -> void:
@@ -33,7 +34,9 @@ func _exit_tree() -> void:
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("marbles"):
-		EffectManager.on_enemy_hit_by_marble(self)
+		var effect_manager: Node = _get_effect_manager()
+		if effect_manager != null and effect_manager.has_method("on_enemy_hit_by_marble"):
+			effect_manager.call("on_enemy_hit_by_marble", self)
 		var hit_damage: int = _get_damage_from_body(body)
 		take_damage(hit_damage, _get_active_buff_flash_color())
 
@@ -58,6 +61,7 @@ func take_damage(amount: int, flash_color: Color = Color.WHITE) -> void:
 	flash_hit_mask(flash_color)
 
 	if health <= 0:
+		_emit_enemy_killed()
 		queue_free()
 
 
@@ -111,3 +115,23 @@ func _get_stat_system() -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null("StatSystem")
+
+
+func _get_effect_manager() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("EffectManager")
+
+
+func _emit_enemy_killed() -> void:
+	if _death_emitted:
+		return
+	_death_emitted = true
+
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return
+	var event_bus: Node = tree.root.get_node_or_null("Event")
+	if event_bus != null and event_bus.has_signal(&"enemy_killed"):
+		event_bus.emit_signal(&"enemy_killed", self)

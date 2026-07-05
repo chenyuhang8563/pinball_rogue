@@ -2,8 +2,12 @@ extends Node2D
 
 const STAT_BOUNCELESS_WALL_BOUNCE: String = "bounceless_wall_bounce"
 const STAT_ENTITY_PINBALL_TABLE: String = "pinball_table"
+const RunControllerScript: GDScript = preload("res://Run/run_controller.gd")
+const NodeChoicePanelScript: GDScript = preload("res://UI/node_choice_panel.gd")
+const DraftRewardPanelScript: GDScript = preload("res://UI/draft_reward_panel.gd")
 
 @onready var marbles: Node2D = $Marbles
+@onready var enemies: Node2D = $Enemies
 @export var purchased_marble_spawn_position: Vector2 = Vector2(56, 48)
 @export var starting_marble_spawn_positions: Array[Vector2] = [
 	Vector2(56, 96),
@@ -16,6 +20,7 @@ const STAT_ENTITY_PINBALL_TABLE: String = "pinball_table"
 
 ## 当前活跃的弹珠链。由 _spawn_chain() 创建，整条链只有一个 RigidBody2D（Head）。
 var marble_chain: MarbleChain = null
+var run_controller: RunController = null
 
 
 func _ready() -> void:
@@ -27,6 +32,7 @@ func _ready() -> void:
 		_connect_once(event_bus, &"dash_skill_activated", Callable(self, "_on_dash_skill_activated"))
 	_connect_inventory_change()
 	_spawn_chain()
+	_setup_run_flow()
 
 
 # ---- 链生成 ----
@@ -112,6 +118,10 @@ func _on_inventory_changed() -> void:
 	_spawn_chain()
 
 
+func reset_battle_state() -> void:
+	_spawn_chain()
+
+
 # ---- 辅助方法 ----
 
 ## 返回链的 Head（Dash 等系统使用）。
@@ -157,10 +167,14 @@ func _get_shop_marble_box_items() -> Array[Item]:
 func _get_inventory_marble_items() -> Array[Item]:
 	var items: Array[Item] = []
 	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null or not inventory.has("marble_items"):
+	if inventory == null:
 		return items
 
-	var marble_items: Array = inventory.get("marble_items")
+	var raw_marble_items: Variant = inventory.get("marble_items")
+	if not raw_marble_items is Array:
+		return items
+
+	var marble_items: Array = raw_marble_items
 	for item: Item in marble_items:
 		if item != null and item.type == Item.ItemType.MARBLE:
 			items.append(item)
@@ -180,13 +194,13 @@ func _apply_bounceless_wall_physics_material() -> void:
 	if stat_system == null or not stat_system.has_method("get_stat"):
 		return
 
-	var material: PhysicsMaterial = wall.physics_material_override
-	if material != null:
-		material = material.duplicate() as PhysicsMaterial
+	var physics_material: PhysicsMaterial = wall.physics_material_override
+	if physics_material != null:
+		physics_material = physics_material.duplicate() as PhysicsMaterial
 	else:
-		material = PhysicsMaterial.new()
-	material.bounce = float(stat_system.call("get_stat", STAT_BOUNCELESS_WALL_BOUNCE, STAT_ENTITY_PINBALL_TABLE))
-	wall.physics_material_override = material
+		physics_material = PhysicsMaterial.new()
+	physics_material.bounce = float(stat_system.call("get_stat", STAT_BOUNCELESS_WALL_BOUNCE, STAT_ENTITY_PINBALL_TABLE))
+	wall.physics_material_override = physics_material
 
 
 func _get_autoload_node(node_name: StringName) -> Node:
@@ -205,3 +219,59 @@ func _connect_inventory_change() -> void:
 	var inventory: Node = _get_autoload_node(&"Inventory")
 	if inventory != null and inventory.has_signal(&"inventory_changed"):
 		_connect_once(inventory, &"inventory_changed", Callable(self, "_on_inventory_changed"))
+
+
+func _setup_run_flow() -> void:
+	var ui_layer: Node = get_node_or_null("CrtLayer")
+	if ui_layer == null:
+		ui_layer = CanvasLayer.new()
+		ui_layer.name = "RunFlowLayer"
+		add_child(ui_layer)
+
+	var node_choice_panel: NodeChoicePanel = NodeChoicePanelScript.new()
+	node_choice_panel.name = "NodeChoicePanel"
+	ui_layer.add_child(node_choice_panel)
+
+	var draft_reward_panel: DraftRewardPanel = DraftRewardPanelScript.new()
+	draft_reward_panel.name = "DraftRewardPanel"
+	ui_layer.add_child(draft_reward_panel)
+
+	var crt_overlay: Node = ui_layer.get_node_or_null("ColorRect")
+	if crt_overlay != null:
+		ui_layer.move_child(crt_overlay, ui_layer.get_child_count() - 1)
+
+	run_controller = RunControllerScript.new()
+	run_controller.name = "RunController"
+	run_controller.enemy_container = enemies
+	run_controller.node_choice_panel = node_choice_panel
+	run_controller.draft_reward_panel = draft_reward_panel
+	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
+	add_child(run_controller)
+
+	var event_bus: Node = _get_autoload_node(&"Event")
+	if event_bus != null:
+		_connect_run_signal(run_controller, event_bus, &"run_node_completed")
+		_connect_run_signal(run_controller, event_bus, &"battle_started")
+		_connect_run_signal(run_controller, event_bus, &"battle_completed")
+		_connect_run_signal(run_controller, event_bus, &"run_completed")
+
+	run_controller.start_run()
+
+
+func _connect_run_signal(source: Object, event_bus: Node, signal_name: StringName) -> void:
+	if source == null or event_bus == null:
+		return
+	if not source.has_signal(signal_name) or not event_bus.has_signal(signal_name):
+		return
+
+	if signal_name == &"run_completed":
+		var no_arg_callable: Callable = func() -> void:
+			event_bus.emit_signal(signal_name)
+		if not source.is_connected(signal_name, no_arg_callable):
+			source.connect(signal_name, no_arg_callable)
+		return
+
+	var one_arg_callable: Callable = func(value: String) -> void:
+		event_bus.emit_signal(signal_name, value)
+	if not source.is_connected(signal_name, one_arg_callable):
+		source.connect(signal_name, one_arg_callable)

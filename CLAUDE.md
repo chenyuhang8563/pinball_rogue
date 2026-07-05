@@ -1,116 +1,73 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+Guidance for Claude Code when working in this repository.
 
-## Project
+## Basics
 
-**RoguePinball** — a 2D pinball-roguelike prototype built in Godot 4.6.1 (GDScript).
-Viewport: 240×320, window: 720×960, renderer: GL Compatibility, physics: Jolt.
+- 使用中文回答。
+- Project: **RoguePinball**, a Godot 4.6.1 GDScript pinball-roguelike prototype.
+- Godot executable: `C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe`.
+- `godot` is not on `PATH`.
+- Viewport: 240x320. Window: 720x960. Renderer: GL Compatibility.
 
-## Godot Executable
+## Verification
 
-Not on `PATH`. Full path on this machine:
-
-```
-C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe
-```
-
-### Headless commands
+- Use GUT as the test evidence. Do not treat startup/load checks or standalone scripts as proof that tests passed.
+- Reliable local GUT invocation on this machine:
 
 ```powershell
-# Smoke test (parse + autoload check, quits after ~1s)
-& 'C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe' --headless --path . --quit-after 1
-
-# Run a standalone test script
-& 'C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe' --headless --path . -s res://tests/<test_file>.gd
+cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gdir=res://tests -ginclude_subdirs -gexit -glog=1 -gconfig="
 ```
 
-A shader-compiler warning like `Condition "!actions.custom_samplers.has(...)" is true` fires on every headless start. Ignore it unless the change touches shaders or rendering setup.
+- After GUT passes, run the game in Godot when runtime validation is relevant.
+- For screenshots, use Hastur/godot-screenshot against a connected `game` executor.
+- `GameExecutor` exists only while the game process is running and connected.
 
-## Architecture
+## Autoloads
 
-### Autoloads (defined in `project.godot`)
+Autoloads are defined in `project.godot`. Important ones:
 
-| Name             | Script                                  | Role                                                       |
-|------------------|-----------------------------------------|------------------------------------------------------------|
-| `Event`          | `Main/event.gd`                         | Signal bus — `marble_fell`, `dash_skill_activated`.         |
-| `Shop`           | `Shop/shop.gd`                          | Gold, buy/sell, shop UI, collection rows, starting marbles.|
-| `Inventory`      | `Inventory/inventory.gd`                | Owned items split into `marble_items` / `relic_items`.     |
-| `EffectManager`  | `Effects/effect_manager.gd`             | Instantiates/dispatches relic effect scripts on combat events. |
-| `EffectRegistry` | `Items/effect_registry.gd`             | Single source of truth: `effect_type → relic script` and `effect_type → MarbleSpec`. |
-| `GameExecutor`   | `addons/hasturoperationgd/...`          | Remote-execution plugin (Hastur).                          |
-| `StatSystem`     | `Stats/stat_system.gd`                  | Data-driven stat definitions, modifiers, formulas, and final-value queries. |
+| Name | Role |
+| --- | --- |
+| `Event` | Signal bus. |
+| `Shop` | Gold, buy/sell, shop UI, collection rows, starting marbles. |
+| `Inventory` | Owned marble/relic items. |
+| `EffectManager` | Dispatches relic effect scripts on combat events. |
+| `EffectRegistry` | Maps item effects to relic scripts and marble specs. |
+| `GameExecutor` | Hastur runtime executor. |
+| `StatSystem` | Data-driven stats, modifiers, formulas, final-value queries. |
+| `BuffManager` / `BuffRegistry` | Buff lifetime, definitions, and stat modifiers. |
 
-Autoloads resolve before the main scene. In standalone `-s` test scripts, autoload singletons are **not** guaranteed to exist as global identifiers — resolve via `get_node_or_null("/root/Event")` etc. (see `Main/main.gd::_get_autoload_node` for the helper used throughout).
+Do not assume autoload names are compile-time globals. Resolve from `/root` with `get_node_or_null()` before use.
 
-### Build system (content pipeline)
+## Content Flow
 
-New content flows through one path: **`Shop → Slot → Inventory.add_item()`**. Never drop ad-hoc test marbles into `Main/main.tscn`; add them as `Item` resources purchasable from the shop.
+- New content should enter through `Shop -> Slot -> Inventory.add_item()`.
+- Do not place ad-hoc test marbles in `Main/main.tscn`.
+- New marble type: add `Item.EffectType`, create/register a marble spec in `EffectRegistry`.
+- New relic effect: add `Item.EffectType`, create a `RefCounted` effect script, register it in `EffectRegistry.RELIC_EFFECT_SCRIPTS`.
+- Keep per-type branching out of `main.gd` and `EffectManager` when registry data can drive it.
 
-`EffectRegistry` is the data-driven core. Adding new content means registering in its constants:
+## Stat System
 
-- **New marble type** → add entry to `Item.EffectType`, create a `MarbleSpec` `.tres` in `Resources/marble_specs/`, register it in `EffectRegistry.MARBLE_SPECS`.
-- **New relic effect** → add entry to `Item.EffectType`, create a `RefCounted` script under `Effects/` with callback methods (e.g. `on_enemy_hit_by_marble`), register it in `EffectRegistry.RELIC_EFFECT_SCRIPTS`.
+- Final gameplay values flow through `StatSystem.get_stat(stat_id, entity_id, context)`.
+- Static bases live in `Resources/stats/**/*.tres` as `StatDef` resources.
+- Runtime changes are `StatModifier`s attached to entity ids such as `marble_chain`, `player`, or `enemy_<instance_id>`.
+- When adding a stat, create the resource, register it in `Stats/stat_registry.gd`, and query through `StatSystem`.
+- Avoid new hard-coded numeric getters in gameplay managers.
 
-`main.gd` reads marble specs from the registry to build the chain. `EffectManager` reads relic scripts from the registry to dispatch combat events. Neither file should contain per-type `match`/`if` branches.
+Integrated stat paths include damage, enemy health, buffs, shop prices, inventory capacity, marble speed/dash values, and table physics tuning.
 
-### Stat system
+## Marble Chain
 
-Final gameplay values flow through `StatSystem.get_stat(stat_id, entity_id, context)`. Static bases live in `Resources/stats/**/*.tres` as `StatDef` resources; runtime changes are `StatModifier`s attached to an entity id such as `marble_chain`, `player`, or `enemy_<instance_id>`.
+- Active play uses one `MarbleChain`, not independent marble bodies.
+- Only the head is a `RigidBody2D`; body segments are visual `ChainSegment` nodes.
+- Body segments follow the head via path-history trail.
+- On fall into KillZone, rebuild the whole chain.
+- Cast `Event.marble_fell` bodies to `Marble` before reading `marble_type`; ignore non-marble bodies safely.
 
-Current integrated paths:
+## Worktree Hygiene
 
-- Marble-chain contact damage aggregates head/segment/echo base damage, then asks `final_damage`.
-- Enemy damage asks `damage_received`, then stores the result back into `current_health`.
-- BuffManager owns buff lifetime but writes stat modifiers for damage, speed, dash speed, and shield charges.
-- Shop buy/sell prices use `buy_price_multiplier` and `sell_price_multiplier`.
-- Inventory capacities use `marble_slot_count`, `relic_slot_count`, and `buff_slot_count`.
-- Marble speed and dash values use `max_speed`, `dash_impulse`, `dash_max_speed`, `dash_duration`, `marble_speed_multiplier`, and `dash_speed_multiplier`.
-
-When adding a new stat, create a `StatDef` resource, register its path in `Stats/stat_registry.gd`, and query it through `StatSystem`; avoid adding new hard-coded numeric getters to gameplay managers.
-
-### Marble chain
-
-The active marble is a **`MarbleChain`** (Node2D), not a set of independent `RigidBody2D` marbles:
-
-```
-MarbleChain (Node2D)
-  ├── Head (Marble / RigidBody2D)  ← only physics body
-  └── BodyContainer (Node2D)
-        ├── Segment0 (ChainSegment)  ← visual only
-        └── ...
-```
-
-- **Only the Head** is a `RigidBody2D`; Body segments are `ChainSegment` (pure `Node2D`).
-- Body segments follow the Head via a **path-history trail**: Head records `(pos, rot)` into a ring buffer each `_physics_process`; segments lerp toward the trail point at their target distance.
-- **Damage aggregation**: `Enemy → Head.get_hit_damage() → MarbleChain.get_total_damage()` sums Head base damage + each segment's contribution (BROWN echo bonus, BOMB contributes 0 contact damage — damage comes from explosion).
-- **BROWN echo**: stacks on non-enemy collisions (walls, flippers); bonus damage on full stacks, then resets.
-- **BOMB explosion**: triggers on enemy collision, AoE damage + knockback to Head.
-- On marble fall (KillZone), the **entire chain is rebuilt**, not just the fallen marble.
-
-### Groups (scene-level tags, defined in `project.godot` `[global_group]`)
-
-- `marbles` — assigned to marble bodies (Head in chain mode).
-- `enemies` — assigned in `Enemy._ready()`.
-
-### Physics layers
-
-1: world, 2: marble, 3: flipper, 4: enemy.
-
-## Controls
-
-- Left/Right arrow: flippers
-- `U`: toggle shop (pauses game)
-- `Q`: dash skill (consumes charge, aims at nearest enemy)
-- Left-click shop slot: buy; right-click inventory slot in shop: sell (50% refund)
-
-## Testing conventions
-
-- Tests live under `/tests` (gitignored).
-- For `SceneTree` tests, manually create/autoload required nodes under `get_root()` — do not rely on editor-only autoload state.
-- Free test-created `Node`s / `Resource`s to avoid RID / `ObjectDB` leak warnings.
-- Cast `Event.marble_fell`'s `RigidBody2D` body to `Marble` before reading `marble_type`; non-marble bodies should be ignored.
-
-## Worktree / dirty-file hygiene
-
-Before editing, run `git status --short` and distinguish pre-existing user changes from agent changes. `Marbles/bomb_marble.tscn`, `Main/util.gd`, and `Main/util.gd.uid` may already be dirty or untracked from user work — do not revert or fold them into unrelated fixes without explicit instruction.
+- Before editing, run `git status --short` and distinguish pre-existing user changes from agent changes.
+- Do not revert user changes unless explicitly requested.
+- `Marbles/bomb_marble.tscn`, `Main/util.gd`, and `Main/util.gd.uid` may be dirty or untracked from user work; do not fold them into unrelated fixes.

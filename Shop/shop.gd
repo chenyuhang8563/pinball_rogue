@@ -1,5 +1,7 @@
 extends Control
 
+const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+
 @export var shop_slot_node: PackedScene = preload("res://Items/slot.tscn")
 @export var shop_items: Array[Item] = []
 @export var shop_container: GridContainer
@@ -31,6 +33,10 @@ var mode: MODE = MODE.OFF:
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	$UI.hide()
+	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
+	if exit_button != null and not exit_button.pressed.is_connected(close_shop):
+		_apply_button_label_settings(exit_button)
+		exit_button.pressed.connect(close_shop)
 	set_initial_gold()
 	load_shop_inventory()
 	_connect_collection_slot_inputs()
@@ -45,6 +51,16 @@ func _input(event) -> void:
 				mode = MODE.OFF
 			elif mode == MODE.OFF:
 				mode = MODE.ON
+
+
+func close_shop() -> void:
+	mode = MODE.OFF
+
+
+func _apply_button_label_settings(button: Button) -> void:
+	if UI_LABEL_SETTINGS.font != null:
+		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
+	button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
 
 func sell_item(item: Item) -> bool:
 	if item == null:
@@ -65,7 +81,7 @@ func buy_item(item: Item) -> bool:
 
 
 func purchase_item(item: Item) -> bool:
-	if item == null or not shop_items.has(item):
+	if not _is_purchasable_item(item) or not shop_items.has(item):
 		return false
 
 	var inventory: Node = _get_autoload_node(&"Inventory")
@@ -128,13 +144,15 @@ func free_previous_slots():
 
 func load_shop_inventory():
 	for item in shop_items:
+		if not _is_purchasable_item(item):
+			continue
 		var shop_slot = shop_slot_node.instantiate() as Panel
 		shop_container.add_child(shop_slot)
 		shop_slot.item = item
 
 func set_shop_inventory(list: Array[Item]):
 	free_previous_slots()
-	shop_items = list
+	shop_items = _filter_purchasable_items(list)
 	load_shop_inventory()
 
 func set_initial_gold():
@@ -148,8 +166,10 @@ func refresh_collection_rows() -> void:
 		_update_collection_icons(relic_bar_container, [])
 		return
 
-	var marble_items: Array = inventory.get("marble_items")
-	var relic_items: Array = inventory.get("relic_items")
+	var raw_marble_items: Variant = inventory.get("marble_items")
+	var raw_relic_items: Variant = inventory.get("relic_items")
+	var marble_items: Array = raw_marble_items if raw_marble_items is Array else []
+	var relic_items: Array = raw_relic_items if raw_relic_items is Array else []
 	_update_collection_icons(marble_box_container, marble_items)
 	_update_collection_icons(relic_bar_container, relic_items)
 
@@ -236,3 +256,17 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null(NodePath(node_name))
+
+
+func _filter_purchasable_items(list: Array[Item]) -> Array[Item]:
+	var purchasable_items: Array[Item] = []
+	for item: Item in list:
+		if _is_purchasable_item(item):
+			purchasable_items.append(item)
+	return purchasable_items
+
+
+func _is_purchasable_item(item: Item) -> bool:
+	if item == null:
+		return false
+	return item.type == Item.ItemType.MARBLE or item.type == Item.ItemType.RELIC

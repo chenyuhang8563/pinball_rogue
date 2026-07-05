@@ -8,6 +8,7 @@
 [ext_resource type="PackedScene" uid="uid://bx6h7a1u1u7xb" path="res://Inventory/inventory.tscn" id="5_inventory"]
 [ext_resource type="Resource" uid="uid://q7t1651xon8y" path="res://Resources/brown_marble.tres" id="6_brown"]
 [ext_resource type="Resource" uid="uid://c2jbto0wkkqhs" path="res://Resources/green_marble.tres" id="7_green"]
+[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="8_7gdb2"]
 
 [node name="Shop" type="Control" unique_id=395620655 node_paths=PackedStringArray("shop_container", "marble_box_container", "relic_bar_container")]
 layout_mode = 3
@@ -40,6 +41,20 @@ offset_bottom = 39.0
 grow_horizontal = 2
 text = "Shop"
 label_settings = ExtResource("1_3weqf")
+
+[node name="ExitButton" type="Button" parent="UI/Panel" unique_id=450602043]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -56.0
+offset_top = 7.0
+offset_right = -8.0
+offset_bottom = 38.0
+grow_horizontal = 0
+theme_override_fonts/font = ExtResource("8_7gdb2")
+theme_override_font_sizes/font_size = 12
+text = "Exit"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="UI/Panel" unique_id=1845394202]
 layout_mode = 0
