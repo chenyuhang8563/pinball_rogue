@@ -48,6 +48,8 @@ func _spawn_explosion_effect(explosion_center: Vector2) -> void:
 	var explosion_effect: Node2D = explosion_effect_scene.instantiate() as Node2D
 	scene.add_child(explosion_effect)
 	explosion_effect.global_position = explosion_center
+	var effect_scale: float = _get_stat_float("explosion_effect_scale", 1.0)
+	explosion_effect.scale = Vector2(effect_scale, effect_scale)
 
 
 func _get_stat_float(stat_id: String, fallback: float) -> float:

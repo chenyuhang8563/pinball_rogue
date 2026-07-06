@@ -246,6 +246,8 @@ func _spawn_explosion_effect(center: Vector2) -> void:
 	var effect: Node2D = _explosion_effect_scene.instantiate() as Node2D
 	scene.add_child(effect)
 	effect.global_position = center
+	var effect_scale: float = _get_stat_float("explosion_effect_scale", 1.0)
+	effect.scale = Vector2(effect_scale, effect_scale)
 
 
 # ---- 回声逻辑 ----
@@ -265,7 +267,7 @@ func get_total_damage(target: Node) -> int:
 	var total: int = 0
 
 	if head != null and is_instance_valid(head):
-		total += head.damage
+		total += roundi(_get_stat_float("dark_marble_damage", float(head.damage)))
 
 	for seg: ChainSegment in body:
 		if seg == null or not is_instance_valid(seg):

@@ -11,6 +11,7 @@ const BattleGroupDefScript: GDScript = preload("res://Run/battle_group_def.gd")
 const RunNodeOptionScript: GDScript = preload("res://Run/run_node_option.gd")
 const BattleSpawnerScript: GDScript = preload("res://Run/battle_spawner.gd")
 const StatRegistryScript: GDScript = preload("res://Stats/stat_registry.gd")
+const MarbleUpgradeSystemScript: GDScript = preload("res://Run/marble_upgrade_system.gd")
 const EnemyScene: PackedScene = preload("res://Enemies/enemy.tscn")
 const DEFAULT_REWARD_ITEM_PATHS: PackedStringArray = [
 	"res://Resources/brown_marble.tres",
@@ -21,7 +22,7 @@ const DEFAULT_REWARD_ITEM_PATHS: PackedStringArray = [
 const NORMAL_BATTLE_OPTION_WEIGHT: int = 30
 const EVENT_OPTION_WEIGHT: int = 30
 const ELITE_OPTION_WEIGHT: int = 20
-const UPGRADE_OPTION_WEIGHT: int = 10
+const UPGRADE_OPTION_WEIGHT: int = 20
 const SHOP_MODE_ON: int = 0
 const SHOP_MODE_OFF: int = 1
 const NORMAL_BATTLE_GOLD_MIN: int = 15
@@ -35,27 +36,32 @@ const RUN_HEALTH_ENTITY_ID: String = "run:current"
 @export var battle_spawner: BattleSpawner
 @export var node_choice_panel: Control
 @export var draft_reward_panel: Control
+@export var upgrade_panel: Control
 
 var current_node_index: int = 0
 var choice_wave_index: int = 0
 var run_is_complete: bool = false
 var reset_battle_state_callable: Callable = Callable()
 var battle_is_active: bool = false
+var marble_upgrade_system: Node
 
 
 func _ready() -> void:
 	_ensure_battle_spawner()
+	_ensure_marble_upgrade_system()
 	_connect_event_bus()
 	_connect_panels()
 
 
 func start_run() -> void:
 	_ensure_battle_spawner()
+	_ensure_marble_upgrade_system()
 	_connect_panels()
 	current_node_index = 0
 	choice_wave_index = 0
 	run_is_complete = false
 	battle_is_active = false
+	marble_upgrade_system.call("reset_upgrades")
 	_connect_event_bus()
 	_reset_run_health()
 	run_health_changed.emit(_get_run_health())
@@ -72,9 +78,10 @@ func build_node_options_for_wave(wave_index: int) -> Array[RunNodeOption]:
 	if wave_index == 4:
 		options.append(_make_shop_option())
 
+	var require_unique_kinds: bool = _get_enabled_node_option_kind_count() >= 3
 	while options.size() < 3:
 		var option: RunNodeOption = _make_weighted_node_option()
-		if not _options_have_kind_id(options, option.kind_id):
+		if not require_unique_kinds or not _options_have_kind_id(options, option.kind_id):
 			options.append(option)
 	return options
 
@@ -86,6 +93,14 @@ func get_option_weights() -> Dictionary:
 		"elite": ELITE_OPTION_WEIGHT,
 		"upgrade": UPGRADE_OPTION_WEIGHT,
 	}
+
+
+func _get_enabled_node_option_kind_count() -> int:
+	var count: int = 0
+	for weight: int in get_option_weights().values():
+		if weight > 0:
+			count += 1
+	return count
 
 
 func choose_option(option: RunNodeOption) -> void:
@@ -106,7 +121,7 @@ func choose_option(option: RunNodeOption) -> void:
 		RunNodeOption.Kind.REWARD:
 			_show_reward_draft()
 		RunNodeOption.Kind.UPGRADE:
-			_show_upgrade_placeholder()
+			_show_upgrade_choices()
 		RunNodeOption.Kind.SHOP:
 			_show_shop()
 		_:
@@ -205,6 +220,39 @@ func _show_upgrade_placeholder() -> void:
 		node_choice_panel.call("show_message", "Upgrade", "Placeholder")
 	else:
 		_start_next_node()
+
+
+func _show_upgrade_choices() -> void:
+	_ensure_marble_upgrade_system()
+	_connect_panels()
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	var raw_options: Variant = marble_upgrade_system.call("get_upgrade_options", inventory, 3)
+	var options: Array[Dictionary] = raw_options if raw_options is Array else []
+	if options.is_empty():
+		_show_no_upgrade_message()
+		return
+	if upgrade_panel != null and upgrade_panel.has_method("show_upgrades"):
+		upgrade_panel.call("show_upgrades", options)
+		return
+	_show_no_upgrade_message()
+
+
+func _show_no_upgrade_message() -> void:
+	if node_choice_panel != null and node_choice_panel.has_method("show_message"):
+		if node_choice_panel.has_signal(&"message_dismissed"):
+			var continue_callable: Callable = Callable(self, "continue_after_draft")
+			if not node_choice_panel.is_connected(&"message_dismissed", continue_callable):
+				node_choice_panel.connect(&"message_dismissed", continue_callable, CONNECT_ONE_SHOT)
+		node_choice_panel.call("show_message", "Upgrade", "No marble upgrades available.")
+	else:
+		_start_next_node()
+
+
+func _on_upgrade_selected(option: Dictionary) -> void:
+	_ensure_marble_upgrade_system()
+	var marble_type: Marble.MARBLE_TYPE = int(option.get("marble_type", Marble.MARBLE_TYPE.DEFAULT)) as Marble.MARBLE_TYPE
+	marble_upgrade_system.call("upgrade_marble", marble_type)
+	_start_next_node()
 
 
 func _show_shop() -> void:
@@ -507,3 +555,18 @@ func _connect_panels() -> void:
 		var draft_callable: Callable = Callable(self, "continue_after_draft")
 		if not draft_reward_panel.is_connected(&"draft_closed", draft_callable):
 			draft_reward_panel.connect(&"draft_closed", draft_callable)
+
+	if upgrade_panel != null and upgrade_panel.has_signal(&"upgrade_selected"):
+		var upgrade_callable: Callable = Callable(self, "_on_upgrade_selected")
+		if not upgrade_panel.is_connected(&"upgrade_selected", upgrade_callable):
+			upgrade_panel.connect(&"upgrade_selected", upgrade_callable)
+
+
+func _ensure_marble_upgrade_system() -> void:
+	if marble_upgrade_system != null and is_instance_valid(marble_upgrade_system):
+		return
+	marble_upgrade_system = get_node_or_null("MarbleUpgradeSystem")
+	if marble_upgrade_system == null:
+		marble_upgrade_system = MarbleUpgradeSystemScript.new()
+		marble_upgrade_system.name = "MarbleUpgradeSystem"
+		add_child(marble_upgrade_system)

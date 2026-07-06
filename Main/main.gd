@@ -5,6 +5,7 @@ const STAT_ENTITY_PINBALL_TABLE: String = "pinball_table"
 const RunControllerScript: GDScript = preload("res://Run/run_controller.gd")
 const NodeChoicePanelScript: GDScript = preload("res://UI/node_choice_panel.gd")
 const DraftRewardPanelScript: GDScript = preload("res://UI/draft_reward_panel.gd")
+const MarbleUpgradePanelScript: GDScript = preload("res://UI/marble_upgrade_panel.gd")
 const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.tscn")
 
 @onready var marbles: Node2D = $Marbles
@@ -238,6 +239,10 @@ func _setup_run_flow() -> void:
 	draft_reward_panel.name = "DraftRewardPanel"
 	ui_layer.add_child(draft_reward_panel)
 
+	var upgrade_panel: Control = MarbleUpgradePanelScript.new()
+	upgrade_panel.name = "MarbleUpgradePanel"
+	ui_layer.add_child(upgrade_panel)
+
 	_setup_battle_health_hud(ui_layer)
 
 	var crt_overlay: Node = ui_layer.get_node_or_null("ColorRect")
@@ -249,6 +254,7 @@ func _setup_run_flow() -> void:
 	run_controller.enemy_container = enemies
 	run_controller.node_choice_panel = node_choice_panel
 	run_controller.draft_reward_panel = draft_reward_panel
+	run_controller.upgrade_panel = upgrade_panel
 	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
 	run_controller.run_health_changed.connect(_on_run_health_changed)
 	add_child(run_controller)

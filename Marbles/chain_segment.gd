@@ -41,7 +41,7 @@ func add_echo_stack() -> void:
 	if segment_type != Marble.MARBLE_TYPE.BROWN:
 		return
 	echo_stacks = min(echo_stacks + 1, max_echo_stacks)
-	_echo_timer.start(echo_timeout)
+	_echo_timer.start(_get_echo_timeout())
 	_update_echo_visual()
 
 
@@ -49,9 +49,15 @@ func add_echo_stack() -> void:
 func get_echo_damage() -> int:
 	if segment_type != Marble.MARBLE_TYPE.BROWN:
 		return 0
-	var bonus: int = echo_bonus_damage if echo_stacks >= max_echo_stacks else 0
+	var bonus: int = roundi(_get_stat_float("echo_bonus_damage", float(echo_bonus_damage))) if echo_stacks >= max_echo_stacks else 0
 	if bonus > 0:
-		_clear_echo_stacks()
+		if _is_echo_awakened():
+			echo_stacks = max(0, echo_stacks - 1)
+			if echo_stacks > 0 and is_instance_valid(_echo_timer):
+				_echo_timer.start(_get_echo_timeout())
+			_update_echo_visual()
+		else:
+			_clear_echo_stacks()
 	return bonus
 
 
@@ -71,3 +77,21 @@ func _update_echo_visual() -> void:
 		return
 	var charge_ratio: float = float(echo_stacks) / float(max_echo_stacks)
 	sprite.modulate = Color(1.0, 1.0 + charge_ratio * 0.25, 1.0 - charge_ratio * 0.2)
+
+
+func _get_echo_timeout() -> float:
+	return _get_stat_float("echo_timeout", echo_timeout)
+
+
+func _is_echo_awakened() -> bool:
+	return _get_echo_timeout() >= 15.0
+
+
+func _get_stat_float(stat_id: String, fallback: float) -> float:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return fallback
+	var stat_system: Node = tree.root.get_node_or_null("StatSystem")
+	if stat_system == null or not stat_system.has_method("get_stat"):
+		return fallback
+	return float(stat_system.call("get_stat", stat_id, "marble_chain"))
