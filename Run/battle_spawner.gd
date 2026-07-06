@@ -44,7 +44,7 @@ func clear_enemies() -> void:
 		return
 
 	for child: Node in enemy_container.get_children():
-		child.queue_free()
+		child.free()
 
 
 func _spawn_enemy(entry: BattleGroupDef.EnemyEntry) -> Node:

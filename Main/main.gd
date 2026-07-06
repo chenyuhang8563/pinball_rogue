@@ -109,11 +109,12 @@ func _on_dash_skill_activated() -> void:
 	var head_marble: Marble = marble_chain.head
 	if head_marble == null or not is_instance_valid(head_marble):
 		return
-	if $Enemies.get_child_count() <= 0:
+
+	var target: Node2D = _find_nearest_enemy(head_marble.global_position)
+	if target == null:
 		return
 
-	var target: Vector2 = _find_nearest_enemy(head_marble.global_position)
-	var direction: Vector2 = (target - head_marble.global_position).normalized()
+	var direction: Vector2 = (target.global_position - head_marble.global_position).normalized()
 	head_marble.dash_toward(direction)
 
 
@@ -134,17 +135,24 @@ func _get_active_marble() -> Marble:
 	return null
 
 
-func _find_nearest_enemy(from: Vector2) -> Vector2:
-	var nearest_pos: Vector2 = Vector2.ZERO
+func _find_nearest_enemy(from: Vector2) -> Node2D:
+	var nearest_enemy: Node2D = null
 	var nearest_dist: float = INF
-	for enemy: Node in $Enemies.get_children():
-		if enemy is Node2D:
-			var pos: Vector2 = enemy.global_position
-			var dist: float = from.distance_squared_to(pos)
-			if dist < nearest_dist:
-				nearest_dist = dist
-				nearest_pos = pos
-	return nearest_pos
+	var tree: SceneTree = get_tree()
+	if tree == null:
+		return null
+
+	for enemy: Node in tree.get_nodes_in_group("enemies"):
+		if enemy == null or not is_instance_valid(enemy):
+			continue
+		if not enemy is Node2D:
+			continue
+		var enemy_node: Node2D = enemy as Node2D
+		var dist: float = from.distance_squared_to(enemy_node.global_position)
+		if dist < nearest_dist:
+			nearest_dist = dist
+			nearest_enemy = enemy_node
+	return nearest_enemy
 
 
 func _get_shop_marble_box_items() -> Array[Item]:
@@ -275,11 +283,32 @@ func _setup_battle_health_hud(ui_layer: Node) -> void:
 		battle_health_hud = BattleHealthHudScene.instantiate()
 		battle_health_hud.name = "BattleHealthHud"
 		ui_layer.add_child(battle_health_hud)
+	_sync_battle_hud_gold()
+	_connect_shop_gold_changed()
 
 
 func _on_run_health_changed(health: int) -> void:
 	if battle_health_hud != null and battle_health_hud.has_method("set_health"):
 		battle_health_hud.call("set_health", health)
+
+
+func _sync_battle_hud_gold() -> void:
+	var shop: Node = _get_autoload_node(&"Shop")
+	if shop == null:
+		return
+	_on_shop_gold_changed(int(shop.get("gold")))
+
+
+func _connect_shop_gold_changed() -> void:
+	var shop: Node = _get_autoload_node(&"Shop")
+	if shop == null or not shop.has_signal(&"gold_changed"):
+		return
+	_connect_once(shop, &"gold_changed", Callable(self, "_on_shop_gold_changed"))
+
+
+func _on_shop_gold_changed(value: int) -> void:
+	if battle_health_hud != null and battle_health_hud.has_method("set_gold"):
+		battle_health_hud.call("set_gold", value)
 
 
 func _connect_run_signal(source: Object, event_bus: Node, signal_name: StringName) -> void:

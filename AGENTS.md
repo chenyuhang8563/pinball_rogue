@@ -10,6 +10,7 @@
 - `godot` is not on `PATH`.
 - Prefer the running editor plus Hastur tools when live inspection or screenshots are needed.
 - `GameExecutor` is only available while the game process is running and connected.
+- Never stop Godot by broad process-name commands such as `Stop-Process Godot_v4.6.1-stable_win64` or killing all matching Godot processes. If a process must be stopped, record the PID returned by the launch command and stop only that specific process, or use Godot/editor APIs to stop the running game.
 
 ## Verification
 

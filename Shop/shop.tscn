@@ -73,8 +73,3 @@ columns = 3
 
 [node name="CollectionRows" parent="UI/Panel" unique_id=1783459460 instance=ExtResource("5_inventory")]
 layout_mode = 1
-
-[node name="Coins" type="Label" parent="UI" unique_id=1066180551]
-offset_right = 40.0
-offset_bottom = 23.0
-label_settings = ExtResource("1_3weqf")

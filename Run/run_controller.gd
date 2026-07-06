@@ -13,6 +13,20 @@ const BattleSpawnerScript: GDScript = preload("res://Run/battle_spawner.gd")
 const StatRegistryScript: GDScript = preload("res://Stats/stat_registry.gd")
 const MarbleUpgradeSystemScript: GDScript = preload("res://Run/marble_upgrade_system.gd")
 const EnemyScene: PackedScene = preload("res://Enemies/enemy.tscn")
+const WEAK_LEVEL_DEF_PATH: String = "res://Levels/level_001_weak.tres"
+const STRONG_LEVEL_DEF_PATH: String = "res://Levels/level_strong_normal.tres"
+const ELITE_LEVEL_DEF_PATH: String = "res://Levels/level_elite.tres"
+const BOSS_LEVEL_DEF_PATH: String = "res://Levels/level_boss.tres"
+const STAT_ENTITY_PINBALL_TABLE: String = "pinball_table"
+const LEGACY_TABLE_NODE_NAMES: PackedStringArray = [
+	"WallSprite",
+	"KillZone",
+	"LFlipper",
+	"RFlipper",
+	"Walls",
+	"Platforms",
+	"BouncelessWall",
+]
 const DEFAULT_REWARD_ITEM_PATHS: PackedStringArray = [
 	"res://Resources/brown_marble.tres",
 	"res://Resources/green_marble.tres",
@@ -30,6 +44,9 @@ const NORMAL_BATTLE_GOLD_MAX: int = 20
 const ELITE_BATTLE_GOLD_MIN: int = 35
 const ELITE_BATTLE_GOLD_MAX: int = 40
 const RUN_HEALTH_ENTITY_ID: String = "run:current"
+const WEAK_ENEMY_BASE_HEALTH: int = 15
+const STRONG_ENEMY_BASE_HEALTH: int = 40
+const ENEMY_HEALTH_PER_NODE: int = 5
 
 @export var boss_node_index: int = 6
 @export var enemy_container: Node2D
@@ -37,6 +54,7 @@ const RUN_HEALTH_ENTITY_ID: String = "run:current"
 @export var node_choice_panel: Control
 @export var draft_reward_panel: Control
 @export var upgrade_panel: Control
+@export var level_parent: Node
 
 var current_node_index: int = 0
 var choice_wave_index: int = 0
@@ -44,6 +62,7 @@ var run_is_complete: bool = false
 var reset_battle_state_callable: Callable = Callable()
 var battle_is_active: bool = false
 var marble_upgrade_system: Node
+var active_level_scene: Node = null
 
 
 func _ready() -> void:
@@ -151,6 +170,7 @@ func _begin_battle(group: BattleGroupDef) -> void:
 	if group == null:
 		return
 
+	_activate_level_scene_for_group(group)
 	_ensure_battle_spawner()
 	battle_is_active = true
 	run_health_changed.emit(_get_run_health())
@@ -325,6 +345,92 @@ func _pick_normal_battle_group() -> BattleGroupDef:
 	return _make_strong_group()
 
 
+func _load_level_def(path: String) -> LevelDef:
+	var resource: Resource = load(path) as Resource
+	return resource as LevelDef
+
+
+func _get_enemy_health(base_health: int) -> int:
+	var node_index: int = maxi(1, current_node_index)
+	return base_health + (node_index - 1) * ENEMY_HEALTH_PER_NODE
+
+
+func _get_weak_enemy_health() -> int:
+	return _get_enemy_health(WEAK_ENEMY_BASE_HEALTH)
+
+
+func _get_strong_enemy_health() -> int:
+	return _get_enemy_health(STRONG_ENEMY_BASE_HEALTH)
+
+
+func _get_pool_health(enemy_pool: LevelDef.EnemyPool) -> int:
+	match enemy_pool:
+		LevelDef.EnemyPool.STRONG:
+			return _get_strong_enemy_health()
+		_:
+			return _get_weak_enemy_health()
+
+
+func _get_spawn_pool(level_def: LevelDef, spawn: LevelEnemySpawn) -> LevelDef.EnemyPool:
+	if spawn.pool_override == LevelEnemySpawn.PoolOverride.STRONG:
+		return LevelDef.EnemyPool.STRONG
+	if spawn.pool_override == LevelEnemySpawn.PoolOverride.WEAK:
+		return LevelDef.EnemyPool.WEAK
+	return level_def.enemy_pool
+
+
+func _get_spawn_health(level_def: LevelDef, spawn: LevelEnemySpawn) -> int:
+	if spawn.health_override >= 0:
+		return spawn.health_override
+
+	var base_health: int = _get_pool_health(_get_spawn_pool(level_def, spawn))
+	match spawn.role:
+		LevelEnemySpawn.Role.ELITE:
+			return base_health * 2
+		LevelEnemySpawn.Role.BOSS:
+			return 240
+		_:
+			return base_health
+
+
+func _make_group_from_level_def(level_def: LevelDef) -> BattleGroupDef:
+	if level_def == null or level_def.level_scene == null:
+		return null
+
+	var level_scene: Node = level_def.level_scene.instantiate()
+	var entries: Array[BattleGroupDef.EnemyEntry] = _build_enemy_entries_from_level_scene(level_def, level_scene)
+	level_scene.free()
+	if entries.is_empty():
+		return null
+
+	var group_id: String = "%s_%d" % [level_def.id, current_node_index]
+	var group: BattleGroupDef = _make_group(group_id, level_def.title, level_def.kind, entries)
+	group.level_def = level_def
+	return group
+
+
+func _build_enemy_entries_from_level_scene(level_def: LevelDef, level_scene: Node) -> Array[BattleGroupDef.EnemyEntry]:
+	var entries: Array[BattleGroupDef.EnemyEntry] = []
+	if level_scene == null:
+		return entries
+
+	var spawn_root: Node = level_scene.get_node_or_null("EnemySpawns")
+	if spawn_root == null:
+		return entries
+
+	for child: Node in spawn_root.get_children():
+		var spawn: LevelEnemySpawn = child as LevelEnemySpawn
+		if spawn == null:
+			continue
+		var enemy_scene: PackedScene = spawn.enemy_scene if spawn.enemy_scene != null else EnemyScene
+		entries.append(_enemy_entry_with_scene(
+			enemy_scene,
+			spawn.global_position,
+			_get_spawn_health(level_def, spawn)
+		))
+	return entries
+
+
 func _make_weighted_node_option() -> RunNodeOption:
 	var total_weight: int = NORMAL_BATTLE_OPTION_WEIGHT + EVENT_OPTION_WEIGHT + ELITE_OPTION_WEIGHT + UPGRADE_OPTION_WEIGHT
 	var roll: int = randi_range(1, total_weight)
@@ -358,39 +464,59 @@ func _make_shop_option() -> RunNodeOption:
 
 
 func _make_weak_group() -> BattleGroupDef:
+	var level_group: BattleGroupDef = _make_group_from_level_def(_load_level_def(WEAK_LEVEL_DEF_PATH))
+	if level_group != null:
+		return level_group
+
+	var weak_enemy_health: int = _get_weak_enemy_health()
 	var entries: Array[BattleGroupDef.EnemyEntry] = [
-		_enemy_entry(Vector2(72, 48), 30),
-		_enemy_entry(Vector2(120, 72), 30),
-		_enemy_entry(Vector2(168, 48), 30),
+		_enemy_entry(Vector2(72, 48), weak_enemy_health),
+		_enemy_entry(Vector2(120, 72), weak_enemy_health),
+		_enemy_entry(Vector2(168, 48), weak_enemy_health),
 	]
 	return _make_group("weak_normal_%d" % current_node_index, "Weak Fight", BattleGroupDef.Kind.WEAK_NORMAL, entries)
 
 
 func _make_strong_group() -> BattleGroupDef:
+	var level_group: BattleGroupDef = _make_group_from_level_def(_load_level_def(STRONG_LEVEL_DEF_PATH))
+	if level_group != null:
+		return level_group
+
+	var strong_enemy_health: int = _get_strong_enemy_health()
 	var entries: Array[BattleGroupDef.EnemyEntry] = [
-		_enemy_entry(Vector2(64, 48), 42),
-		_enemy_entry(Vector2(104, 88), 42),
-		_enemy_entry(Vector2(144, 48), 42),
-		_enemy_entry(Vector2(184, 88), 42),
-		_enemy_entry(Vector2(120, 132), 42),
+		_enemy_entry(Vector2(64, 48), strong_enemy_health),
+		_enemy_entry(Vector2(104, 88), strong_enemy_health),
+		_enemy_entry(Vector2(144, 48), strong_enemy_health),
+		_enemy_entry(Vector2(184, 88), strong_enemy_health),
+		_enemy_entry(Vector2(120, 132), strong_enemy_health),
 	]
 	return _make_group("strong_normal_%d" % current_node_index, "Strong Fight", BattleGroupDef.Kind.STRONG_NORMAL, entries)
 
 
 func _make_elite_group() -> BattleGroupDef:
+	var level_group: BattleGroupDef = _make_group_from_level_def(_load_level_def(ELITE_LEVEL_DEF_PATH))
+	if level_group != null:
+		return level_group
+
+	var strong_enemy_health: int = _get_strong_enemy_health()
 	var entries: Array[BattleGroupDef.EnemyEntry] = [
-		_enemy_entry(Vector2(120, 64), 120),
-		_enemy_entry(Vector2(80, 124), 36),
-		_enemy_entry(Vector2(160, 124), 36),
+		_enemy_entry(Vector2(120, 64), strong_enemy_health * 2),
+		_enemy_entry(Vector2(80, 124), strong_enemy_health),
+		_enemy_entry(Vector2(160, 124), strong_enemy_health),
 	]
 	return _make_group("elite_%d" % current_node_index, "Elite Fight", BattleGroupDef.Kind.ELITE, entries)
 
 
 func _make_boss_group() -> BattleGroupDef:
+	var level_group: BattleGroupDef = _make_group_from_level_def(_load_level_def(BOSS_LEVEL_DEF_PATH))
+	if level_group != null:
+		return level_group
+
+	var weak_enemy_health: int = _get_weak_enemy_health()
 	var entries: Array[BattleGroupDef.EnemyEntry] = [
 		_enemy_entry(Vector2(120, 64), 240),
-		_enemy_entry(Vector2(72, 128), 50),
-		_enemy_entry(Vector2(168, 128), 50),
+		_enemy_entry(Vector2(72, 128), weak_enemy_health),
+		_enemy_entry(Vector2(168, 128), weak_enemy_health),
 	]
 	return _make_group("boss_%d" % current_node_index, "Boss Fight", BattleGroupDef.Kind.BOSS, entries)
 
@@ -405,11 +531,124 @@ func _make_group(id: String, title: String, kind: BattleGroupDef.Kind, entries: 
 
 
 func _enemy_entry(position: Vector2, health: int) -> BattleGroupDef.EnemyEntry:
+	return _enemy_entry_with_scene(EnemyScene, position, health)
+
+
+func _enemy_entry_with_scene(scene: PackedScene, position: Vector2, health: int) -> BattleGroupDef.EnemyEntry:
 	var entry: BattleGroupDef.EnemyEntry = BattleGroupDef.EnemyEntry.new()
-	entry.scene = EnemyScene
+	entry.scene = scene
 	entry.position = position
 	entry.health = health
 	return entry
+
+
+func _activate_level_scene_for_group(group: BattleGroupDef) -> void:
+	var level_def: LevelDef = group.level_def as LevelDef
+	if level_def == null or level_def.level_scene == null:
+		return
+
+	var parent: Node = _get_level_scene_parent()
+	if parent == null:
+		return
+
+	var previous_enemy_container: Node2D = enemy_container
+	_clear_active_level_scene()
+	_disable_legacy_table_nodes(parent)
+
+	var scene: Node = level_def.level_scene.instantiate()
+	scene.name = "ActiveLevel"
+	parent.add_child(scene)
+	active_level_scene = scene
+	_apply_level_bounceless_wall_material(scene)
+
+	var scene_enemy_container: Node2D = scene.get_node_or_null("Enemies") as Node2D
+	if scene_enemy_container == null:
+		return
+
+	_clear_legacy_enemy_container(previous_enemy_container, scene_enemy_container)
+	enemy_container = scene_enemy_container
+	if battle_spawner != null:
+		battle_spawner.enemy_container = enemy_container
+
+
+func _get_level_scene_parent() -> Node:
+	if level_parent != null and is_instance_valid(level_parent):
+		return level_parent
+	if active_level_scene != null and is_instance_valid(active_level_scene) and active_level_scene.get_parent() != null:
+		return active_level_scene.get_parent()
+	if enemy_container != null and is_instance_valid(enemy_container):
+		var container_parent: Node = enemy_container.get_parent()
+		if container_parent != null:
+			if container_parent == active_level_scene and active_level_scene.get_parent() != null:
+				return active_level_scene.get_parent()
+			return container_parent
+	return self
+
+
+func _clear_active_level_scene() -> void:
+	if active_level_scene == null or not is_instance_valid(active_level_scene):
+		active_level_scene = null
+		return
+	var parent: Node = active_level_scene.get_parent()
+	if parent != null:
+		parent.remove_child(active_level_scene)
+	active_level_scene.queue_free()
+	active_level_scene = null
+
+
+func _disable_legacy_table_nodes(parent: Node) -> void:
+	for node_name: String in LEGACY_TABLE_NODE_NAMES:
+		var node: Node = parent.get_node_or_null(NodePath(node_name))
+		if node == null:
+			continue
+		if node is CanvasItem:
+			(node as CanvasItem).visible = false
+		_set_collision_nodes_disabled(node, true)
+
+
+func _set_collision_nodes_disabled(node: Node, disabled: bool) -> void:
+	if node is CollisionShape2D:
+		(node as CollisionShape2D).disabled = disabled
+	elif node is CollisionPolygon2D:
+		(node as CollisionPolygon2D).disabled = disabled
+
+	for child: Node in node.get_children():
+		_set_collision_nodes_disabled(child, disabled)
+
+
+func _clear_legacy_enemy_container(previous_enemy_container: Node2D, next_enemy_container: Node2D) -> void:
+	if previous_enemy_container == null or previous_enemy_container == next_enemy_container:
+		return
+	if not is_instance_valid(previous_enemy_container):
+		return
+
+	for child: Node in previous_enemy_container.get_children():
+		child.free()
+	previous_enemy_container.visible = false
+
+
+func _apply_level_bounceless_wall_material(level_scene: Node) -> void:
+	if level_scene == null:
+		return
+	var wall: StaticBody2D = level_scene.find_child("BouncelessWall", true, false) as StaticBody2D
+	if wall == null:
+		return
+
+	var stat_system: Node = _get_stat_system()
+	if stat_system == null:
+		return
+
+	var physics_material: PhysicsMaterial = wall.physics_material_override
+	if physics_material == null:
+		physics_material = PhysicsMaterial.new()
+	else:
+		physics_material = physics_material.duplicate()
+	physics_material.bounce = float(stat_system.call(
+		"get_stat",
+		StatRegistryScript.BOUNCELESS_WALL_BOUNCE,
+		STAT_ENTITY_PINBALL_TABLE
+	))
+	wall.physics_material_override = physics_material
 
 
 func _make_option(

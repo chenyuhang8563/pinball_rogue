@@ -139,7 +139,9 @@ rotation = 3.1415927
 scale = Vector2(1, -1)
 polygon = PackedVector2Array(8, -8, 7.9999847, 119.999985, 40, 120, 40, 40)
 
-[node name="SkillSlot" type="Panel" parent="." unique_id=741403767]
+[node name="CrtLayer" type="CanvasLayer" parent="." unique_id=1475341812]
+
+[node name="SkillSlot" type="Panel" parent="CrtLayer" unique_id=741403767]
 custom_minimum_size = Vector2(32, 32)
 offset_left = 200.0
 offset_top = 280.0
@@ -151,7 +153,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_o60nc")
 script = ExtResource("10_skilld")
 recharge_time = 3.5
 
-[node name="Icon" type="TextureRect" parent="SkillSlot" unique_id=402347934]
+[node name="Icon" type="TextureRect" parent="CrtLayer/SkillSlot" unique_id=402347934]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -160,7 +162,7 @@ texture = ExtResource("8_rj11h")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="SkillSlot" unique_id=2075154416]
+[node name="Label" type="Label" parent="CrtLayer/SkillSlot" unique_id=2075154416]
 layout_mode = 0
 offset_left = 27.0
 offset_top = 25.0
@@ -169,14 +171,12 @@ offset_bottom = 37.0
 text = "1"
 label_settings = ExtResource("9_qac2q")
 
-[node name="CooldownOverlay" type="ColorRect" parent="SkillSlot" unique_id=1825731688]
+[node name="CooldownOverlay" type="ColorRect" parent="CrtLayer/SkillSlot" unique_id=1825731688]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 color = Color(0, 0, 0, 0)
-
-[node name="CrtLayer" type="CanvasLayer" parent="." unique_id=1475341812]
 
 [node name="BattleHealthHud" parent="CrtLayer" instance=ExtResource("11_health")]
 

@@ -1,0 +1,87 @@
+[gd_scene load_steps=9 format=3]
+
+[ext_resource type="Texture2D" path="res://Assets/Walls/walls.png" id="1_walls"]
+[ext_resource type="PackedScene" path="res://Fliper/flipper.tscn" id="2_flipper"]
+[ext_resource type="PackedScene" path="res://Platform/platform.tscn" id="3_platform"]
+[ext_resource type="Script" path="res://Main/kill_zone.gd" id="4_kill"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_flipper"]
+size = Vector2(80, 16)
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_wall"]
+bounce = 0.3
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_kill"]
+size = Vector2(240, 12)
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_platform"]
+bounce = 1.0
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_bounceless"]
+bounce = 1.0
+absorbent = true
+
+[node name="TableBase" type="Node2D"]
+
+[node name="WallSprite" type="Sprite2D" parent="."]
+position = Vector2(120, 160)
+texture = ExtResource("1_walls")
+
+[node name="KillZone" type="Area2D" parent="."]
+position = Vector2(112, 312)
+collision_mask = 2
+script = ExtResource("4_kill")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="KillZone"]
+position = Vector2(8, -32)
+shape = SubResource("RectangleShape2D_flipper")
+
+[node name="LFlipper" parent="." instance=ExtResource("2_flipper")]
+position = Vector2(79.99999, 248)
+rotation = 0.5235988
+snap_angle = -65
+
+[node name="RFlipper" parent="." instance=ExtResource("2_flipper")]
+position = Vector2(160, 248.00002)
+rotation = 2.6179938
+keycode = "ui_right"
+snap_angle = 65
+
+[node name="Walls" type="StaticBody2D" parent="."]
+collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_wall")
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Walls"]
+position = Vector2(8, 0)
+polygon = PackedVector2Array(0, 0, 0, 72, 16, 128, 40, 192, 40, 240, 40, 320, -8, 320, -8, 0)
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls"]
+position = Vector2(120, -6)
+shape = SubResource("RectangleShape2D_kill")
+
+[node name="CollisionPolygon2D2" type="CollisionPolygon2D" parent="Walls"]
+position = Vector2(232, 0)
+rotation = 3.1415927
+scale = Vector2(1, -1)
+polygon = PackedVector2Array(0, 0, 0, 72, 39.999985, 192, 39.99997, 320, -8, 320, -8, 0)
+
+[node name="Platforms" type="Node2D" parent="."]
+
+[node name="Platform" parent="Platforms" instance=ExtResource("3_platform")]
+position = Vector2(120, 152)
+physics_material_override = SubResource("PhysicsMaterial_platform")
+
+[node name="BouncelessWall" type="StaticBody2D" parent="."]
+collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_bounceless")
+
+[node name="CollisionPolygon2D3" type="CollisionPolygon2D" parent="BouncelessWall"]
+position = Vector2(49.75, 196.75)
+scale = Vector2(0.8125, 1.0208334)
+polygon = PackedVector2Array(0, 0, 0, 120, 40, 120, 40, 40)
+
+[node name="CollisionPolygon2D4" type="CollisionPolygon2D" parent="BouncelessWall"]
+position = Vector2(200, 200)
+rotation = 3.1415927
+scale = Vector2(1, -1)
+polygon = PackedVector2Array(8, -8, 7.9999847, 119.999985, 40, 120, 40, 40)

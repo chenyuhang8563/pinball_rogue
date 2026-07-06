@@ -2,6 +2,8 @@ extends Control
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
 
+signal gold_changed(value: int)
+
 @export var shop_slot_node: PackedScene = preload("res://Items/slot.tscn")
 @export var shop_items: Array[Item] = []
 @export var shop_container: GridContainer
@@ -10,7 +12,7 @@ const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_setting
 var gold: int = 0:
 	set(value):
 		gold = value
-		$UI/Coins.text = "Gold: " + str(value)
+		gold_changed.emit(value)
 
 enum MODE {
 	ON,

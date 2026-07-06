@@ -1,0 +1,71 @@
+[gd_scene format=3 uid="uid://c4sf4r73fwjvw"]
+
+[ext_resource type="Texture2D" uid="uid://xf2y06gxijb1" path="res://Assets/Items/Big Heart Idle (18x14).png" id="1_4vxhk"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ypt7p"]
+atlas = ExtResource("1_4vxhk")
+region = Rect2(0, 0, 18, 14)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_nwllv"]
+atlas = ExtResource("1_4vxhk")
+region = Rect2(18, 0, 18, 14)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_57438"]
+atlas = ExtResource("1_4vxhk")
+region = Rect2(36, 0, 18, 14)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_7cxh2"]
+atlas = ExtResource("1_4vxhk")
+region = Rect2(54, 0, 18, 14)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_5tltg"]
+atlas = ExtResource("1_4vxhk")
+region = Rect2(72, 0, 18, 14)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_ommjt"]
+atlas = ExtResource("1_4vxhk")
+region = Rect2(90, 0, 18, 14)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_p3pc8"]
+atlas = ExtResource("1_4vxhk")
+region = Rect2(108, 0, 18, 14)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_xln61"]
+atlas = ExtResource("1_4vxhk")
+region = Rect2(126, 0, 18, 14)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_najbi"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ypt7p")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_nwllv")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_57438")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_7cxh2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_5tltg")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_ommjt")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_p3pc8")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_xln61")
+}],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}]
+
+[node name="Heart" type="AnimatedSprite2D" unique_id=983777306]
+sprite_frames = SubResource("SpriteFrames_najbi")
+frame_progress = 0.9902792

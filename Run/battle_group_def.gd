@@ -19,6 +19,7 @@ class EnemyEntry:
 @export var id: String = ""
 @export var title: String = ""
 @export var kind: Kind = Kind.WEAK_NORMAL
+@export var level_def: Resource
 @export var enemy_entries: Array[EnemyEntry] = []
 
 

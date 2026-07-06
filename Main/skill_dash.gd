@@ -40,8 +40,13 @@ func _gui_input(event: InputEvent) -> void:
 	_try_activate()
 
 
+func _shortcut_input(event: InputEvent) -> void:
+	if _is_dash_key_event(event) and _try_activate():
+		get_viewport().set_input_as_handled()
+
+
 func _unhandled_input(event: InputEvent) -> void:
-	if event is InputEventKey and event.keycode == KEY_Q and event.pressed and not event.echo:
+	if _is_dash_key_event(event):
 		_try_activate()
 
 
@@ -59,8 +64,14 @@ func _try_activate() -> bool:
 	# Consume a charge and fire the dash signal.
 	current_charges -= 1
 	_start_cooldown_overlay()
-	Event.dash_skill_activated.emit()
+	var event_bus: Node = _get_event_bus()
+	if event_bus != null and event_bus.has_signal(&"dash_skill_activated"):
+		event_bus.emit_signal(&"dash_skill_activated")
 	return true
+
+
+func _is_dash_key_event(event: InputEvent) -> bool:
+	return event is InputEventKey and event.keycode == KEY_Q and event.pressed and not event.echo
 
 
 func _on_recharge_timer_timeout() -> void:
@@ -86,3 +97,10 @@ func _update_ui() -> void:
 		modulate = Color(0.5, 0.5, 0.5, 0.5)
 	else:
 		modulate = Color(1, 1, 1, 1)
+
+
+func _get_event_bus() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("Event")

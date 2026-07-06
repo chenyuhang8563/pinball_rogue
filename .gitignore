@@ -25,9 +25,11 @@ mono_crash.*.json
 
 # test ignores
 /tests
+
 # agent ignores
 .claude
 prompts
+.codex
 
 # temp files
 .temp
