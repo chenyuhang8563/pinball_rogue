@@ -5,6 +5,7 @@ const STAT_ENTITY_PINBALL_TABLE: String = "pinball_table"
 const RunControllerScript: GDScript = preload("res://Run/run_controller.gd")
 const NodeChoicePanelScript: GDScript = preload("res://UI/node_choice_panel.gd")
 const DraftRewardPanelScript: GDScript = preload("res://UI/draft_reward_panel.gd")
+const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.tscn")
 
 @onready var marbles: Node2D = $Marbles
 @onready var enemies: Node2D = $Enemies
@@ -21,6 +22,7 @@ const DraftRewardPanelScript: GDScript = preload("res://UI/draft_reward_panel.gd
 ## 当前活跃的弹珠链。由 _spawn_chain() 创建，整条链只有一个 RigidBody2D（Head）。
 var marble_chain: MarbleChain = null
 var run_controller: RunController = null
+var battle_health_hud: Node = null
 
 
 func _ready() -> void:
@@ -236,6 +238,8 @@ func _setup_run_flow() -> void:
 	draft_reward_panel.name = "DraftRewardPanel"
 	ui_layer.add_child(draft_reward_panel)
 
+	_setup_battle_health_hud(ui_layer)
+
 	var crt_overlay: Node = ui_layer.get_node_or_null("ColorRect")
 	if crt_overlay != null:
 		ui_layer.move_child(crt_overlay, ui_layer.get_child_count() - 1)
@@ -246,6 +250,7 @@ func _setup_run_flow() -> void:
 	run_controller.node_choice_panel = node_choice_panel
 	run_controller.draft_reward_panel = draft_reward_panel
 	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
+	run_controller.run_health_changed.connect(_on_run_health_changed)
 	add_child(run_controller)
 
 	var event_bus: Node = _get_autoload_node(&"Event")
@@ -256,6 +261,19 @@ func _setup_run_flow() -> void:
 		_connect_run_signal(run_controller, event_bus, &"run_completed")
 
 	run_controller.start_run()
+
+
+func _setup_battle_health_hud(ui_layer: Node) -> void:
+	battle_health_hud = ui_layer.get_node_or_null("BattleHealthHud")
+	if battle_health_hud == null:
+		battle_health_hud = BattleHealthHudScene.instantiate()
+		battle_health_hud.name = "BattleHealthHud"
+		ui_layer.add_child(battle_health_hud)
+
+
+func _on_run_health_changed(health: int) -> void:
+	if battle_health_hud != null and battle_health_hud.has_method("set_health"):
+		battle_health_hud.call("set_health", health)
 
 
 func _connect_run_signal(source: Object, event_bus: Node, signal_name: StringName) -> void:

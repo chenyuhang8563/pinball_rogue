@@ -38,6 +38,8 @@ const BUY_PRICE_MULTIPLIER: String = "buy_price_multiplier"
 const MARBLE_SLOT_COUNT: String = "marble_slot_count"
 const RELIC_SLOT_COUNT: String = "relic_slot_count"
 
+const RUN_HEALTH: String = "run_health"
+
 const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Resources/stats/marble/base_damage.tres",
 	"res://Resources/stats/marble/segment_damage.tres",
@@ -68,6 +70,7 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Resources/stats/economy/buy_price_multiplier.tres",
 	"res://Resources/stats/capacity/marble_slot_count.tres",
 	"res://Resources/stats/capacity/relic_slot_count.tres",
+	"res://Resources/stats/run/run_health.tres",
 ]
 
 

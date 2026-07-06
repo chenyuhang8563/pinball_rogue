@@ -1,0 +1,22 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://UI/battle_health_hud.gd" id="1_hud"]
+[ext_resource type="LabelSettings" path="res://Themes/new_label_settings.tres" id="2_label"]
+
+[node name="BattleHealthHud" type="Control"]
+process_mode = 3
+anchors_preset = 0
+offset_right = 116.0
+offset_bottom = 22.0
+mouse_filter = 2
+script = ExtResource("1_hud")
+
+[node name="BattleHealthLabel" type="Label" parent="."]
+anchors_preset = 0
+offset_left = 4.0
+offset_top = 2.0
+offset_right = 116.0
+offset_bottom = 22.0
+mouse_filter = 2
+text = "Health: 0"
+label_settings = ExtResource("2_label")

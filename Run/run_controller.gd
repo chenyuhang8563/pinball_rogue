@@ -4,11 +4,13 @@ class_name RunController
 signal run_node_completed(node_kind: String)
 signal battle_started(group_id: String)
 signal battle_completed(group_id: String)
+signal run_health_changed(health: int)
 signal run_completed
 
 const BattleGroupDefScript: GDScript = preload("res://Run/battle_group_def.gd")
 const RunNodeOptionScript: GDScript = preload("res://Run/run_node_option.gd")
 const BattleSpawnerScript: GDScript = preload("res://Run/battle_spawner.gd")
+const StatRegistryScript: GDScript = preload("res://Stats/stat_registry.gd")
 const EnemyScene: PackedScene = preload("res://Enemies/enemy.tscn")
 const DEFAULT_REWARD_ITEM_PATHS: PackedStringArray = [
 	"res://Resources/brown_marble.tres",
@@ -26,6 +28,7 @@ const NORMAL_BATTLE_GOLD_MIN: int = 15
 const NORMAL_BATTLE_GOLD_MAX: int = 20
 const ELITE_BATTLE_GOLD_MIN: int = 35
 const ELITE_BATTLE_GOLD_MAX: int = 40
+const RUN_HEALTH_ENTITY_ID: String = "run:current"
 
 @export var boss_node_index: int = 6
 @export var enemy_container: Node2D
@@ -37,10 +40,12 @@ var current_node_index: int = 0
 var choice_wave_index: int = 0
 var run_is_complete: bool = false
 var reset_battle_state_callable: Callable = Callable()
+var battle_is_active: bool = false
 
 
 func _ready() -> void:
 	_ensure_battle_spawner()
+	_connect_event_bus()
 	_connect_panels()
 
 
@@ -50,6 +55,10 @@ func start_run() -> void:
 	current_node_index = 0
 	choice_wave_index = 0
 	run_is_complete = false
+	battle_is_active = false
+	_connect_event_bus()
+	_reset_run_health()
+	run_health_changed.emit(_get_run_health())
 	_start_next_node()
 
 
@@ -128,6 +137,8 @@ func _begin_battle(group: BattleGroupDef) -> void:
 		return
 
 	_ensure_battle_spawner()
+	battle_is_active = true
+	run_health_changed.emit(_get_run_health())
 	battle_started.emit(group.id)
 	_reset_battle_state()
 	if battle_spawner != null:
@@ -135,6 +146,8 @@ func _begin_battle(group: BattleGroupDef) -> void:
 
 
 func _on_battle_completed(group_id: String) -> void:
+	battle_is_active = false
+	run_health_changed.emit(_get_run_health())
 	battle_completed.emit(group_id)
 
 	if group_id.contains("boss"):
@@ -143,8 +156,7 @@ func _on_battle_completed(group_id: String) -> void:
 		_show_run_completed_message()
 		return
 
-	_grant_battle_gold(group_id)
-	_show_node_choices()
+	_show_battle_rewards(group_id)
 
 
 func _show_node_choices() -> void:
@@ -168,6 +180,15 @@ func _show_event_draft() -> void:
 		return
 	if draft_reward_panel.has_method("show_item_draft"):
 		draft_reward_panel.call("show_item_draft", _pick_event_items())
+
+
+func _show_battle_rewards(group_id: String) -> void:
+	var gold_amount: int = _roll_battle_gold(group_id)
+	var items: Array[Item] = _pick_battle_reward_items(group_id)
+	if draft_reward_panel == null or not draft_reward_panel.has_method("show_battle_rewards"):
+		_start_next_node()
+		return
+	draft_reward_panel.call("show_battle_rewards", items, gold_amount)
 
 
 func _show_run_completed_message() -> void:
@@ -223,11 +244,24 @@ func _get_default_reward_items() -> Array[Item]:
 	return result
 
 
-func _grant_battle_gold(group_id: String) -> void:
+func _pick_battle_reward_items(group_id: String) -> Array[Item]:
+	var result: Array[Item] = []
+	if not group_id.contains("elite"):
+		return result
+
+	for item: Item in _get_default_reward_items():
+		if item != null and item.type == Item.ItemType.RELIC:
+			result.append(item)
+			break
+	return result
+
+
+func _roll_battle_gold(group_id: String) -> int:
 	if group_id.contains("elite"):
-		_add_gold(randi_range(ELITE_BATTLE_GOLD_MIN, ELITE_BATTLE_GOLD_MAX))
-	elif group_id.contains("normal"):
-		_add_gold(randi_range(NORMAL_BATTLE_GOLD_MIN, NORMAL_BATTLE_GOLD_MAX))
+		return randi_range(ELITE_BATTLE_GOLD_MIN, ELITE_BATTLE_GOLD_MAX)
+	if group_id.contains("normal"):
+		return randi_range(NORMAL_BATTLE_GOLD_MIN, NORMAL_BATTLE_GOLD_MAX)
+	return 0
 
 
 func _add_gold(amount: int) -> void:
@@ -358,6 +392,30 @@ func _reset_battle_state() -> void:
 		reset_battle_state_callable.call()
 
 
+func _on_marble_fell(marble: RigidBody2D) -> void:
+	if not battle_is_active:
+		return
+	if marble == null or not marble.is_in_group("marbles"):
+		return
+
+	var stat_system: Node = _get_stat_system()
+	if stat_system == null:
+		return
+
+	var current_health: int = int(stat_system.call(
+		"get_stat",
+		StatRegistryScript.RUN_HEALTH,
+		RUN_HEALTH_ENTITY_ID
+	))
+	stat_system.call(
+		"set_stat_base",
+		RUN_HEALTH_ENTITY_ID,
+		StatRegistryScript.RUN_HEALTH,
+		float(maxi(0, current_health - 1))
+	)
+	run_health_changed.emit(_get_run_health())
+
+
 func _watch_shop_close(shop: Node) -> void:
 	var timer: Timer = Timer.new()
 	timer.name = "ShopCloseWatcher"
@@ -384,6 +442,44 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null(NodePath(node_name))
+
+
+func _reset_run_health() -> void:
+	var stat_system: Node = _get_stat_system()
+	if stat_system == null:
+		return
+	if stat_system.has_method("unregister_entity"):
+		stat_system.call("unregister_entity", RUN_HEALTH_ENTITY_ID)
+	if stat_system.has_method("register_entity"):
+		stat_system.call("register_entity", RUN_HEALTH_ENTITY_ID, [StatRegistryScript.RUN_HEALTH])
+
+
+func _get_run_health() -> int:
+	var stat_system: Node = _get_stat_system()
+	if stat_system == null:
+		return 0
+	return int(stat_system.call(
+		"get_stat",
+		StatRegistryScript.RUN_HEALTH,
+		RUN_HEALTH_ENTITY_ID
+	))
+
+
+func _get_stat_system() -> Node:
+	var stat_system: Node = _get_autoload_node(&"StatSystem")
+	if stat_system == null or not stat_system.has_method("get_stat") or not stat_system.has_method("set_stat_base"):
+		return null
+	return stat_system
+
+
+func _connect_event_bus() -> void:
+	var event_bus: Node = _get_autoload_node(&"Event")
+	if event_bus == null or not event_bus.has_signal(&"marble_fell"):
+		return
+
+	var callable: Callable = Callable(self, "_on_marble_fell")
+	if not event_bus.is_connected(&"marble_fell", callable):
+		event_bus.connect(&"marble_fell", callable)
 
 
 func _ensure_battle_spawner() -> void:

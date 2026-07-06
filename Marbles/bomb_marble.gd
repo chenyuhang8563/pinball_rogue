@@ -3,7 +3,7 @@
 extends Marble
 class_name BombMarble
 
-@export var explosion_radius: float = 100.0
+@export var explosion_radius: float = 50.0
 @export var explosion_damage: int = 5
 
 @onready var explosion_effect_scene: PackedScene = preload("res://Effects/explosion_effect/explosion_effect.tscn")

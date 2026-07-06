@@ -10,6 +10,7 @@
 [ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="9_qac2q"]
 [ext_resource type="Texture2D" uid="uid://cm7xu42fdrmlk" path="res://Assets/Walls/walls.png" id="9_rj11h"]
 [ext_resource type="Script" uid="uid://cx1d57ki0wccy" path="res://Main/skill_dash.gd" id="10_skilld"]
+[ext_resource type="PackedScene" path="res://UI/battle_health_hud.tscn" id="11_health"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_eunhr"]
 size = Vector2(80, 16)
@@ -176,6 +177,8 @@ mouse_filter = 2
 color = Color(0, 0, 0, 0)
 
 [node name="CrtLayer" type="CanvasLayer" parent="." unique_id=1475341812]
+
+[node name="BattleHealthHud" parent="CrtLayer" instance=ExtResource("11_health")]
 
 [node name="ColorRect" type="ColorRect" parent="CrtLayer" unique_id=2088465450]
 material = SubResource("ShaderMaterial_f6fdm")
