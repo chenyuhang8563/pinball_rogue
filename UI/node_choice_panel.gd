@@ -15,12 +15,16 @@ var _button_row: HBoxContainer
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_build_ui()
+	_bind_nodes()
+	_connect_buttons()
 	hide()
 
 
 func show_options(options: Array[RunNodeOption]) -> void:
-	_build_ui()
+	_bind_nodes()
+	_connect_buttons()
+	if not _has_required_nodes():
+		return
 	_options = options
 	_title_label.text = "Choose Next Node"
 	_description_label.text = "Pick one path for the next step."
@@ -42,7 +46,10 @@ func show_options(options: Array[RunNodeOption]) -> void:
 
 
 func show_message(title: String, description: String) -> void:
-	_build_ui()
+	_bind_nodes()
+	_connect_buttons()
+	if not _has_required_nodes():
+		return
 	_options.clear()
 	_title_label.text = title
 	_description_label.text = description
@@ -70,61 +77,32 @@ func _on_button_pressed(index: int) -> void:
 	option_selected.emit(option)
 
 
-func _build_ui() -> void:
+func _bind_nodes() -> void:
 	if _button_row != null:
 		return
-
-	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	_title_label = get_node_or_null("Center/Panel/MarginContainer/Layout/TitleLabel") as Label
+	_description_label = get_node_or_null("Center/Panel/MarginContainer/Layout/DescriptionLabel") as Label
+	_button_row = get_node_or_null("Center/Panel/MarginContainer/Layout/ButtonRow") as HBoxContainer
+	_buttons.clear()
+	if _button_row == null:
+		return
+	for child: Node in _button_row.get_children():
+		if child is Button:
+			var button: Button = child as Button
+			_apply_button_font(button)
+			_buttons.append(button)
 
-	var backdrop: ColorRect = ColorRect.new()
-	backdrop.color = Color(0.0, 0.0, 0.0, 1.0)
-	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(backdrop)
 
-	var center: CenterContainer = CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(center)
+func _connect_buttons() -> void:
+	for index: int in range(_buttons.size()):
+		var callback := Callable(self, "_on_button_pressed").bind(index)
+		if not _buttons[index].pressed.is_connected(callback):
+			_buttons[index].pressed.connect(callback)
 
-	var panel: PanelContainer = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(220, 150)
-	center.add_child(panel)
 
-	var margin: MarginContainer = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 8)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_right", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
-	panel.add_child(margin)
-
-	var layout: VBoxContainer = VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 6)
-	margin.add_child(layout)
-
-	_title_label = Label.new()
-	_apply_label_settings(_title_label)
-	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	layout.add_child(_title_label)
-
-	_description_label = Label.new()
-	_apply_label_settings(_description_label)
-	_description_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	_description_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-	layout.add_child(_description_label)
-
-	_button_row = HBoxContainer.new()
-	_button_row.add_theme_constant_override("separation", 4)
-	layout.add_child(_button_row)
-
-	for index: int in range(3):
-		var button: Button = Button.new()
-		button.custom_minimum_size = Vector2(66, 64)
-		button.focus_mode = Control.FOCUS_ALL
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
-		_apply_button_font(button)
-		button.pressed.connect(Callable(self, "_on_button_pressed").bind(index))
-		_button_row.add_child(button)
-		_buttons.append(button)
+func _has_required_nodes() -> bool:
+	return _title_label != null and _description_label != null and _button_row != null and _buttons.size() > 0
 
 
 func _apply_label_settings(label: Label) -> void:

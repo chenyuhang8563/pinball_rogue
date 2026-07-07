@@ -2,8 +2,8 @@ extends Control
 class_name InventoryPanel
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
-const LevelBadgeScript: GDScript = preload("res://UI/level_badge.gd")
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
+const InventoryIconSlotScene: PackedScene = preload("res://UI/inventory_icon_slot.tscn")
 
 @export var toggle_action: StringName = &"toggle_inventory"
 @export var skill_slot_count: int = 3
@@ -145,15 +145,13 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 		var slot := container.get_child(index)
 		if not slot is Control:
 			continue
-		var slot_control: Control = slot as Control
-		var icon := slot.get_node_or_null("Icon") as TextureRect
-		if icon == null:
+		var icon_view := _get_icon_view(slot)
+		if icon_view == null:
 			continue
 
 		if slot.has_meta("item"):
 			slot.remove_meta("item")
-		icon.texture = null
-		LevelBadgeScript.clear_badge(slot_control)
+		_clear_icon_view(icon_view)
 
 		if index >= collection_items.size():
 			continue
@@ -161,8 +159,8 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 		if item == null:
 			continue
 		slot.set_meta("item", item)
-		icon.texture = item.icon
-		LevelBadgeScript.update_badge(slot_control, ItemLevelResolverScript.get_inventory_level(item))
+		_set_icon_view_texture(icon_view, item.icon)
+		_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item))
 
 
 func _ensure_skill_slots() -> void:
@@ -173,19 +171,8 @@ func _ensure_skill_slots() -> void:
 
 
 func _make_skill_slot(index: int) -> Panel:
-	var slot := Panel.new()
+	var slot := InventoryIconSlotScene.instantiate() as Panel
 	slot.name = "SkillSlot%d" % index
-	slot.custom_minimum_size = Vector2(32, 32)
-	slot.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	slot.size_flags_vertical = Control.SIZE_SHRINK_CENTER
-
-	var icon := TextureRect.new()
-	icon.name = "Icon"
-	icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-	icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-	slot.add_child(icon)
 	return slot
 
 
@@ -196,17 +183,16 @@ func _update_skill_slots() -> void:
 	var skill_sources: Array[Dictionary] = _get_skill_slot_sources()
 	for index: int in range(skill_bar_container.get_child_count()):
 		var slot := skill_bar_container.get_child(index)
-		var icon := slot.get_node_or_null("Icon") as TextureRect
-		if icon == null:
+		var icon_view := _get_icon_view(slot)
+		if icon_view == null:
 			continue
-		icon.texture = null
-		LevelBadgeScript.clear_badge(slot as Control)
+		_clear_icon_view(icon_view)
 		if slot.has_meta("skill_source"):
 			slot.remove_meta("skill_source")
 		if index >= skill_sources.size():
 			continue
 		var source: Dictionary = skill_sources[index]
-		icon.texture = source.get("icon") as Texture2D
+		_set_icon_view_texture(icon_view, source.get("icon") as Texture2D)
 		if source.has("source_path"):
 			slot.set_meta("skill_source", source["source_path"])
 
@@ -221,12 +207,55 @@ func _get_skill_slot_sources() -> Array[Dictionary]:
 	if skill_slot == null:
 		return sources
 
-	var icon: TextureRect = skill_slot.get_node_or_null("Icon") as TextureRect
+	var icon: Node = skill_slot.get_node_or_null("Icon")
 	sources.append({
-		"icon": icon.texture if icon != null else null,
+		"icon": _get_icon_view_texture(icon),
 		"source_path": str(skill_slot.get_path()),
 	})
 	return sources
+
+
+func _get_icon_view(slot: Node) -> Node:
+	if slot == null:
+		return null
+	return slot.get_node_or_null("Icon")
+
+
+func _set_icon_view_texture(icon_view: Node, texture: Texture2D) -> void:
+	if icon_view == null:
+		return
+	if icon_view.has_method("set_texture"):
+		icon_view.call("set_texture", texture)
+	elif icon_view is TextureRect:
+		var texture_rect := icon_view as TextureRect
+		texture_rect.texture = texture
+		texture_rect.visible = texture != null
+
+
+func _set_icon_view_level(icon_view: Node, level: int) -> void:
+	if icon_view != null and icon_view.has_method("set_level"):
+		icon_view.call("set_level", level)
+
+
+func _clear_icon_view(icon_view: Node) -> void:
+	if icon_view == null:
+		return
+	if icon_view.has_method("clear"):
+		icon_view.call("clear")
+	elif icon_view is TextureRect:
+		var texture_rect := icon_view as TextureRect
+		texture_rect.texture = null
+		texture_rect.hide()
+
+
+func _get_icon_view_texture(icon_view: Node) -> Texture2D:
+	if icon_view == null:
+		return null
+	if icon_view.has_method("get_texture"):
+		return icon_view.call("get_texture") as Texture2D
+	if icon_view is TextureRect:
+		return (icon_view as TextureRect).texture
+	return null
 
 
 func _connect_inventory() -> void:

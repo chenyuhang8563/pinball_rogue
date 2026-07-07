@@ -5,7 +5,6 @@ signal reward_selected(item: Item)
 signal draft_closed
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
-const ItemTooltipScene: PackedScene = preload("res://UI/item_tooltip.tscn")
 const CoinTexture: Texture2D = preload("res://Assets/Items/Coin.png")
 const ITEM_OPTION_SIZE: Vector2 = Vector2(32, 32)
 
@@ -26,12 +25,16 @@ var _tooltip: Control
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
-	_build_ui()
+	_bind_nodes()
+	_connect_buttons()
 	hide()
 
 
 func show_item_draft(items: Array[Item]) -> void:
-	_build_ui()
+	_bind_nodes()
+	_connect_buttons()
+	if not _has_required_nodes():
+		return
 	_is_battle_reward_mode = false
 	_items = items
 	_title_label.text = "Draft Reward"
@@ -62,7 +65,10 @@ func show_item_draft(items: Array[Item]) -> void:
 
 
 func show_battle_rewards(items: Array[Item], gold_amount: int) -> void:
-	_build_ui()
+	_bind_nodes()
+	_connect_buttons()
+	if not _has_required_nodes():
+		return
 	_is_battle_reward_mode = true
 	_battle_reward_items = items
 	_battle_item_claimed.clear()
@@ -258,72 +264,48 @@ func _close_panel() -> void:
 	draft_closed.emit()
 
 
-func _build_ui() -> void:
+func _bind_nodes() -> void:
 	if _button_row != null:
 		return
-
-	set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
 	mouse_filter = Control.MOUSE_FILTER_STOP
+	_title_label = get_node_or_null("Center/Panel/MarginContainer/Layout/TitleLabel") as Label
+	_button_row = get_node_or_null("Center/Panel/MarginContainer/Layout/ButtonRow") as HBoxContainer
+	_tooltip = get_node_or_null("ItemTooltip") as Control
+	_buttons.clear()
+	_button_icons.clear()
+	if _button_row == null:
+		return
 
-	var backdrop: ColorRect = ColorRect.new()
-	backdrop.color = Color(0.0, 0.0, 0.0, 0.55)
-	backdrop.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(backdrop)
-
-	var center: CenterContainer = CenterContainer.new()
-	center.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-	add_child(center)
-
-	var panel: PanelContainer = PanelContainer.new()
-	panel.custom_minimum_size = Vector2(150, 98)
-	center.add_child(panel)
-
-	var margin: MarginContainer = MarginContainer.new()
-	margin.add_theme_constant_override("margin_left", 8)
-	margin.add_theme_constant_override("margin_top", 8)
-	margin.add_theme_constant_override("margin_right", 8)
-	margin.add_theme_constant_override("margin_bottom", 8)
-	panel.add_child(margin)
-
-	var layout: VBoxContainer = VBoxContainer.new()
-	layout.add_theme_constant_override("separation", 8)
-	margin.add_child(layout)
-
-	_title_label = Label.new()
-	_apply_label_settings(_title_label)
-	_title_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	layout.add_child(_title_label)
-
-	_button_row = HBoxContainer.new()
-	_button_row.add_theme_constant_override("separation", 4)
-	layout.add_child(_button_row)
-
-	for index: int in range(3):
-		var button: Button = Button.new()
-		button.custom_minimum_size = ITEM_OPTION_SIZE
-		button.focus_mode = Control.FOCUS_ALL
-		button.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	for child: Node in _button_row.get_children():
+		if not child is Button:
+			continue
+		var button: Button = child as Button
 		_apply_button_font(button)
-		button.pressed.connect(Callable(self, "_on_button_pressed").bind(index))
-		button.mouse_entered.connect(Callable(self, "_on_reward_button_mouse_entered").bind(button))
-		button.mouse_exited.connect(_hide_custom_tooltip)
-		_button_row.add_child(button)
 		_buttons.append(button)
-
-		var icon: TextureRect = TextureRect.new()
-		icon.name = "ItemIcon"
-		icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
-		icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
-		icon.custom_minimum_size = ITEM_OPTION_SIZE
-		icon.set_anchors_and_offsets_preset(Control.PRESET_FULL_RECT)
-		icon.hide()
-		button.add_child(icon)
+		var icon: TextureRect = button.get_node_or_null("ItemIcon") as TextureRect
 		_button_icons.append(icon)
 
-	_tooltip = ItemTooltipScene.instantiate() as Control
-	_tooltip.name = "ItemTooltip"
-	add_child(_tooltip)
+
+func _connect_buttons() -> void:
+	for index: int in range(_buttons.size()):
+		var button: Button = _buttons[index]
+		var pressed_callback := Callable(self, "_on_button_pressed").bind(index)
+		if not button.pressed.is_connected(pressed_callback):
+			button.pressed.connect(pressed_callback)
+		var entered_callback := Callable(self, "_on_reward_button_mouse_entered").bind(button)
+		if not button.mouse_entered.is_connected(entered_callback):
+			button.mouse_entered.connect(entered_callback)
+		if not button.mouse_exited.is_connected(_hide_custom_tooltip):
+			button.mouse_exited.connect(_hide_custom_tooltip)
+
+
+func _has_required_nodes() -> bool:
+	if _title_label == null or _button_row == null or _buttons.is_empty() or _button_icons.size() != _buttons.size():
+		return false
+	for icon: TextureRect in _button_icons:
+		if icon == null:
+			return false
+	return true
 
 
 func _apply_label_settings(label: Label) -> void:
@@ -344,10 +326,7 @@ func _on_reward_button_mouse_entered(button: Button) -> void:
 		_hide_custom_tooltip()
 		return
 	if _tooltip.has_method("show_text_for_control"):
-		if _is_battle_reward_mode:
-			_tooltip.call("show_text_for_control", text, button, ItemTooltip.Placement.BOTTOM_RIGHT)
-		else:
-			_tooltip.call("show_text_for_control", text, button)
+		_tooltip.call("show_text_for_control", text, button)
 
 
 func _hide_custom_tooltip() -> void:

@@ -1,52 +1,53 @@
-[gd_scene load_steps=5 format=3]
+[gd_scene format=3 uid="uid://bbpoxb65e2l6d"]
 
-[ext_resource type="Script" path="res://UI/battle_health_hud.gd" id="1_hud"]
-[ext_resource type="LabelSettings" path="res://Themes/new_label_settings.tres" id="2_label"]
-[ext_resource type="PackedScene" path="res://Items/heart.tscn" id="3_heart"]
-[ext_resource type="Texture2D" path="res://Assets/Items/Coin.png" id="4_coin"]
+[ext_resource type="Script" uid="uid://hjovqtcmwm3b" path="res://UI/battle_health_hud.gd" id="1_hud"]
+[ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="2_label"]
+[ext_resource type="PackedScene" uid="uid://c4sf4r73fwjvw" path="res://Items/heart.tscn" id="3_heart"]
+[ext_resource type="Texture2D" uid="uid://du2jk7gtqvcd1" path="res://Assets/Items/Coin.png" id="4_coin"]
 
-[node name="BattleHealthHud" type="Control"]
+[node name="BattleHealthHud" type="Control" unique_id=1027706886]
 process_mode = 3
+layout_mode = 3
 anchors_preset = 0
 offset_right = 72.0
 offset_bottom = 42.0
 mouse_filter = 2
 script = ExtResource("1_hud")
 
-[node name="ResourceRows" type="VBoxContainer" parent="."]
+[node name="ResourceRows" type="VBoxContainer" parent="." unique_id=2089716243]
 layout_mode = 0
 offset_left = 4.0
 offset_top = 2.0
 offset_right = 72.0
-offset_bottom = 40.0
+offset_bottom = 34.0
 mouse_filter = 2
 theme_override_constants/separation = 0
 
-[node name="HealthRow" type="HBoxContainer" parent="ResourceRows"]
+[node name="HealthRow" type="HBoxContainer" parent="ResourceRows" unique_id=307670159]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 3
 
-[node name="IconSlot" type="Control" parent="ResourceRows/HealthRow"]
+[node name="IconSlot" type="Control" parent="ResourceRows/HealthRow" unique_id=1773506788]
 custom_minimum_size = Vector2(18, 16)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Heart" parent="ResourceRows/HealthRow/IconSlot" instance=ExtResource("3_heart")]
-position = Vector2(9, 8)
+[node name="Heart" parent="ResourceRows/HealthRow/IconSlot" unique_id=1248334842 instance=ExtResource("3_heart")]
+position = Vector2(7, 6)
+scale = Vector2(0.9444444, 1)
 
-[node name="ValueLabel" type="Label" parent="ResourceRows/HealthRow"]
+[node name="ValueLabel" type="Label" parent="ResourceRows/HealthRow" unique_id=846182129]
 layout_mode = 2
-mouse_filter = 2
 text = "0"
 label_settings = ExtResource("2_label")
 
-[node name="GoldRow" type="HBoxContainer" parent="ResourceRows"]
+[node name="GoldRow" type="HBoxContainer" parent="ResourceRows" unique_id=1070103492]
 layout_mode = 2
 mouse_filter = 2
 theme_override_constants/separation = 3
 
-[node name="CoinIcon" type="TextureRect" parent="ResourceRows/GoldRow"]
+[node name="CoinIcon" type="TextureRect" parent="ResourceRows/GoldRow" unique_id=1171494697]
 custom_minimum_size = Vector2(16, 16)
 layout_mode = 2
 mouse_filter = 2
@@ -54,8 +55,8 @@ texture = ExtResource("4_coin")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="ValueLabel" type="Label" parent="ResourceRows/GoldRow"]
+[node name="ValueLabel" type="Label" parent="ResourceRows/GoldRow" unique_id=1199416625]
 layout_mode = 2
-mouse_filter = 2
+size_flags_horizontal = 4
 text = "0"
 label_settings = ExtResource("2_label")

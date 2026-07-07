@@ -48,3 +48,7 @@ cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gu
 
 - Do not revert user changes unless explicitly requested.
 - `Marbles/bomb_marble.tscn`, `Main/util.gd`, and `Main/util.gd.uid` may be dirty or untracked from user work; do not fold them into unrelated fixes.
+
+## UI 搭建与架构规范 (UI Construction & Architecture)
+- **UI 约束:** 严禁使用代码（如 `Control.new()`）搭建、组装 UI 结构。所有 UI 必须在 Godot 编辑器中作为场景（.tscn）可视化创建（需要使用hastur broker mcp）。
+- **代码职责:** 逻辑脚本仅允许处理数据传递、UI 状态刷新、信号（Signals）绑定与分发。动态生成的 UI 元素必须通过 `preload` 编辑器导出的场景并 `instantiate()` 载入，禁止代码硬编码布局。

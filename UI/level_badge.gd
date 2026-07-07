@@ -2,6 +2,7 @@ extends RefCounted
 class_name LevelBadge
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const LevelBadgeScene: PackedScene = preload("res://UI/level_badge.tscn")
 const BADGE_NAME: String = "LevelBadge"
 const ROMAN_LEVELS: Dictionary = {
 	1: "I",
@@ -19,21 +20,12 @@ static func update_badge(parent: Control, level: int) -> void:
 
 	var badge: Label = parent.get_node_or_null(BADGE_NAME) as Label
 	if badge == null:
-		badge = Label.new()
+		badge = LevelBadgeScene.instantiate() as Label
 		badge.name = BADGE_NAME
-		badge.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_RIGHT
-		badge.vertical_alignment = VERTICAL_ALIGNMENT_BOTTOM
-		badge.set_anchors_and_offsets_preset(Control.PRESET_BOTTOM_RIGHT)
-		badge.offset_left = -28.0
-		badge.offset_top = -16.0
-		badge.offset_right = -1.0
-		badge.offset_bottom = -1.0
-		badge.z_index = 10
 		parent.add_child(badge)
 
 	badge.text = to_roman(level)
-	badge.label_settings = _make_label_settings()
+	apply_to_label(badge, level)
 
 
 static func clear_badge(parent: Control) -> void:
@@ -47,6 +39,13 @@ static func clear_badge(parent: Control) -> void:
 
 static func to_roman(level: int) -> String:
 	return String(ROMAN_LEVELS.get(level, str(level)))
+
+
+static func apply_to_label(label: Label, level: int) -> void:
+	if label == null:
+		return
+	label.text = to_roman(level)
+	label.label_settings = _make_label_settings()
 
 
 static func _make_label_settings() -> LabelSettings:

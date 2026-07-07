@@ -1,7 +1,6 @@
 extends Control
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
-const LevelBadgeScript: GDScript = preload("res://UI/level_badge.gd")
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
 
 signal gold_changed(value: int)
@@ -184,19 +183,18 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 
 	for index: int in range(container.get_child_count()):
 		var slot := container.get_child(index)
-		var icon := slot.get_node_or_null("Icon") as TextureRect
-		if icon == null:
+		var icon_view := slot.get_node_or_null("Icon")
+		if icon_view == null:
 			continue
 		if slot.has_meta("item"):
 			slot.remove_meta("item")
-		icon.texture = null
-		LevelBadgeScript.clear_badge(slot as Control)
+		_clear_icon_view(icon_view)
 		if index < collection_items.size():
 			var item: Item = collection_items[index] as Item
 			if item != null:
 				slot.set_meta("item", item)
-				icon.texture = item.icon
-				LevelBadgeScript.update_badge(slot as Control, ItemLevelResolverScript.get_inventory_level(item))
+				_set_icon_view_texture(icon_view, item.icon)
+				_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item))
 
 
 func _remove_shop_item(item: Item) -> void:
@@ -222,6 +220,33 @@ func _connect_collection_slot_inputs_for_row(container: HBoxContainer) -> void:
 			var callable := Callable(self, "_on_collection_slot_gui_input").bind(slot)
 			if not slot.is_connected(&"gui_input", callable):
 				slot.connect(&"gui_input", callable)
+
+
+func _set_icon_view_texture(icon_view: Node, texture: Texture2D) -> void:
+	if icon_view == null:
+		return
+	if icon_view.has_method("set_texture"):
+		icon_view.call("set_texture", texture)
+	elif icon_view is TextureRect:
+		var texture_rect := icon_view as TextureRect
+		texture_rect.texture = texture
+		texture_rect.visible = texture != null
+
+
+func _set_icon_view_level(icon_view: Node, level: int) -> void:
+	if icon_view != null and icon_view.has_method("set_level"):
+		icon_view.call("set_level", level)
+
+
+func _clear_icon_view(icon_view: Node) -> void:
+	if icon_view == null:
+		return
+	if icon_view.has_method("clear"):
+		icon_view.call("clear")
+	elif icon_view is TextureRect:
+		var texture_rect := icon_view as TextureRect
+		texture_rect.texture = null
+		texture_rect.hide()
 
 
 func _on_collection_slot_gui_input(event: InputEvent, slot: Node) -> void:

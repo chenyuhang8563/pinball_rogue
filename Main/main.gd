@@ -3,9 +3,9 @@ extends Node2D
 const STAT_BOUNCELESS_WALL_BOUNCE: String = "bounceless_wall_bounce"
 const STAT_ENTITY_PINBALL_TABLE: String = "pinball_table"
 const RunControllerScript: GDScript = preload("res://Run/run_controller.gd")
-const NodeChoicePanelScript: GDScript = preload("res://UI/node_choice_panel.gd")
-const DraftRewardPanelScript: GDScript = preload("res://UI/draft_reward_panel.gd")
-const MarbleUpgradePanelScript: GDScript = preload("res://UI/marble_upgrade_panel.gd")
+const NodeChoicePanelScene: PackedScene = preload("res://UI/node_choice_panel.tscn")
+const DraftRewardPanelScene: PackedScene = preload("res://UI/draft_reward_panel.tscn")
+const MarbleUpgradePanelScene: PackedScene = preload("res://UI/marble_upgrade_panel.tscn")
 const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.tscn")
 const InventoryPanelScene: PackedScene = preload("res://UI/inventory_panel.tscn")
 
@@ -241,15 +241,15 @@ func _setup_run_flow() -> void:
 		ui_layer.name = "RunFlowLayer"
 		add_child(ui_layer)
 
-	var node_choice_panel: NodeChoicePanel = NodeChoicePanelScript.new()
+	var node_choice_panel: NodeChoicePanel = NodeChoicePanelScene.instantiate() as NodeChoicePanel
 	node_choice_panel.name = "NodeChoicePanel"
 	ui_layer.add_child(node_choice_panel)
 
-	var draft_reward_panel: DraftRewardPanel = DraftRewardPanelScript.new()
+	var draft_reward_panel: DraftRewardPanel = DraftRewardPanelScene.instantiate() as DraftRewardPanel
 	draft_reward_panel.name = "DraftRewardPanel"
 	ui_layer.add_child(draft_reward_panel)
 
-	var upgrade_panel: Control = MarbleUpgradePanelScript.new()
+	var upgrade_panel: Control = MarbleUpgradePanelScene.instantiate() as Control
 	upgrade_panel.name = "MarbleUpgradePanel"
 	ui_layer.add_child(upgrade_panel)
 

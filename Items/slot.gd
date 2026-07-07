@@ -10,10 +10,10 @@ var _tooltip: Control
 		item = value
 
 		if value == null:
-			$Icon.texture = null
+			_set_icon_texture(null)
 			return
 
-		$Icon.texture = value.icon
+		_set_icon_texture(value.icon)
 		$Price.text = "$ " + str(value.price)
 
 
@@ -92,3 +92,14 @@ func _get_scene_crt_layer() -> Node:
 		return null
 	return tree.current_scene.get_node_or_null("CrtLayer")
 
+
+func _set_icon_texture(texture: Texture2D) -> void:
+	var icon: Node = get_node_or_null("Icon")
+	if icon == null:
+		return
+	if icon.has_method("set_texture"):
+		icon.call("set_texture", texture)
+	elif icon is TextureRect:
+		var texture_rect := icon as TextureRect
+		texture_rect.texture = texture
+		texture_rect.visible = texture != null

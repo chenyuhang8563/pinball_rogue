@@ -286,7 +286,7 @@ func _show_shop() -> void:
 
 
 func _pick_reward_items() -> Array[Item]:
-	var default_items: Array[Item] = _get_default_reward_items()
+	var default_items: Array[Item] = _get_available_reward_items()
 	var result: Array[Item] = []
 	for index: int in range(mini(3, default_items.size())):
 		result.append(default_items[index])
@@ -294,13 +294,55 @@ func _pick_reward_items() -> Array[Item]:
 
 
 func _pick_event_items() -> Array[Item]:
-	var default_items: Array[Item] = _get_default_reward_items()
+	var default_items: Array[Item] = _get_available_reward_items()
 	var result: Array[Item] = []
 	for index: int in range(default_items.size() - 1, -1, -1):
 		result.append(default_items[index])
 		if result.size() >= 3:
 			break
 	return result
+
+
+func _get_available_reward_items() -> Array[Item]:
+	var result: Array[Item] = []
+	for item: Item in _get_default_reward_items():
+		if _is_reward_item_available(item):
+			result.append(item)
+	return result
+
+
+func _is_reward_item_available(item: Item) -> bool:
+	if item == null:
+		return false
+	if item.type == Item.ItemType.MARBLE:
+		return not _inventory_has_marble(item)
+	return true
+
+
+func _inventory_has_marble(item: Item) -> bool:
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	if inventory == null or item == null:
+		return false
+	if item.id != "" and inventory.has_method("has_item_id") and bool(inventory.call("has_item_id", item.id)):
+		return true
+
+	var raw_marble_items: Variant = inventory.get("marble_items")
+	if not raw_marble_items is Array:
+		return false
+
+	var marble_items: Array = raw_marble_items
+	for owned_item: Item in marble_items:
+		if _is_same_marble_reward(owned_item, item):
+			return true
+	return false
+
+
+func _is_same_marble_reward(owned_item: Item, reward_item: Item) -> bool:
+	if owned_item == null or reward_item == null:
+		return false
+	if owned_item.id != "" and reward_item.id != "" and owned_item.id == reward_item.id:
+		return true
+	return owned_item.marble_type == reward_item.marble_type
 
 
 func _get_default_reward_items() -> Array[Item]:
