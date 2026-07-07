@@ -19,7 +19,7 @@ size = Vector2(80, 16)
 bounce = 0.3
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_k3v36"]
-size = Vector2(240, 12)
+size = Vector2(240, 64)
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_ib3t1"]
 bounce = 1.0
@@ -64,7 +64,7 @@ texture = ExtResource("9_rj11h")
 [node name="Marbles" type="Node2D" parent="." unique_id=2013848348]
 
 [node name="KillZone" type="Area2D" parent="." unique_id=580004618]
-position = Vector2(112, 312)
+position = Vector2(112, 328)
 collision_mask = 2
 script = ExtResource("5_k3v36")
 
@@ -88,18 +88,19 @@ collision_mask = 2
 physics_material_override = SubResource("PhysicsMaterial_eunhr")
 
 [node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Walls" unique_id=693128715]
-position = Vector2(8, 0)
-polygon = PackedVector2Array(0, 0, 0, 72, 16, 128, 40, 192, 40, 240, 40, 320, -8, 320, -8, 0)
+position = Vector2(6.8666687, 0)
+scale = Vector2(1.0208333, 1)
+polygon = PackedVector2Array(0, 0, 0, 72, 16, 128, 40, 192, 40, 240, 40, 320, -69.42042, 320, -69.42042, 0)
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="Walls" unique_id=1424319608]
-position = Vector2(120, -6)
+position = Vector2(120, -32)
 shape = SubResource("RectangleShape2D_k3v36")
 
 [node name="CollisionPolygon2D2" type="CollisionPolygon2D" parent="Walls" unique_id=564458978]
 position = Vector2(232, 0)
 rotation = 3.1415927
 scale = Vector2(1, -1)
-polygon = PackedVector2Array(0, 0, 0, 72, 39.999985, 192, 39.99997, 320, -8, 320, -8, 0)
+polygon = PackedVector2Array(0, 0, 0, 72, 39.999985, 192, 39.99997, 320, -88.00003, 320, -88, -7.693205e-06)
 
 [node name="Enemies" type="Node2D" parent="." unique_id=1557868648]
 
@@ -130,8 +131,7 @@ physics_material_override = SubResource("PhysicsMaterial_liyct")
 
 [node name="CollisionPolygon2D3" type="CollisionPolygon2D" parent="BouncelessWall" unique_id=1095855192]
 position = Vector2(49.75, 196.75)
-scale = Vector2(0.8125, 1.0208334)
-polygon = PackedVector2Array(0, 0, 0, 120, 40, 120, 40, 40)
+polygon = PackedVector2Array(-1.75, -4.75, -1.75, 123.25, 30.25, 123.25, 30.25, 43.25)
 
 [node name="CollisionPolygon2D4" type="CollisionPolygon2D" parent="BouncelessWall" unique_id=541304290]
 position = Vector2(200, 200)
@@ -178,7 +178,8 @@ anchor_bottom = 1.0
 mouse_filter = 2
 color = Color(0, 0, 0, 0)
 
-[node name="BattleHealthHud" parent="CrtLayer" instance=ExtResource("11_health")]
+[node name="BattleHealthHud" parent="CrtLayer" unique_id=1820331821 instance=ExtResource("11_health")]
+layout_mode = 3
 
 [node name="ColorRect" type="ColorRect" parent="CrtLayer" unique_id=2088465450]
 material = SubResource("ShaderMaterial_f6fdm")
