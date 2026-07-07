@@ -7,12 +7,25 @@ signal inventory_changed
 @export var marble_capacity: int = 3
 @export var relic_capacity: int = 3
 
+const RELIC_MAX_LEVEL: int = 3
+
 var marble_items: Array[Item] = []
 var relic_items: Array[Item] = []
+var relic_levels: Dictionary = {}
 
 func add_item(item: Item) -> bool:
 	if not can_add_item(item):
 		return false
+
+	if item.type == Item.ItemType.RELIC:
+		var relic_key: String = _get_relic_key(item)
+		var current_level: int = get_relic_level(item)
+		if current_level > 0:
+			relic_levels[relic_key] = mini(current_level + 1, RELIC_MAX_LEVEL)
+			item_added.emit(item)
+			inventory_changed.emit()
+			return true
+		relic_levels[relic_key] = 1
 
 	items.append(item)
 	if item.type == Item.ItemType.MARBLE:
@@ -35,6 +48,7 @@ func remove_item(item: Item) -> bool:
 		_remove_from_array(marble_items, item)
 	elif item.type == Item.ItemType.RELIC:
 		_remove_from_array(relic_items, item)
+		relic_levels.erase(_get_relic_key(item))
 
 	inventory_changed.emit()
 	return true
@@ -46,8 +60,28 @@ func can_add_item(item: Item) -> bool:
 	if item.type == Item.ItemType.MARBLE:
 		return marble_items.size() < _get_capacity("marble_slot_count", marble_capacity)
 	if item.type == Item.ItemType.RELIC:
+		var current_level: int = get_relic_level(item)
+		if current_level > 0:
+			return current_level < RELIC_MAX_LEVEL
 		return relic_items.size() < _get_capacity("relic_slot_count", relic_capacity)
 	return false
+
+
+func get_relic_level(item: Item) -> int:
+	if item == null or item.type != Item.ItemType.RELIC:
+		return 0
+	return clampi(int(relic_levels.get(_get_relic_key(item), 0)), 0, RELIC_MAX_LEVEL)
+
+
+func get_relic_award_level(item: Item) -> int:
+	if item == null or item.type != Item.ItemType.RELIC:
+		return 0
+	var current_level: int = get_relic_level(item)
+	return 1 if current_level <= 0 else mini(current_level + 1, RELIC_MAX_LEVEL)
+
+
+func is_relic_max_level(item: Item) -> bool:
+	return get_relic_level(item) >= RELIC_MAX_LEVEL
 
 
 func has_item_id(id: String) -> bool:
@@ -70,6 +104,14 @@ func has_effect(effect_type: Item.EffectType) -> bool:
 		if item != null and item.effect_type == effect_type:
 			return true
 	return false
+
+
+func _get_relic_key(item: Item) -> String:
+	if item == null:
+		return ""
+	if item.id != "":
+		return "id:%s" % item.id
+	return "effect:%d" % int(item.effect_type)
 
 
 func _get_capacity(stat_id: String, fallback: int) -> int:
