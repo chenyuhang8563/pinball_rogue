@@ -7,6 +7,7 @@ signal draft_closed
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
 const ItemTooltipScene: PackedScene = preload("res://UI/item_tooltip.tscn")
 const CoinTexture: Texture2D = preload("res://Assets/Items/Coin.png")
+const ItemLevelBadgeScript: GDScript = preload("res://UI/item_level_badge.gd")
 const ITEM_OPTION_SIZE: Vector2 = Vector2(32, 32)
 
 @export var compensation_gold: int = 15
@@ -44,6 +45,7 @@ func show_item_draft(items: Array[Item]) -> void:
 			button.show()
 		elif all_blocked:
 			button.set_meta("tooltip_text", "")
+			ItemLevelBadgeScript.update_badge(button, 0)
 			button.hide()
 		elif index < _items.size():
 			var item: Item = _items[index]
@@ -53,6 +55,7 @@ func show_item_draft(items: Array[Item]) -> void:
 		else:
 			button.set_meta("tooltip_text", "")
 			_set_button_icon(index, null)
+			ItemLevelBadgeScript.update_badge(button, 0)
 			button.hide()
 
 	show()
@@ -191,6 +194,7 @@ func _configure_item_button(index: int, item: Item) -> void:
 	else:
 		button.text = _format_item_label(item)
 		_set_button_icon(index, null)
+	ItemLevelBadgeScript.update_badge(button, _get_item_award_level(item))
 
 
 func _configure_gold_compensation_button(index: int) -> void:
@@ -204,6 +208,7 @@ func _configure_gold_button(index: int, custom_tooltip_text: String) -> void:
 	button.tooltip_text = ""
 	button.set_meta("tooltip_text", custom_tooltip_text)
 	_set_button_icon(index, CoinTexture)
+	ItemLevelBadgeScript.update_badge(button, 0)
 
 
 func _format_gold_compensation_tooltip() -> String:
@@ -222,6 +227,7 @@ func _refresh_battle_reward_buttons() -> void:
 		if index < _battle_reward_items.size():
 			if _battle_item_claimed[index]:
 				_set_button_icon(index, null)
+				ItemLevelBadgeScript.update_badge(button, 0)
 				button.hide()
 				continue
 			var item: Item = _battle_reward_items[index]
@@ -236,6 +242,7 @@ func _refresh_battle_reward_buttons() -> void:
 			button.show()
 		else:
 			_set_button_icon(index, null)
+			ItemLevelBadgeScript.update_badge(button, 0)
 			button.hide()
 
 
@@ -362,6 +369,15 @@ func _set_button_icon(index: int, texture: Texture2D) -> void:
 	var icon: TextureRect = _button_icons[index]
 	icon.texture = texture
 	icon.visible = texture != null
+
+
+func _get_item_award_level(item: Item) -> int:
+	if item == null or item.type != Item.ItemType.RELIC:
+		return 0
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	if inventory != null and inventory.has_method("get_relic_award_level"):
+		return int(inventory.call("get_relic_award_level", item))
+	return 1
 
 
 func _get_autoload_node(node_name: StringName) -> Node:

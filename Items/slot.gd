@@ -2,6 +2,7 @@ extends Panel
 
 const SHOP_MODE_ON := 0
 const ItemTooltipScene: PackedScene = preload("res://UI/item_tooltip.tscn")
+const ItemLevelBadgeScript: GDScript = preload("res://UI/item_level_badge.gd")
 
 var _tooltip: Control
 
@@ -11,10 +12,12 @@ var _tooltip: Control
 
 		if value == null:
 			$Icon.texture = null
+			ItemLevelBadgeScript.update_badge(self, 0)
 			return
 
 		$Icon.texture = value.icon
 		$Price.text = "$ " + str(value.price)
+		ItemLevelBadgeScript.update_badge(self, _get_item_award_level(value))
 
 
 func _ready() -> void:
@@ -91,3 +94,12 @@ func _get_scene_crt_layer() -> Node:
 	if tree == null or tree.current_scene == null:
 		return null
 	return tree.current_scene.get_node_or_null("CrtLayer")
+
+
+func _get_item_award_level(value: Item) -> int:
+	if value == null or value.type != Item.ItemType.RELIC:
+		return 0
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	if inventory != null and inventory.has_method("get_relic_award_level"):
+		return int(inventory.call("get_relic_award_level", value))
+	return 1
