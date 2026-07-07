@@ -1,7 +1,8 @@
 extends Control
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
-const ItemLevelBadgeScript: GDScript = preload("res://UI/item_level_badge.gd")
+const LevelBadgeScript: GDScript = preload("res://UI/level_badge.gd")
+const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
 
 signal gold_changed(value: int)
 
@@ -189,13 +190,13 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 		if slot.has_meta("item"):
 			slot.remove_meta("item")
 		icon.texture = null
-		ItemLevelBadgeScript.update_badge(slot as Control, 0)
+		LevelBadgeScript.clear_badge(slot as Control)
 		if index < collection_items.size():
 			var item: Item = collection_items[index] as Item
 			if item != null:
 				slot.set_meta("item", item)
 				icon.texture = item.icon
-				ItemLevelBadgeScript.update_badge(slot as Control, _get_item_current_level(item))
+				LevelBadgeScript.update_badge(slot as Control, ItemLevelResolverScript.get_inventory_level(item))
 
 
 func _remove_shop_item(item: Item) -> void:
@@ -261,15 +262,6 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null(NodePath(node_name))
-
-
-func _get_item_current_level(item: Item) -> int:
-	if item == null or item.type != Item.ItemType.RELIC:
-		return 0
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory != null and inventory.has_method("get_relic_level"):
-		return int(inventory.call("get_relic_level", item))
-	return 1
 
 
 func _filter_purchasable_items(list: Array[Item]) -> Array[Item]:

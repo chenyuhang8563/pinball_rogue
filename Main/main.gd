@@ -7,6 +7,7 @@ const NodeChoicePanelScript: GDScript = preload("res://UI/node_choice_panel.gd")
 const DraftRewardPanelScript: GDScript = preload("res://UI/draft_reward_panel.gd")
 const MarbleUpgradePanelScript: GDScript = preload("res://UI/marble_upgrade_panel.gd")
 const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.tscn")
+const InventoryPanelScene: PackedScene = preload("res://UI/inventory_panel.tscn")
 
 @onready var marbles: Node2D = $Marbles
 @onready var enemies: Node2D = $Enemies
@@ -24,6 +25,7 @@ const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.ts
 var marble_chain: MarbleChain = null
 var run_controller: RunController = null
 var battle_health_hud: Node = null
+var inventory_panel: Control = null
 
 
 func _ready() -> void:
@@ -252,6 +254,7 @@ func _setup_run_flow() -> void:
 	ui_layer.add_child(upgrade_panel)
 
 	_setup_battle_health_hud(ui_layer)
+	_setup_inventory_panel()
 
 	var crt_overlay: Node = ui_layer.get_node_or_null("ColorRect")
 	if crt_overlay != null:
@@ -285,6 +288,16 @@ func _setup_battle_health_hud(ui_layer: Node) -> void:
 		ui_layer.add_child(battle_health_hud)
 	_sync_battle_hud_gold()
 	_connect_shop_gold_changed()
+
+
+func _setup_inventory_panel() -> void:
+	inventory_panel = get_node_or_null("InventoryPanel") as Control
+	if inventory_panel != null:
+		return
+
+	inventory_panel = InventoryPanelScene.instantiate() as Control
+	inventory_panel.name = "InventoryPanel"
+	add_child(inventory_panel)
 
 
 func _on_run_health_changed(health: int) -> void:
