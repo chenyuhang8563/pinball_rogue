@@ -1,0 +1,112 @@
+[gd_scene format=3 uid="uid://dry577g502x3m"]
+
+[ext_resource type="Script" uid="uid://48i1f34wpeay" path="res://UI/draft_reward_panel.gd" id="1_script"]
+[ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="2_label_settings"]
+[ext_resource type="PackedScene" uid="uid://bo3st3gtuqltq" path="res://UI/item_tooltip.tscn" id="3_tooltip"]
+
+[node name="DraftRewardPanel" type="Control" unique_id=1712510819]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1022379337]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=1475400197]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Center" unique_id=1208718852]
+custom_minimum_size = Vector2(150, 98)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Center/Panel" unique_id=2116562550]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel/MarginContainer" unique_id=450261744]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout" unique_id=285227628]
+layout_mode = 2
+label_settings = ExtResource("2_label_settings")
+horizontal_alignment = 1
+
+[node name="ButtonRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout" unique_id=53161417]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RewardButton1" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=690716721]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton1" unique_id=1255265588]
+visible = false
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RewardButton2" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1279436893]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton2" unique_id=1276198212]
+visible = false
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="RewardButton3" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1556859133]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+autowrap_mode = 3
+
+[node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton3" unique_id=128082564]
+visible = false
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ItemTooltip" parent="." unique_id=2115341950 instance=ExtResource("3_tooltip")]
+layout_mode = 1

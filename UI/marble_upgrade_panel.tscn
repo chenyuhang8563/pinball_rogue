@@ -1,0 +1,69 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://UI/marble_upgrade_panel.gd" id="1_script"]
+[ext_resource type="LabelSettings" path="res://Themes/new_label_settings.tres" id="2_label_settings"]
+[ext_resource type="PackedScene" path="res://UI/icon_option_button.tscn" id="3_option_button"]
+
+[node name="MarbleUpgradePanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(238, 178)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout"]
+layout_mode = 2
+horizontal_alignment = 1
+label_settings = ExtResource("2_label_settings")
+
+[node name="DescriptionLabel" type="Label" parent="Center/Panel/MarginContainer/Layout"]
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3
+label_settings = ExtResource("2_label_settings")
+
+[node name="ButtonRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="UpgradeButton1" parent="Center/Panel/MarginContainer/Layout/ButtonRow" instance=ExtResource("3_option_button")]
+
+[node name="UpgradeButton2" parent="Center/Panel/MarginContainer/Layout/ButtonRow" instance=ExtResource("3_option_button")]
+
+[node name="UpgradeButton3" parent="Center/Panel/MarginContainer/Layout/ButtonRow" instance=ExtResource("3_option_button")]
+

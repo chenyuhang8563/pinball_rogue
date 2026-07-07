@@ -1,0 +1,80 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://UI/node_choice_panel.gd" id="1_script"]
+[ext_resource type="LabelSettings" path="res://Themes/new_label_settings.tres" id="2_label_settings"]
+
+[node name="NodeChoicePanel" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 0
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 1)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(220, 150)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout"]
+layout_mode = 2
+horizontal_alignment = 1
+label_settings = ExtResource("2_label_settings")
+
+[node name="DescriptionLabel" type="Label" parent="Center/Panel/MarginContainer/Layout"]
+layout_mode = 2
+horizontal_alignment = 1
+autowrap_mode = 3
+label_settings = ExtResource("2_label_settings")
+
+[node name="ButtonRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="ChoiceButton1" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
+custom_minimum_size = Vector2(66, 64)
+layout_mode = 2
+focus_mode = 2
+autowrap_mode = 3
+
+[node name="ChoiceButton2" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
+custom_minimum_size = Vector2(66, 64)
+layout_mode = 2
+focus_mode = 2
+autowrap_mode = 3
+
+[node name="ChoiceButton3" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
+custom_minimum_size = Vector2(66, 64)
+layout_mode = 2
+focus_mode = 2
+autowrap_mode = 3
+

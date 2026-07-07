@@ -1,0 +1,73 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://UI/icon_option_button.gd" id="1_script"]
+[ext_resource type="LabelSettings" path="res://Themes/new_label_settings.tres" id="2_label_settings"]
+[ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="3_item_icon_view"]
+
+[node name="IconOptionButton" type="Button"]
+custom_minimum_size = Vector2(68, 98)
+clip_text = true
+focus_mode = 2
+text = ""
+script = ExtResource("1_script")
+
+[node name="OptionContent" type="MarginContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 5
+
+[node name="OptionLayout" type="VBoxContainer" parent="OptionContent"]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 3
+
+[node name="OptionIconArea" type="Control" parent="OptionContent/OptionLayout"]
+custom_minimum_size = Vector2(30, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Icon" parent="OptionContent/OptionLayout/OptionIconArea" instance=ExtResource("3_item_icon_view")]
+layout_mode = 1
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -16.0
+offset_top = -16.0
+offset_right = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="OptionTitle" type="Label" parent="OptionContent/OptionLayout"]
+custom_minimum_size = Vector2(60, 14)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+clip_text = true
+text_overrun_behavior = 3
+horizontal_alignment = 1
+autowrap_mode = 3
+label_settings = ExtResource("2_label_settings")
+
+[node name="OptionDescription" type="Label" parent="OptionContent/OptionLayout"]
+custom_minimum_size = Vector2(60, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+mouse_filter = 2
+clip_text = true
+text_overrun_behavior = 3
+horizontal_alignment = 1
+vertical_alignment = 0
+autowrap_mode = 3
+label_settings = ExtResource("2_label_settings")
