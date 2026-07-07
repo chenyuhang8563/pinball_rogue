@@ -32,7 +32,7 @@ BuffRegistry="*res://Buffs/buff_registry.gd"
 window/size/viewport_width=240
 window/size/viewport_height=320
 window/size/window_width_override=720
-window/size/window_height_override=960
+window/size/window_height_override=840
 window/stretch/mode="canvas_items"
 
 [editor_plugins]

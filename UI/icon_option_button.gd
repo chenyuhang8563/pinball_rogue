@@ -1,8 +1,6 @@
 extends Button
 class_name IconOptionButton
 
-const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
-
 var _icon_view: Control
 var _title_label: Label
 var _description_label: Label
@@ -12,8 +10,6 @@ func _ready() -> void:
 	_bind_nodes()
 	if not _has_required_nodes():
 		return
-	_apply_label_settings(_title_label, -2)
-	_apply_label_settings(_description_label, -3)
 	text = ""
 	clip_text = true
 	focus_mode = Control.FOCUS_ALL
@@ -65,15 +61,3 @@ func _set_icon_level(level: int) -> void:
 func _clear_icon() -> void:
 	if _icon_view != null and _icon_view.has_method("clear"):
 		_icon_view.call("clear")
-
-
-func _apply_label_settings(label: Label, size_delta: int) -> void:
-	if label == null:
-		return
-	var settings := LabelSettings.new()
-	settings.font = UI_LABEL_SETTINGS.font
-	settings.font_size = max(6, UI_LABEL_SETTINGS.font_size + size_delta)
-	settings.font_color = UI_LABEL_SETTINGS.font_color
-	settings.outline_color = UI_LABEL_SETTINGS.outline_color
-	settings.outline_size = UI_LABEL_SETTINGS.outline_size
-	label.label_settings = settings

@@ -1,17 +1,15 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene format=3 uid="uid://djxdqfcs7wnw"]
 
-[ext_resource type="Script" path="res://UI/icon_option_button.gd" id="1_script"]
-[ext_resource type="LabelSettings" path="res://Themes/new_label_settings.tres" id="2_label_settings"]
+[ext_resource type="Script" uid="uid://igfddiqybmwn" path="res://UI/icon_option_button.gd" id="1_script"]
+[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="2_font"]
 [ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="3_item_icon_view"]
 
-[node name="IconOptionButton" type="Button"]
+[node name="IconOptionButton" type="Button" unique_id=569716031]
 custom_minimum_size = Vector2(68, 98)
 clip_text = true
-focus_mode = 2
-text = ""
 script = ExtResource("1_script")
 
-[node name="OptionContent" type="MarginContainer" parent="."]
+[node name="OptionContent" type="MarginContainer" parent="." unique_id=1361912741]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -24,19 +22,20 @@ theme_override_constants/margin_top = 5
 theme_override_constants/margin_right = 4
 theme_override_constants/margin_bottom = 5
 
-[node name="OptionLayout" type="VBoxContainer" parent="OptionContent"]
+[node name="OptionLayout" type="VBoxContainer" parent="OptionContent" unique_id=910383879]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 5
 
-[node name="OptionIconArea" type="Control" parent="OptionContent/OptionLayout"]
+[node name="OptionIconArea" type="Control" parent="OptionContent/OptionLayout" unique_id=2088922988]
 custom_minimum_size = Vector2(30, 28)
 layout_mode = 2
 size_flags_horizontal = 3
 mouse_filter = 2
 
-[node name="Icon" parent="OptionContent/OptionLayout/OptionIconArea" instance=ExtResource("3_item_icon_view")]
+[node name="Icon" parent="OptionContent/OptionLayout/OptionIconArea" unique_id=203796059 instance=ExtResource("3_item_icon_view")]
 layout_mode = 1
+anchors_preset = 8
 anchor_left = 0.5
 anchor_top = 0.5
 anchor_right = 0.5
@@ -48,26 +47,27 @@ offset_bottom = 16.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="OptionTitle" type="Label" parent="OptionContent/OptionLayout"]
-custom_minimum_size = Vector2(60, 14)
+[node name="OptionTitle" type="Label" parent="OptionContent/OptionLayout" unique_id=437249271]
+custom_minimum_size = Vector2(74, 14)
 layout_mode = 2
 size_flags_horizontal = 3
-mouse_filter = 2
-clip_text = true
-text_overrun_behavior = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 10
 horizontal_alignment = 1
 autowrap_mode = 3
-label_settings = ExtResource("2_label_settings")
+clip_text = true
+text_overrun_behavior = 3
 
-[node name="OptionDescription" type="Label" parent="OptionContent/OptionLayout"]
+[node name="OptionDescription" type="Label" parent="OptionContent/OptionLayout" unique_id=1074841555]
 custom_minimum_size = Vector2(60, 32)
 layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
-mouse_filter = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_fonts/font = ExtResource("2_font")
+theme_override_font_sizes/font_size = 11
+horizontal_alignment = 1
+autowrap_mode = 3
 clip_text = true
 text_overrun_behavior = 3
-horizontal_alignment = 1
-vertical_alignment = 0
-autowrap_mode = 3
-label_settings = ExtResource("2_label_settings")
