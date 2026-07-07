@@ -3,6 +3,12 @@ class_name ItemTooltip
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
 const PADDING: Vector2 = Vector2(8, 4)
+const GAP: float = 4.0
+
+enum Placement {
+	ABOVE,
+	BOTTOM_RIGHT,
+}
 
 var _panel: PanelContainer
 var _label: Label
@@ -24,7 +30,7 @@ func show_item_for_control(item: Item, target: Control) -> void:
 	show_text_for_control(item.title, target)
 
 
-func show_text_for_control(text: String, target: Control) -> void:
+func show_text_for_control(text: String, target: Control, placement: Placement = Placement.ABOVE) -> void:
 	if text.is_empty() or target == null:
 		hide_tooltip()
 		return
@@ -41,7 +47,7 @@ func show_text_for_control(text: String, target: Control) -> void:
 
 	var target_rect: Rect2 = target.get_global_rect()
 	var viewport_size: Vector2 = get_viewport_rect().size
-	var target_position: Vector2 = target_rect.position + Vector2(0, -(tooltip_size.y + 4))
+	var target_position: Vector2 = _get_target_position(target_rect, tooltip_size, placement)
 	target_position.x = clampf(target_position.x, 0.0, maxf(0.0, viewport_size.x - tooltip_size.x))
 	target_position.y = clampf(target_position.y, 0.0, maxf(0.0, viewport_size.y - tooltip_size.y))
 
@@ -82,3 +88,11 @@ func _calculate_tooltip_size(text: String) -> Vector2:
 		return Vector2(maxf(48.0, float(text.length() * UI_LABEL_SETTINGS.font_size)), 18.0)
 	var text_size: Vector2 = UI_LABEL_SETTINGS.font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, UI_LABEL_SETTINGS.font_size)
 	return Vector2(maxf(48.0, text_size.x + PADDING.x), maxf(18.0, text_size.y + PADDING.y))
+
+
+func _get_target_position(target_rect: Rect2, tooltip_size: Vector2, placement: Placement) -> Vector2:
+	match placement:
+		Placement.BOTTOM_RIGHT:
+			return target_rect.position + Vector2(target_rect.size.x + GAP, target_rect.size.y + GAP)
+		_:
+			return target_rect.position + Vector2(0.0, -(tooltip_size.y + GAP))

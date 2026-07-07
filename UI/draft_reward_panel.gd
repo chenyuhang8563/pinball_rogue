@@ -344,7 +344,10 @@ func _on_reward_button_mouse_entered(button: Button) -> void:
 		_hide_custom_tooltip()
 		return
 	if _tooltip.has_method("show_text_for_control"):
-		_tooltip.call("show_text_for_control", text, button)
+		if _is_battle_reward_mode:
+			_tooltip.call("show_text_for_control", text, button, ItemTooltip.Placement.BOTTOM_RIGHT)
+		else:
+			_tooltip.call("show_text_for_control", text, button)
 
 
 func _hide_custom_tooltip() -> void:
