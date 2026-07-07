@@ -203,8 +203,6 @@ func _try_trigger_bomb() -> void:
 	var explosion_center: Vector2 = head.global_position
 	_damage_enemies_in_radius(explosion_center)
 	_spawn_explosion_effect(explosion_center)
-	# 对 Head 施加后座力（替代旧版多弹珠 shockwave）
-	_apply_head_knockback(explosion_center)
 
 
 func _find_segment(marble_type: Marble.MARBLE_TYPE) -> ChainSegment:
@@ -228,15 +226,6 @@ func _damage_enemies_in_radius(center: Vector2) -> void:
 			continue
 		if enemy_node.has_method("take_damage"):
 			enemy_node.take_damage(explosion_damage)
-
-
-func _apply_head_knockback(explosion_center: Vector2) -> void:
-	if head == null or not is_instance_valid(head):
-		return
-	const SHOCKWAVE_IMPULSE: float = 120.0
-	# Head 在爆炸中心（碰撞点），给一个随机轻微偏移避免零向量
-	var dir: Vector2 = Vector2(randf_range(-0.5, 0.5), -1.0).normalized()
-	head.apply_central_impulse(dir * SHOCKWAVE_IMPULSE)
 
 
 func _spawn_explosion_effect(center: Vector2) -> void:
