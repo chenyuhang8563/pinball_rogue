@@ -138,6 +138,11 @@ func restore_frozen_physics_snapshot(snapshot: Dictionary) -> void:
 	angular_velocity = 0.0
 	gravity_scale = float(snapshot.get("gravity_scale", gravity_scale))
 	lock_rotation = bool(snapshot.get("lock_rotation", lock_rotation))
+	physics_material_override = snapshot.get("physics_material_override", physics_material_override)
+	linear_damp = float(snapshot.get("linear_damp", linear_damp))
+	linear_damp_mode = snapshot.get("linear_damp_mode", linear_damp_mode)
+	angular_damp = float(snapshot.get("angular_damp", angular_damp))
+	angular_damp_mode = snapshot.get("angular_damp_mode", angular_damp_mode)
 	freeze_mode = snapshot.get("freeze_mode", freeze_mode)
 	freeze = bool(snapshot.get("freeze", freeze))
 	global_transform = restored_transform

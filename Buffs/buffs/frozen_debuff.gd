@@ -2,7 +2,7 @@ extends BuffDef
 class_name FrozenDebuff
 
 const FROZEN_COLOR: Color = Color(0.78, 0.94, 1.0, 1.0)
-const DEFAULT_DURATION: float = 2.0
+const DEFAULT_DURATION: float = 4.0
 
 
 func _init() -> void:

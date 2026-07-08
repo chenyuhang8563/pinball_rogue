@@ -22,6 +22,7 @@ cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gu
 
 - After GUT passes, run the game in Godot when runtime validation is relevant.
 - Capture screenshots from a running game only when a `game` executor is connected.
+- Save screenshot evidence under `E:\Projects\pinball_rogue\.codex\hud_screenshots`; do not use `.codex_validation`.
 - 生成多个测试场景，每个测试场景单独用 `godot-remote-executor` 运行并且截图保存，必须有证据支持。
 
 ## Autoloads And Tests
