@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="Item" format=3]
+
+[ext_resource type="Texture2D" path="res://Assets/Marbles/blue_marble.png" id="1_icon"]
+[ext_resource type="Script" path="res://Items/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "blue_marble"
+title = "Blue Marble"
+icon = ExtResource("1_icon")
+price = 22
+description = "Focuses the chain into higher contact damage."
+effect_type = 5
+type = 1
+marble_type = 4
+marble_segment_damage = 2
+metadata/_custom_type_script = "res://Items/item.gd"

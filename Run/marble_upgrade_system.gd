@@ -11,6 +11,7 @@ const MODIFIER_SOURCE: String = "marble_upgrade"
 const OP_OVERRIDE: int = 2
 
 const STAT_DARK_MARBLE_DAMAGE: String = "dark_marble_damage"
+const STAT_BLUE_MARBLE_DAMAGE: String = "blue_marble_damage"
 const STAT_POISON_DAMAGE_PER_TICK: String = "poison_damage_per_tick"
 const STAT_POISON_TICK_SECONDS: String = "poison_tick_seconds"
 const STAT_ECHO_TIMEOUT: String = "echo_timeout"
@@ -18,6 +19,7 @@ const STAT_EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
 const STAT_EXPLOSION_DAMAGE: String = "explosion_damage"
 const STAT_EXPLOSION_RADIUS: String = "explosion_radius"
 const STAT_ECHO_BONUS_DAMAGE: String = "echo_bonus_damage"
+const STAT_DAMAGE_MULTIPLIER: String = "damage_multiplier"
 
 const UPGRADE_VALUES: Dictionary = {
 	Marble.MARBLE_TYPE.DEFAULT: {
@@ -58,6 +60,16 @@ const UPGRADE_VALUES: Dictionary = {
 			"Echo damage 2",
 			"Echo damage 4",
 			"Awaken: Echo 8, 15s, spend 1 stack",
+		],
+	},
+	Marble.MARBLE_TYPE.BLUE: {
+		"title": "Blue Marble",
+		"stat": STAT_BLUE_MARBLE_DAMAGE,
+		"values": [3.0, 4.0, 6.0],
+		"descriptions": [
+			"Focus damage 3",
+			"Focus damage 4",
+			"Awaken: Focus damage 6, chain damage x1.25",
 		],
 	},
 }
@@ -153,6 +165,8 @@ func _sync_stat_modifiers() -> void:
 			STAT_EXPLOSION_DAMAGE,
 			STAT_EXPLOSION_RADIUS,
 			STAT_ECHO_BONUS_DAMAGE,
+			STAT_BLUE_MARBLE_DAMAGE,
+			STAT_DAMAGE_MULTIPLIER,
 		])
 
 	for raw_type: int in _levels.keys():
@@ -179,6 +193,8 @@ func _apply_level_modifiers(stat_system: Node, marble_type: Marble.MARBLE_TYPE, 
 		_add_override_modifier(stat_system, STAT_POISON_TICK_SECONDS, 0.5)
 	elif marble_type == Marble.MARBLE_TYPE.BROWN and level >= MAX_LEVEL:
 		_add_override_modifier(stat_system, STAT_ECHO_TIMEOUT, 15.0)
+	elif marble_type == Marble.MARBLE_TYPE.BLUE and level >= MAX_LEVEL:
+		_add_override_modifier(stat_system, STAT_DAMAGE_MULTIPLIER, 1.25)
 
 
 func _add_override_modifier(stat_system: Node, stat_id: String, value: float) -> void:

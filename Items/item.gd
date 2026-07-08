@@ -9,6 +9,7 @@ enum EffectType {
 	BOMB_MARBLE,
 	BROWN_MARBLE,
 	DARK_MARBLE,  # 默认黑色弹珠，初始即拥有
+	BLUE_MARBLE,
 }
 
 enum ItemType {

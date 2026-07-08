@@ -12,6 +12,7 @@ const ECHO_BONUS_DAMAGE: String = "echo_bonus_damage"
 const EXPLOSION_RADIUS: String = "explosion_radius"
 const EXPLOSION_DAMAGE: String = "explosion_damage"
 const DARK_MARBLE_DAMAGE: String = "dark_marble_damage"
+const BLUE_MARBLE_DAMAGE: String = "blue_marble_damage"
 const POISON_DAMAGE_PER_TICK: String = "poison_damage_per_tick"
 const POISON_TICK_SECONDS: String = "poison_tick_seconds"
 const ECHO_TIMEOUT: String = "echo_timeout"
@@ -58,6 +59,7 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Resources/stats/marble/explosion_radius.tres",
 	"res://Resources/stats/marble/explosion_damage.tres",
 	"res://Resources/stats/marble/dark_marble_damage.tres",
+	"res://Resources/stats/marble/blue_marble_damage.tres",
 	"res://Resources/stats/marble/poison_damage_per_tick.tres",
 	"res://Resources/stats/marble/poison_tick_seconds.tres",
 	"res://Resources/stats/marble/echo_timeout.tres",
