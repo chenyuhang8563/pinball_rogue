@@ -18,15 +18,6 @@ const STRONG_LEVEL_DEF_PATH: String = "res://Levels/level_strong_normal.tres"
 const ELITE_LEVEL_DEF_PATH: String = "res://Levels/level_elite.tres"
 const BOSS_LEVEL_DEF_PATH: String = "res://Levels/level_boss.tres"
 const STAT_ENTITY_PINBALL_TABLE: String = "pinball_table"
-const LEGACY_TABLE_NODE_NAMES: PackedStringArray = [
-	"WallSprite",
-	"KillZone",
-	"LFlipper",
-	"RFlipper",
-	"Walls",
-	"Platforms",
-	"BouncelessWall",
-]
 const DEFAULT_REWARD_ITEM_PATHS: PackedStringArray = [
 	"res://Resources/brown_marble.tres",
 	"res://Resources/green_marble.tres",
@@ -595,7 +586,6 @@ func _activate_level_scene_for_group(group: BattleGroupDef) -> void:
 
 	var previous_enemy_container: Node2D = enemy_container
 	_clear_active_level_scene()
-	_disable_legacy_table_nodes(parent)
 
 	var scene: Node = level_def.level_scene.instantiate()
 	scene.name = "ActiveLevel"
@@ -636,26 +626,6 @@ func _clear_active_level_scene() -> void:
 		parent.remove_child(active_level_scene)
 	active_level_scene.queue_free()
 	active_level_scene = null
-
-
-func _disable_legacy_table_nodes(parent: Node) -> void:
-	for node_name: String in LEGACY_TABLE_NODE_NAMES:
-		var node: Node = parent.get_node_or_null(NodePath(node_name))
-		if node == null:
-			continue
-		if node is CanvasItem:
-			(node as CanvasItem).visible = false
-		_set_collision_nodes_disabled(node, true)
-
-
-func _set_collision_nodes_disabled(node: Node, disabled: bool) -> void:
-	if node is CollisionShape2D:
-		(node as CollisionShape2D).disabled = disabled
-	elif node is CollisionPolygon2D:
-		(node as CollisionPolygon2D).disabled = disabled
-
-	for child: Node in node.get_children():
-		_set_collision_nodes_disabled(child, disabled)
 
 
 func _clear_legacy_enemy_container(previous_enemy_container: Node2D, next_enemy_container: Node2D) -> void:

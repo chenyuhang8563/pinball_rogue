@@ -3,7 +3,7 @@ class_name FrostDebuff
 
 const FROZEN_DEBUFF_SCRIPT: GDScript = preload("res://Buffs/buffs/frozen_debuff.gd")
 const FROST_COLOR: Color = Color(0.55, 0.85, 1.0, 1.0)
-const DEFAULT_DURATION: float = 2.0
+const DEFAULT_DURATION: float = 5.0
 const MAX_FROST_STACKS: int = 6
 const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition"
 const STAT_ENTITY_MARBLE_CHAIN: String = "marble_chain"

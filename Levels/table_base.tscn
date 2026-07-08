@@ -29,7 +29,7 @@ texture = ExtResource("1_walls")
 
 [node name="KillZone" type="Area2D" parent="."]
 position = Vector2(112, 312)
-collision_mask = 2
+collision_mask = 10
 script = ExtResource("4_kill")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="KillZone"]

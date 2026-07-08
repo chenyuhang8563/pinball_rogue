@@ -2,31 +2,10 @@
 
 [ext_resource type="Script" uid="uid://bsino3h1ad0fx" path="res://Main/main.gd" id="1_eunhr"]
 [ext_resource type="Shader" uid="uid://cba25h8vxpxv4" path="res://Main/crt.gdshader" id="1_f6fdm"]
-[ext_resource type="PackedScene" uid="uid://cryddal4ywmf" path="res://Fliper/flipper.tscn" id="4_eunhr"]
-[ext_resource type="Script" uid="uid://bu4i20qayb4y1" path="res://Main/kill_zone.gd" id="5_k3v36"]
-[ext_resource type="PackedScene" uid="uid://cw0103st1p7ap" path="res://Enemies/enemy.tscn" id="5_liyct"]
-[ext_resource type="PackedScene" uid="uid://dd087hymsfsw" path="res://Platform/platform.tscn" id="6_liyct"]
 [ext_resource type="Texture2D" uid="uid://bxpxvl2xpde65" path="res://Assets/Items/Icon40.png" id="8_rj11h"]
 [ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="9_qac2q"]
-[ext_resource type="Texture2D" uid="uid://cm7xu42fdrmlk" path="res://Assets/Walls/walls.png" id="9_rj11h"]
 [ext_resource type="Script" uid="uid://cx1d57ki0wccy" path="res://Main/skill_dash.gd" id="10_skilld"]
 [ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://UI/battle_health_hud.tscn" id="11_health"]
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_eunhr"]
-size = Vector2(80, 48)
-
-[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_eunhr"]
-bounce = 0.3
-
-[sub_resource type="RectangleShape2D" id="RectangleShape2D_k3v36"]
-size = Vector2(240, 64)
-
-[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_ib3t1"]
-bounce = 1.0
-
-[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_liyct"]
-bounce = 1.0
-absorbent = true
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o60nc"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -57,87 +36,7 @@ shader_parameter/pixel_strength = -2.0
 script = ExtResource("1_eunhr")
 metadata/_edit_horizontal_guides_ = [208.0]
 
-[node name="WallSprite" type="Sprite2D" parent="." unique_id=918237892]
-position = Vector2(120, 160)
-texture = ExtResource("9_rj11h")
-
 [node name="Marbles" type="Node2D" parent="." unique_id=2013848348]
-
-[node name="KillZone" type="Area2D" parent="." unique_id=580004618]
-position = Vector2(112, 328)
-collision_mask = 2
-script = ExtResource("5_k3v36")
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="KillZone" unique_id=1619468347]
-position = Vector2(8, -32)
-shape = SubResource("RectangleShape2D_eunhr")
-
-[node name="LFlipper" parent="." unique_id=42033138 instance=ExtResource("4_eunhr")]
-position = Vector2(79.99999, 248)
-rotation = 0.5235988
-snap_angle = -65
-
-[node name="RFlipper" parent="." unique_id=35970917 instance=ExtResource("4_eunhr")]
-position = Vector2(160, 248.00002)
-rotation = 2.6179938
-keycode = "ui_right"
-snap_angle = 65
-
-[node name="Walls" type="StaticBody2D" parent="." unique_id=160946941]
-collision_mask = 2
-physics_material_override = SubResource("PhysicsMaterial_eunhr")
-
-[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Walls" unique_id=693128715]
-position = Vector2(6.8666687, 0)
-scale = Vector2(1.0208333, 1)
-polygon = PackedVector2Array(0, 0, 0, 72, 16, 128, 40, 192, 40, 240, 40, 320, -69.42042, 320, -69.42042, 0)
-
-[node name="CollisionShape2D" type="CollisionShape2D" parent="Walls" unique_id=1424319608]
-position = Vector2(120, -32)
-shape = SubResource("RectangleShape2D_k3v36")
-
-[node name="CollisionPolygon2D2" type="CollisionPolygon2D" parent="Walls" unique_id=564458978]
-position = Vector2(232, 0)
-rotation = 3.1415927
-scale = Vector2(1, -1)
-polygon = PackedVector2Array(0, 0, 0, 72, 39.999985, 192, 39.99997, 320, -88.00003, 320, -88, -7.693205e-06)
-
-[node name="Enemies" type="Node2D" parent="." unique_id=1557868648]
-
-[node name="Enemy1" parent="Enemies" unique_id=666898646 instance=ExtResource("5_liyct")]
-position = Vector2(152, 72)
-
-[node name="Enemy4" parent="Enemies" unique_id=503945892 instance=ExtResource("5_liyct")]
-position = Vector2(184, 144)
-
-[node name="Enemy5" parent="Enemies" unique_id=2060794820 instance=ExtResource("5_liyct")]
-position = Vector2(96, 176)
-
-[node name="Enemy2" parent="Enemies" unique_id=1024730384 instance=ExtResource("5_liyct")]
-position = Vector2(80, 112)
-
-[node name="Enemy3" parent="Enemies" unique_id=500135733 instance=ExtResource("5_liyct")]
-position = Vector2(96, 40)
-
-[node name="Platforms" type="Node2D" parent="." unique_id=1680760151]
-
-[node name="Platform" parent="Platforms" unique_id=1324038840 instance=ExtResource("6_liyct")]
-position = Vector2(120, 152)
-physics_material_override = SubResource("PhysicsMaterial_ib3t1")
-
-[node name="BouncelessWall" type="StaticBody2D" parent="." unique_id=650453500]
-collision_mask = 2
-physics_material_override = SubResource("PhysicsMaterial_liyct")
-
-[node name="CollisionPolygon2D3" type="CollisionPolygon2D" parent="BouncelessWall" unique_id=1095855192]
-position = Vector2(49.75, 196.75)
-polygon = PackedVector2Array(-1.75, -4.75, -1.75, 123.25, 30.25, 123.25, 30.25, 43.25)
-
-[node name="CollisionPolygon2D4" type="CollisionPolygon2D" parent="BouncelessWall" unique_id=541304290]
-position = Vector2(200, 200)
-rotation = 3.1415927
-scale = Vector2(1, -1)
-polygon = PackedVector2Array(8, -8, 7.9999847, 119.999985, 40, 120, 40, 40)
 
 [node name="CrtLayer" type="CanvasLayer" parent="." unique_id=1475341812]
 

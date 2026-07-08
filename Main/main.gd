@@ -1,7 +1,5 @@
 extends Node2D
 
-const STAT_BOUNCELESS_WALL_BOUNCE: String = "bounceless_wall_bounce"
-const STAT_ENTITY_PINBALL_TABLE: String = "pinball_table"
 const RunControllerScript: GDScript = preload("res://Run/run_controller.gd")
 const NodeChoicePanelScene: PackedScene = preload("res://UI/node_choice_panel.tscn")
 const DraftRewardPanelScene: PackedScene = preload("res://UI/draft_reward_panel.tscn")
@@ -10,8 +8,6 @@ const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.ts
 const InventoryPanelScene: PackedScene = preload("res://UI/inventory_panel.tscn")
 
 @onready var marbles: Node2D = $Marbles
-@onready var enemies: Node2D = $Enemies
-@export var purchased_marble_spawn_position: Vector2 = Vector2(56, 48)
 @export var starting_marble_spawn_positions: Array[Vector2] = [
 	Vector2(56, 96),
 	Vector2(56, 72),
@@ -29,7 +25,6 @@ var inventory_panel: Control = null
 
 
 func _ready() -> void:
-	_apply_bounceless_wall_physics_material()
 	var event_bus: Node = _get_autoload_node(&"Event")
 	if event_bus != null and event_bus.has_signal(&"marble_fell"):
 		_connect_once(event_bus, &"marble_fell", Callable(self, "_on_marble_fell"))
@@ -198,24 +193,6 @@ func _get_default_marble_item() -> Item:
 	return preload("res://Resources/dark_marble.tres") as Item
 
 
-func _apply_bounceless_wall_physics_material() -> void:
-	var wall: StaticBody2D = get_node_or_null("BouncelessWall") as StaticBody2D
-	if wall == null:
-		return
-
-	var stat_system: Node = _get_autoload_node(&"StatSystem")
-	if stat_system == null or not stat_system.has_method("get_stat"):
-		return
-
-	var physics_material: PhysicsMaterial = wall.physics_material_override
-	if physics_material != null:
-		physics_material = physics_material.duplicate() as PhysicsMaterial
-	else:
-		physics_material = PhysicsMaterial.new()
-	physics_material.bounce = float(stat_system.call("get_stat", STAT_BOUNCELESS_WALL_BOUNCE, STAT_ENTITY_PINBALL_TABLE))
-	wall.physics_material_override = physics_material
-
-
 func _get_autoload_node(node_name: StringName) -> Node:
 	var tree: SceneTree = Engine.get_main_loop() as SceneTree
 	if tree == null:
@@ -262,7 +239,7 @@ func _setup_run_flow() -> void:
 
 	run_controller = RunControllerScript.new()
 	run_controller.name = "RunController"
-	run_controller.enemy_container = enemies
+	run_controller.level_parent = self
 	run_controller.node_choice_panel = node_choice_panel
 	run_controller.draft_reward_panel = draft_reward_panel
 	run_controller.upgrade_panel = upgrade_panel
