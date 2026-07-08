@@ -45,6 +45,7 @@ func add_buff(buff: BuffDef, stacks: int = 1) -> void:
 
 	var active_buff: ActiveBuff = ActiveBuff.new(buff, requested_stacks)
 	_active_buffs[buff.id] = active_buff
+	active_buff.state["stacks"] = active_buff.stacks
 	active_buff.definition.on_apply(_host, active_buff.state)
 
 
@@ -76,6 +77,7 @@ func _refresh_buff(active_buff: ActiveBuff, stacks: int) -> void:
 	if active_buff.definition.stackable:
 		active_buff.stacks = clampi(active_buff.stacks + stacks, 1, max(1, active_buff.definition.max_stacks))
 	active_buff.remaining_time = active_buff.definition.duration
+	active_buff.state["stacks"] = active_buff.stacks
 	active_buff.definition.on_apply(_host, active_buff.state)
 
 
@@ -88,6 +90,7 @@ func _process_active_buffs(delta: float) -> void:
 			expired_buff_ids.append(buff_id)
 			continue
 
+		active_buff.state["stacks"] = active_buff.stacks
 		active_buff.definition.on_process(_host, active_buff.state, delta)
 		if active_buff.is_permanent():
 			continue

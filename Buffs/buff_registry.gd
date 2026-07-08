@@ -10,6 +10,7 @@ const BUFF_DEFS: Dictionary = {
 	"speed_up": preload("res://Buffs/buffs/speed_up.gd"),
 	"shield": preload("res://Buffs/buffs/shield.gd"),
 	"poison_debuff": preload("res://Buffs/buffs/poison_debuff.gd"),
+	"frost_debuff": preload("res://Buffs/buffs/frost_debuff.gd"),
 }
 
 

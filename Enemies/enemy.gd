@@ -1,6 +1,7 @@
 extends RigidBody2D
 
 const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
+const FrostStatusVisualScene: PackedScene = preload("res://Effects/frost_status_visual/frost_status_visual.tscn")
 
 @export var health: int = 100:
 	set(value):
@@ -17,6 +18,7 @@ const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
 
 var _entity_id: String = ""
 var _death_emitted: bool = false
+var _frost_visual: Node2D = null
 
 
 func _ready() -> void:
@@ -80,6 +82,25 @@ func flash_hit_mask(flash_color: Color) -> void:
 	hit_flash.call("flash", flash_color)
 
 
+func set_frost_visual(stacks: int, max_stacks: int, is_frozen: bool) -> void:
+	_set_sprite_frost_amount(_get_frost_amount(stacks, max_stacks))
+	if _frost_visual == null or not is_instance_valid(_frost_visual):
+		_frost_visual = FrostStatusVisualScene.instantiate() as Node2D
+		_frost_visual.name = "FrostStatusVisual"
+		add_child(_frost_visual)
+	if _frost_visual != null and _frost_visual.has_method("set_frost_state"):
+		_frost_visual.call("set_frost_state", stacks, max_stacks, is_frozen)
+	set_meta("frozen", is_frozen)
+
+
+func clear_frost_visual() -> void:
+	_set_sprite_frost_amount(0.0)
+	set_meta("frozen", false)
+	if _frost_visual != null and is_instance_valid(_frost_visual):
+		_frost_visual.queue_free()
+	_frost_visual = null
+
+
 func _get_damage_from_body(body: Node) -> int:
 	if body.has_method("get_hit_damage"):
 		return body.get_hit_damage(self)
@@ -103,6 +124,17 @@ func _register_stat_entity() -> void:
 	stat_system.call("register_entity", _entity_id, ["max_health", "current_health", "armor"])
 	stat_system.call("set_stat_base", _entity_id, "max_health", float(health))
 	stat_system.call("set_stat_base", _entity_id, "current_health", float(health))
+
+
+func _get_frost_amount(stacks: int, max_stacks: int) -> float:
+	return clampf(float(max(0, stacks)) / float(max(1, max_stacks)), 0.0, 1.0)
+
+
+func _set_sprite_frost_amount(amount: float) -> void:
+	if sprite == null or not sprite.material is ShaderMaterial:
+		return
+	var shader_material: ShaderMaterial = sprite.material as ShaderMaterial
+	shader_material.set_shader_parameter("frost_amount", amount)
 
 
 func _update_health_label() -> void:

@@ -263,10 +263,9 @@ func get_total_damage(target: Node) -> int:
 			continue
 		if seg.segment_type == Marble.MARBLE_TYPE.GREEN:
 			GreenMarble.apply_poison_to_enemy(target)
-		if seg.segment_type == Marble.MARBLE_TYPE.BLUE:
-			total += roundi(_get_stat_float("blue_marble_damage", float(seg.damage)))
-		else:
-			total += seg.damage
+		elif seg.segment_type == Marble.MARBLE_TYPE.BLUE:
+			BlueMarble.apply_frost_to_enemy(target)
+		total += seg.damage
 		total += seg.get_echo_damage()
 
 	var stat_system: Node = _get_autoload_node(&"StatSystem")
