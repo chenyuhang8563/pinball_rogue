@@ -4,10 +4,10 @@
 
 [resource]
 script = ExtResource("1_stat")
-id = "blue_frost_duration"
-display_name = "Blue Frost Duration"
+id = "blue_frost_stacks_per_hit"
+display_name = "Blue Frost Stacks Per Hit"
 category = "marble"
-base_value = 2.0
-min_value = 0.1
-max_value = 30.0
-integer = false
+base_value = 1.0
+min_value = 1.0
+max_value = 2.0
+integer = true

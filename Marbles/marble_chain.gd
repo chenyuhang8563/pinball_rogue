@@ -264,7 +264,8 @@ func get_total_damage(target: Node) -> int:
 		if seg.segment_type == Marble.MARBLE_TYPE.GREEN:
 			GreenMarble.apply_poison_to_enemy(target)
 		elif seg.segment_type == Marble.MARBLE_TYPE.BLUE:
-			BlueMarble.apply_frost_to_enemy(target)
+			var stacks_after_hit: int = BlueMarble.apply_frost_to_enemy(target)
+			total += BlueMarble.get_frost_bonus_damage(stacks_after_hit)
 		total += seg.damage
 		total += seg.get_echo_damage()
 

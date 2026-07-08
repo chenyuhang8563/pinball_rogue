@@ -8,17 +8,24 @@ static func get_inventory_level(item: Item) -> int:
 	if item.type == Item.ItemType.RELIC:
 		var inventory: Node = _get_root_node("Inventory")
 		if inventory != null and inventory.has_method("get_relic_level"):
+			if inventory.has_method("is_relic_awakened") and bool(inventory.call("is_relic_awakened", item)):
+				return 4
 			return int(inventory.call("get_relic_level", item))
 		return 0
 	if item.type == Item.ItemType.MARBLE:
 		var upgrade_system: Node = _get_marble_upgrade_system()
 		if upgrade_system != null and upgrade_system.has_method("get_level"):
+			if upgrade_system.has_method("is_awakened") and bool(upgrade_system.call("is_awakened", item.marble_type)):
+				return 4
 			return int(upgrade_system.call("get_level", item.marble_type))
+		return 1
 	return 0
 
 
 static func get_upgrade_option_level(option: Variant) -> int:
 	if option is Dictionary:
+		if bool((option as Dictionary).get("awakens", false)):
+			return 4
 		return int((option as Dictionary).get("next_level", 0))
 	return 0
 

@@ -5,7 +5,6 @@ const StatModifierScript: GDScript = preload("res://Stats/stat_modifier.gd")
 const LightningEffectScene := preload("res://Effects/lightning_effect/lightning_effect.tscn")
 
 const MAX_LEVEL: int = 3
-const AWAKENED_LEVEL: int = 3
 const AWAKENED_HIT_COUNT: int = 3
 const STAT_LIGHTNING_CHAIN_DAMAGE: String = "lightning_chain_damage"
 const STAT_ENTITY_LIGHTNING_CHAIN: String = "relic:lightning_chain"
@@ -14,6 +13,7 @@ const OP_OVERRIDE: int = 2
 const LEVEL_DAMAGE: Array[int] = [1, 3, 5]
 
 var _level: int = 1
+var _awakened: bool = false
 
 
 func set_level(level: int) -> void:
@@ -25,11 +25,19 @@ func get_level() -> int:
 	return _level
 
 
+func set_awakened(awakened: bool) -> void:
+	_awakened = awakened
+
+
+func is_awakened() -> bool:
+	return _awakened
+
+
 func on_enemy_hit_by_marble(enemy: Node2D) -> void:
 	if enemy == null:
 		return
 
-	var hit_count: int = AWAKENED_HIT_COUNT if _level >= AWAKENED_LEVEL else 1
+	var hit_count: int = AWAKENED_HIT_COUNT if _awakened else 1
 	var previous: Node2D = enemy
 	var visited: Array[Node2D] = [enemy]
 	for _hit_index: int in range(hit_count):

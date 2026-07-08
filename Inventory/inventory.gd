@@ -12,6 +12,7 @@ const RELIC_MAX_LEVEL: int = 3
 var marble_items: Array[Item] = []
 var relic_items: Array[Item] = []
 var relic_levels: Dictionary = {}
+var relic_awakened: Dictionary = {}
 
 func add_item(item: Item) -> bool:
 	if not can_add_item(item):
@@ -21,7 +22,10 @@ func add_item(item: Item) -> bool:
 		var relic_key: String = _get_relic_key(item)
 		var current_level: int = get_relic_level(item)
 		if current_level > 0:
-			relic_levels[relic_key] = mini(current_level + 1, RELIC_MAX_LEVEL)
+			if current_level >= RELIC_MAX_LEVEL:
+				relic_awakened[relic_key] = true
+			else:
+				relic_levels[relic_key] = mini(current_level + 1, RELIC_MAX_LEVEL)
 			item_added.emit(item)
 			inventory_changed.emit()
 			return true
@@ -48,7 +52,9 @@ func remove_item(item: Item) -> bool:
 		_remove_from_array(marble_items, item)
 	elif item.type == Item.ItemType.RELIC:
 		_remove_from_array(relic_items, item)
-		relic_levels.erase(_get_relic_key(item))
+		var relic_key: String = _get_relic_key(item)
+		relic_levels.erase(relic_key)
+		relic_awakened.erase(relic_key)
 
 	inventory_changed.emit()
 	return true
@@ -62,7 +68,7 @@ func can_add_item(item: Item) -> bool:
 	if item.type == Item.ItemType.RELIC:
 		var current_level: int = get_relic_level(item)
 		if current_level > 0:
-			return current_level < RELIC_MAX_LEVEL
+			return not is_relic_awakened(item)
 		return relic_items.size() < _get_capacity("relic_slot_count", relic_capacity)
 	return false
 
@@ -80,8 +86,14 @@ func get_relic_award_level(item: Item) -> int:
 	return 1 if current_level <= 0 else mini(current_level + 1, RELIC_MAX_LEVEL)
 
 
+func is_relic_awakened(item: Item) -> bool:
+	if item == null or item.type != Item.ItemType.RELIC:
+		return false
+	return bool(relic_awakened.get(_get_relic_key(item), false))
+
+
 func is_relic_max_level(item: Item) -> bool:
-	return get_relic_level(item) >= RELIC_MAX_LEVEL
+	return is_relic_awakened(item)
 
 
 func has_item_id(id: String) -> bool:

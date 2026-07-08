@@ -2,6 +2,7 @@ extends RigidBody2D
 
 const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
 const FrostStatusVisualScene: PackedScene = preload("res://Effects/frost_status_visual/frost_status_visual.tscn")
+const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition"
 
 @export var health: int = 100:
 	set(value):
@@ -10,11 +11,13 @@ const FrostStatusVisualScene: PackedScene = preload("res://Effects/frost_status_
 			health_label.text = str(health)
 
 @export var flash_duration: float = 0.08
+@export var frozen_push_impulse_scale: float = 0.25
 
 @onready var sprite: Sprite2D = $Sprite2D
 @onready var hit_flash: Node = $HitFlash
 @onready var health_label: Label = $HealthLabel
 @onready var buff_host: BuffHost = $BuffHost
+@onready var physics_state_machine: Node = $PhysicsStateMachine
 
 var _entity_id: String = ""
 var _death_emitted: bool = false
@@ -41,6 +44,7 @@ func _on_body_entered(body: Node) -> void:
 			effect_manager.call("on_enemy_hit_by_marble", self)
 		var hit_damage: int = _get_damage_from_body(body)
 		take_damage(hit_damage, _get_active_buff_flash_color())
+		_apply_frozen_push_from_body(body)
 
 
 func take_damage(amount: int, flash_color: Color = Color.WHITE) -> void:
@@ -72,8 +76,19 @@ func add_buff(buff: BuffDef, stacks: int = 1) -> void:
 		buff_host.add_buff(buff, stacks)
 
 
+func remove_buff(buff_id: String) -> void:
+	if buff_host != null:
+		buff_host.remove_buff(buff_id)
+
+
 func has_buff(buff_id: String) -> bool:
 	return buff_host != null and buff_host.has_buff(buff_id)
+
+
+func get_buff_stacks(buff_id: String) -> int:
+	if buff_host == null:
+		return 0
+	return buff_host.get_buff_stacks(buff_id)
 
 
 func flash_hit_mask(flash_color: Color) -> void:
@@ -93,11 +108,52 @@ func set_frost_visual(stacks: int, max_stacks: int, is_frozen: bool) -> void:
 	set_meta("frozen", is_frozen)
 
 
+func set_frozen_visual(is_frozen: bool) -> void:
+	_set_sprite_frost_amount(0.0)
+	if is_frozen:
+		if _frost_visual == null or not is_instance_valid(_frost_visual):
+			_frost_visual = FrostStatusVisualScene.instantiate() as Node2D
+			_frost_visual.name = "FrostStatusVisual"
+			add_child(_frost_visual)
+		if _frost_visual != null and _frost_visual.has_method("set_frost_state"):
+			_frost_visual.call("set_frost_state", 0, 1, true)
+	else:
+		if _frost_visual != null and is_instance_valid(_frost_visual):
+			_frost_visual.queue_free()
+		_frost_visual = null
+	set_meta("frozen", is_frozen)
+
+
+func begin_frozen_physics() -> void:
+	_transition_physics_state(&"Frozen")
+
+
+func end_frozen_physics() -> void:
+	_transition_physics_state(&"Normal")
+
+
+func restore_frozen_physics_snapshot(snapshot: Dictionary) -> void:
+	var restored_transform: Transform2D = global_transform
+	linear_velocity = Vector2.ZERO
+	angular_velocity = 0.0
+	gravity_scale = float(snapshot.get("gravity_scale", gravity_scale))
+	lock_rotation = bool(snapshot.get("lock_rotation", lock_rotation))
+	freeze_mode = snapshot.get("freeze_mode", freeze_mode)
+	freeze = bool(snapshot.get("freeze", freeze))
+	global_transform = restored_transform
+	PhysicsServer2D.body_set_state(get_rid(), PhysicsServer2D.BODY_STATE_TRANSFORM, restored_transform)
+	reset_physics_interpolation()
+	set_sleeping(false)
+
+
 func clear_frost_visual() -> void:
 	_set_sprite_frost_amount(0.0)
-	set_meta("frozen", false)
+	if bool(get_meta(META_FROST_TO_FROZEN_TRANSITION, false)):
+		return
+	if bool(get_meta("frozen", false)):
+		return
 	if _frost_visual != null and is_instance_valid(_frost_visual):
-		_frost_visual.queue_free()
+		_frost_visual.free()
 	_frost_visual = null
 
 
@@ -105,6 +161,34 @@ func _get_damage_from_body(body: Node) -> int:
 	if body.has_method("get_hit_damage"):
 		return body.get_hit_damage(self)
 	return 1
+
+
+func _apply_frozen_push_from_body(body: Node) -> void:
+	if not bool(get_meta("frozen", false)):
+		return
+	if not body is RigidBody2D:
+		return
+	var marble: RigidBody2D = body as RigidBody2D
+	var push_velocity: Vector2 = marble.linear_velocity
+	if push_velocity == Vector2.ZERO and marble.global_position != global_position:
+		push_velocity = (global_position - marble.global_position).normalized() * 80.0
+	if push_velocity == Vector2.ZERO:
+		return
+	call_deferred("_apply_frozen_push_impulse", push_velocity * frozen_push_impulse_scale)
+
+
+func _apply_frozen_push_impulse(impulse: Vector2) -> void:
+	if not bool(get_meta("frozen", false)):
+		return
+	freeze = false
+	set_sleeping(false)
+	angular_velocity = 0.0
+	linear_velocity += impulse / maxf(mass, 0.001)
+
+
+func _transition_physics_state(state_name: StringName) -> void:
+	if physics_state_machine != null and physics_state_machine.has_method("transition_to"):
+		physics_state_machine.call("transition_to", state_name)
 
 
 func _get_active_buff_flash_color() -> Color:

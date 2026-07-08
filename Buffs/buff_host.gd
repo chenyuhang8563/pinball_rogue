@@ -62,6 +62,11 @@ func has_buff(buff_id: String) -> bool:
 	return _active_buffs.has(buff_id)
 
 
+func get_buff_stacks(buff_id: String) -> int:
+	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
+	return active_buff.stacks if active_buff != null else 0
+
+
 func get_active_flash_color() -> Color:
 	for value: Variant in _active_buffs.values():
 		var active_buff: ActiveBuff = value as ActiveBuff

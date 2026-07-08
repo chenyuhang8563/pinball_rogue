@@ -5,6 +5,9 @@
 [ext_resource type="Shader" uid="uid://xwfud13h1mq4" path="res://Enemies/enemy.gdshader" id="2_lawal"]
 [ext_resource type="Script" uid="uid://jos4pct5bhu0" path="res://Enemies/hit_flash.gd" id="4_fy0xy"]
 [ext_resource type="Script" path="res://Buffs/buff_host.gd" id="5_buff_host"]
+[ext_resource type="Script" path="res://Enemies/physics_states/physics_state_machine.gd" id="6_state_machine"]
+[ext_resource type="Script" path="res://Enemies/physics_states/normal_physics_state.gd" id="7_normal_state"]
+[ext_resource type="Script" path="res://Enemies/physics_states/frozen_physics_state.gd" id="8_frozen_state"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_l2g5i"]
 resource_local_to_scene = true
@@ -39,6 +42,15 @@ script = ExtResource("4_fy0xy")
 
 [node name="BuffHost" type="Node" parent="."]
 script = ExtResource("5_buff_host")
+
+[node name="PhysicsStateMachine" type="Node" parent="."]
+script = ExtResource("6_state_machine")
+
+[node name="Normal" type="Node" parent="PhysicsStateMachine"]
+script = ExtResource("7_normal_state")
+
+[node name="Frozen" type="Node" parent="PhysicsStateMachine"]
+script = ExtResource("8_frozen_state")
 
 [node name="HealthLabel" type="Label" parent="." unique_id=238119258]
 anchors_preset = 8

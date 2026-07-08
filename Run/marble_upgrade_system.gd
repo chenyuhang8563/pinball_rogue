@@ -12,7 +12,8 @@ const OP_OVERRIDE: int = 2
 
 const STAT_DARK_MARBLE_DAMAGE: String = "dark_marble_damage"
 const STAT_BLUE_FROST_DURATION: String = "blue_frost_duration"
-const STAT_BLUE_FROST_FREEZE_ENABLED: String = "blue_frost_freeze_enabled"
+const STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED: String = "blue_frost_bonus_damage_enabled"
+const STAT_BLUE_FROST_STACKS_PER_HIT: String = "blue_frost_stacks_per_hit"
 const STAT_POISON_DAMAGE_PER_TICK: String = "poison_damage_per_tick"
 const STAT_POISON_TICK_SECONDS: String = "poison_tick_seconds"
 const STAT_ECHO_TIMEOUT: String = "echo_timeout"
@@ -25,10 +26,11 @@ const UPGRADE_VALUES: Dictionary = {
 	Marble.MARBLE_TYPE.DEFAULT: {
 		"title": "Dark Marble",
 		"stat": STAT_DARK_MARBLE_DAMAGE,
-		"values": [1.0, 2.0, 4.0],
+		"values": [1.0, 2.0, 3.0],
+		"awakened_value": 4.0,
 		"descriptions": [
-			"Damage 1",
 			"Damage 2",
+			"Damage 3",
 			"Awaken: Damage 4",
 		],
 	},
@@ -65,39 +67,50 @@ const UPGRADE_VALUES: Dictionary = {
 	Marble.MARBLE_TYPE.BLUE: {
 		"title": "Blue Marble",
 		"stat": STAT_BLUE_FROST_DURATION,
-		"values": [4.0, 6.0, 6.0],
+		"values": [4.0, 4.0, 4.0],
 		"descriptions": [
-			"Frost lasts 4s",
-			"Frost lasts 6s",
-			"Awaken: Full frost freezes enemies",
+			"Frost duration +2s",
+			"Bonus damage equals frost stacks",
+			"Awaken: +1 frost stack on Blue hit",
 		],
 	},
 }
 
 var _levels: Dictionary = {}
+var _awakened_types: Dictionary = {}
 
 
 func reset_upgrades() -> void:
 	_levels.clear()
+	_awakened_types.clear()
 	_clear_upgrade_modifiers()
 
 
 func get_level(marble_type: Marble.MARBLE_TYPE) -> int:
-	return int(_levels.get(int(marble_type), 0))
+	if not UPGRADE_VALUES.has(marble_type):
+		return 0
+	return clampi(int(_levels.get(int(marble_type), 1)), 1, MAX_LEVEL)
+
+
+func is_awakened(marble_type: Marble.MARBLE_TYPE) -> bool:
+	return bool(_awakened_types.get(int(marble_type), false))
 
 
 func is_max_level(marble_type: Marble.MARBLE_TYPE) -> bool:
-	return get_level(marble_type) >= MAX_LEVEL
+	return is_awakened(marble_type)
 
 
 func upgrade_marble(marble_type: Marble.MARBLE_TYPE) -> bool:
 	if not UPGRADE_VALUES.has(marble_type):
 		return false
-	var current_level: int = get_level(marble_type)
-	if current_level >= MAX_LEVEL:
+	if is_awakened(marble_type):
 		return false
-	var next_level: int = current_level + 1
-	_levels[int(marble_type)] = next_level
+	var current_level: int = get_level(marble_type)
+	var next_level: int = mini(current_level + 1, MAX_LEVEL)
+	if current_level >= MAX_LEVEL:
+		_awakened_types[int(marble_type)] = true
+	else:
+		_levels[int(marble_type)] = next_level
 	_sync_stat_modifiers()
 	marble_upgraded.emit(marble_type, next_level)
 	return true
@@ -133,18 +146,21 @@ func get_upgrade_options(inventory: Node, max_options: int = 3) -> Array[Diction
 
 func _make_option(item: Item, marble_type: Marble.MARBLE_TYPE) -> Dictionary:
 	var current_level: int = get_level(marble_type)
-	var next_level: int = current_level + 1
+	var awakens: bool = current_level >= MAX_LEVEL
+	var next_level: int = MAX_LEVEL if awakens else current_level + 1
 	var data: Dictionary = UPGRADE_VALUES[marble_type]
 	var descriptions: Array = data.get("descriptions", [])
 	var description: String = ""
-	if next_level - 1 >= 0 and next_level - 1 < descriptions.size():
-		description = String(descriptions[next_level - 1])
+	var description_index: int = current_level - 1
+	if description_index >= 0 and description_index < descriptions.size():
+		description = String(descriptions[description_index])
 	return {
 		"marble_type": marble_type,
 		"title": item.title if item.title != "" else String(data.get("title", "")),
 		"icon": item.icon,
 		"current_level": current_level,
 		"next_level": next_level,
+		"awakens": awakens,
 		"description": description,
 	}
 
@@ -166,12 +182,21 @@ func _sync_stat_modifiers() -> void:
 			STAT_EXPLOSION_RADIUS,
 			STAT_ECHO_BONUS_DAMAGE,
 			STAT_BLUE_FROST_DURATION,
-			STAT_BLUE_FROST_FREEZE_ENABLED,
+			STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED,
+			STAT_BLUE_FROST_STACKS_PER_HIT,
 		])
 
+	var types_to_sync: Array[int] = []
 	for raw_type: int in _levels.keys():
+		if not types_to_sync.has(raw_type):
+			types_to_sync.append(raw_type)
+	for raw_type: int in _awakened_types.keys():
+		if not types_to_sync.has(raw_type):
+			types_to_sync.append(raw_type)
+
+	for raw_type: int in types_to_sync:
 		var marble_type: Marble.MARBLE_TYPE = raw_type as Marble.MARBLE_TYPE
-		var level: int = clampi(int(_levels[raw_type]), 0, MAX_LEVEL)
+		var level: int = get_level(marble_type)
 		if level <= 0:
 			continue
 		_apply_level_modifiers(stat_system, marble_type, level)
@@ -186,15 +211,22 @@ func _apply_level_modifiers(stat_system: Node, marble_type: Marble.MARBLE_TYPE, 
 	if stat_id != "" and level - 1 >= 0 and level - 1 < values.size():
 		_add_override_modifier(stat_system, stat_id, float(values[level - 1]))
 
-	if marble_type == Marble.MARBLE_TYPE.BOMB and level >= MAX_LEVEL:
+	var awakened: bool = is_awakened(marble_type)
+	if awakened and stat_id != "" and data.has("awakened_value"):
+		_add_override_modifier(stat_system, stat_id, float(data.get("awakened_value")))
+
+	if marble_type == Marble.MARBLE_TYPE.BOMB and awakened:
 		_add_override_modifier(stat_system, STAT_EXPLOSION_RADIUS, 100.0)
 		_add_override_modifier(stat_system, STAT_EXPLOSION_EFFECT_SCALE, 4.0)
-	elif marble_type == Marble.MARBLE_TYPE.GREEN and level >= MAX_LEVEL:
+	elif marble_type == Marble.MARBLE_TYPE.GREEN and awakened:
 		_add_override_modifier(stat_system, STAT_POISON_TICK_SECONDS, 0.5)
-	elif marble_type == Marble.MARBLE_TYPE.BROWN and level >= MAX_LEVEL:
+	elif marble_type == Marble.MARBLE_TYPE.BROWN and awakened:
 		_add_override_modifier(stat_system, STAT_ECHO_TIMEOUT, 15.0)
-	elif marble_type == Marble.MARBLE_TYPE.BLUE and level >= MAX_LEVEL:
-		_add_override_modifier(stat_system, STAT_BLUE_FROST_FREEZE_ENABLED, 1.0)
+	elif marble_type == Marble.MARBLE_TYPE.BLUE:
+		if level >= 2:
+			_add_override_modifier(stat_system, STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED, 1.0)
+		if awakened:
+			_add_override_modifier(stat_system, STAT_BLUE_FROST_STACKS_PER_HIT, 2.0)
 
 
 func _add_override_modifier(stat_system: Node, stat_id: String, value: float) -> void:

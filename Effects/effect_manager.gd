@@ -29,7 +29,10 @@ func _sync_active_effects() -> void:
 			_active_effects[effect_type] = EFFECT_SCRIPTS[effect_type].new()
 		var effect: Variant = _active_effects[effect_type]
 		if effect != null and effect.has_method("set_level"):
-			effect.call("set_level", int(owned_effect_levels[effect_type]))
+			var effect_state: Dictionary = owned_effect_levels[effect_type]
+			effect.call("set_level", int(effect_state.get("level", 1)))
+			if effect.has_method("set_awakened"):
+				effect.call("set_awakened", bool(effect_state.get("awakened", false)))
 
 	for effect_type in _active_effects.keys():
 		if not owned_effects.has(effect_type):
@@ -62,10 +65,17 @@ func _get_owned_effect_levels() -> Dictionary:
 		if not EFFECT_SCRIPTS.has(item.effect_type):
 			continue
 		var level: int = 1
+		var awakened: bool = false
 		if inventory.has_method("get_relic_level"):
 			level = max(1, int(inventory.call("get_relic_level", item)))
+		if inventory.has_method("is_relic_awakened"):
+			awakened = bool(inventory.call("is_relic_awakened", item))
 		var effect_key: int = int(item.effect_type)
-		owned_effects[effect_key] = maxi(int(owned_effects.get(effect_key, 0)), level)
+		var previous: Dictionary = owned_effects.get(effect_key, {"level": 0, "awakened": false})
+		owned_effects[effect_key] = {
+			"level": maxi(int(previous.get("level", 0)), level),
+			"awakened": bool(previous.get("awakened", false)) or awakened,
+		}
 	return owned_effects
 
 
