@@ -53,7 +53,10 @@ func show_text_for_control(
 	if _description_label != null:
 		_description_label.text = display_description
 		_description_label.visible = not description.is_empty()
-		_description_label.custom_minimum_size = Vector2(tooltip_size.x - PADDING.x, _line_height(display_description)) if not description.is_empty() else Vector2.ZERO
+		_description_label.custom_minimum_size = Vector2(
+			tooltip_size.x - PADDING.x,
+			_text_height(display_description, tooltip_size.x - PADDING.x)
+		) if not description.is_empty() else Vector2.ZERO
 	_panel.custom_minimum_size = tooltip_size
 	_panel.size = tooltip_size
 
@@ -104,7 +107,7 @@ func _calculate_tooltip_size(text: String, description: String = "") -> Vector2:
 		)
 		content_width = minf(max_width, maxf(content_width, description_size.x))
 		var wrapped_description: String = _wrap_text_to_width(description, content_width)
-		content_height += maxf(description_size.y, _line_height(wrapped_description)) + 2.0
+		content_height += maxf(description_size.y, _text_height(wrapped_description, content_width)) + 2.0
 	return Vector2(content_width + PADDING.x, maxf(18.0, content_height + PADDING.y))
 
 
@@ -145,10 +148,22 @@ func _wrap_text_to_width(text: String, max_width: float) -> String:
 	return "\n".join(lines)
 
 
-func _line_height(text: String) -> float:
+func _text_height(text: String, width: float) -> float:
 	if text.is_empty():
 		return 0.0
-	return float(text.count("\n") + 1) * float(UI_LABEL_SETTINGS.font_size)
+	var line_count := text.count("\n") + 1
+	var fallback_height := float(line_count) * float(UI_LABEL_SETTINGS.font_size + 2)
+	if UI_LABEL_SETTINGS.font == null:
+		return fallback_height
+	var measured_size := UI_LABEL_SETTINGS.font.get_multiline_string_size(
+		text,
+		HORIZONTAL_ALIGNMENT_LEFT,
+		width,
+		UI_LABEL_SETTINGS.font_size,
+		-1,
+		TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_GRAPHEME_BOUND
+	)
+	return maxf(fallback_height, measured_size.y + 2.0)
 
 
 func _get_ui_bottom_right_position(tooltip_size: Vector2) -> Vector2:
