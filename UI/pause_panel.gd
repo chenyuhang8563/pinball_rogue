@@ -4,6 +4,7 @@ class_name PausePanel
 signal exit_requested
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const UI_COMPACT_FONT: FontFile = preload("res://Assets/Fonts/fusion-pixel-10px-proportional-zh_hans.ttf")
 const PAUSE_ACTION: StringName = &"pause_game"
 
 @export var quit_on_exit: bool = true
@@ -151,9 +152,8 @@ func _set_button_text(path: String, key: String) -> void:
 
 func _apply_option_button_style(button: OptionButton) -> void:
 	button.focus_mode = Control.FOCUS_ALL
-	if UI_LABEL_SETTINGS.font != null:
-		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
-		button.get_popup().add_theme_font_override("font", UI_LABEL_SETTINGS.font)
+	button.add_theme_font_override("font", UI_COMPACT_FONT)
+	button.get_popup().add_theme_font_override("font", UI_COMPACT_FONT)
 	button.add_theme_font_size_override("font_size", max(8, UI_LABEL_SETTINGS.font_size - 1))
 	button.get_popup().add_theme_font_size_override("font_size", max(8, UI_LABEL_SETTINGS.font_size - 1))
 

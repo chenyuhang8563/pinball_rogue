@@ -2,6 +2,7 @@ extends Control
 class_name InventoryPanel
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const UI_COMPACT_FONT: FontFile = preload("res://Assets/Fonts/fusion-pixel-10px-proportional-zh_hans.ttf")
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
 const InventoryIconSlotScene: PackedScene = preload("res://UI/inventory_icon_slot.tscn")
 
@@ -110,9 +111,10 @@ func _apply_button_label_settings() -> void:
 
 	var language_button: OptionButton = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/LanguageButton") as OptionButton
 	if language_button != null:
-		if UI_LABEL_SETTINGS.font != null:
-			language_button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
+		language_button.add_theme_font_override("font", UI_COMPACT_FONT)
+		language_button.get_popup().add_theme_font_override("font", UI_COMPACT_FONT)
 		language_button.add_theme_font_size_override("font_size", max(8, UI_LABEL_SETTINGS.font_size - 2))
+		language_button.get_popup().add_theme_font_size_override("font_size", max(8, UI_LABEL_SETTINGS.font_size - 2))
 
 
 func _setup_language_button() -> void:

@@ -1,4 +1,6 @@
-[gd_scene format=3]
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="LabelSettings" path="res://Themes/label_settings_8_zh.tres" id="1_label_settings"]
 
 [node name="LevelBadge" type="Label"]
 layout_mode = 0
@@ -17,4 +19,4 @@ mouse_filter = 2
 z_index = 10
 horizontal_alignment = 2
 vertical_alignment = 2
-
+label_settings = ExtResource("1_label_settings")

@@ -4,6 +4,7 @@ class_name MarbleUpgradePanel
 signal upgrade_selected(option: Dictionary)
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const UI_COMPACT_FONT: FontFile = preload("res://Assets/Fonts/fusion-pixel-10px-proportional-zh_hans.ttf")
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
 const ITEM_OPTION_SIZE: Vector2 = Vector2(68, 98)
 
@@ -100,8 +101,7 @@ func _apply_label_settings(label: Label) -> void:
 
 
 func _apply_button_font(button: Button) -> void:
-	if UI_LABEL_SETTINGS.font != null:
-		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
+	button.add_theme_font_override("font", UI_COMPACT_FONT)
 	button.add_theme_font_size_override("font_size", max(6, UI_LABEL_SETTINGS.font_size - 1))
 
 
