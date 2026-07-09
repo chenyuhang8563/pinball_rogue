@@ -238,8 +238,8 @@ func _setup_run_flow() -> void:
 	var crt_overlay: Node = ui_layer.get_node_or_null("ColorRect")
 	if crt_overlay != null:
 		if crt_overlay is CanvasItem:
-			(crt_overlay as CanvasItem).z_index = -1
-		ui_layer.move_child(crt_overlay, 0)
+			(crt_overlay as CanvasItem).z_index = 100
+		ui_layer.move_child(crt_overlay, ui_layer.get_child_count() - 1)
 
 	run_controller = RunControllerScript.new()
 	run_controller.name = "RunController"

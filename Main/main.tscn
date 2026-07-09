@@ -41,16 +41,6 @@ metadata/_edit_horizontal_guides_ = [208.0]
 
 [node name="CrtLayer" type="CanvasLayer" parent="." unique_id=1475341812]
 
-[node name="ColorRect" type="ColorRect" parent="CrtLayer" unique_id=2088465450]
-z_index = -1
-material = SubResource("ShaderMaterial_f6fdm")
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-
 [node name="SkillSlot" type="Panel" parent="CrtLayer" unique_id=741403767]
 custom_minimum_size = Vector2(32, 32)
 offset_left = 200.0
@@ -91,3 +81,13 @@ color = Color(0, 0, 0, 0)
 [node name="BattleHealthHud" parent="CrtLayer" unique_id=1820331821 instance=ExtResource("11_health")]
 
 [node name="PausePanel" parent="CrtLayer" instance=ExtResource("12_pause")]
+
+[node name="ColorRect" type="ColorRect" parent="CrtLayer" unique_id=2088465450]
+z_index = 100
+material = SubResource("ShaderMaterial_f6fdm")
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
