@@ -1,6 +1,5 @@
 [gd_scene format=3 uid="uid://fjioorpo70mx"]
 
-[ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="1_3weqf"]
 [ext_resource type="Script" uid="uid://buhl2nbgd233p" path="res://Shop/shop.gd" id="1_qlv7h"]
 [ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Items/item.gd" id="2_nunvh"]
 [ext_resource type="Resource" uid="uid://y6hstamuojv7" path="res://Resources/lightning.tres" id="3_u3phx"]
@@ -9,7 +8,8 @@
 [ext_resource type="Resource" uid="uid://q7t1651xon8y" path="res://Resources/brown_marble.tres" id="6_brown"]
 [ext_resource type="Resource" uid="uid://c2jbto0wkkqhs" path="res://Resources/green_marble.tres" id="7_green"]
 [ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="8_7gdb2"]
-[ext_resource type="Resource" path="res://Resources/blue_marble.tres" id="9_blue"]
+[ext_resource type="LabelSettings" uid="uid://bd00rp10kuuon" path="res://Themes/label_settings_12.tres" id="8_buhfn"]
+[ext_resource type="Resource" uid="uid://c100pjp7ilvk2" path="res://Resources/blue_marble.tres" id="9_blue"]
 
 [node name="Shop" type="Control" unique_id=395620655 node_paths=PackedStringArray("shop_container", "marble_box_container", "relic_bar_container")]
 layout_mode = 3
@@ -31,18 +31,17 @@ grow_vertical = 2
 mouse_filter = 2
 
 [node name="Label" type="Label" parent="UI/Panel" unique_id=1354368329]
-custom_minimum_size = Vector2(96, 24)
 layout_mode = 1
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -48.0
+offset_left = -8.0
 offset_top = 16.0
-offset_right = 48.0
-offset_bottom = 39.0
+offset_right = 45.0
+offset_bottom = 40.0
 grow_horizontal = 2
-text = "UI_SHOP_TITLE"
-label_settings = ExtResource("1_3weqf")
+text = "Shop"
+label_settings = ExtResource("8_buhfn")
 
 [node name="ExitButton" type="Button" parent="UI/Panel" unique_id=450602043]
 custom_minimum_size = Vector2(64, 24)
@@ -57,7 +56,7 @@ offset_bottom = 36.0
 grow_horizontal = 0
 theme_override_fonts/font = ExtResource("8_7gdb2")
 theme_override_font_sizes/font_size = 12
-text = "UI_EXIT"
+text = "Exit"
 
 [node name="ScrollContainer" type="ScrollContainer" parent="UI/Panel" unique_id=1845394202]
 layout_mode = 0

@@ -44,6 +44,10 @@ enabled=PackedStringArray("res://addons/gut/plugin.cfg", "res://addons/hasturope
 marbles=""
 enemies=""
 
+[gui]
+
+theme/default_font_antialiasing=0
+
 [input]
 
 right_paddle_flip={
