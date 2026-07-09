@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "bounceless_wall_bounce"
-display_name = "Bounceless Wall Bounce"
+display_name = "STAT_BOUNCELESS_WALL_BOUNCE"
 category = "physics"
 base_value = 0.2
 min_value = 0.0

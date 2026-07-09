@@ -57,6 +57,10 @@ left_paddle_flip={
 ]
 }
 
+[internationalization]
+
+locale/translations=PackedStringArray("res://translations/game.en.translation", "res://translations/game.zh_CN.translation")
+
 [layer_names]
 
 2d_physics/layer_1="world"

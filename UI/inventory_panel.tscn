@@ -1,9 +1,10 @@
-[gd_scene load_steps=6 format=3]
+[gd_scene format=3 uid="uid://cdtp3l2fpkq7w"]
 
-[ext_resource type="Script" path="res://UI/inventory_panel.gd" id="1_inventory_panel"]
-[ext_resource type="PackedScene" path="res://Inventory/inventory.tscn" id="2_collection_rows"]
-[ext_resource type="LabelSettings" path="res://Themes/new_label_settings.tres" id="3_label_settings"]
+[ext_resource type="Script" uid="uid://bdx7lt0b5vbid" path="res://UI/inventory_panel.gd" id="1_inventory_panel"]
+[ext_resource type="PackedScene" uid="uid://bx6h7a1u1u7xb" path="res://Inventory/inventory.tscn" id="2_collection_rows"]
+[ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="3_label_settings"]
 [ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="4_item_icon_view"]
+[ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/item_icon_view.gd" id="5_3ouoh"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -13,7 +14,7 @@ border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.55, 0.53, 0.47, 1)
 
-[node name="InventoryPanel" type="Control" node_paths=PackedStringArray("marble_box_container", "relic_bar_container", "skill_bar_container")]
+[node name="InventoryPanel" type="Control" unique_id=1899383523 node_paths=PackedStringArray("marble_box_container", "relic_bar_container", "skill_bar_container")]
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -25,18 +26,18 @@ marble_box_container = NodePath("UI/Panel/MarginContainer/Layout/Content/Collect
 relic_bar_container = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/RelicBar")
 skill_bar_container = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillBar")
 
-[node name="UI" type="CanvasLayer" parent="."]
-visible = false
+[node name="UI" type="CanvasLayer" parent="." unique_id=1313626524]
 layer = 10
+visible = false
 
-[node name="Panel" type="Panel" parent="UI"]
+[node name="Panel" type="Panel" parent="UI" unique_id=111013388]
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="UI/Panel"]
+[node name="MarginContainer" type="MarginContainer" parent="UI/Panel" unique_id=641478699]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -52,85 +53,107 @@ theme_override_constants/margin_top = 0
 theme_override_constants/margin_right = 0
 theme_override_constants/margin_bottom = 0
 
-[node name="Layout" type="VBoxContainer" parent="UI/Panel/MarginContainer"]
+[node name="Layout" type="VBoxContainer" parent="UI/Panel/MarginContainer" unique_id=1411242961]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="Header" type="HBoxContainer" parent="UI/Panel/MarginContainer/Layout"]
+[node name="Header" type="HBoxContainer" parent="UI/Panel/MarginContainer/Layout" unique_id=983344968]
 layout_mode = 2
 theme_override_constants/separation = 8
 
-[node name="TitleLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Header"]
+[node name="TitleLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Header" unique_id=1341364741]
 layout_mode = 2
 size_flags_horizontal = 3
 text = "Inventory"
-horizontal_alignment = 1
 label_settings = ExtResource("3_label_settings")
+horizontal_alignment = 1
 
-[node name="ExitButton" type="Button" parent="UI/Panel/MarginContainer/Layout/Header"]
+[node name="ExitButton" type="Button" parent="UI/Panel/MarginContainer/Layout/Header" unique_id=456823086]
 custom_minimum_size = Vector2(48, 24)
 layout_mode = 2
-focus_mode = 2
 text = "Exit"
 
-[node name="Content" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout"]
+[node name="LanguageButton" type="OptionButton" parent="UI/Panel/MarginContainer/Layout/Header" unique_id=1819175104]
+custom_minimum_size = Vector2(64, 24)
+layout_mode = 2
+size_flags_horizontal = 8
+size_flags_vertical = 4
+clip_text = true
+selected = 0
+item_count = 2
+popup/item_0/text = "中文"
+popup/item_0/id = 0
+popup/item_1/text = "English"
+popup/item_1/id = 1
+
+[node name="Content" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout" unique_id=648841879]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="CollectionRows" parent="UI/Panel/MarginContainer/Layout/Content" instance=ExtResource("2_collection_rows")]
+[node name="CollectionRows" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=983508902 instance=ExtResource("2_collection_rows")]
 layout_mode = 2
+theme_override_constants/separation = 4
 
-[node name="SkillLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Content"]
+[node name="SkillLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=1006936368]
 layout_mode = 2
 text = "Skills"
 label_settings = ExtResource("3_label_settings")
 
-[node name="SkillBar" type="HBoxContainer" parent="UI/Panel/MarginContainer/Layout/Content"]
+[node name="SkillBar" type="HBoxContainer" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=527104730]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="SkillSlot1" type="Panel" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar"]
+[node name="SkillSlot1" type="Panel" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar" unique_id=737797125]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
 
-[node name="Icon" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot1" instance=ExtResource("4_item_icon_view")]
+[node name="Icon" type="Control" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot1" unique_id=213926947 instance=ExtResource("4_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_3ouoh")
 
-[node name="SkillSlot2" type="Panel" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar"]
+[node name="SkillSlot2" type="Panel" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar" unique_id=935025288]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
 
-[node name="Icon" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot2" instance=ExtResource("4_item_icon_view")]
+[node name="Icon" type="Control" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot2" unique_id=1746947562 instance=ExtResource("4_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_3ouoh")
 
-[node name="SkillSlot3" type="Panel" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar"]
+[node name="SkillSlot3" type="Panel" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar" unique_id=224756412]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
 
-[node name="Icon" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot3" instance=ExtResource("4_item_icon_view")]
+[node name="Icon" type="Control" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot3" unique_id=1963359288 instance=ExtResource("4_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("5_3ouoh")

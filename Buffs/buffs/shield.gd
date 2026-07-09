@@ -6,8 +6,8 @@ extends RefCounted
 func get_definition() -> BuffDef:
 	var buff: BuffDef = BuffDef.new()
 	buff.id = "shield"
-	buff.display_name = "Shield"
-	buff.description = "Adds temporary shield charges."
+	buff.display_name = "BUFF_SHIELD_TITLE"
+	buff.description = "BUFF_SHIELD_DESC"
 	buff.duration = 8.0
 	buff.stackable = true
 	buff.max_stacks = 5

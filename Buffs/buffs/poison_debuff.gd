@@ -16,8 +16,8 @@ const STAT_POISON_TICK_SECONDS: String = "poison_tick_seconds"
 
 func _init() -> void:
 	id = "poison_debuff"
-	display_name = "Poison"
-	description = "Takes 2 damage per second for 10 seconds."
+	display_name = "BUFF_POISON_TITLE"
+	description = "BUFF_POISON_DESC"
 	duration = 10.0
 	stackable = false
 	max_stacks = 1

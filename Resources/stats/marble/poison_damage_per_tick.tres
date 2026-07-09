@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "poison_damage_per_tick"
-display_name = "Poison Damage Per Tick"
+display_name = "STAT_POISON_DAMAGE_PER_TICK"
 category = "marble"
 base_value = 2.0
 min_value = 0.0

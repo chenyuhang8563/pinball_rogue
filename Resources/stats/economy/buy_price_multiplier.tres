@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "buy_price_multiplier"
-display_name = "Buy Price Multiplier"
+display_name = "STAT_BUY_PRICE_MULTIPLIER"
 category = "economy"
 base_value = 1.0
 min_value = 0.0

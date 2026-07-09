@@ -26,8 +26,10 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layout_direction = Control.LAYOUT_DIRECTION_LOCALE
 	_ensure_toggle_action()
+	_setup_language_button()
 	_apply_text()
 	_apply_button_label_settings()
+	_connect_locale_changed()
 	_ensure_skill_slots()
 	_connect_inventory()
 	refresh_inventory()
@@ -85,15 +87,15 @@ func _apply_mode() -> void:
 func _apply_text() -> void:
 	var title_label: Label = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/TitleLabel") as Label
 	if title_label != null:
-		title_label.text = tr("Inventory")
+		title_label.text = tr("UI_INVENTORY_TITLE")
 
 	var skill_label: Label = get_node_or_null("UI/Panel/MarginContainer/Layout/Content/SkillLabel") as Label
 	if skill_label != null:
-		skill_label.text = tr("Skills")
+		skill_label.text = tr("UI_SKILLS_TITLE")
 
 	var exit_button: Button = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/ExitButton") as Button
 	if exit_button != null:
-		exit_button.text = tr("Exit")
+		exit_button.text = tr("UI_EXIT")
 		if not exit_button.pressed.is_connected(close_inventory):
 			exit_button.pressed.connect(close_inventory)
 
@@ -105,6 +107,76 @@ func _apply_button_label_settings() -> void:
 	if UI_LABEL_SETTINGS.font != null:
 		exit_button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
 	exit_button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+
+	var language_button: OptionButton = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/LanguageButton") as OptionButton
+	if language_button != null:
+		if UI_LABEL_SETTINGS.font != null:
+			language_button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
+		language_button.add_theme_font_size_override("font_size", max(8, UI_LABEL_SETTINGS.font_size - 2))
+
+
+func _setup_language_button() -> void:
+	var language_button: OptionButton = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/LanguageButton") as OptionButton
+	if language_button == null:
+		return
+	if language_button.item_count == 0:
+		for locale: Dictionary in _get_supported_locales():
+			language_button.add_item(String(locale.get("name", locale.get("code", ""))))
+	language_button.focus_mode = Control.FOCUS_ALL
+	_sync_language_button()
+	var callback := Callable(self, "_on_language_selected")
+	if not language_button.item_selected.is_connected(callback):
+		language_button.item_selected.connect(callback)
+
+
+func _on_language_selected(index: int) -> void:
+	var locales: Array[Dictionary] = _get_supported_locales()
+	if index < 0 or index >= locales.size():
+		return
+	var localization: Node = _get_autoload_node(&"Localization")
+	var locale_code := String(locales[index].get("code", "zh_CN"))
+	if localization != null and localization.has_method("set_locale"):
+		localization.call("set_locale", locale_code)
+	else:
+		TranslationServer.set_locale(locale_code)
+	_apply_text()
+	_sync_language_button()
+
+
+func _sync_language_button() -> void:
+	var language_button: OptionButton = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/LanguageButton") as OptionButton
+	if language_button == null:
+		return
+	var current_locale := TranslationServer.get_locale()
+	var locales: Array[Dictionary] = _get_supported_locales()
+	for index: int in range(locales.size()):
+		if String(locales[index].get("code", "")) == current_locale:
+			language_button.select(index)
+			return
+
+
+func _get_supported_locales() -> Array[Dictionary]:
+	var localization: Node = _get_autoload_node(&"Localization")
+	if localization != null and localization.has_method("get_supported_locales"):
+		return localization.call("get_supported_locales")
+	return [
+		{"code": "zh_CN", "name": "中文"},
+		{"code": "en", "name": "English"},
+	]
+
+
+func _connect_locale_changed() -> void:
+	var localization: Node = _get_autoload_node(&"Localization")
+	if localization == null or not localization.has_signal(&"locale_changed"):
+		return
+	var callback := Callable(self, "_on_locale_changed")
+	if not localization.is_connected(&"locale_changed", callback):
+		localization.connect(&"locale_changed", callback)
+
+
+func _on_locale_changed(_locale_code: String = "") -> void:
+	_apply_text()
+	_sync_language_button()
 
 
 func _ensure_toggle_action() -> void:

@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "dodge_rate"
-display_name = "Dodge Rate"
+display_name = "STAT_DODGE_RATE"
 category = "defense"
 base_value = 0.0
 min_value = 0.0

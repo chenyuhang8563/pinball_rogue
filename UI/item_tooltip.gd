@@ -27,7 +27,7 @@ func show_item_for_control(item: Item, target: Control) -> void:
 	if item == null:
 		hide_tooltip()
 		return
-	show_text_for_control(item.title, target)
+	show_text_for_control(tr(item.title), target)
 
 
 func show_text_for_control(text: String, _target: Control = null, _placement: Placement = Placement.ABOVE) -> void:
@@ -38,7 +38,7 @@ func show_text_for_control(text: String, _target: Control = null, _placement: Pl
 	_bind_nodes()
 	if _panel == null or _label == null:
 		return
-	_label.text = text
+	_label.text = tr(text)
 	var tooltip_size: Vector2 = _calculate_tooltip_size(text)
 	_panel.custom_minimum_size = tooltip_size
 	_panel.size = tooltip_size

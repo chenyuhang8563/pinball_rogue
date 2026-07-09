@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "move_speed"
-display_name = "Move Speed"
+display_name = "STAT_MOVE_SPEED"
 category = "enemy"
 base_value = 0.0
 min_value = 0.0

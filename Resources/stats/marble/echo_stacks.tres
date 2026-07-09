@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "echo_stacks"
-display_name = "Echo Stacks"
+display_name = "STAT_ECHO_STACKS"
 category = "marble"
 base_value = 0.0
 min_value = 0.0

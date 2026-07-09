@@ -37,7 +37,7 @@ func _on_gui_input(event) -> void:
 
 	if shop.has_method("purchase_item"):
 		if shop.call("purchase_item", item):
-			print("Bought " + item.title)
+			print("Bought " + tr(item.title))
 		return
 
 

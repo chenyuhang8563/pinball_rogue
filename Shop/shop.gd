@@ -36,6 +36,8 @@ var mode: MODE = MODE.OFF:
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	$UI.hide()
+	_apply_text()
+	_connect_locale_changed()
 	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
 	if exit_button != null and not exit_button.pressed.is_connected(close_shop):
 		_apply_button_label_settings(exit_button)
@@ -261,7 +263,7 @@ func _on_collection_slot_gui_input(event: InputEvent, slot: Node) -> void:
 
 	var item: Item = slot.get_meta("item") as Item
 	if sell_item(item):
-		print("Sold " + item.title)
+		print("Sold " + tr(item.title))
 
 
 func _grant_starting_marbles() -> void:
@@ -301,3 +303,25 @@ func _is_purchasable_item(item: Item) -> bool:
 	if item == null:
 		return false
 	return item.type == Item.ItemType.MARBLE or item.type == Item.ItemType.RELIC
+
+
+func _apply_text() -> void:
+	var title_label: Label = get_node_or_null("UI/Panel/Label") as Label
+	if title_label != null:
+		title_label.text = tr("UI_SHOP_TITLE")
+	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
+	if exit_button != null:
+		exit_button.text = tr("UI_EXIT")
+
+
+func _connect_locale_changed() -> void:
+	var localization: Node = _get_autoload_node(&"Localization")
+	if localization == null or not localization.has_signal(&"locale_changed"):
+		return
+	var callback := Callable(self, "_on_locale_changed")
+	if not localization.is_connected(&"locale_changed", callback):
+		localization.connect(&"locale_changed", callback)
+
+
+func _on_locale_changed(_locale_code: String = "") -> void:
+	_apply_text()

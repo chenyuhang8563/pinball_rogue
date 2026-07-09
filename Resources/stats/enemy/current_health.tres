@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "current_health"
-display_name = "Current Health"
+display_name = "STAT_CURRENT_HEALTH"
 category = "enemy"
 base_value = 100.0
 min_value = 0.0

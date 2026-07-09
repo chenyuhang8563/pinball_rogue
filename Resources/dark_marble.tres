@@ -6,10 +6,10 @@
 [resource]
 script = ExtResource("2_item")
 id = "dark_marble"
-title = "Dark Marble"
+title = "ITEM_DARK_MARBLE_TITLE"
 icon = ExtResource("1_dark")
 price = 0
-description = "Default dark marble."
+description = "ITEM_DARK_MARBLE_DESC"
 effect_type = 4
 type = 1
 metadata/_custom_type_script = "uid://cbxvjrptlxvsm"

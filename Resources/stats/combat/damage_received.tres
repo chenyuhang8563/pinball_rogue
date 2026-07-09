@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "damage_received"
-display_name = "Damage Received"
+display_name = "STAT_DAMAGE_RECEIVED"
 category = "combat"
 base_value = 0.0
 min_value = 0.0

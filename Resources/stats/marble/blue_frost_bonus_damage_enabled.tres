@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "blue_frost_bonus_damage_enabled"
-display_name = "Blue Frost Bonus Damage Enabled"
+display_name = "STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED"
 category = "marble"
 base_value = 0.0
 min_value = 0.0

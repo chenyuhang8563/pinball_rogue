@@ -7,8 +7,8 @@ const DEFAULT_DURATION: float = 4.0
 
 func _init() -> void:
 	id = "frozen_debuff"
-	display_name = "Frozen"
-	description = "Turns the enemy into a pushable ice block for a short time."
+	display_name = "BUFF_FROZEN_TITLE"
+	description = "BUFF_FROZEN_DESC"
 	duration = DEFAULT_DURATION
 	stackable = false
 	max_stacks = 1

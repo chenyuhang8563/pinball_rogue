@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "blue_frost_duration"
-display_name = "Blue Frost Duration"
+display_name = "STAT_BLUE_FROST_DURATION"
 category = "marble"
 base_value = 2.0
 min_value = 0.1

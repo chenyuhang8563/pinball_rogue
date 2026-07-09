@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_def")
 id = "strong_normal"
-title = "Strong Fight"
+title = "RUN_STRONG_FIGHT_TITLE"
 level_index = 2
 kind = 1
 enemy_pool = 1

@@ -6,7 +6,7 @@
 [resource]
 script = ExtResource("1_def")
 id = "weak_normal"
-title = "Weak Fight"
+title = "RUN_WEAK_FIGHT_TITLE"
 level_index = 1
 kind = 0
 enemy_pool = 0

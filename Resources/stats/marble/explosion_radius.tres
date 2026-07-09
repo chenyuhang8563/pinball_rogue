@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "explosion_radius"
-display_name = "Explosion Radius"
+display_name = "STAT_EXPLOSION_RADIUS"
 category = "marble"
 base_value = 100.0
 min_value = 0.0

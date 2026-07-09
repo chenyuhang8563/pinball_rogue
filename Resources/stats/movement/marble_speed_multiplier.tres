@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "marble_speed_multiplier"
-display_name = "Marble Speed Multiplier"
+display_name = "STAT_MARBLE_SPEED_MULTIPLIER"
 category = "movement"
 base_value = 1.0
 min_value = 0.0

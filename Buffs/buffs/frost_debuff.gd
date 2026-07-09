@@ -12,8 +12,8 @@ const STAT_BLUE_FROST_DURATION: String = "blue_frost_duration"
 
 func _init() -> void:
 	id = "frost_debuff"
-	display_name = "Frost"
-	description = "Adds frost on hit. Full frost freezes enemies."
+	display_name = "BUFF_FROST_TITLE"
+	description = "BUFF_FROST_DESC"
 	duration = _get_frost_duration()
 	stackable = true
 	max_stacks = MAX_FROST_STACKS

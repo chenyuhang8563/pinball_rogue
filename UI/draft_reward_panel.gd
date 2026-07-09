@@ -27,6 +27,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_bind_nodes()
 	_connect_buttons()
+	_connect_locale_changed()
 	hide()
 
 
@@ -37,7 +38,7 @@ func show_item_draft(items: Array[Item]) -> void:
 		return
 	_is_battle_reward_mode = false
 	_items = items
-	_title_label.text = "Draft Reward"
+	_title_label.text = tr("UI_DRAFT_REWARD_TITLE")
 	var all_blocked: bool = _all_visible_rewards_blocked()
 
 	for index: int in range(_buttons.size()):
@@ -76,7 +77,7 @@ func show_battle_rewards(items: Array[Item], gold_amount: int) -> void:
 		_battle_item_claimed.append(false)
 	_battle_reward_gold = gold_amount
 	_battle_gold_claimed = gold_amount <= 0
-	_title_label.text = "Battle Reward"
+	_title_label.text = tr("UI_BATTLE_REWARD_TITLE")
 	_refresh_battle_reward_buttons()
 
 	show()
@@ -182,15 +183,15 @@ func _on_button_pressed(index: int) -> void:
 
 func _format_item_label(item: Item) -> String:
 	if item == null:
-		return "Empty"
-	var item_type: String = "Relic" if item.type == Item.ItemType.RELIC else "Marble"
-	return "%s\n%s" % [item.title, item_type]
+		return tr("UI_EMPTY")
+	var item_type: String = tr("UI_RELIC_TYPE") if item.type == Item.ItemType.RELIC else tr("UI_MARBLE_TYPE")
+	return "%s\n%s" % [tr(item.title), item_type]
 
 
 func _configure_item_button(index: int, item: Item) -> void:
 	var button: Button = _buttons[index]
 	button.tooltip_text = ""
-	button.set_meta("tooltip_text", item.title if item != null else "")
+	button.set_meta("tooltip_text", tr(item.title) if item != null else "")
 	if item != null and item.icon != null:
 		button.text = ""
 		_set_button_icon(index, item.icon)
@@ -213,11 +214,11 @@ func _configure_gold_button(index: int, custom_tooltip_text: String) -> void:
 
 
 func _format_gold_compensation_tooltip() -> String:
-	return "Inventory full: take +%d Gold" % compensation_gold
+	return tr("UI_INVENTORY_FULL_GOLD_TOOLTIP") % compensation_gold
 
 
 func _format_gold_reward_tooltip(gold_amount: int) -> String:
-	return "Take +%d Gold" % gold_amount
+	return tr("UI_TAKE_GOLD_TOOLTIP") % gold_amount
 
 
 func _refresh_battle_reward_buttons() -> void:
@@ -333,6 +334,25 @@ func _hide_custom_tooltip() -> void:
 	if _tooltip != null:
 		if _tooltip.has_method("hide_tooltip"):
 			_tooltip.call("hide_tooltip")
+
+
+func _connect_locale_changed() -> void:
+	var localization: Node = get_node_or_null("/root/Localization")
+	if localization == null or not localization.has_signal(&"locale_changed"):
+		return
+	var callback := Callable(self, "_on_locale_changed")
+	if not localization.is_connected(&"locale_changed", callback):
+		localization.connect(&"locale_changed", callback)
+
+
+func _on_locale_changed(_locale_code: String = "") -> void:
+	if not visible:
+		return
+	if _is_battle_reward_mode:
+		_title_label.text = tr("UI_BATTLE_REWARD_TITLE")
+		_refresh_battle_reward_buttons()
+	else:
+		show_item_draft(_items)
 
 
 func _set_button_icon(index: int, texture: Texture2D) -> void:

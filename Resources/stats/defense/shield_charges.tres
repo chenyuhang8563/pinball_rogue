@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "shield_charges"
-display_name = "Shield Charges"
+display_name = "STAT_SHIELD_CHARGES"
 category = "defense"
 base_value = 0.0
 min_value = 0.0

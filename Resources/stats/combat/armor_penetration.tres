@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "armor_penetration"
-display_name = "Armor Penetration"
+display_name = "STAT_ARMOR_PENETRATION"
 category = "combat"
 base_value = 0.0
 min_value = 0.0

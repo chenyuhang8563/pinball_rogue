@@ -6,6 +6,7 @@ const DraftRewardPanelScene: PackedScene = preload("res://UI/draft_reward_panel.
 const MarbleUpgradePanelScene: PackedScene = preload("res://UI/marble_upgrade_panel.tscn")
 const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.tscn")
 const InventoryPanelScene: PackedScene = preload("res://UI/inventory_panel.tscn")
+const PausePanelScene: PackedScene = preload("res://UI/pause_panel.tscn")
 
 @onready var marbles: Node2D = $Marbles
 @export var starting_marble_spawn_positions: Array[Vector2] = [
@@ -22,6 +23,7 @@ var marble_chain: MarbleChain = null
 var run_controller: RunController = null
 var battle_health_hud: Node = null
 var inventory_panel: Control = null
+var pause_panel: Control = null
 
 
 func _ready() -> void:
@@ -232,6 +234,7 @@ func _setup_run_flow() -> void:
 
 	_setup_battle_health_hud(ui_layer)
 	_setup_inventory_panel()
+	_setup_pause_panel(ui_layer)
 
 	var crt_overlay: Node = ui_layer.get_node_or_null("ColorRect")
 	if crt_overlay != null:
@@ -275,6 +278,16 @@ func _setup_inventory_panel() -> void:
 	inventory_panel = InventoryPanelScene.instantiate() as Control
 	inventory_panel.name = "InventoryPanel"
 	add_child(inventory_panel)
+
+
+func _setup_pause_panel(ui_layer: Node) -> void:
+	pause_panel = ui_layer.get_node_or_null("PausePanel") as Control
+	if pause_panel != null:
+		return
+
+	pause_panel = PausePanelScene.instantiate() as Control
+	pause_panel.name = "PausePanel"
+	ui_layer.add_child(pause_panel)
 
 
 func _on_run_health_changed(health: int) -> void:

@@ -17,6 +17,7 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_bind_nodes()
 	_connect_buttons()
+	_connect_locale_changed()
 	hide()
 
 
@@ -26,14 +27,14 @@ func show_options(options: Array[RunNodeOption]) -> void:
 	if not _has_required_nodes():
 		return
 	_options = options
-	_title_label.text = "Choose Next Node"
-	_description_label.text = "Pick one path for the next step."
+	_title_label.text = tr("UI_CHOOSE_NEXT_NODE_TITLE")
+	_description_label.text = tr("UI_CHOOSE_NEXT_NODE_DESC")
 
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
 		if index < _options.size():
 			var option: RunNodeOption = _options[index]
-			button.text = option.title
+			button.text = tr(option.title)
 			button.disabled = false
 			button.show()
 		else:
@@ -51,11 +52,11 @@ func show_message(title: String, description: String) -> void:
 	if not _has_required_nodes():
 		return
 	_options.clear()
-	_title_label.text = title
-	_description_label.text = description
+	_title_label.text = tr(title)
+	_description_label.text = tr(description)
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
-		button.text = "OK" if index == 0 else ""
+		button.text = tr("UI_OK") if index == 0 else ""
 		button.visible = index == 0
 		button.disabled = false
 	show()
@@ -113,6 +114,20 @@ func _apply_button_font(button: Button) -> void:
 	if UI_LABEL_SETTINGS.font != null:
 		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
 	button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+
+
+func _connect_locale_changed() -> void:
+	var localization: Node = get_node_or_null("/root/Localization")
+	if localization == null or not localization.has_signal(&"locale_changed"):
+		return
+	var callback := Callable(self, "_on_locale_changed")
+	if not localization.is_connected(&"locale_changed", callback):
+		localization.connect(&"locale_changed", callback)
+
+
+func _on_locale_changed(_locale_code: String = "") -> void:
+	if visible and not _options.is_empty():
+		show_options(_options)
 
 
 func _set_tree_paused(paused: bool) -> void:

@@ -219,7 +219,7 @@ func _show_battle_rewards(group_id: String) -> void:
 
 func _show_run_completed_message() -> void:
 	if node_choice_panel != null and node_choice_panel.has_method("show_message"):
-		node_choice_panel.call("show_message", "Run Complete", "Boss defeated. This v1 flow is complete.")
+		node_choice_panel.call("show_message", "RUN_COMPLETED_TITLE", "RUN_COMPLETED_DESC")
 
 
 func _show_upgrade_placeholder() -> void:
@@ -228,7 +228,7 @@ func _show_upgrade_placeholder() -> void:
 			var continue_callable: Callable = Callable(self, "continue_after_draft")
 			if not node_choice_panel.is_connected(&"message_dismissed", continue_callable):
 				node_choice_panel.connect(&"message_dismissed", continue_callable, CONNECT_ONE_SHOT)
-		node_choice_panel.call("show_message", "Upgrade", "Placeholder")
+		node_choice_panel.call("show_message", "RUN_UPGRADE_UNAVAILABLE_TITLE", "RUN_UPGRADE_UNAVAILABLE_DESC")
 	else:
 		_start_next_node()
 
@@ -254,7 +254,7 @@ func _show_no_upgrade_message() -> void:
 			var continue_callable: Callable = Callable(self, "continue_after_draft")
 			if not node_choice_panel.is_connected(&"message_dismissed", continue_callable):
 				node_choice_panel.connect(&"message_dismissed", continue_callable, CONNECT_ONE_SHOT)
-		node_choice_panel.call("show_message", "Upgrade", "No marble upgrades available.")
+		node_choice_panel.call("show_message", "RUN_UPGRADE_UNAVAILABLE_TITLE", "RUN_UPGRADE_UNAVAILABLE_DESC")
 	else:
 		_start_next_node()
 
@@ -477,23 +477,23 @@ func _make_weighted_node_option() -> RunNodeOption:
 
 
 func _make_normal_battle_option() -> RunNodeOption:
-	return _make_option(RunNodeOption.Kind.BATTLE, "battle", "Battle", "", _make_strong_group())
+	return _make_option(RunNodeOption.Kind.BATTLE, "battle", "RUN_BATTLE_TITLE", "RUN_BATTLE_DESC", _make_strong_group())
 
 
 func _make_event_option() -> RunNodeOption:
-	return _make_option(RunNodeOption.Kind.EVENT, "event", "Event", "", null)
+	return _make_option(RunNodeOption.Kind.EVENT, "event", "RUN_EVENT_TITLE", "RUN_EVENT_DESC", null)
 
 
 func _make_elite_option() -> RunNodeOption:
-	return _make_option(RunNodeOption.Kind.ELITE, "elite", "Elite", "", _make_elite_group())
+	return _make_option(RunNodeOption.Kind.ELITE, "elite", "RUN_ELITE_FIGHT_TITLE", "RUN_ELITE_DESC", _make_elite_group())
 
 
 func _make_upgrade_option() -> RunNodeOption:
-	return _make_option(RunNodeOption.Kind.UPGRADE, "upgrade", "Upgrade", "", null)
+	return _make_option(RunNodeOption.Kind.UPGRADE, "upgrade", "RUN_UPGRADE_TITLE", "RUN_UPGRADE_DESC", null)
 
 
 func _make_shop_option() -> RunNodeOption:
-	return _make_option(RunNodeOption.Kind.SHOP, "shop", "Shop", "", null)
+	return _make_option(RunNodeOption.Kind.SHOP, "shop", "RUN_SHOP_TITLE", "RUN_SHOP_DESC", null)
 
 
 func _make_weak_group() -> BattleGroupDef:
@@ -507,7 +507,7 @@ func _make_weak_group() -> BattleGroupDef:
 		_enemy_entry(Vector2(120, 72), weak_enemy_health),
 		_enemy_entry(Vector2(168, 48), weak_enemy_health),
 	]
-	return _make_group("weak_normal_%d" % current_node_index, "Weak Fight", BattleGroupDef.Kind.WEAK_NORMAL, entries)
+	return _make_group("weak_normal_%d" % current_node_index, "RUN_WEAK_FIGHT_TITLE", BattleGroupDef.Kind.WEAK_NORMAL, entries)
 
 
 func _make_strong_group() -> BattleGroupDef:
@@ -523,7 +523,7 @@ func _make_strong_group() -> BattleGroupDef:
 		_enemy_entry(Vector2(184, 88), strong_enemy_health),
 		_enemy_entry(Vector2(120, 132), strong_enemy_health),
 	]
-	return _make_group("strong_normal_%d" % current_node_index, "Strong Fight", BattleGroupDef.Kind.STRONG_NORMAL, entries)
+	return _make_group("strong_normal_%d" % current_node_index, "RUN_STRONG_FIGHT_TITLE", BattleGroupDef.Kind.STRONG_NORMAL, entries)
 
 
 func _make_elite_group() -> BattleGroupDef:
@@ -537,7 +537,7 @@ func _make_elite_group() -> BattleGroupDef:
 		_enemy_entry(Vector2(80, 124), strong_enemy_health),
 		_enemy_entry(Vector2(160, 124), strong_enemy_health),
 	]
-	return _make_group("elite_%d" % current_node_index, "Elite Fight", BattleGroupDef.Kind.ELITE, entries)
+	return _make_group("elite_%d" % current_node_index, "RUN_ELITE_FIGHT_TITLE", BattleGroupDef.Kind.ELITE, entries)
 
 
 func _make_boss_group() -> BattleGroupDef:
@@ -551,7 +551,7 @@ func _make_boss_group() -> BattleGroupDef:
 		_enemy_entry(Vector2(72, 128), weak_enemy_health),
 		_enemy_entry(Vector2(168, 128), weak_enemy_health),
 	]
-	return _make_group("boss_%d" % current_node_index, "Boss Fight", BattleGroupDef.Kind.BOSS, entries)
+	return _make_group("boss_%d" % current_node_index, "RUN_BOSS_FIGHT_TITLE", BattleGroupDef.Kind.BOSS, entries)
 
 
 func _make_group(id: String, title: String, kind: BattleGroupDef.Kind, entries: Array[BattleGroupDef.EnemyEntry]) -> BattleGroupDef:

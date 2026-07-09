@@ -5,7 +5,7 @@
 [resource]
 script = ExtResource("1_stat")
 id = "blue_frost_stacks_per_hit"
-display_name = "Blue Frost Stacks Per Hit"
+display_name = "STAT_BLUE_FROST_STACKS_PER_HIT"
 category = "marble"
 base_value = 1.0
 min_value = 1.0

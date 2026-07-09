@@ -6,8 +6,8 @@ extends RefCounted
 func get_definition() -> BuffDef:
 	var buff: BuffDef = BuffDef.new()
 	buff.id = "damage_up"
-	buff.display_name = "Damage Up"
-	buff.description = "Increases marble-chain damage."
+	buff.display_name = "BUFF_DAMAGE_UP_TITLE"
+	buff.description = "BUFF_DAMAGE_UP_DESC"
 	buff.duration = -1.0
 	buff.stackable = true
 	buff.max_stacks = 3
