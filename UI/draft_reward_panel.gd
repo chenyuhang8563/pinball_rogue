@@ -191,6 +191,10 @@ func _configure_item_button(index: int, item: Item) -> void:
 	var button: Button = _buttons[index]
 	button.tooltip_text = ""
 	button.set_meta("tooltip_text", item.title if item != null else "")
+	if item != null:
+		button.set_meta("tooltip_item", item)
+	elif button.has_meta("tooltip_item"):
+		button.remove_meta("tooltip_item")
 	if item != null and item.icon != null:
 		button.text = ""
 		_set_button_icon(index, item.icon)
@@ -209,6 +213,8 @@ func _configure_gold_button(index: int, custom_tooltip_text: String) -> void:
 	button.disabled = false
 	button.tooltip_text = ""
 	button.set_meta("tooltip_text", custom_tooltip_text)
+	if button.has_meta("tooltip_item"):
+		button.remove_meta("tooltip_item")
 	_set_button_icon(index, CoinTexture)
 
 
@@ -320,6 +326,12 @@ func _apply_button_font(button: Button) -> void:
 
 func _on_reward_button_mouse_entered(button: Button) -> void:
 	if _tooltip == null:
+		return
+	var item: Item = null
+	if button.has_meta("tooltip_item"):
+		item = button.get_meta("tooltip_item") as Item
+	if item != null and _tooltip.has_method("show_item_for_control"):
+		_tooltip.call("show_item_for_control", item, button)
 		return
 	var text: String = str(button.get_meta("tooltip_text", ""))
 	if text.is_empty():
