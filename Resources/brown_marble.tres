@@ -6,10 +6,10 @@
 [resource]
 script = ExtResource("2_item")
 id = "brown_marble"
-title = "Brown Marble"
+title = "ITEM_BROWN_MARBLE_TITLE"
 icon = ExtResource("1_brown")
 price = 20
-description = "Unlocks brown marble."
+description = "ITEM_BROWN_MARBLE_DESC"
 effect_type = 3
 type = 1
 marble_type = 1

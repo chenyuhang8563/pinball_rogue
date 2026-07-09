@@ -8,37 +8,13 @@ const EN_FONT: FontFile = preload("res://Assets/Fonts/quaver.ttf")
 const UI_FONT_SIZE: int = 12
 const PAUSE_ACTION: StringName = &"pause_game"
 
-const LOCALES: Array[Dictionary] = [
-	{"code": "zh_CN", "name": "中文"},
-	{"code": "en", "name": "English"},
-]
-
-const TEXT: Dictionary = {
-	"en": {
-		"UI_PAUSE_TITLE": "Paused",
-		"UI_CONTINUE": "Continue",
-		"UI_SETTINGS_TITLE": "Settings",
-		"UI_EXIT": "Exit",
-		"UI_LANGUAGE": "Language",
-		"UI_MASTER_VOLUME": "Total Volume",
-		"UI_MUSIC_VOLUME_PLACEHOLDER": "Music (placeholder)",
-		"UI_SFX_VOLUME": "SFX Volume",
-	},
-	"zh_CN": {
-		"UI_PAUSE_TITLE": "暂停",
-		"UI_CONTINUE": "继续",
-		"UI_SETTINGS_TITLE": "设置",
-		"UI_EXIT": "退出",
-		"UI_LANGUAGE": "语言",
-		"UI_MASTER_VOLUME": "总音量",
-		"UI_MUSIC_VOLUME_PLACEHOLDER": "音乐（占位）",
-		"UI_SFX_VOLUME": "音效大小",
-	},
-}
-
 @export var quit_on_exit: bool = true
 
 var _settings_visible: bool = false
+var _locales: Array[Dictionary] = [
+	{"code": "zh_CN", "name": "中文"},
+	{"code": "en", "name": "English"},
+]
 
 
 func _ready() -> void:
@@ -46,6 +22,7 @@ func _ready() -> void:
 	layout_direction = Control.LAYOUT_DIRECTION_LOCALE
 	_ensure_pause_action()
 	_ensure_supported_locale()
+	_connect_localization()
 	_bind_signals()
 	_setup_language_button()
 	_setup_volume_sliders()
@@ -108,9 +85,10 @@ func _setup_language_button() -> void:
 	var language_button: OptionButton = _node("Center/Panel/MarginContainer/Layout/SettingsPanel/LanguageRow/LanguageButton") as OptionButton
 	if language_button == null:
 		return
-	if language_button.item_count == 0:
-		for locale: Dictionary in LOCALES:
-			language_button.add_item(String(locale.get("name", locale.get("code", ""))))
+	_locales = _get_supported_locales()
+	language_button.clear()
+	for locale: Dictionary in _locales:
+		language_button.add_item(String(locale.get("name", locale.get("code", ""))))
 	var callback := Callable(self, "_on_language_selected")
 	if not language_button.item_selected.is_connected(callback):
 		language_button.item_selected.connect(callback)
@@ -119,10 +97,15 @@ func _setup_language_button() -> void:
 
 
 func _on_language_selected(index: int) -> void:
-	if index < 0 or index >= LOCALES.size():
+	if index < 0 or index >= _locales.size():
 		return
-	TranslationServer.set_locale(String(LOCALES[index].get("code", "zh_CN")))
-	_apply_text()
+	var locale_code := String(_locales[index].get("code", "zh_CN"))
+	var localization := _get_localization()
+	if localization != null and localization.has_method("set_locale"):
+		localization.call("set_locale", locale_code)
+	else:
+		TranslationServer.set_locale(locale_code)
+		_apply_text()
 	_sync_language_button()
 
 
@@ -161,7 +144,7 @@ func _set_label_text(path: String, key: String) -> void:
 	var label: Label = _node(path) as Label
 	if label == null:
 		return
-	label.text = _translate(key)
+	label.text = tr(key)
 	label.label_settings = _label_settings_for_locale()
 
 
@@ -169,7 +152,7 @@ func _set_button_text(path: String, key: String) -> void:
 	var button: Button = _node(path) as Button
 	if button == null:
 		return
-	button.text = _translate(key)
+	button.text = tr(key)
 	button.focus_mode = Control.FOCUS_ALL
 	_apply_button_font(button)
 
@@ -185,8 +168,8 @@ func _sync_language_button() -> void:
 	if language_button == null:
 		return
 	var current_locale := _current_locale()
-	for index: int in range(LOCALES.size()):
-		if String(LOCALES[index].get("code", "")) == current_locale:
+	for index: int in range(_locales.size()):
+		if String(_locales[index].get("code", "")) == current_locale:
 			language_button.select(index)
 			return
 
@@ -230,12 +213,10 @@ func _ensure_supported_locale() -> void:
 		TranslationServer.set_locale("zh_CN")
 
 
-func _translate(key: String) -> String:
-	var locale_text: Dictionary = TEXT.get(_current_locale(), TEXT["zh_CN"])
-	return String(locale_text.get(key, key))
-
-
 func _current_locale() -> String:
+	var localization := _get_localization()
+	if localization != null and localization.has_method("get_locale"):
+		return String(localization.call("get_locale"))
 	return "en" if TranslationServer.get_locale() == "en" else "zh_CN"
 
 
@@ -264,6 +245,40 @@ func _apply_option_button_font(button: OptionButton) -> void:
 		button.get_popup().remove_theme_font_override(&"font")
 	button.add_theme_font_size_override(&"font_size", UI_FONT_SIZE)
 	button.get_popup().add_theme_font_size_override(&"font_size", UI_FONT_SIZE)
+
+
+func _connect_localization() -> void:
+	var localization := _get_localization()
+	if localization == null or not localization.has_signal(&"locale_changed"):
+		return
+	var callback := Callable(self, "_on_locale_changed")
+	if not localization.is_connected(&"locale_changed", callback):
+		localization.connect(&"locale_changed", callback)
+
+
+func _on_locale_changed(_locale_code: String) -> void:
+	_apply_text()
+	_sync_language_button()
+
+
+func _get_supported_locales() -> Array[Dictionary]:
+	var localization := _get_localization()
+	if localization != null and localization.has_method("get_supported_locales"):
+		var locales: Variant = localization.call("get_supported_locales")
+		if locales is Array:
+			var typed_locales: Array[Dictionary] = []
+			for locale: Variant in locales:
+				if locale is Dictionary:
+					typed_locales.append(locale)
+			return typed_locales
+	return _locales
+
+
+func _get_localization() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("Localization")
 
 
 func _node(path: String) -> Node:

@@ -1,0 +1,71 @@
+keys,en,zh_CN
+UI_INVENTORY_TITLE,Inventory,物品栏
+UI_SKILLS_TITLE,Skills,技能
+UI_EXIT,Exit,退出
+UI_SHOP_TITLE,Shop,商店
+UI_OK,OK,确定
+UI_LANGUAGE_CHINESE,中文,中文
+UI_LANGUAGE_ENGLISH,English,English
+UI_CHOOSE_NEXT_NODE_TITLE,Choose Next Node,选择下一节点
+UI_DRAFT_REWARD_TITLE,Draft Reward,选择奖励
+UI_BATTLE_REWARD_TITLE,Battle Reward,战斗奖励
+UI_UPGRADE_MARBLE_TITLE,Upgrade Marble,升级弹珠
+UI_UPGRADE_MARBLE_DESC,Choose one marble to upgrade.,选择一个弹珠进行升级。
+UI_RELIC_TYPE,Relic,遗物
+UI_MARBLE_TYPE,Marble,弹珠
+UI_EMPTY,Empty,空
+UI_INVENTORY_FULL_GOLD_TOOLTIP,Inventory full: take +%d Gold,物品栏已满：获得 +%d 金币
+UI_TAKE_GOLD_TOOLTIP,Take +%d Gold,获得 +%d 金币
+RUN_BATTLE_TITLE,Battle,战斗
+RUN_EVENT_TITLE,Event,事件
+RUN_UPGRADE_TITLE,Upgrade,升级
+RUN_SHOP_TITLE,Shop,商店
+RUN_UPGRADE_UNAVAILABLE_TITLE,Upgrade,升级
+RUN_UPGRADE_UNAVAILABLE_DESC,No marble upgrades available.,没有可升级的弹珠。
+RUN_COMPLETED_TITLE,Victory,胜利
+RUN_COMPLETED_DESC,Boss defeated. This v1 flow is complete.,首领已击败。当前流程已完成。
+RUN_WEAK_FIGHT_TITLE,Weak Fight,普通战斗
+RUN_STRONG_FIGHT_TITLE,Strong Fight,强敌战斗
+RUN_ELITE_FIGHT_TITLE,Elite Fight,精英战斗
+RUN_BOSS_FIGHT_TITLE,Boss Fight,首领战
+ITEM_DARK_MARBLE_TITLE,Dark Marble,暗影弹珠
+ITEM_DARK_MARBLE_DESC,Default dark marble.,默认暗影弹珠。
+ITEM_BLUE_MARBLE_TITLE,Blue Marble,冰霜弹珠
+ITEM_BLUE_MARBLE_DESC,Adds frost to enemies on hit.,命中敌人时施加冰霜。
+ITEM_GREEN_MARBLE_TITLE,Green Marble,毒液弹珠
+ITEM_GREEN_MARBLE_DESC,Poisons enemies for 10 seconds.,使敌人中毒 10 秒。
+ITEM_BROWN_MARBLE_TITLE,Brown Marble,棕色弹珠
+ITEM_BROWN_MARBLE_DESC,Unlocks brown marble.,解锁棕色弹珠。
+ITEM_BOMB_MARBLE_TITLE,Bomb Marble,炸弹弹珠
+ITEM_BOMB_MARBLE_DESC,Unlocks bomb marble refills.,解锁炸弹弹珠补充。
+ITEM_LIGHTNING_TITLE,Lightning,闪电链
+ITEM_LIGHTNING_DESC,Releases a chain of lightning,释放一道闪电链。
+UPGRADE_DARK_DAMAGE_2_DESC,Damage 2,伤害 2
+UPGRADE_DARK_DAMAGE_3_DESC,Damage 3,伤害 3
+UPGRADE_DARK_AWAKEN_DESC,Awaken: Damage 4,觉醒：伤害 4
+UPGRADE_BOMB_DAMAGE_5_DESC,Explosion damage 5,爆炸伤害 5
+UPGRADE_BOMB_DAMAGE_8_DESC,Explosion damage 8,爆炸伤害 8
+UPGRADE_BOMB_AWAKEN_DESC,"Awaken: radius 100, effect x4","觉醒：半径 100，效果 x4"
+UPGRADE_GREEN_POISON_2_DESC,Poison 2 per tick,每跳中毒 2
+UPGRADE_GREEN_POISON_4_DESC,Poison 4 per tick,每跳中毒 4
+UPGRADE_GREEN_AWAKEN_DESC,Awaken: Poison 4 every 0.5s,觉醒：每 0.5 秒中毒 4
+UPGRADE_BROWN_ECHO_2_DESC,Echo damage 2,回响伤害 2
+UPGRADE_BROWN_ECHO_4_DESC,Echo damage 4,回响伤害 4
+UPGRADE_BROWN_AWAKEN_DESC,"Awaken: Echo 8, 15s, spend 1 stack","觉醒：回响 8，15 秒，消耗 1 层"
+UPGRADE_BLUE_DURATION_DESC,Frost duration +2s,冰霜持续时间 +2 秒
+UPGRADE_BLUE_BONUS_DESC,Bonus damage equals frost stacks,额外伤害等于冰霜层数
+UPGRADE_BLUE_AWAKEN_DESC,Awaken: +1 frost stack on Blue hit,觉醒：冰霜命中额外叠加 1 层
+STAT_BASE_DAMAGE,Base Damage,基础伤害
+STAT_ARMOR,Armor,护甲
+STAT_CRIT_RATE,Crit Rate,暴击率
+STAT_CRIT_DAMAGE,Crit Damage,暴击伤害
+STAT_MOVE_SPEED,Move Speed,移动速度
+STAT_MAX_HEALTH,Max Health,最大生命值
+STAT_RUN_HEALTH,Run Health,旅程生命值
+UI_PAUSE_TITLE,Paused,暂停
+UI_CONTINUE,Continue,继续
+UI_SETTINGS_TITLE,Settings,设置
+UI_LANGUAGE,Language,语言
+UI_MASTER_VOLUME,Total Volume,总音量
+UI_MUSIC_VOLUME_PLACEHOLDER,Music (placeholder),音乐（占位）
+UI_SFX_VOLUME,SFX Volume,音效大小

@@ -60,7 +60,7 @@ theme_override_constants/separation = 8
 
 [node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout"]
 layout_mode = 2
-text = "Paused"
+text = "UI_PAUSE_TITLE"
 label_settings = ExtResource("2_label_settings")
 horizontal_alignment = 1
 
@@ -74,7 +74,7 @@ layout_mode = 2
 focus_mode = 2
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 12
-text = "Continue"
+text = "UI_CONTINUE"
 
 [node name="SettingsButton" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
 custom_minimum_size = Vector2(132, 24)
@@ -82,7 +82,7 @@ layout_mode = 2
 focus_mode = 2
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 12
-text = "Settings"
+text = "UI_SETTINGS_TITLE"
 
 [node name="ExitButton" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
 custom_minimum_size = Vector2(132, 24)
@@ -90,7 +90,7 @@ layout_mode = 2
 focus_mode = 2
 theme_override_fonts/font = ExtResource("3_font")
 theme_override_font_sizes/font_size = 12
-text = "Exit"
+text = "UI_EXIT"
 
 [node name="SettingsPanel" type="VBoxContainer" parent="Center/Panel/MarginContainer/Layout"]
 visible = false
@@ -104,7 +104,7 @@ theme_override_constants/separation = 6
 [node name="LanguageLabel" type="Label" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/LanguageRow"]
 custom_minimum_size = Vector2(66, 18)
 layout_mode = 2
-text = "Language"
+text = "UI_LANGUAGE"
 label_settings = ExtResource("2_label_settings")
 
 [node name="LanguageButton" type="OptionButton" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/LanguageRow"]
@@ -128,7 +128,7 @@ theme_override_constants/separation = 6
 [node name="MasterVolumeLabel" type="Label" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/MasterVolumeRow"]
 custom_minimum_size = Vector2(66, 18)
 layout_mode = 2
-text = "Total Volume"
+text = "UI_MASTER_VOLUME"
 label_settings = ExtResource("2_label_settings")
 
 [node name="MasterVolumeSlider" type="HSlider" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/MasterVolumeRow"]
@@ -147,7 +147,7 @@ theme_override_constants/separation = 6
 [node name="MusicVolumeLabel" type="Label" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/MusicVolumeRow"]
 custom_minimum_size = Vector2(66, 18)
 layout_mode = 2
-text = "Music (placeholder)"
+text = "UI_MUSIC_VOLUME_PLACEHOLDER"
 label_settings = ExtResource("2_label_settings")
 
 [node name="MusicVolumeSlider" type="HSlider" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/MusicVolumeRow"]
@@ -166,7 +166,7 @@ theme_override_constants/separation = 6
 [node name="SfxVolumeLabel" type="Label" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/SfxVolumeRow"]
 custom_minimum_size = Vector2(66, 18)
 layout_mode = 2
-text = "SFX Volume"
+text = "UI_SFX_VOLUME"
 label_settings = ExtResource("2_label_settings")
 
 [node name="SfxVolumeSlider" type="HSlider" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/SfxVolumeRow"]

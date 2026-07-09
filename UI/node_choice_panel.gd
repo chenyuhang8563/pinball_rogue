@@ -16,6 +16,7 @@ var _button_row: HBoxContainer
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_bind_nodes()
+	_connect_localization()
 	_connect_buttons()
 	hide()
 
@@ -26,14 +27,15 @@ func show_options(options: Array[RunNodeOption]) -> void:
 	if not _has_required_nodes():
 		return
 	_options = options
-	_title_label.text = "Choose Next Node"
-	_description_label.text = "Pick one path for the next step."
+	_title_label.text = tr("UI_CHOOSE_NEXT_NODE_TITLE")
+	_description_label.text = ""
+	_description_label.hide()
 
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
 		if index < _options.size():
 			var option: RunNodeOption = _options[index]
-			button.text = option.title
+			button.text = tr(option.title)
 			button.disabled = false
 			button.show()
 		else:
@@ -51,11 +53,12 @@ func show_message(title: String, description: String) -> void:
 	if not _has_required_nodes():
 		return
 	_options.clear()
-	_title_label.text = title
-	_description_label.text = description
+	_title_label.text = tr(title)
+	_description_label.text = tr(description)
+	_description_label.visible = not description.is_empty()
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
-		button.text = "OK" if index == 0 else ""
+		button.text = tr("UI_OK") if index == 0 else ""
 		button.visible = index == 0
 		button.disabled = false
 	show()
@@ -119,3 +122,24 @@ func _set_tree_paused(paused: bool) -> void:
 	if not is_inside_tree():
 		return
 	get_tree().paused = paused
+
+
+func _connect_localization() -> void:
+	var localization := _get_autoload_node(&"Localization")
+	if localization == null or not localization.has_signal(&"locale_changed"):
+		return
+	var callback := Callable(self, "_on_locale_changed")
+	if not localization.is_connected(&"locale_changed", callback):
+		localization.connect(&"locale_changed", callback)
+
+
+func _on_locale_changed(_locale_code: String) -> void:
+	if visible and not _options.is_empty():
+		show_options(_options)
+
+
+func _get_autoload_node(node_name: StringName) -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null(NodePath(node_name))

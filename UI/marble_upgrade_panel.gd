@@ -17,6 +17,7 @@ var _button_row: HBoxContainer
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_bind_nodes()
+	_connect_localization()
 	_connect_buttons()
 	hide()
 
@@ -27,8 +28,8 @@ func show_upgrades(options: Array[Dictionary]) -> void:
 	if not _has_required_nodes():
 		return
 	_options = options
-	_title_label.text = "Upgrade Marble"
-	_description_label.text = "Choose one marble to upgrade."
+	_title_label.text = tr("UI_UPGRADE_MARBLE_TITLE")
+	_description_label.text = tr("UI_UPGRADE_MARBLE_DESC")
 
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
@@ -38,8 +39,8 @@ func show_upgrades(options: Array[Dictionary]) -> void:
 				button.call(
 					"set_option",
 					option.get("icon") as Texture2D,
-					String(option.get("title", "Marble")),
-					String(option.get("description", "")),
+					_translate_option_text(String(option.get("title", "UI_MARBLE_TYPE"))),
+					_translate_option_text(String(option.get("description", ""))),
 					ItemLevelResolverScript.get_upgrade_option_level(option)
 				)
 			button.disabled = false
@@ -108,3 +109,30 @@ func _set_tree_paused(paused: bool) -> void:
 	if not is_inside_tree():
 		return
 	get_tree().paused = paused
+
+
+func _translate_option_text(key_or_text: String) -> String:
+	if key_or_text.is_empty():
+		return ""
+	return tr(key_or_text)
+
+
+func _connect_localization() -> void:
+	var localization := _get_autoload_node(&"Localization")
+	if localization == null or not localization.has_signal(&"locale_changed"):
+		return
+	var callback := Callable(self, "_on_locale_changed")
+	if not localization.is_connected(&"locale_changed", callback):
+		localization.connect(&"locale_changed", callback)
+
+
+func _on_locale_changed(_locale_code: String) -> void:
+	if visible:
+		show_upgrades(_options)
+
+
+func _get_autoload_node(node_name: StringName) -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null(NodePath(node_name))

@@ -21,8 +21,8 @@ func set_option(texture: Texture2D, title: String, description: String, level: i
 		return
 	text = ""
 	_set_icon_texture(texture)
-	_title_label.text = title
-	_description_label.text = description
+	_title_label.text = tr(title)
+	_description_label.text = tr(description)
 	_set_icon_level(level)
 
 

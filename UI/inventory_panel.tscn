@@ -63,15 +63,28 @@ theme_override_constants/separation = 8
 [node name="TitleLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Header"]
 layout_mode = 2
 size_flags_horizontal = 3
-text = "Inventory"
+text = "UI_INVENTORY_TITLE"
 horizontal_alignment = 1
 label_settings = ExtResource("3_label_settings")
+
+[node name="LanguageButton" type="OptionButton" parent="UI/Panel/MarginContainer/Layout/Header"]
+custom_minimum_size = Vector2(74, 24)
+layout_mode = 2
+focus_mode = 2
+theme_override_font_sizes/font_size = 12
+clip_text = true
+selected = 0
+item_count = 2
+popup/item_0/text = "中文"
+popup/item_0/id = 0
+popup/item_1/text = "English"
+popup/item_1/id = 1
 
 [node name="ExitButton" type="Button" parent="UI/Panel/MarginContainer/Layout/Header"]
 custom_minimum_size = Vector2(48, 24)
 layout_mode = 2
 focus_mode = 2
-text = "Exit"
+text = "UI_EXIT"
 
 [node name="Content" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout"]
 layout_mode = 2
@@ -83,7 +96,7 @@ layout_mode = 2
 
 [node name="SkillLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Content"]
 layout_mode = 2
-text = "Skills"
+text = "UI_SKILLS_TITLE"
 label_settings = ExtResource("3_label_settings")
 
 [node name="SkillBar" type="HBoxContainer" parent="UI/Panel/MarginContainer/Layout/Content"]

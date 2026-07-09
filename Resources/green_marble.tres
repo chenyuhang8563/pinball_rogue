@@ -6,10 +6,10 @@
 [resource]
 script = ExtResource("1_c17y6")
 id = "green_marble"
-title = "Green Marble"
+title = "ITEM_GREEN_MARBLE_TITLE"
 icon = ExtResource("1_1xaem")
 price = 25
-description = "Poisons enemies for 10 seconds."
+description = "ITEM_GREEN_MARBLE_DESC"
 type = 1
 marble_type = 3
 metadata/_custom_type_script = "uid://cbxvjrptlxvsm"

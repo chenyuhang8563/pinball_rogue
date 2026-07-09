@@ -6,10 +6,10 @@
 [resource]
 script = ExtResource("2_item")
 id = "bomb_marble"
-title = "Bomb Marble"
+title = "ITEM_BOMB_MARBLE_TITLE"
 icon = ExtResource("1_bomb")
 price = 30
-description = "Unlocks bomb marble refills."
+description = "ITEM_BOMB_MARBLE_DESC"
 effect_type = 2
 type = 1
 marble_type = 2

@@ -26,7 +26,9 @@ func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	layout_direction = Control.LAYOUT_DIRECTION_LOCALE
 	_ensure_toggle_action()
+	_connect_localization()
 	_apply_text()
+	_setup_language_button()
 	_apply_button_label_settings()
 	_ensure_skill_slots()
 	_connect_inventory()
@@ -85,17 +87,58 @@ func _apply_mode() -> void:
 func _apply_text() -> void:
 	var title_label: Label = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/TitleLabel") as Label
 	if title_label != null:
-		title_label.text = tr("Inventory")
+		title_label.text = tr("UI_INVENTORY_TITLE")
 
 	var skill_label: Label = get_node_or_null("UI/Panel/MarginContainer/Layout/Content/SkillLabel") as Label
 	if skill_label != null:
-		skill_label.text = tr("Skills")
+		skill_label.text = tr("UI_SKILLS_TITLE")
 
 	var exit_button: Button = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/ExitButton") as Button
 	if exit_button != null:
-		exit_button.text = tr("Exit")
+		exit_button.text = tr("UI_EXIT")
 		if not exit_button.pressed.is_connected(close_inventory):
 			exit_button.pressed.connect(close_inventory)
+
+
+func _setup_language_button() -> void:
+	var language_button: OptionButton = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/LanguageButton") as OptionButton
+	if language_button == null:
+		return
+	language_button.clear()
+	var locales := _get_supported_locales()
+	for locale: Dictionary in locales:
+		language_button.add_item(String(locale.get("name", locale.get("code", ""))))
+	var callback := Callable(self, "_on_language_selected")
+	if not language_button.item_selected.is_connected(callback):
+		language_button.item_selected.connect(callback)
+	_sync_language_button()
+	language_button.add_theme_font_size_override(&"font_size", 12)
+	language_button.get_popup().add_theme_font_size_override(&"font_size", 12)
+
+
+func _on_language_selected(index: int) -> void:
+	var locales := _get_supported_locales()
+	if index < 0 or index >= locales.size():
+		return
+	var localization := _get_localization()
+	var locale_code := String(locales[index].get("code", "zh_CN"))
+	if localization != null and localization.has_method("set_locale"):
+		localization.call("set_locale", locale_code)
+	else:
+		TranslationServer.set_locale(locale_code)
+		_apply_text()
+
+
+func _sync_language_button() -> void:
+	var language_button: OptionButton = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/LanguageButton") as OptionButton
+	if language_button == null:
+		return
+	var locales := _get_supported_locales()
+	var current_locale := _current_locale()
+	for index: int in range(locales.size()):
+		if String(locales[index].get("code", "")) == current_locale:
+			language_button.select(index)
+			return
 
 
 func _apply_button_label_settings() -> void:
@@ -272,3 +315,45 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null(NodePath(node_name))
+
+
+func _connect_localization() -> void:
+	var localization := _get_localization()
+	if localization == null or not localization.has_signal(&"locale_changed"):
+		return
+	var callback := Callable(self, "_on_locale_changed")
+	if not localization.is_connected(&"locale_changed", callback):
+		localization.connect(&"locale_changed", callback)
+
+
+func _on_locale_changed(_locale_code: String) -> void:
+	_apply_text()
+	_sync_language_button()
+	refresh_inventory()
+
+
+func _get_supported_locales() -> Array[Dictionary]:
+	var localization := _get_localization()
+	if localization != null and localization.has_method("get_supported_locales"):
+		var locales: Variant = localization.call("get_supported_locales")
+		if locales is Array:
+			var typed_locales: Array[Dictionary] = []
+			for locale: Variant in locales:
+				if locale is Dictionary:
+					typed_locales.append(locale)
+			return typed_locales
+	return [
+		{"code": "zh_CN", "name": "中文"},
+		{"code": "en", "name": "English"},
+	]
+
+
+func _current_locale() -> String:
+	var localization := _get_localization()
+	if localization != null and localization.has_method("get_locale"):
+		return String(localization.call("get_locale"))
+	return "en" if TranslationServer.get_locale() == "en" else "zh_CN"
+
+
+func _get_localization() -> Node:
+	return _get_autoload_node(&"Localization")

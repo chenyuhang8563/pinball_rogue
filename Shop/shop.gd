@@ -24,6 +24,7 @@ var mode: MODE = MODE.OFF:
 	set(value):
 		mode = value
 		if value == MODE.ON:
+			_apply_text()
 			refresh_collection_rows()
 			$UI.show()
 			get_tree().paused = true
@@ -36,6 +37,8 @@ var mode: MODE = MODE.OFF:
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	$UI.hide()
+	_connect_localization()
+	_apply_text()
 	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
 	if exit_button != null and not exit_button.pressed.is_connected(close_shop):
 		_apply_button_label_settings(exit_button)
@@ -64,6 +67,16 @@ func _apply_button_label_settings(button: Button) -> void:
 	if UI_LABEL_SETTINGS.font != null:
 		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
 	button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+
+
+func _apply_text() -> void:
+	var title_label: Label = get_node_or_null("UI/Panel/Label") as Label
+	if title_label != null:
+		title_label.text = tr("UI_SHOP_TITLE")
+	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
+	if exit_button != null:
+		exit_button.text = tr("UI_EXIT")
+		_apply_button_label_settings(exit_button)
 
 func sell_item(item: Item) -> bool:
 	if item == null:
@@ -287,6 +300,19 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null(NodePath(node_name))
+
+
+func _connect_localization() -> void:
+	var localization := _get_autoload_node(&"Localization")
+	if localization == null or not localization.has_signal(&"locale_changed"):
+		return
+	var callback := Callable(self, "_on_locale_changed")
+	if not localization.is_connected(&"locale_changed", callback):
+		localization.connect(&"locale_changed", callback)
+
+
+func _on_locale_changed(_locale_code: String) -> void:
+	_apply_text()
 
 
 func _filter_purchasable_items(list: Array[Item]) -> Array[Item]:
