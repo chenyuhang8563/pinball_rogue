@@ -6,6 +6,7 @@ const DraftRewardPanelScene: PackedScene = preload("res://UI/draft_reward_panel.
 const MarbleUpgradePanelScene: PackedScene = preload("res://UI/marble_upgrade_panel.tscn")
 const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.tscn")
 const InventoryPanelScene: PackedScene = preload("res://UI/inventory_panel.tscn")
+const PausePanelScene: PackedScene = preload("res://UI/pause_panel.tscn")
 
 @onready var marbles: Node2D = $Marbles
 @export var starting_marble_spawn_positions: Array[Vector2] = [
@@ -231,11 +232,14 @@ func _setup_run_flow() -> void:
 	ui_layer.add_child(upgrade_panel)
 
 	_setup_battle_health_hud(ui_layer)
+	_setup_pause_panel(ui_layer)
 	_setup_inventory_panel()
 
 	var crt_overlay: Node = ui_layer.get_node_or_null("ColorRect")
 	if crt_overlay != null:
-		ui_layer.move_child(crt_overlay, ui_layer.get_child_count() - 1)
+		if crt_overlay is CanvasItem:
+			(crt_overlay as CanvasItem).z_index = -1
+		ui_layer.move_child(crt_overlay, 0)
 
 	run_controller = RunControllerScript.new()
 	run_controller.name = "RunController"
@@ -265,6 +269,20 @@ func _setup_battle_health_hud(ui_layer: Node) -> void:
 		ui_layer.add_child(battle_health_hud)
 	_sync_battle_hud_gold()
 	_connect_shop_gold_changed()
+
+
+func _setup_pause_panel(ui_layer: Node) -> void:
+	var pause_panel: Node = ui_layer.get_node_or_null("PausePanel")
+	if pause_panel == null:
+		pause_panel = get_node_or_null("PausePanel")
+	if pause_panel == null:
+		pause_panel = PausePanelScene.instantiate()
+		pause_panel.name = "PausePanel"
+		ui_layer.add_child(pause_panel)
+		return
+	if pause_panel.get_parent() != ui_layer:
+		pause_panel.get_parent().remove_child(pause_panel)
+		ui_layer.add_child(pause_panel)
 
 
 func _setup_inventory_panel() -> void:

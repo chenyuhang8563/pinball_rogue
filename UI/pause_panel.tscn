@@ -1,0 +1,179 @@
+[gd_scene load_steps=5 format=3 uid="uid://bfiq2ule5s2x8"]
+
+[ext_resource type="Script" path="res://UI/pause_panel.gd" id="1_script"]
+[ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="2_label_settings"]
+[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="3_font"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_panel"]
+bg_color = Color(0.08, 0.08, 0.1, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.53, 0.47, 1)
+
+[node name="PausePanel" type="Control"]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+color = Color(0, 0, 0, 0.62)
+
+[node name="Center" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center"]
+custom_minimum_size = Vector2(176, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_panel")
+
+[node name="MarginContainer" type="MarginContainer" parent="Center/Panel"]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel/MarginContainer"]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout"]
+layout_mode = 2
+text = "Paused"
+label_settings = ExtResource("2_label_settings")
+horizontal_alignment = 1
+
+[node name="ButtonRow" type="VBoxContainer" parent="Center/Panel/MarginContainer/Layout"]
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="ContinueButton" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+focus_mode = 2
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 12
+text = "Continue"
+
+[node name="SettingsButton" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+focus_mode = 2
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 12
+text = "Settings"
+
+[node name="ExitButton" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+focus_mode = 2
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 12
+text = "Exit"
+
+[node name="SettingsPanel" type="VBoxContainer" parent="Center/Panel/MarginContainer/Layout"]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 5
+
+[node name="LanguageRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LanguageLabel" type="Label" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/LanguageRow"]
+custom_minimum_size = Vector2(66, 18)
+layout_mode = 2
+text = "Language"
+label_settings = ExtResource("2_label_settings")
+
+[node name="LanguageButton" type="OptionButton" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/LanguageRow"]
+custom_minimum_size = Vector2(80, 22)
+layout_mode = 2
+focus_mode = 2
+theme_override_fonts/font = ExtResource("3_font")
+theme_override_font_sizes/font_size = 12
+clip_text = true
+selected = 0
+item_count = 2
+popup/item_0/text = "中文"
+popup/item_0/id = 0
+popup/item_1/text = "English"
+popup/item_1/id = 1
+
+[node name="MasterVolumeRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MasterVolumeLabel" type="Label" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/MasterVolumeRow"]
+custom_minimum_size = Vector2(66, 18)
+layout_mode = 2
+text = "Total Volume"
+label_settings = ExtResource("2_label_settings")
+
+[node name="MasterVolumeSlider" type="HSlider" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/MasterVolumeRow"]
+custom_minimum_size = Vector2(80, 18)
+layout_mode = 2
+focus_mode = 2
+max_value = 1.0
+step = 0.05
+value = 1.0
+editable = false
+
+[node name="MusicVolumeRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="MusicVolumeLabel" type="Label" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/MusicVolumeRow"]
+custom_minimum_size = Vector2(66, 18)
+layout_mode = 2
+text = "Music (placeholder)"
+label_settings = ExtResource("2_label_settings")
+
+[node name="MusicVolumeSlider" type="HSlider" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/MusicVolumeRow"]
+custom_minimum_size = Vector2(80, 18)
+layout_mode = 2
+focus_mode = 2
+max_value = 1.0
+step = 0.05
+value = 1.0
+editable = false
+
+[node name="SfxVolumeRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout/SettingsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="SfxVolumeLabel" type="Label" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/SfxVolumeRow"]
+custom_minimum_size = Vector2(66, 18)
+layout_mode = 2
+text = "SFX Volume"
+label_settings = ExtResource("2_label_settings")
+
+[node name="SfxVolumeSlider" type="HSlider" parent="Center/Panel/MarginContainer/Layout/SettingsPanel/SfxVolumeRow"]
+custom_minimum_size = Vector2(80, 18)
+layout_mode = 2
+focus_mode = 2
+max_value = 1.0
+step = 0.05
+value = 1.0
+editable = false
