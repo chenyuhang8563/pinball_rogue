@@ -1,6 +1,6 @@
 [gd_scene load_steps=2 format=3]
 
-[ext_resource type="LabelSettings" path="res://Themes/label_settings_8_zh.tres" id="1_label_settings"]
+[ext_resource type="LabelSettings" path="res://Themes/label_settings_8.tres" id="1_label_settings"]
 
 [node name="LevelBadge" type="Label"]
 layout_mode = 0

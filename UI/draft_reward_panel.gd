@@ -5,6 +5,7 @@ signal reward_selected(item: Item)
 signal draft_closed
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const LocaleFontSettingsScript: GDScript = preload("res://UI/locale_font_settings.gd")
 const CoinTexture: Texture2D = preload("res://Assets/Items/Coin.png")
 const ITEM_OPTION_SIZE: Vector2 = Vector2(32, 32)
 
@@ -34,6 +35,7 @@ func _ready() -> void:
 func show_item_draft(items: Array[Item]) -> void:
 	_bind_nodes()
 	_connect_buttons()
+	_apply_button_fonts()
 	if not _has_required_nodes():
 		return
 	_is_battle_reward_mode = false
@@ -68,6 +70,7 @@ func show_item_draft(items: Array[Item]) -> void:
 func show_battle_rewards(items: Array[Item], gold_amount: int) -> void:
 	_bind_nodes()
 	_connect_buttons()
+	_apply_button_fonts()
 	if not _has_required_nodes():
 		return
 	_is_battle_reward_mode = true
@@ -314,9 +317,12 @@ func _apply_label_settings(label: Label) -> void:
 
 
 func _apply_button_font(button: Button) -> void:
-	if UI_LABEL_SETTINGS.font != null:
-		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
-	button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+	LocaleFontSettingsScript.apply_button_font(button, UI_LABEL_SETTINGS.font_size)
+
+
+func _apply_button_fonts() -> void:
+	for button: Button in _buttons:
+		_apply_button_font(button)
 
 
 func _on_reward_button_mouse_entered(button: Button) -> void:

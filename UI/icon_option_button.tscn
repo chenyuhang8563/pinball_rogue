@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://djxdqfcs7wnw"]
 
 [ext_resource type="Script" uid="uid://igfddiqybmwn" path="res://UI/icon_option_button.gd" id="1_script"]
-[ext_resource type="LabelSettings" path="res://Themes/label_settings_11_zh.tres" id="2_title_settings"]
+[ext_resource type="LabelSettings" path="res://Themes/label_settings_11.tres" id="2_title_settings"]
 [ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="3_item_icon_view"]
-[ext_resource type="LabelSettings" path="res://Themes/label_settings_10_zh.tres" id="4_description_settings"]
+[ext_resource type="LabelSettings" path="res://Themes/label_settings_10.tres" id="4_description_settings"]
 
 [node name="IconOptionButton" type="Button" unique_id=569716031]
 custom_minimum_size = Vector2(68, 98)

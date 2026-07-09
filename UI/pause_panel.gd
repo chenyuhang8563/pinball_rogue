@@ -4,7 +4,7 @@ class_name PausePanel
 signal exit_requested
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
-const UI_COMPACT_FONT: FontFile = preload("res://Assets/Fonts/fusion-pixel-10px-proportional-zh_hans.ttf")
+const LocaleFontSettingsScript: GDScript = preload("res://UI/locale_font_settings.gd")
 const PAUSE_ACTION: StringName = &"pause_game"
 
 @export var quit_on_exit: bool = true
@@ -145,17 +145,12 @@ func _set_button_text(path: String, key: String) -> void:
 		return
 	button.text = tr(key)
 	button.focus_mode = Control.FOCUS_ALL
-	if UI_LABEL_SETTINGS.font != null:
-		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
-	button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+	LocaleFontSettingsScript.apply_button_font(button, UI_LABEL_SETTINGS.font_size)
 
 
 func _apply_option_button_style(button: OptionButton) -> void:
 	button.focus_mode = Control.FOCUS_ALL
-	button.add_theme_font_override("font", UI_COMPACT_FONT)
-	button.get_popup().add_theme_font_override("font", UI_COMPACT_FONT)
-	button.add_theme_font_size_override("font_size", max(8, UI_LABEL_SETTINGS.font_size - 1))
-	button.get_popup().add_theme_font_size_override("font_size", max(8, UI_LABEL_SETTINGS.font_size - 1))
+	LocaleFontSettingsScript.apply_option_button_font(button, max(8, UI_LABEL_SETTINGS.font_size - 1))
 
 
 func _set_settings_visible(should_show: bool) -> void:
@@ -175,6 +170,9 @@ func _connect_locale_changed() -> void:
 
 func _on_locale_changed(_locale_code: String = "") -> void:
 	_apply_text()
+	var language_button: OptionButton = _node("Center/Panel/MarginContainer/Layout/SettingsPanel/LanguageRow/LanguageButton") as OptionButton
+	if language_button != null:
+		_apply_option_button_style(language_button)
 	_sync_language_button()
 
 

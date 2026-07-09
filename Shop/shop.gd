@@ -1,6 +1,7 @@
 extends Control
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const LocaleFontSettingsScript: GDScript = preload("res://UI/locale_font_settings.gd")
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
 
 signal gold_changed(value: int)
@@ -63,9 +64,7 @@ func close_shop() -> void:
 
 
 func _apply_button_label_settings(button: Button) -> void:
-	if UI_LABEL_SETTINGS.font != null:
-		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
-	button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+	LocaleFontSettingsScript.apply_button_font(button, UI_LABEL_SETTINGS.font_size)
 
 func sell_item(item: Item) -> bool:
 	if item == null:
@@ -325,3 +324,6 @@ func _connect_locale_changed() -> void:
 
 func _on_locale_changed(_locale_code: String = "") -> void:
 	_apply_text()
+	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
+	if exit_button != null:
+		_apply_button_label_settings(exit_button)

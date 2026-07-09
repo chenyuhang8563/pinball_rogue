@@ -2,7 +2,7 @@ extends RefCounted
 class_name LevelBadge
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
-const UI_BADGE_FONT: FontFile = preload("res://Assets/Fonts/fusion-pixel-8px-proportional-zh_hans.ttf")
+const LocaleFontSettingsScript: GDScript = preload("res://UI/locale_font_settings.gd")
 const LevelBadgeScene: PackedScene = preload("res://UI/level_badge.tscn")
 const BADGE_NAME: String = "LevelBadge"
 const ROMAN_LEVELS: Dictionary = {
@@ -52,7 +52,7 @@ static func apply_to_label(label: Label, level: int) -> void:
 
 static func _make_label_settings() -> LabelSettings:
 	var settings := LabelSettings.new()
-	settings.font = UI_BADGE_FONT
+	settings.font = LocaleFontSettingsScript.font_for_size(max(6, UI_LABEL_SETTINGS.font_size - 3))
 	settings.font_size = max(6, UI_LABEL_SETTINGS.font_size - 3)
 	settings.font_color = Color(1.0, 0.95, 0.65, 1.0)
 	settings.outline_color = Color(0.05, 0.04, 0.02, 1.0)

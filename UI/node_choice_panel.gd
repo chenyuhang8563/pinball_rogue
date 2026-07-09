@@ -5,6 +5,7 @@ signal option_selected(option: RunNodeOption)
 signal message_dismissed
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const LocaleFontSettingsScript: GDScript = preload("res://UI/locale_font_settings.gd")
 
 var _options: Array[RunNodeOption] = []
 var _buttons: Array[Button] = []
@@ -24,6 +25,7 @@ func _ready() -> void:
 func show_options(options: Array[RunNodeOption]) -> void:
 	_bind_nodes()
 	_connect_buttons()
+	_apply_button_fonts()
 	if not _has_required_nodes():
 		return
 	_options = options
@@ -49,6 +51,7 @@ func show_options(options: Array[RunNodeOption]) -> void:
 func show_message(title: String, description: String) -> void:
 	_bind_nodes()
 	_connect_buttons()
+	_apply_button_fonts()
 	if not _has_required_nodes():
 		return
 	_options.clear()
@@ -111,9 +114,12 @@ func _apply_label_settings(label: Label) -> void:
 
 
 func _apply_button_font(button: Button) -> void:
-	if UI_LABEL_SETTINGS.font != null:
-		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
-	button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+	LocaleFontSettingsScript.apply_button_font(button, UI_LABEL_SETTINGS.font_size)
+
+
+func _apply_button_fonts() -> void:
+	for button: Button in _buttons:
+		_apply_button_font(button)
 
 
 func _connect_locale_changed() -> void:
@@ -128,6 +134,8 @@ func _connect_locale_changed() -> void:
 func _on_locale_changed(_locale_code: String = "") -> void:
 	if visible and not _options.is_empty():
 		show_options(_options)
+	elif visible:
+		_apply_button_fonts()
 
 
 func _set_tree_paused(paused: bool) -> void:

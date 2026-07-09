@@ -6,6 +6,7 @@ const DEFAULT_LOCALE: String = "zh_CN"
 const TRANSLATION_CSV_PATH: String = "res://translations/game.csv"
 const SETTINGS_SECTION: String = "locale"
 const SETTINGS_KEY_CODE: String = "code"
+const LocaleFontSettingsScript: GDScript = preload("res://UI/locale_font_settings.gd")
 
 @export var settings_path: String = "user://settings.cfg"
 
@@ -18,7 +19,9 @@ var _translations: Array[Translation] = []
 
 func _ready() -> void:
 	_load_translations()
-	TranslationServer.set_locale(_load_saved_locale())
+	var locale_code := _load_saved_locale()
+	TranslationServer.set_locale(locale_code)
+	LocaleFontSettingsScript.apply_locale(locale_code)
 
 
 func _exit_tree() -> void:
@@ -39,6 +42,7 @@ func set_locale(locale_code: String) -> void:
 	if not _is_supported_locale(locale_code):
 		locale_code = DEFAULT_LOCALE
 	TranslationServer.set_locale(locale_code)
+	LocaleFontSettingsScript.apply_locale(locale_code)
 	_save_locale(locale_code)
 	locale_changed.emit(locale_code)
 

@@ -1,7 +1,7 @@
 [gd_scene load_steps=3 format=3]
 
 [ext_resource type="Script" path="res://UI/item_icon_view.gd" id="1_script"]
-[ext_resource type="LabelSettings" path="res://Themes/label_settings_8_zh.tres" id="2_label_settings"]
+[ext_resource type="LabelSettings" path="res://Themes/label_settings_8.tres" id="2_label_settings"]
 
 [node name="ItemIconView" type="Control"]
 custom_minimum_size = Vector2(32, 32)

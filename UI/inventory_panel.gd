@@ -2,7 +2,7 @@ extends Control
 class_name InventoryPanel
 
 const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
-const UI_COMPACT_FONT: FontFile = preload("res://Assets/Fonts/fusion-pixel-10px-proportional-zh_hans.ttf")
+const LocaleFontSettingsScript: GDScript = preload("res://UI/locale_font_settings.gd")
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
 const InventoryIconSlotScene: PackedScene = preload("res://UI/inventory_icon_slot.tscn")
 
@@ -105,16 +105,11 @@ func _apply_button_label_settings() -> void:
 	var exit_button: Button = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/ExitButton") as Button
 	if exit_button == null:
 		return
-	if UI_LABEL_SETTINGS.font != null:
-		exit_button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
-	exit_button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+	LocaleFontSettingsScript.apply_button_font(exit_button, UI_LABEL_SETTINGS.font_size)
 
 	var language_button: OptionButton = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/LanguageButton") as OptionButton
 	if language_button != null:
-		language_button.add_theme_font_override("font", UI_COMPACT_FONT)
-		language_button.get_popup().add_theme_font_override("font", UI_COMPACT_FONT)
-		language_button.add_theme_font_size_override("font_size", max(8, UI_LABEL_SETTINGS.font_size - 2))
-		language_button.get_popup().add_theme_font_size_override("font_size", max(8, UI_LABEL_SETTINGS.font_size - 2))
+		LocaleFontSettingsScript.apply_option_button_font(language_button, max(8, UI_LABEL_SETTINGS.font_size - 2))
 
 
 func _setup_language_button() -> void:
@@ -178,6 +173,7 @@ func _connect_locale_changed() -> void:
 
 func _on_locale_changed(_locale_code: String = "") -> void:
 	_apply_text()
+	_apply_button_label_settings()
 	_sync_language_button()
 
 

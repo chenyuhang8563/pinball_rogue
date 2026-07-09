@@ -1,7 +1,0 @@
-[gd_resource type="LabelSettings" format=3]
-
-[ext_resource type="FontFile" path="res://Assets/Fonts/fusion-pixel-12px-proportional-zh_hans.ttf" id="1_font"]
-
-[resource]
-font = ExtResource("1_font")
-font_size = 12
