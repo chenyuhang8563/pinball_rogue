@@ -152,8 +152,8 @@ func _text_height(text: String, width: float) -> float:
 	if text.is_empty():
 		return 0.0
 	var line_count := text.count("\n") + 1
-	var fallback_height := float(line_count) * float(UI_LABEL_SETTINGS.font_size + 2)
-	if UI_LABEL_SETTINGS.font == null:
+	var fallback_height := float(line_count) * float(UI_LABEL_SETTINGS.font_size)
+	if not _contains_cjk(text) or UI_LABEL_SETTINGS.font == null:
 		return fallback_height
 	var measured_size := UI_LABEL_SETTINGS.font.get_multiline_string_size(
 		text,
@@ -164,6 +164,14 @@ func _text_height(text: String, width: float) -> float:
 		TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_GRAPHEME_BOUND
 	)
 	return maxf(fallback_height, measured_size.y + 2.0)
+
+
+func _contains_cjk(text: String) -> bool:
+	for index: int in range(text.length()):
+		var codepoint := text.unicode_at(index)
+		if (codepoint >= 0x3400 and codepoint <= 0x9FFF) or (codepoint >= 0xF900 and codepoint <= 0xFAFF):
+			return true
+	return false
 
 
 func _get_ui_bottom_right_position(tooltip_size: Vector2) -> Vector2:
