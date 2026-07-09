@@ -150,7 +150,7 @@ func _set_button_text(path: String, key: String) -> void:
 
 func _apply_option_button_style(button: OptionButton) -> void:
 	button.focus_mode = Control.FOCUS_ALL
-	LocaleFontSettingsScript.apply_option_button_font(button, max(8, UI_LABEL_SETTINGS.font_size - 1))
+	LocaleFontSettingsScript.apply_option_button_font(button, UI_LABEL_SETTINGS.font_size)
 
 
 func _set_settings_visible(should_show: bool) -> void:

@@ -52,8 +52,8 @@ static func apply_to_label(label: Label, level: int) -> void:
 
 static func _make_label_settings() -> LabelSettings:
 	var settings := LabelSettings.new()
-	settings.font = LocaleFontSettingsScript.font_for_size(max(6, UI_LABEL_SETTINGS.font_size - 3))
-	settings.font_size = max(6, UI_LABEL_SETTINGS.font_size - 3)
+	settings.font = LocaleFontSettingsScript.font_for_size(UI_LABEL_SETTINGS.font_size)
+	settings.font_size = UI_LABEL_SETTINGS.font_size
 	settings.font_color = Color(1.0, 0.95, 0.65, 1.0)
 	settings.outline_color = Color(0.05, 0.04, 0.02, 1.0)
 	settings.outline_size = 3

@@ -109,7 +109,7 @@ func _apply_button_label_settings() -> void:
 
 	var language_button: OptionButton = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/LanguageButton") as OptionButton
 	if language_button != null:
-		LocaleFontSettingsScript.apply_option_button_font(language_button, max(8, UI_LABEL_SETTINGS.font_size - 2))
+		LocaleFontSettingsScript.apply_option_button_font(language_button, UI_LABEL_SETTINGS.font_size)
 
 
 func _setup_language_button() -> void:

@@ -102,7 +102,7 @@ func _apply_label_settings(label: Label) -> void:
 
 
 func _apply_button_font(button: Button) -> void:
-	LocaleFontSettingsScript.apply_button_font(button, max(6, UI_LABEL_SETTINGS.font_size - 1))
+	LocaleFontSettingsScript.apply_button_font(button, UI_LABEL_SETTINGS.font_size)
 
 
 func _apply_button_fonts() -> void:

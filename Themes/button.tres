@@ -28,7 +28,7 @@ content_margin_bottom = 0.0
 texture = ExtResource("4_pv870")
 
 [resource]
-Button/font_sizes/font_size = 8
+Button/font_sizes/font_size = 12
 Button/fonts/font = ExtResource("1_gv6e5")
 Button/styles/hover = SubResource("StyleBoxTexture_vxja4")
 Button/styles/normal = SubResource("StyleBoxTexture_lt4la")
