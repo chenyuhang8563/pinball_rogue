@@ -31,7 +31,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="Center"]
-custom_minimum_size = Vector2(220, 150)
+custom_minimum_size = Vector2(292, 136)
 layout_mode = 2
 
 [node name="MarginContainer" type="MarginContainer" parent="Center/Panel"]
@@ -46,11 +46,13 @@ layout_mode = 2
 theme_override_constants/separation = 6
 
 [node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout"]
+custom_minimum_size = Vector2(260, 22)
 layout_mode = 2
 horizontal_alignment = 1
 label_settings = ExtResource("2_label_settings")
 
 [node name="DescriptionLabel" type="Label" parent="Center/Panel/MarginContainer/Layout"]
+visible = false
 layout_mode = 2
 horizontal_alignment = 1
 autowrap_mode = 3
@@ -61,20 +63,19 @@ layout_mode = 2
 theme_override_constants/separation = 4
 
 [node name="ChoiceButton1" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
-custom_minimum_size = Vector2(66, 64)
+custom_minimum_size = Vector2(86, 72)
 layout_mode = 2
 focus_mode = 2
 autowrap_mode = 3
 
 [node name="ChoiceButton2" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
-custom_minimum_size = Vector2(66, 64)
+custom_minimum_size = Vector2(86, 72)
 layout_mode = 2
 focus_mode = 2
 autowrap_mode = 3
 
 [node name="ChoiceButton3" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow"]
-custom_minimum_size = Vector2(66, 64)
+custom_minimum_size = Vector2(86, 72)
 layout_mode = 2
 focus_mode = 2
 autowrap_mode = 3
-

@@ -30,7 +30,8 @@ func show_options(options: Array[RunNodeOption]) -> void:
 		return
 	_options = options
 	_title_label.text = tr("UI_CHOOSE_NEXT_NODE_TITLE")
-	_description_label.text = tr("UI_CHOOSE_NEXT_NODE_DESC")
+	_description_label.text = ""
+	_description_label.hide()
 
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
@@ -57,6 +58,7 @@ func show_message(title: String, description: String) -> void:
 	_options.clear()
 	_title_label.text = tr(title)
 	_description_label.text = tr(description)
+	_description_label.visible = not _description_label.text.is_empty()
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
 		button.text = tr("UI_OK") if index == 0 else ""

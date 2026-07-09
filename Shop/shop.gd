@@ -315,11 +315,11 @@ func _apply_text() -> void:
 
 func _connect_locale_changed() -> void:
 	var localization: Node = _get_autoload_node(&"Localization")
-	if localization == null or not localization.has_signal(&"locale_changed"):
-		return
 	var callback := Callable(self, "_on_locale_changed")
-	if not localization.is_connected(&"locale_changed", callback):
+	if localization != null and localization.has_signal(&"locale_changed") and not localization.is_connected(&"locale_changed", callback):
 		localization.connect(&"locale_changed", callback)
+	if TranslationServer.has_signal(&"locale_changed") and not TranslationServer.is_connected(&"locale_changed", callback):
+		TranslationServer.connect(&"locale_changed", callback)
 
 
 func _on_locale_changed(_locale_code: String = "") -> void:
