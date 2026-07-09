@@ -34,8 +34,8 @@ ITEM_BLUE_MARBLE_TITLE,Blue Marble,冰霜弹珠
 ITEM_BLUE_MARBLE_DESC,Adds frost to enemies on hit.,命中敌人时施加冰霜。
 ITEM_GREEN_MARBLE_TITLE,Green Marble,毒液弹珠
 ITEM_GREEN_MARBLE_DESC,Poisons enemies for 10 seconds.,使敌人中毒 10 秒。
-ITEM_BROWN_MARBLE_TITLE,Brown Marble,棕色弹珠
-ITEM_BROWN_MARBLE_DESC,Builds echo stacks on hit; full stacks add bonus damage.,命中叠加回响，叠满后造成额外伤害。
+ITEM_BROWN_MARBLE_TITLE,Brown Marble,大地弹珠
+ITEM_BROWN_MARBLE_DESC,The more collisions occur, the higher the damage.,碰撞次数越多，伤害越高。
 ITEM_BOMB_MARBLE_TITLE,Bomb Marble,炸弹弹珠
 ITEM_BOMB_MARBLE_DESC,Explodes on hit and damages nearby enemies.,命中时爆炸，伤害附近敌人。
 ITEM_LIGHTNING_TITLE,Lightning,闪电链
@@ -67,5 +67,5 @@ UI_CONTINUE,Continue,继续
 UI_SETTINGS_TITLE,Settings,设置
 UI_LANGUAGE,Language,语言
 UI_MASTER_VOLUME,Total Volume,总音量
-UI_MUSIC_VOLUME_PLACEHOLDER,Music (placeholder),音乐（占位）
-UI_SFX_VOLUME,SFX Volume,音效大小
+UI_MUSIC_VOLUME_PLACEHOLDER,Music,音乐
+UI_SFX_VOLUME,SFX Volume,音效
