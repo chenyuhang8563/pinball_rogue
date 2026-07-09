@@ -419,7 +419,7 @@ func _get_spawn_health(level_def: LevelDef, spawn: LevelEnemySpawn) -> int:
 	var base_health: int = _get_pool_health(_get_spawn_pool(level_def, spawn))
 	match spawn.role:
 		LevelEnemySpawn.Role.ELITE:
-			return base_health * 2
+			return floori(base_health * 1.5)
 		LevelEnemySpawn.Role.BOSS:
 			return 240
 		_:
@@ -533,7 +533,7 @@ func _make_elite_group() -> BattleGroupDef:
 
 	var strong_enemy_health: int = _get_strong_enemy_health()
 	var entries: Array[BattleGroupDef.EnemyEntry] = [
-		_enemy_entry(Vector2(120, 64), strong_enemy_health * 2),
+		_enemy_entry(Vector2(120, 64), floori(strong_enemy_health * 1.5)),
 		_enemy_entry(Vector2(80, 124), strong_enemy_health),
 		_enemy_entry(Vector2(160, 124), strong_enemy_health),
 	]

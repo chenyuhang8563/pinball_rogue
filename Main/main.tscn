@@ -1,12 +1,11 @@
 [gd_scene format=3 uid="uid://cbbk5l2e1na0y"]
 
 [ext_resource type="Script" uid="uid://bsino3h1ad0fx" path="res://Main/main.gd" id="1_eunhr"]
-[ext_resource type="Shader" uid="uid://cba25h8vxpxv4" path="res://Main/crt.gdshader" id="1_f6fdm"]
 [ext_resource type="Texture2D" uid="uid://bxpxvl2xpde65" path="res://Assets/Items/Icon40.png" id="8_rj11h"]
 [ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="9_qac2q"]
 [ext_resource type="Script" uid="uid://cx1d57ki0wccy" path="res://Main/skill_dash.gd" id="10_skilld"]
 [ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://UI/battle_health_hud.tscn" id="11_health"]
-[ext_resource type="PackedScene" path="res://UI/pause_panel.tscn" id="12_pause"]
+[ext_resource type="PackedScene" uid="uid://bfiq2ule5s2x8" path="res://UI/pause_panel.tscn" id="12_pause"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_o60nc"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -15,23 +14,6 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.55, 0.53, 0.47, 1)
-
-[sub_resource type="ShaderMaterial" id="ShaderMaterial_f6fdm"]
-shader = ExtResource("1_f6fdm")
-shader_parameter/resolution = Vector2(320, 180)
-shader_parameter/scan_line_amount = 1.0
-shader_parameter/warp_amount = 0.1
-shader_parameter/noise_amount = 0.03
-shader_parameter/interference_amount = 0.2
-shader_parameter/grille_amount = 0.1
-shader_parameter/grille_size = 1.0
-shader_parameter/vignette_amount = 0.6
-shader_parameter/vignette_intensity = 0.4
-shader_parameter/aberation_amount = 0.5
-shader_parameter/roll_line_amount = 0.0
-shader_parameter/roll_speed = 1.0
-shader_parameter/scan_line_strength = -8.0
-shader_parameter/pixel_strength = -2.0
 
 [node name="Main" type="Node2D" unique_id=1204434413]
 script = ExtResource("1_eunhr")
@@ -80,14 +62,4 @@ color = Color(0, 0, 0, 0)
 
 [node name="BattleHealthHud" parent="CrtLayer" unique_id=1820331821 instance=ExtResource("11_health")]
 
-[node name="PausePanel" parent="CrtLayer" instance=ExtResource("12_pause")]
-
-[node name="ColorRect" type="ColorRect" parent="CrtLayer" unique_id=2088465450]
-z_index = 100
-material = SubResource("ShaderMaterial_f6fdm")
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
+[node name="PausePanel" parent="CrtLayer" unique_id=1639927173 instance=ExtResource("12_pause")]
