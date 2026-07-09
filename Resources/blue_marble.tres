@@ -14,3 +14,4 @@ effect_type = 5
 type = 1
 marble_type = 4
 marble_segment_damage = 2
+metadata/_custom_type_script = "res://Items/item.gd"

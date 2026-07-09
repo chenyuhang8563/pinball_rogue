@@ -9,7 +9,6 @@ const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_setting
 var _options: Array[RunNodeOption] = []
 var _buttons: Array[Button] = []
 var _title_label: Label
-var _description_label: Label
 var _button_row: HBoxContainer
 
 
@@ -28,8 +27,6 @@ func show_options(options: Array[RunNodeOption]) -> void:
 		return
 	_options = options
 	_title_label.text = tr("UI_CHOOSE_NEXT_NODE_TITLE")
-	_description_label.text = ""
-	_description_label.hide()
 
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
@@ -47,15 +44,13 @@ func show_options(options: Array[RunNodeOption]) -> void:
 		_buttons[0].grab_focus()
 
 
-func show_message(title: String, description: String) -> void:
+func show_message(title: String) -> void:
 	_bind_nodes()
 	_connect_buttons()
 	if not _has_required_nodes():
 		return
 	_options.clear()
 	_title_label.text = tr(title)
-	_description_label.text = tr(description)
-	_description_label.visible = not description.is_empty()
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
 		button.text = tr("UI_OK") if index == 0 else ""
@@ -85,7 +80,6 @@ func _bind_nodes() -> void:
 		return
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_title_label = get_node_or_null("Center/Panel/MarginContainer/Layout/TitleLabel") as Label
-	_description_label = get_node_or_null("Center/Panel/MarginContainer/Layout/DescriptionLabel") as Label
 	_button_row = get_node_or_null("Center/Panel/MarginContainer/Layout/ButtonRow") as HBoxContainer
 	_buttons.clear()
 	if _button_row == null:
@@ -105,7 +99,7 @@ func _connect_buttons() -> void:
 
 
 func _has_required_nodes() -> bool:
-	return _title_label != null and _description_label != null and _button_row != null and _buttons.size() > 0
+	return _title_label != null and _button_row != null and _buttons.size() > 0
 
 
 func _apply_label_settings(label: Label) -> void:
