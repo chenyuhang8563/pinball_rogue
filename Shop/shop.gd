@@ -25,6 +25,10 @@ var mode: MODE = MODE.OFF:
 	set(value):
 		mode = value
 		if value == MODE.ON:
+			_apply_text()
+			var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
+			if exit_button != null:
+				_apply_button_label_settings(exit_button)
 			refresh_collection_rows()
 			$UI.show()
 			get_tree().paused = true
