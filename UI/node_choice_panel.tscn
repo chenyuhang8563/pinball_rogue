@@ -42,7 +42,7 @@ theme_override_constants/margin_bottom = 8
 
 [node name="Layout" type="VBoxContainer" parent="Center/Panel/MarginContainer" unique_id=1955221600]
 layout_mode = 2
-theme_override_constants/separation = 6
+theme_override_constants/separation = 4
 
 [node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout" unique_id=1920447467]
 custom_minimum_size = Vector2(0, 32)
@@ -51,16 +51,9 @@ size_flags_vertical = 6
 label_settings = ExtResource("2_label_settings")
 horizontal_alignment = 1
 
-[node name="DescriptionLabel" type="Label" parent="Center/Panel/MarginContainer/Layout" unique_id=650926157]
-custom_minimum_size = Vector2(0, 24)
-layout_mode = 2
-size_flags_vertical = 2
-autowrap_mode = 2
-horizontal_alignment = 1
-
 [node name="ButtonRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout" unique_id=376217603]
 layout_mode = 2
-size_flags_vertical = 10
+size_flags_vertical = 6
 theme_override_constants/separation = 4
 
 [node name="ChoiceButton1" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1931518382]
