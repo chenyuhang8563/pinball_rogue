@@ -68,6 +68,7 @@ func take_damage(amount: int, flash_color: Color = Color.WHITE) -> void:
 		health -= final_damage
 
 	flash_hit_mask(flash_color)
+	_show_float_damage_text(final_damage)
 
 	if health <= 0:
 		_emit_enemy_killed()
@@ -246,6 +247,15 @@ func _get_effect_manager() -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null("EffectManager")
+
+
+func _show_float_damage_text(damage_amount: int) -> void:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return
+	var pool: Node = tree.root.get_node_or_null("FloatDamageTextPool")
+	if pool != null and pool.has_method("show_damage"):
+		pool.call("show_damage", damage_amount, global_position + Vector2.UP * 8.0)
 
 
 func _emit_enemy_killed() -> void:

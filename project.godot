@@ -27,6 +27,7 @@ GameExecutor="*uid://7yjc3ixh2laf"
 StatSystem="*res://Stats/stat_system.gd"
 BuffManager="*res://Buffs/buff_manager.gd"
 BuffRegistry="*res://Buffs/buff_registry.gd"
+FloatDamageTextPool="*res://UI/float_damage_text_pool.gd"
 
 [display]
 

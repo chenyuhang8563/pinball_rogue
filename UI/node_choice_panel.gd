@@ -10,6 +10,7 @@ const UI_FONT_SIZE: int = 12
 var _options: Array[RunNodeOption] = []
 var _buttons: Array[Button] = []
 var _title_label: Label
+var _desc_label: Label
 var _button_row: HBoxContainer
 
 
@@ -45,13 +46,19 @@ func show_options(options: Array[RunNodeOption]) -> void:
 		_buttons[0].grab_focus()
 
 
-func show_message(title: String) -> void:
+func show_message(title: String, description: String = "") -> void:
 	_bind_nodes()
 	_connect_buttons()
 	if not _has_required_nodes():
 		return
 	_options.clear()
 	_title_label.text = tr(title)
+	if _desc_label != null:
+		if description.is_empty():
+			_desc_label.hide()
+		else:
+			_desc_label.text = tr(description)
+			_desc_label.show()
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
 		button.text = tr("UI_OK") if index == 0 else ""
@@ -81,6 +88,7 @@ func _bind_nodes() -> void:
 		return
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_title_label = get_node_or_null("Center/Panel/MarginContainer/Layout/TitleLabel") as Label
+	_desc_label = get_node_or_null("Center/Panel/MarginContainer/Layout/DescriptionLabel") as Label
 	_button_row = get_node_or_null("Center/Panel/MarginContainer/Layout/ButtonRow") as HBoxContainer
 	_buttons.clear()
 	if _button_row == null:

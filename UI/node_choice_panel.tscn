@@ -51,6 +51,13 @@ size_flags_vertical = 6
 label_settings = ExtResource("2_label_settings")
 horizontal_alignment = 1
 
+[node name="DescriptionLabel" type="Label" parent="Center/Panel/MarginContainer/Layout" unique_id=650926157]
+custom_minimum_size = Vector2(0, 24)
+layout_mode = 2
+size_flags_vertical = 2
+autowrap_mode = 2
+horizontal_alignment = 1
+
 [node name="ButtonRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout" unique_id=376217603]
 layout_mode = 2
 size_flags_vertical = 10
