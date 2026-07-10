@@ -1,6 +1,7 @@
 extends Control
 
-const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
+const UI_FONT_SIZE: int = 12
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
 
 signal gold_changed(value: int)
@@ -64,9 +65,7 @@ func close_shop() -> void:
 
 
 func _apply_button_label_settings(button: Button) -> void:
-	if UI_LABEL_SETTINGS.font != null:
-		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
-	button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+		UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
 
 
 func _apply_text() -> void:

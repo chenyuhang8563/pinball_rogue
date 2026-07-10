@@ -2,6 +2,8 @@ extends Panel
 # Dash skill slot — click to dash toward the nearest enemy.
 # Manages a charge system with timed recharge per charge.
 
+const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
+const CHARGE_FONT_SIZE: int = 12
 const COOLDOWN_OVERLAY_ALPHA_MAX: float = 0.5
 
 @export var max_charges: int = 3
@@ -27,6 +29,8 @@ func _ready() -> void:
 
 	_cooldown_overlay = $CooldownOverlay
 	_label = $Label
+	if _label != null:
+		UIFontsScript.apply_number_label(_label, CHARGE_FONT_SIZE)
 
 	current_charges = max_charges
 	_update_ui()

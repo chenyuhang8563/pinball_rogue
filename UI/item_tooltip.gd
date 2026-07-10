@@ -1,10 +1,11 @@
 extends Control
 class_name ItemTooltip
 
-const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const PADDING: Vector2 = Vector2(8, 4)
 const SCREEN_MARGIN: Vector2 = Vector2(4.0, 4.0)
 const MIN_WRAP_WIDTH: float = 160.0
+const ITEM_TOOLTIP_FONT_SIZE: int = 12
 
 enum Placement {
 	ABOVE,
@@ -79,9 +80,9 @@ func _bind_nodes() -> void:
 	_label = get_node_or_null("TooltipPanel/TooltipMargin/TooltipLayout/TooltipLabel") as Label
 	_description_label = get_node_or_null("TooltipPanel/TooltipMargin/TooltipLayout/DescriptionLabel") as Label
 	if _label != null:
-		_label.label_settings = UI_LABEL_SETTINGS
+		UIFontsScript.apply_label_settings(_label, ITEM_TOOLTIP_FONT_SIZE)
 	if _description_label != null:
-		_description_label.label_settings = UI_LABEL_SETTINGS
+		UIFontsScript.apply_label_settings(_description_label, ITEM_TOOLTIP_FONT_SIZE)
 		_description_label.autowrap_mode = TextServer.AUTOWRAP_ARBITRARY
 		_description_label.clip_text = true
 
@@ -89,19 +90,20 @@ func _bind_nodes() -> void:
 func _calculate_tooltip_size(text: String, description: String = "") -> Vector2:
 	var viewport_size: Vector2 = get_viewport_rect().size
 	var max_width: float = maxf(MIN_WRAP_WIDTH, viewport_size.x - (SCREEN_MARGIN.x * 2.0) - PADDING.x)
-	if UI_LABEL_SETTINGS.font == null:
-		var fallback_width: float = minf(max_width, maxf(48.0, float(maxi(text.length(), description.length()) * UI_LABEL_SETTINGS.font_size)))
+	var font: FontFile = UIFontsScript.font_for_size(ITEM_TOOLTIP_FONT_SIZE)
+	if font == null:
+		var fallback_width: float = minf(max_width, maxf(48.0, float(maxi(text.length(), description.length()) * ITEM_TOOLTIP_FONT_SIZE)))
 		var fallback_lines: int = 1 + (0 if description.is_empty() else 1)
-		return Vector2(fallback_width + PADDING.x, maxf(18.0, float(fallback_lines * UI_LABEL_SETTINGS.font_size) + PADDING.y))
-	var title_size: Vector2 = UI_LABEL_SETTINGS.font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, UI_LABEL_SETTINGS.font_size)
+		return Vector2(fallback_width + PADDING.x, maxf(18.0, float(fallback_lines * ITEM_TOOLTIP_FONT_SIZE) + PADDING.y))
+	var title_size: Vector2 = font.get_string_size(text, HORIZONTAL_ALIGNMENT_LEFT, -1.0, ITEM_TOOLTIP_FONT_SIZE)
 	var content_width: float = minf(max_width, maxf(48.0, title_size.x))
-	var content_height: float = maxf(float(UI_LABEL_SETTINGS.font_size), title_size.y)
+	var content_height: float = maxf(float(ITEM_TOOLTIP_FONT_SIZE), title_size.y)
 	if not description.is_empty():
-		var description_size: Vector2 = UI_LABEL_SETTINGS.font.get_multiline_string_size(
+		var description_size: Vector2 = font.get_multiline_string_size(
 			description,
 			HORIZONTAL_ALIGNMENT_LEFT,
 			max_width,
-			UI_LABEL_SETTINGS.font_size,
+			ITEM_TOOLTIP_FONT_SIZE,
 			-1,
 			TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_GRAPHEME_BOUND
 		)
@@ -122,7 +124,10 @@ func _translated_item_text(item: Item, suffix: String, fallback: String) -> Stri
 
 
 func _wrap_text_to_width(text: String, max_width: float) -> String:
-	if text.is_empty() or UI_LABEL_SETTINGS.font == null:
+	if text.is_empty():
+		return text
+	var font: FontFile = UIFontsScript.font_for_size(ITEM_TOOLTIP_FONT_SIZE)
+	if font == null:
 		return text
 	var lines: Array[String] = []
 	var current_line: String = ""
@@ -133,11 +138,11 @@ func _wrap_text_to_width(text: String, max_width: float) -> String:
 			current_line = ""
 			continue
 		var candidate: String = current_line + character
-		var candidate_size: Vector2 = UI_LABEL_SETTINGS.font.get_string_size(
+		var candidate_size: Vector2 = font.get_string_size(
 			candidate,
 			HORIZONTAL_ALIGNMENT_LEFT,
 			-1.0,
-			UI_LABEL_SETTINGS.font_size
+			ITEM_TOOLTIP_FONT_SIZE
 		)
 		if not current_line.is_empty() and candidate_size.x > max_width:
 			lines.append(current_line)
@@ -152,14 +157,15 @@ func _text_height(text: String, width: float) -> float:
 	if text.is_empty():
 		return 0.0
 	var line_count := text.count("\n") + 1
-	var fallback_height := float(line_count) * float(UI_LABEL_SETTINGS.font_size)
-	if not _contains_cjk(text) or UI_LABEL_SETTINGS.font == null:
+	var fallback_height := float(line_count) * float(ITEM_TOOLTIP_FONT_SIZE)
+	var font: FontFile = UIFontsScript.font_for_size(ITEM_TOOLTIP_FONT_SIZE)
+	if not _contains_cjk(text) or font == null:
 		return fallback_height
-	var measured_size := UI_LABEL_SETTINGS.font.get_multiline_string_size(
+	var measured_size := font.get_multiline_string_size(
 		text,
 		HORIZONTAL_ALIGNMENT_LEFT,
 		width,
-		UI_LABEL_SETTINGS.font_size,
+		ITEM_TOOLTIP_FONT_SIZE,
 		-1,
 		TextServer.BREAK_MANDATORY | TextServer.BREAK_WORD_BOUND | TextServer.BREAK_GRAPHEME_BOUND
 	)

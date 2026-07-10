@@ -4,7 +4,8 @@ class_name NodeChoicePanel
 signal option_selected(option: RunNodeOption)
 signal message_dismissed
 
-const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
+const UI_FONT_SIZE: int = 12
 
 var _options: Array[RunNodeOption] = []
 var _buttons: Array[Button] = []
@@ -103,13 +104,11 @@ func _has_required_nodes() -> bool:
 
 
 func _apply_label_settings(label: Label) -> void:
-	label.label_settings = UI_LABEL_SETTINGS
+		UIFontsScript.apply_label_settings(label, UI_FONT_SIZE)
 
 
 func _apply_button_font(button: Button) -> void:
-	if UI_LABEL_SETTINGS.font != null:
-		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
-	button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+		UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
 
 
 func _set_tree_paused(paused: bool) -> void:

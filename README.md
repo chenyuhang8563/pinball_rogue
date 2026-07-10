@@ -101,7 +101,9 @@ Shop -> Slot -> Inventory.add_item()
 ## 目录结构
 
 ```text
-Assets/                  美术、字体、按钮、弹珠和特效贴图
+Assets/
+  Fonts/                    quaver.ttf（英文/数字） + fusion 像素中文字体（8px/10px/12px）
+  ...                      美术、按钮、弹珠和特效贴图
 Effects/                 战斗效果和视觉效果
 Enemies/                 敌人场景、脚本和 shader
 Fliper/                  挡板场景与控制脚本
@@ -112,7 +114,8 @@ Marbles/                 弹珠场景、脚本和弹珠 shader
 Platform/                场内平台
 Resources/               可购买物品资源
 Shop/                    商店 UI 和购买/出售逻辑
-Themes/                  UI 主题资源
+Themes/                  UI 主题资源（中文 fusion 字体，数字 quaver）
+UI/                      字体管理（fonts.gd）和 UI 面板脚本
 addons/hasturoperationgd 远程执行/调试插件
 ```
 ## 后续计划

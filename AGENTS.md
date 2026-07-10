@@ -32,5 +32,6 @@ cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gu
 - Free test-created Nodes/Resources when possible to avoid RID/ObjectDB leak warnings.
 
 ## UI 搭建与架构规范 (UI Construction & Architecture)
-- **UI 约束:** 严禁使用代码（如 `Control.new()`）搭建、组装 UI 结构。所有 UI 必须在 Godot 编辑器中作为场景（.tscn）可视化创建（需要使用hastur broker mcp）。
+- **UI 约束:** 严禁使用代码（如 `Control.new()`）搭建、组装 UI 结构。所有 UI 必须在 Godot 编辑器中作为场景（.tscn）可视化创建（需要使用 hastur broker mcp）。
 - **代码职责:** 逻辑脚本仅允许处理数据传递、UI 状态刷新、信号（Signals）绑定与分发。动态生成的 UI 元素必须通过 `preload` 编辑器导出的场景并 `instantiate()` 载入，禁止代码硬编码布局。
+- **禁止在代码中编辑 UI 属性:** 所有 UI 属性（位置、大小、颜色、字体、间距、可见性等）必须在 `.tscn` 场景文件或 `.tres` 主题/资源中设置，不得通过 GDScript 修改。代码中写 `rect_position`、`size`、`color`、`visible` 等 UI 属性赋值视为违规。运行时动态样式需求应通过主题（Theme）或场景预制变体实现。

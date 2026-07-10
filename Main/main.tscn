@@ -21,9 +21,9 @@ metadata/_edit_horizontal_guides_ = [208.0]
 
 [node name="Marbles" type="Node2D" parent="." unique_id=2013848348]
 
-[node name="CrtLayer" type="CanvasLayer" parent="." unique_id=1475341812]
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1475341812]
 
-[node name="SkillSlot" type="Panel" parent="CrtLayer" unique_id=741403767]
+[node name="SkillSlot" type="Panel" parent="CanvasLayer" unique_id=741403767]
 custom_minimum_size = Vector2(32, 32)
 offset_left = 200.0
 offset_top = 280.0
@@ -35,7 +35,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_o60nc")
 script = ExtResource("10_skilld")
 recharge_time = 3.5
 
-[node name="Icon" type="TextureRect" parent="CrtLayer/SkillSlot" unique_id=402347934]
+[node name="Icon" type="TextureRect" parent="CanvasLayer/SkillSlot" unique_id=402347934]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -44,7 +44,7 @@ texture = ExtResource("8_rj11h")
 expand_mode = 1
 stretch_mode = 5
 
-[node name="Label" type="Label" parent="CrtLayer/SkillSlot" unique_id=2075154416]
+[node name="Label" type="Label" parent="CanvasLayer/SkillSlot" unique_id=2075154416]
 layout_mode = 0
 offset_left = 27.0
 offset_top = 25.0
@@ -53,13 +53,17 @@ offset_bottom = 37.0
 text = "1"
 label_settings = ExtResource("9_qac2q")
 
-[node name="CooldownOverlay" type="ColorRect" parent="CrtLayer/SkillSlot" unique_id=1825731688]
+[node name="CooldownOverlay" type="ColorRect" parent="CanvasLayer/SkillSlot" unique_id=1825731688]
 layout_mode = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 mouse_filter = 2
 color = Color(0, 0, 0, 0)
 
-[node name="BattleHealthHud" parent="CrtLayer" unique_id=1820331821 instance=ExtResource("11_health")]
+[node name="BattleHealthHud" parent="CanvasLayer" unique_id=1820331821 instance=ExtResource("11_health")]
 
-[node name="PausePanel" parent="CrtLayer" unique_id=1639927173 instance=ExtResource("12_pause")]
+[node name="PausePanel" parent="CanvasLayer" unique_id=1639927173 instance=ExtResource("12_pause")]
+
+[node name="Label" type="Label" parent="CanvasLayer" unique_id=1125416496]
+offset_right = 40.0
+offset_bottom = 23.0

@@ -9,35 +9,36 @@
 process_mode = 3
 layout_mode = 3
 anchors_preset = 0
-offset_right = 72.0
-offset_bottom = 42.0
+offset_right = 92.0
+offset_bottom = 52.0
 mouse_filter = 2
 script = ExtResource("1_hud")
 
 [node name="ResourceRows" type="VBoxContainer" parent="." unique_id=2089716243]
 layout_mode = 0
-offset_left = 4.0
-offset_top = 2.0
-offset_right = 72.0
-offset_bottom = 34.0
+offset_left = 8.0
+offset_top = 6.0
+offset_right = 92.0
+offset_bottom = 48.0
 mouse_filter = 2
-theme_override_constants/separation = 0
+theme_override_constants/separation = 2
 
 [node name="HealthRow" type="HBoxContainer" parent="ResourceRows" unique_id=307670159]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 4
 
 [node name="IconSlot" type="Control" parent="ResourceRows/HealthRow" unique_id=1773506788]
-custom_minimum_size = Vector2(18, 16)
+custom_minimum_size = Vector2(18, 18)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Heart" parent="ResourceRows/HealthRow/IconSlot" unique_id=1248334842 instance=ExtResource("3_heart")]
-position = Vector2(7, 6)
-scale = Vector2(0.9444444, 1)
+[node name="Heart" type="AnimatedSprite2D" parent="ResourceRows/HealthRow/IconSlot" unique_id=1248334842 instance=ExtResource("3_heart")]
+position = Vector2(0, 2)
+centered = false
 
 [node name="ValueLabel" type="Label" parent="ResourceRows/HealthRow" unique_id=846182129]
+custom_minimum_size = Vector2(24, 0)
 layout_mode = 2
 text = "0"
 label_settings = ExtResource("2_label")
@@ -45,10 +46,10 @@ label_settings = ExtResource("2_label")
 [node name="GoldRow" type="HBoxContainer" parent="ResourceRows" unique_id=1070103492]
 layout_mode = 2
 mouse_filter = 2
-theme_override_constants/separation = 3
+theme_override_constants/separation = 4
 
 [node name="CoinIcon" type="TextureRect" parent="ResourceRows/GoldRow" unique_id=1171494697]
-custom_minimum_size = Vector2(16, 16)
+custom_minimum_size = Vector2(18, 18)
 layout_mode = 2
 mouse_filter = 2
 texture = ExtResource("4_coin")
@@ -56,6 +57,7 @@ expand_mode = 1
 stretch_mode = 5
 
 [node name="ValueLabel" type="Label" parent="ResourceRows/GoldRow" unique_id=1199416625]
+custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
 size_flags_horizontal = 4
 text = "0"

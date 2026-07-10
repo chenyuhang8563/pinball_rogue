@@ -1,5 +1,8 @@
 extends Panel
 
+const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
+const PRICE_FONT_SIZE: int = 12
+
 const SHOP_MODE_ON := 0
 const ItemTooltipScene: PackedScene = preload("res://UI/item_tooltip.tscn")
 
@@ -18,8 +21,9 @@ var _tooltip: Control
 
 
 func _ready() -> void:
-	mouse_entered.connect(_on_mouse_entered)
-	mouse_exited.connect(_on_mouse_exited)
+		UIFontsScript.apply_number_label($Price, PRICE_FONT_SIZE)
+		mouse_entered.connect(_on_mouse_entered)
+		mouse_exited.connect(_on_mouse_exited)
 
 func _on_gui_input(event) -> void:
 	if not event is InputEventMouseButton:

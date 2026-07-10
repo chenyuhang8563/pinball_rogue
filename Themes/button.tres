@@ -1,16 +1,17 @@
 [gd_resource type="Theme" format=3 uid="uid://dyyi8m07c16qi"]
 
-[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="1_gv6e5"]
-[ext_resource type="Texture2D" uid="uid://l0otlcy2iwe6" path="res://Assets/Button/Button_01A_Selected.png" id="2_fiq7h"]
-[ext_resource type="Texture2D" uid="uid://crp0a6axprd0x" path="res://Assets/Button/Button_01A_Normal.png" id="3_gmksc"]
-[ext_resource type="Texture2D" uid="uid://hqaxexrud6gl" path="res://Assets/Button/Button_01A_Pressed.png" id="4_pv870"]
+[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="1_quaver"]
+[ext_resource type="FontFile" uid="uid://doiwc4lh6s2he" path="res://Assets/Fonts/fusion-pixel-8px-proportional-zh_hans.ttf" id="2_fusion8"]
+[ext_resource type="Texture2D" uid="uid://l0otlcy2iwe6" path="res://Assets/Button/Button_01A_Selected.png" id="3_hover"]
+[ext_resource type="Texture2D" uid="uid://crp0a6axprd0x" path="res://Assets/Button/Button_01A_Normal.png" id="4_normal"]
+[ext_resource type="Texture2D" uid="uid://hqaxexrud6gl" path="res://Assets/Button/Button_01A_Pressed.png" id="5_pressed"]
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_vxja4"]
 content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-texture = ExtResource("2_fiq7h")
+texture = ExtResource("3_hover")
 region_rect = Rect2(0, 0, 48, 16)
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_lt4la"]
@@ -18,18 +19,18 @@ content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-texture = ExtResource("3_gmksc")
+texture = ExtResource("4_normal")
 
 [sub_resource type="StyleBoxTexture" id="StyleBoxTexture_4amfo"]
 content_margin_left = 0.0
 content_margin_top = 0.0
 content_margin_right = 0.0
 content_margin_bottom = 0.0
-texture = ExtResource("4_pv870")
+texture = ExtResource("5_pressed")
 
 [resource]
 Button/font_sizes/font_size = 8
-Button/fonts/font = ExtResource("1_gv6e5")
+Button/fonts/font = ExtResource("2_fusion8")
 Button/styles/hover = SubResource("StyleBoxTexture_vxja4")
 Button/styles/normal = SubResource("StyleBoxTexture_lt4la")
 Button/styles/pressed = SubResource("StyleBoxTexture_4amfo")

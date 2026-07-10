@@ -4,7 +4,8 @@ class_name DraftRewardPanel
 signal reward_selected(item: Item)
 signal draft_closed
 
-const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
+const UI_FONT_SIZE: int = 12
 const CoinTexture: Texture2D = preload("res://Assets/Items/Coin.png")
 const ITEM_OPTION_SIZE: Vector2 = Vector2(32, 32)
 
@@ -316,13 +317,11 @@ func _has_required_nodes() -> bool:
 
 
 func _apply_label_settings(label: Label) -> void:
-	label.label_settings = UI_LABEL_SETTINGS
+		UIFontsScript.apply_label_settings(label, UI_FONT_SIZE)
 
 
 func _apply_button_font(button: Button) -> void:
-	if UI_LABEL_SETTINGS.font != null:
-		button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
-	button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+		UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
 
 
 func _on_reward_button_mouse_entered(button: Button) -> void:

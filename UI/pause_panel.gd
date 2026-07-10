@@ -3,8 +3,7 @@ class_name PausePanel
 
 signal exit_requested
 
-const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
-const EN_FONT: FontFile = preload("res://Assets/Fonts/quaver.ttf")
+const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const UI_FONT_SIZE: int = 12
 const PAUSE_ACTION: StringName = &"pause_game"
 
@@ -221,30 +220,15 @@ func _current_locale() -> String:
 
 
 func _label_settings_for_locale() -> LabelSettings:
-	if _current_locale() == "en":
-		return UI_LABEL_SETTINGS
-	var settings := LabelSettings.new()
-	settings.font_size = UI_FONT_SIZE
-	return settings
+		return UIFontsScript.make_label_settings(UI_FONT_SIZE)
 
 
 func _apply_button_font(button: Button) -> void:
-	if _current_locale() == "en":
-		button.add_theme_font_override(&"font", EN_FONT)
-	else:
-		button.remove_theme_font_override(&"font")
-	button.add_theme_font_size_override(&"font_size", UI_FONT_SIZE)
+		UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
 
 
 func _apply_option_button_font(button: OptionButton) -> void:
-	if _current_locale() == "en":
-		button.add_theme_font_override(&"font", EN_FONT)
-		button.get_popup().add_theme_font_override(&"font", EN_FONT)
-	else:
-		button.remove_theme_font_override(&"font")
-		button.get_popup().remove_theme_font_override(&"font")
-	button.add_theme_font_size_override(&"font_size", UI_FONT_SIZE)
-	button.get_popup().add_theme_font_size_override(&"font_size", UI_FONT_SIZE)
+		UIFontsScript.apply_option_button_font(button, UI_FONT_SIZE)
 
 
 func _connect_localization() -> void:

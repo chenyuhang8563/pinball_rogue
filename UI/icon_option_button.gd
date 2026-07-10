@@ -1,6 +1,10 @@
 extends Button
 class_name IconOptionButton
 
+const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
+const TITLE_FONT_SIZE: int = 10
+const DESC_FONT_SIZE: int = 10
+
 var _icon_view: Control
 var _title_label: Label
 var _description_label: Label
@@ -13,6 +17,7 @@ func _ready() -> void:
 	text = ""
 	clip_text = true
 	focus_mode = Control.FOCUS_ALL
+	_apply_fonts()
 
 
 func set_option(texture: Texture2D, title: String, description: String, level: int) -> void:
@@ -42,6 +47,13 @@ func _bind_nodes() -> void:
 	_icon_view = get_node_or_null("OptionContent/OptionLayout/OptionIconArea/Icon") as Control
 	_title_label = get_node_or_null("OptionContent/OptionLayout/OptionTitle") as Label
 	_description_label = get_node_or_null("OptionContent/OptionLayout/OptionDescription") as Label
+
+
+func _apply_fonts() -> void:
+	if _title_label != null:
+		UIFontsScript.apply_label_settings(_title_label, TITLE_FONT_SIZE)
+	if _description_label != null:
+		UIFontsScript.apply_label_settings(_description_label, DESC_FONT_SIZE)
 
 
 func _has_required_nodes() -> bool:

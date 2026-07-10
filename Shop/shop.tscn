@@ -9,7 +9,7 @@
 [ext_resource type="Resource" uid="uid://q7t1651xon8y" path="res://Resources/brown_marble.tres" id="6_brown"]
 [ext_resource type="Resource" uid="uid://c2jbto0wkkqhs" path="res://Resources/green_marble.tres" id="7_green"]
 [ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="8_7gdb2"]
-[ext_resource type="Resource" path="res://Resources/blue_marble.tres" id="9_blue"]
+[ext_resource type="Resource" uid="uid://c100pjp7ilvk2" path="res://Resources/blue_marble.tres" id="9_blue"]
 
 [node name="Shop" type="Control" unique_id=395620655 node_paths=PackedStringArray("shop_container", "marble_box_container", "relic_bar_container")]
 layout_mode = 3

@@ -213,7 +213,9 @@ func _connect_inventory_change() -> void:
 
 
 func _setup_run_flow() -> void:
-	var ui_layer: Node = get_node_or_null("CrtLayer")
+	var ui_layer: Node = get_node_or_null("CanvasLayer")
+	if ui_layer == null:
+		ui_layer = get_node_or_null("CanvsLayer")
 	if ui_layer == null:
 		ui_layer = CanvasLayer.new()
 		ui_layer.name = "RunFlowLayer"
@@ -234,12 +236,6 @@ func _setup_run_flow() -> void:
 	_setup_battle_health_hud(ui_layer)
 	_setup_pause_panel(ui_layer)
 	_setup_inventory_panel()
-
-	var crt_overlay: Node = ui_layer.get_node_or_null("ColorRect")
-	if crt_overlay != null:
-		if crt_overlay is CanvasItem:
-			(crt_overlay as CanvasItem).z_index = 100
-		ui_layer.move_child(crt_overlay, ui_layer.get_child_count() - 1)
 
 	run_controller = RunControllerScript.new()
 	run_controller.name = "RunController"

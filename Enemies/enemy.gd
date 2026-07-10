@@ -1,6 +1,8 @@
 extends RigidBody2D
 
 const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
+const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
+const ENEMY_LABEL_FONT_SIZE: int = 12
 const FrostStatusVisualScene: PackedScene = preload("res://Effects/frost_status_visual/frost_status_visual.tscn")
 const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition"
 
@@ -28,6 +30,7 @@ func _ready() -> void:
 	add_to_group("enemies")
 	_entity_id = "enemy_%d" % get_instance_id()
 	_register_stat_entity()
+	_apply_label_font()
 	_update_health_label()
 
 
@@ -256,3 +259,8 @@ func _emit_enemy_killed() -> void:
 	var event_bus: Node = tree.root.get_node_or_null("Event")
 	if event_bus != null and event_bus.has_signal(&"enemy_killed"):
 		event_bus.emit_signal(&"enemy_killed", self)
+
+
+func _apply_label_font() -> void:
+	if health_label != null:
+		UIFontsScript.apply_number_label(health_label, ENEMY_LABEL_FONT_SIZE)

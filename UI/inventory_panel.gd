@@ -1,7 +1,8 @@
 extends Control
 class_name InventoryPanel
 
-const UI_LABEL_SETTINGS: LabelSettings = preload("res://Themes/new_label_settings.tres")
+const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
+const UI_FONT_SIZE: int = 12
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
 const InventoryIconSlotScene: PackedScene = preload("res://UI/inventory_icon_slot.tscn")
 
@@ -112,8 +113,7 @@ func _setup_language_button() -> void:
 	if not language_button.item_selected.is_connected(callback):
 		language_button.item_selected.connect(callback)
 	_sync_language_button()
-	language_button.add_theme_font_size_override(&"font_size", 12)
-	language_button.get_popup().add_theme_font_size_override(&"font_size", 12)
+	UIFontsScript.apply_option_button_font(language_button, UI_FONT_SIZE)
 
 
 func _on_language_selected(index: int) -> void:
@@ -145,9 +145,7 @@ func _apply_button_label_settings() -> void:
 	var exit_button: Button = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/ExitButton") as Button
 	if exit_button == null:
 		return
-	if UI_LABEL_SETTINGS.font != null:
-		exit_button.add_theme_font_override("font", UI_LABEL_SETTINGS.font)
-	exit_button.add_theme_font_size_override("font_size", UI_LABEL_SETTINGS.font_size)
+	UIFontsScript.apply_button_font(exit_button, UI_FONT_SIZE)
 
 
 func _ensure_toggle_action() -> void:
@@ -246,7 +244,9 @@ func _get_skill_slot_sources() -> Array[Dictionary]:
 	if tree == null or tree.current_scene == null:
 		return sources
 
-	var skill_slot: Node = tree.current_scene.get_node_or_null("CrtLayer/SkillSlot")
+	var skill_slot: Node = tree.current_scene.get_node_or_null("CanvasLayer/SkillSlot")
+	if skill_slot == null:
+		skill_slot = tree.current_scene.get_node_or_null("CanvsLayer/SkillSlot")
 	if skill_slot == null:
 		return sources
 
