@@ -9,10 +9,13 @@
 [ext_resource type="Resource" uid="uid://c2jbto0wkkqhs" path="res://Resources/green_marble.tres" id="7_green"]
 [ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="8_7gdb2"]
 [ext_resource type="Resource" path="res://Resources/magic_missile_skill.tres" id="8_jhfdn"]
+[ext_resource type="Resource" path="res://Resources/fire_marble.tres" id="9_7nrtk"]
 [ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="9_8sid2"]
 [ext_resource type="Resource" uid="uid://c100pjp7ilvk2" path="res://Resources/blue_marble.tres" id="9_blue"]
 [ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="11_eu4ty"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://UI/skill_replace_dialog.tscn" id="13_b5trs"]
+[ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/item_icon_view.gd" id="14_b5trs"]
+[ext_resource type="Script" uid="uid://cx514a2cawcvr" path="res://UI/skill_replace_dialog.gd" id="16_16e15"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6qmg5"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -26,7 +29,7 @@ border_color = Color(0.42, 0.5, 0.78, 1)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_qlv7h")
-shop_items = Array[ExtResource("2_nunvh")]([ExtResource("3_u3phx"), ExtResource("4_bomb"), ExtResource("6_brown"), ExtResource("7_green"), ExtResource("9_blue"), ExtResource("8_jhfdn")])
+shop_items = Array[ExtResource("2_nunvh")]([ExtResource("3_u3phx"), ExtResource("4_bomb"), ExtResource("6_brown"), ExtResource("7_green"), ExtResource("9_blue"), ExtResource("8_jhfdn"), ExtResource("9_7nrtk")])
 shop_container = NodePath("UI/Panel/ScrollContainer/ShopInventory")
 marble_box_container = NodePath("UI/Panel/CollectionRows/MarbleBox")
 relic_bar_container = NodePath("UI/Panel/CollectionRows/RelicBar")
@@ -83,8 +86,19 @@ theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 columns = 3
 
-[node name="CollectionRows" parent="UI/Panel" unique_id=1783459460 instance=ExtResource("5_inventory")]
+[node name="CollectionRows" type="VBoxContainer" parent="UI/Panel" unique_id=1783459460 instance=ExtResource("5_inventory")]
 layout_mode = 1
+anchors_preset = 12
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = -76.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 0
+theme_override_constants/separation = 4
 
 [node name="SkillBox" type="HBoxContainer" parent="UI/Panel/CollectionRows" unique_id=230630312]
 layout_mode = 2
@@ -95,14 +109,21 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_6qmg5")
 
-[node name="Icon" parent="UI/Panel/CollectionRows/SkillBox/SkillSlot" unique_id=299050868 instance=ExtResource("11_eu4ty")]
-layout_mode = 0
+[node name="Icon" type="Control" parent="UI/Panel/CollectionRows/SkillBox/SkillSlot" unique_id=299050868 instance=ExtResource("11_eu4ty")]
+custom_minimum_size = Vector2(32, 32)
 anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
+mouse_filter = 2
+script = ExtResource("14_b5trs")
 
-[node name="SkillReplaceDialog" parent="UI/Panel" unique_id=1955345262 instance=ExtResource("13_b5trs")]
+[node name="SkillReplaceDialog" type="Control" parent="UI/Panel" unique_id=1955345262 instance=ExtResource("13_b5trs")]
+process_mode = 3
+visible = false
 layout_mode = 1
 anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+script = ExtResource("16_16e15")

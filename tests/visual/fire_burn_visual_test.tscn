@@ -1,0 +1,61 @@
+[gd_scene format=3 uid="uid://4hergrnnh8nc"]
+
+[ext_resource type="Script" uid="uid://ca4y0anou3sr1" path="res://tests/visual/fire_burn_visual_test.gd" id="1_guio4"]
+[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="2_we58q"]
+[ext_resource type="PackedScene" uid="uid://cw0103st1p7ap" path="res://Enemies/enemy.tscn" id="3_caoxa"]
+[ext_resource type="Script" uid="uid://1kywgp3v2xwl" path="res://Enemies/enemy.gd" id="4_4et8s"]
+[ext_resource type="PackedScene" uid="uid://bg5ataytpdqjs" path="res://Effects/fire_status_visual/fire_status_visual.tscn" id="5_we58q"]
+
+[node name="FireBurnVisualTest" type="Node2D" unique_id=1100341412]
+script = ExtResource("1_guio4")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=551990651]
+
+[node name="Background" type="ColorRect" parent="CanvasLayer" unique_id=1462448341]
+offset_right = 480.0
+offset_bottom = 270.0
+color = Color(0.08, 0.03, 0.02, 1)
+
+[node name="TitleLabel" type="Label" parent="CanvasLayer" unique_id=1595824145]
+offset_left = 42.0
+offset_top = 18.0
+offset_right = 402.0
+offset_bottom = 42.0
+theme_override_colors/font_color = Color(1, 0.65, 0.2, 1)
+text = "火焰弹珠：燃烧递减伤害"
+label_settings = ExtResource("2_we58q")
+
+[node name="RuleLabel" type="Label" parent="CanvasLayer" unique_id=1377565394]
+offset_left = 42.0
+offset_top = 48.0
+offset_right = 402.0
+offset_bottom = 72.0
+theme_override_colors/font_color = Color(1, 0.86, 0.58, 1)
+text = "每秒末结算：3 → 2 → 1"
+label_settings = ExtResource("2_we58q")
+
+[node name="ResultLabel" type="Label" parent="CanvasLayer" unique_id=1896536587]
+offset_left = 42.0
+offset_top = 230.0
+offset_right = 402.0
+offset_bottom = 254.0
+theme_override_colors/font_color = Color(1, 0.3, 0.18, 1)
+text = "燃烧进行中（红色飘字）"
+label_settings = ExtResource("2_we58q")
+
+[node name="Enemy" type="RigidBody2D" parent="CanvasLayer" unique_id=666898646 groups=["enemies"] instance=ExtResource("3_caoxa")]
+position = Vector2(240, 135)
+collision_layer = 8
+collision_mask = 11
+gravity_scale = 0.0
+freeze = true
+freeze_mode = 1
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("4_4et8s")
+
+[node name="BurnStatus" type="Node2D" parent="CanvasLayer" unique_id=492661556 instance=ExtResource("5_we58q")]
+z_index = 2
+position = Vector2(120, 135)
+
+[connection signal="body_entered" from="CanvasLayer/Enemy" to="CanvasLayer/Enemy" method="_on_body_entered"]

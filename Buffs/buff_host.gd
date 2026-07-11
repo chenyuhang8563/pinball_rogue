@@ -40,6 +40,8 @@ func add_buff(buff: BuffDef, stacks: int = 1) -> void:
 		if existing == null:
 			_active_buffs.erase(buff.id)
 		else:
+			if existing.definition.reapply_policy == BuffDef.ReapplyPolicy.IGNORE:
+				return
 			_refresh_buff(existing, requested_stacks)
 			return
 
@@ -65,6 +67,37 @@ func has_buff(buff_id: String) -> bool:
 func get_buff_stacks(buff_id: String) -> int:
 	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
 	return active_buff.stacks if active_buff != null else 0
+
+
+func get_buff_remaining_time(buff_id: String) -> float:
+	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
+	return active_buff.remaining_time if active_buff != null else 0.0
+
+
+func get_buff_pending_ticks(buff_id: String) -> int:
+	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
+	return int(active_buff.state.get("pending_ticks", 0)) if active_buff != null else 0
+
+
+func append_buff_duration(buff_id: String, duration_to_append: float, max_duration: float = -1.0) -> bool:
+	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
+	if active_buff == null or active_buff.is_permanent() or duration_to_append <= 0.0:
+		return false
+	var previous_time: float = active_buff.remaining_time
+	active_buff.remaining_time += duration_to_append
+	if max_duration >= 0.0:
+		active_buff.remaining_time = minf(active_buff.remaining_time, max_duration)
+	var applied_duration: float = active_buff.remaining_time - previous_time
+	if applied_duration > 0.0:
+		active_buff.definition.on_duration_appended(_host, active_buff.state, applied_duration)
+	return applied_duration > 0.0
+
+
+func notify_host_death() -> void:
+	for value: Variant in _active_buffs.values():
+		var active_buff: ActiveBuff = value as ActiveBuff
+		if active_buff != null:
+			active_buff.definition.on_host_death(_host, active_buff.state)
 
 
 func get_active_flash_color() -> Color:

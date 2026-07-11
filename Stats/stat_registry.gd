@@ -19,6 +19,8 @@ const POISON_DAMAGE_PER_TICK: String = "poison_damage_per_tick"
 const POISON_TICK_SECONDS: String = "poison_tick_seconds"
 const ECHO_TIMEOUT: String = "echo_timeout"
 const EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
+const FIRE_BURN_DURATION: String = "fire_burn_duration"
+const FIRE_EMBER_SPREAD_ENABLED: String = "fire_ember_spread_enabled"
 
 const DAMAGE_MULTIPLIER: String = "damage_multiplier"
 const FINAL_DAMAGE: String = "final_damage"
@@ -68,6 +70,8 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Resources/stats/marble/poison_tick_seconds.tres",
 	"res://Resources/stats/marble/echo_timeout.tres",
 	"res://Resources/stats/marble/explosion_effect_scale.tres",
+	"res://Resources/stats/marble/fire_burn_duration.tres",
+	"res://Resources/stats/marble/fire_ember_spread_enabled.tres",
 	"res://Resources/stats/combat/damage_multiplier.tres",
 	"res://Resources/stats/combat/final_damage.tres",
 	"res://Resources/stats/combat/damage_received.tres",

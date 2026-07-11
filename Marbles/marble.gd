@@ -19,7 +19,8 @@ enum MARBLE_TYPE {
 	BROWN,
 	BOMB,
 	GREEN,
-	BLUE
+	BLUE,
+	FIRE
 }
 
 @export var marble_type: MARBLE_TYPE = MARBLE_TYPE.DEFAULT

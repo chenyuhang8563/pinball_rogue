@@ -24,6 +24,7 @@ const DEFAULT_REWARD_ITEM_PATHS: PackedStringArray = [
 	"res://Resources/brown_marble.tres",
 	"res://Resources/green_marble.tres",
 	"res://Resources/bomb_marble.tres",
+	"res://Resources/fire_marble.tres",
 	"res://Resources/lightning.tres",
 ]
 const NORMAL_BATTLE_OPTION_WEIGHT: int = 30

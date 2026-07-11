@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://bg5ataytpdqjs"]
+
+[ext_resource type="Texture2D" uid="uid://d0lc63nxrrh4e" path="res://Effects/fire_status_visual/fire_embers.png" id="1_y5kyb"]
+
+[node name="FireStatusVisual" type="Node2D" unique_id=577357232]
+z_index = 2
+
+[node name="Embers" type="Sprite2D" parent="." unique_id=406058134]
+texture_filter = 1
+position = Vector2(0, -9)
+texture = ExtResource("1_y5kyb")

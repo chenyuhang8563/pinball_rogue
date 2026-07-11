@@ -24,7 +24,14 @@ data_*/
 mono_crash.*.json
 
 # test ignores
-/tests
+/tests/*
+!/tests/test_fire_marble.gd
+!/tests/visual/
+!/tests/visual/*.gd
+!/tests/visual/*.tscn
+
+# generated image sources; final runtime assets live under Assets/ and Effects/
+/output/imagegen/
 
 # agent ignores
 .claude

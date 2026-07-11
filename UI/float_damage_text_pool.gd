@@ -1,18 +1,20 @@
 extends Node
 
 @export var floating_text_scene: PackedScene = preload("res://UI/floating_text.tscn")
+@export var burn_floating_text_scene: PackedScene = preload("res://UI/burn_floating_text.tscn")
 
-var _available: Array[Node2D] = []
+var _available: Dictionary = {}
 var _active: Array[Node2D] = []
 
 
-func show_damage(damage_amount: int, spawn_position: Vector2) -> Node2D:
-	var text: Node2D = _obtain_text()
+func show_damage(damage_amount: int, spawn_position: Vector2, style: StringName = &"default") -> Node2D:
+	var text: Node2D = _obtain_text(style)
 	if text == null:
 		return null
 	if text.get_parent() == null:
 		add_child(text)
 	text.global_position = spawn_position
+	text.set_meta("floating_text_style", style)
 	_active.append(text)
 	text.call("display_damage_text", damage_amount)
 	return text
@@ -23,24 +25,33 @@ func get_active_count() -> int:
 
 
 func get_available_count() -> int:
-	return _available.size()
+	var total: int = 0
+	for available: Variant in _available.values():
+		if available is Array:
+			total += (available as Array).size()
+	return total
 
 
 func release_text(text: Node2D) -> void:
 	if text == null or not is_instance_valid(text):
 		return
 	_active.erase(text)
-	if not _available.has(text):
-		_available.append(text)
+	var style: StringName = text.get_meta("floating_text_style", &"default") as StringName
+	var available: Array = _available.get(style, []) as Array
+	if not available.has(text):
+		available.append(text)
+		_available[style] = available
 
 
-func _obtain_text() -> Node2D:
-	if not _available.is_empty():
-		return _available.pop_back()
-	if floating_text_scene == null:
+func _obtain_text(style: StringName) -> Node2D:
+	var available: Array = _available.get(style, []) as Array
+	if not available.is_empty():
+		return available.pop_back()
+	var scene: PackedScene = burn_floating_text_scene if style == &"burn" else floating_text_scene
+	if scene == null:
 		push_warning("FloatDamageTextPool needs a floating_text_scene.")
 		return null
-	var text: Node2D = floating_text_scene.instantiate() as Node2D
+	var text: Node2D = scene.instantiate() as Node2D
 	if text == null:
 		push_warning("FloatDamageTextPool can only pool Node2D scenes.")
 		return null

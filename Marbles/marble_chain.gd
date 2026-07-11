@@ -24,6 +24,7 @@ extends Node2D
 class_name MarbleChain
 
 const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
+const FireMarbleScript: GDScript = preload("res://Marbles/fire_marble.gd")
 
 # ---- 导出调参 ----
 
@@ -266,6 +267,8 @@ func get_total_damage(target: Node) -> int:
 		elif seg.segment_type == Marble.MARBLE_TYPE.BLUE:
 			var stacks_after_hit: int = BlueMarble.apply_frost_to_enemy(target)
 			total += BlueMarble.get_frost_bonus_damage(stacks_after_hit)
+		elif seg.segment_type == Marble.MARBLE_TYPE.FIRE:
+			FireMarbleScript.apply_burn_to_enemy(target)
 		total += seg.damage
 		total += seg.get_echo_damage()
 

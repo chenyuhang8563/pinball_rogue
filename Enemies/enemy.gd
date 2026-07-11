@@ -4,6 +4,7 @@ const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
 const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const ENEMY_LABEL_FONT_SIZE: int = 12
 const FrostStatusVisualScene: PackedScene = preload("res://Effects/frost_status_visual/frost_status_visual.tscn")
+const FireStatusVisualScene: PackedScene = preload("res://Effects/fire_status_visual/fire_status_visual.tscn")
 const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition"
 ## 伤害飘字在敌怪上方生成时，X 轴随机偏移的半范围（像素）。
 ## 实际偏移范围为 [-FLOAT_DAMAGE_X_SPREAD_HALF, FLOAT_DAMAGE_X_SPREAD_HALF]，
@@ -28,6 +29,7 @@ const FLOAT_DAMAGE_X_SPREAD_HALF: float = 8.0
 var _entity_id: String = ""
 var _death_emitted: bool = false
 var _frost_visual: Node2D = null
+var _fire_visual: Node2D = null
 
 
 func _ready() -> void:
@@ -54,7 +56,7 @@ func _on_body_entered(body: Node) -> void:
 		_apply_frozen_push_from_body(body)
 
 
-func take_damage(amount: int, flash_color: Color = Color.WHITE) -> void:
+func take_damage(amount: int, flash_color: Color = Color.WHITE, floating_style: StringName = &"default") -> void:
 	var final_damage: int = amount
 	var stat_system: Node = _get_stat_system()
 	if stat_system != null and stat_system.has_method("get_stat") and _entity_id != "":
@@ -72,9 +74,11 @@ func take_damage(amount: int, flash_color: Color = Color.WHITE) -> void:
 		health -= final_damage
 
 	flash_hit_mask(flash_color)
-	_show_float_damage_text(final_damage)
+	_show_float_damage_text(final_damage, floating_style)
 
 	if health <= 0:
+		if buff_host != null:
+			buff_host.notify_host_death()
 		_emit_enemy_killed()
 		queue_free()
 
@@ -97,6 +101,14 @@ func get_buff_stacks(buff_id: String) -> int:
 	if buff_host == null:
 		return 0
 	return buff_host.get_buff_stacks(buff_id)
+
+
+func append_buff_duration(buff_id: String, duration_to_append: float, max_duration: float = -1.0) -> bool:
+	return buff_host != null and buff_host.append_buff_duration(buff_id, duration_to_append, max_duration)
+
+
+func is_alive() -> bool:
+	return health > 0 and not _death_emitted
 
 
 func flash_hit_mask(flash_color: Color) -> void:
@@ -168,6 +180,19 @@ func clear_frost_visual() -> void:
 	if _frost_visual != null and is_instance_valid(_frost_visual):
 		_frost_visual.free()
 	_frost_visual = null
+
+
+func set_fire_status_visual() -> void:
+	if _fire_visual == null or not is_instance_valid(_fire_visual):
+		_fire_visual = FireStatusVisualScene.instantiate() as Node2D
+		_fire_visual.name = "FireStatusVisual"
+		add_child(_fire_visual)
+
+
+func clear_fire_status_visual() -> void:
+	if _fire_visual != null and is_instance_valid(_fire_visual):
+		_fire_visual.queue_free()
+	_fire_visual = null
 
 
 func _get_damage_from_body(body: Node) -> int:
@@ -253,7 +278,7 @@ func _get_effect_manager() -> Node:
 	return tree.root.get_node_or_null("EffectManager")
 
 
-func _show_float_damage_text(damage_amount: int) -> void:
+func _show_float_damage_text(damage_amount: int, style: StringName = &"default") -> void:
 	var tree: SceneTree = Engine.get_main_loop() as SceneTree
 	if tree == null:
 		return
@@ -261,7 +286,7 @@ func _show_float_damage_text(damage_amount: int) -> void:
 	if pool != null and pool.has_method("show_damage"):
 		var spawn_pos: Vector2 = global_position + Vector2.UP * 8.0
 		spawn_pos.x += randf_range(-FLOAT_DAMAGE_X_SPREAD_HALF, FLOAT_DAMAGE_X_SPREAD_HALF)
-		pool.call("show_damage", damage_amount, spawn_pos)
+		pool.call("show_damage", damage_amount, spawn_pos, style)
 
 
 func _emit_enemy_killed() -> void:
