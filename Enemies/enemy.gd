@@ -5,6 +5,10 @@ const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const ENEMY_LABEL_FONT_SIZE: int = 12
 const FrostStatusVisualScene: PackedScene = preload("res://Effects/frost_status_visual/frost_status_visual.tscn")
 const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition"
+## 伤害飘字在敌怪上方生成时，X 轴随机偏移的半范围（像素）。
+## 实际偏移范围为 [-FLOAT_DAMAGE_X_SPREAD_HALF, FLOAT_DAMAGE_X_SPREAD_HALF]，
+## 使同一点上的多次伤害在水平方向上散开，避免完全重叠。
+const FLOAT_DAMAGE_X_SPREAD_HALF: float = 8.0
 
 @export var health: int = 100:
 	set(value):
@@ -255,7 +259,9 @@ func _show_float_damage_text(damage_amount: int) -> void:
 		return
 	var pool: Node = tree.root.get_node_or_null("FloatDamageTextPool")
 	if pool != null and pool.has_method("show_damage"):
-		pool.call("show_damage", damage_amount, global_position + Vector2.UP * 8.0)
+		var spawn_pos: Vector2 = global_position + Vector2.UP * 8.0
+		spawn_pos.x += randf_range(-FLOAT_DAMAGE_X_SPREAD_HALF, FLOAT_DAMAGE_X_SPREAD_HALF)
+		pool.call("show_damage", damage_amount, spawn_pos)
 
 
 func _emit_enemy_killed() -> void:

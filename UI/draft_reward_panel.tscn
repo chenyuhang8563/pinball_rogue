@@ -2,8 +2,7 @@
 
 [ext_resource type="Script" uid="uid://48i1f34wpeay" path="res://UI/draft_reward_panel.gd" id="1_script"]
 [ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="2_label_settings"]
-[ext_resource type="PackedScene" uid="uid://bo3st3gtuqltq" path="res://UI/item_tooltip.tscn" id="3_tooltip"]
-[ext_resource type="Script" uid="uid://claltvuvxjqqy" path="res://UI/item_tooltip.gd" id="4_cj858"]
+[ext_resource type="Script" path="res://UI/reward_tooltip_button.gd" id="3_rm7wo"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://UI/skill_replace_dialog.tscn" id="5_s5edj"]
 [ext_resource type="Script" uid="uid://blctx7unse4cs" path="res://UI/skill_replace_dialog.gd" id="6_v0yo2"]
 
@@ -205,7 +204,9 @@ theme_override_constants/separation = 4
 [node name="RewardButton1" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=690716721]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = " "
 autowrap_mode = 3
+script = ExtResource("3_rm7wo")
 
 [node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton1" unique_id=1255265588]
 custom_minimum_size = Vector2(32, 32)
@@ -225,7 +226,9 @@ libraries/ = SubResource("AnimationLibrary_v0yo2")
 [node name="RewardButton2" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1279436893]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = " "
 autowrap_mode = 3
+script = ExtResource("3_rm7wo")
 
 [node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton2" unique_id=1276198212]
 custom_minimum_size = Vector2(32, 32)
@@ -245,7 +248,9 @@ libraries/ = SubResource("AnimationLibrary_mc3cr")
 [node name="RewardButton3" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1556859133]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
+tooltip_text = " "
 autowrap_mode = 3
+script = ExtResource("3_rm7wo")
 
 [node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton3" unique_id=128082564]
 custom_minimum_size = Vector2(32, 32)
@@ -261,16 +266,6 @@ stretch_mode = 5
 
 [node name="VisibilityPlayer" type="AnimationPlayer" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton3" unique_id=1820413166]
 libraries/ = SubResource("AnimationLibrary_otcn3")
-
-[node name="ItemTooltip" type="Control" parent="." unique_id=2115341950 instance=ExtResource("3_tooltip")]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("4_cj858")
 
 [node name="SkillReplaceDialog" type="Control" parent="." unique_id=1955345262 instance=ExtResource("5_s5edj")]
 process_mode = 3

@@ -11,6 +11,7 @@ enum RewardMode {
 }
 
 const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
+const RewardTooltipButtonScript: Script = preload("res://UI/reward_tooltip_button.gd")
 const UI_FONT_SIZE: int = 12
 const CoinTexture: Texture2D = preload("res://Assets/Items/Coin.png")
 const ITEM_OPTION_SIZE: Vector2 = Vector2(32, 32)
@@ -31,7 +32,6 @@ var _buttons: Array[Button] = []
 var _button_icons: Array[TextureRect] = []
 var _title_label: Label
 var _button_row: HBoxContainer
-var _tooltip: Control
 var _skill_replace_dialog: SkillReplaceDialog
 
 
@@ -61,7 +61,6 @@ func show_item_draft(items: Array[Item]) -> void:
 			_configure_gold_compensation_button(index)
 			_play_button_visibility(button, true)
 		elif all_blocked:
-			button.set_meta("tooltip_text", "")
 			_play_button_visibility(button, false)
 		elif index < _items.size():
 			var item: Item = _items[index]
@@ -69,7 +68,7 @@ func show_item_draft(items: Array[Item]) -> void:
 			button.disabled = not _can_add_item(item)
 			_play_button_visibility(button, true)
 		else:
-			button.set_meta("tooltip_text", "")
+			_configure_gold_button(index, "")
 			_set_button_icon(index, null)
 			_play_button_visibility(button, false)
 
@@ -231,12 +230,8 @@ func _format_item_label(item: Item) -> String:
 
 func _configure_item_button(index: int, item: Item) -> void:
 	var button: Button = _buttons[index]
-	button.tooltip_text = ""
-	button.set_meta("tooltip_text", _item_title(item) if item != null else "")
-	if item != null:
-		button.set_meta("tooltip_item", item)
-	elif button.has_meta("tooltip_item"):
-		button.remove_meta("tooltip_item")
+	if button.get_script() == RewardTooltipButtonScript:
+		button.call("set_item_tooltip", item)
 	if item != null and item.icon != null:
 		button.text = ""
 		_set_button_icon(index, item.icon)
@@ -253,10 +248,8 @@ func _configure_gold_button(index: int, custom_tooltip_text: String) -> void:
 	var button: Button = _buttons[index]
 	button.text = ""
 	button.disabled = false
-	button.tooltip_text = ""
-	button.set_meta("tooltip_text", custom_tooltip_text)
-	if button.has_meta("tooltip_item"):
-		button.remove_meta("tooltip_item")
+	if button.get_script() == RewardTooltipButtonScript:
+		button.call("set_text_tooltip", custom_tooltip_text)
 	_set_button_icon(index, CoinTexture)
 
 
@@ -272,7 +265,6 @@ func _refresh_battle_reward_buttons() -> void:
 	var gold_index: int = _get_battle_gold_button_index()
 	for index: int in range(_buttons.size()):
 		var button: Button = _buttons[index]
-		button.set_meta("tooltip_text", "")
 		if index < _battle_reward_items.size():
 			if _battle_item_claimed[index]:
 				_set_button_icon(index, null)
@@ -289,6 +281,7 @@ func _refresh_battle_reward_buttons() -> void:
 			_configure_gold_button(index, _format_gold_reward_tooltip(_battle_reward_gold))
 			_play_button_visibility(button, true)
 		else:
+			_configure_gold_button(index, "")
 			_set_button_icon(index, null)
 			_play_button_visibility(button, false)
 
@@ -296,8 +289,8 @@ func _refresh_battle_reward_buttons() -> void:
 func _refresh_normal_reward_buttons() -> void:
 	for index: int in range(_buttons.size()):
 		var button := _buttons[index]
-		button.set_meta("tooltip_text", "")
 		if index >= _normal_options.size():
+			_configure_gold_button(index, "")
 			_set_button_icon(index, null)
 			_play_button_visibility(button, false)
 			continue
@@ -377,7 +370,6 @@ func _bind_nodes() -> void:
 	mouse_filter = Control.MOUSE_FILTER_STOP
 	_title_label = get_node_or_null("Center/Panel/MarginContainer/Layout/TitleLabel") as Label
 	_button_row = get_node_or_null("Center/Panel/MarginContainer/Layout/ButtonRow") as HBoxContainer
-	_tooltip = get_node_or_null("ItemTooltip") as Control
 	_skill_replace_dialog = get_node_or_null("SkillReplaceDialog") as SkillReplaceDialog
 	_buttons.clear()
 	_button_icons.clear()
@@ -400,11 +392,6 @@ func _connect_buttons() -> void:
 		var pressed_callback := Callable(self, "_on_button_pressed").bind(index)
 		if not button.pressed.is_connected(pressed_callback):
 			button.pressed.connect(pressed_callback)
-		var entered_callback := Callable(self, "_on_reward_button_mouse_entered").bind(button)
-		if not button.mouse_entered.is_connected(entered_callback):
-			button.mouse_entered.connect(entered_callback)
-		if not button.mouse_exited.is_connected(_hide_custom_tooltip):
-			button.mouse_exited.connect(_hide_custom_tooltip)
 
 
 func _connect_skill_replace_dialog() -> void:
@@ -456,29 +443,6 @@ func _apply_label_settings(label: Label) -> void:
 
 func _apply_button_font(button: Button) -> void:
 		UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
-
-
-func _on_reward_button_mouse_entered(button: Button) -> void:
-	if _tooltip == null:
-		return
-	var item: Item = null
-	if button.has_meta("tooltip_item"):
-		item = button.get_meta("tooltip_item") as Item
-	if item != null and _tooltip.has_method("show_item_for_control"):
-		_tooltip.call("show_item_for_control", item, button)
-		return
-	var text: String = str(button.get_meta("tooltip_text", ""))
-	if text.is_empty():
-		_hide_custom_tooltip()
-		return
-	if _tooltip.has_method("show_text_for_control"):
-		_tooltip.call("show_text_for_control", text, button)
-
-
-func _hide_custom_tooltip() -> void:
-	if _tooltip != null:
-		if _tooltip.has_method("hide_tooltip"):
-			_tooltip.call("hide_tooltip")
 
 
 func _set_button_icon(index: int, texture: Texture2D) -> void:
