@@ -1,31 +1,60 @@
-[gd_scene load_steps=4 format=3 uid="uid://vbkihvbi1c5"]
+[gd_scene format=3 uid="uid://vbkihvbi1c5"]
 
 [ext_resource type="Script" uid="uid://drrrejutacxaw" path="res://Items/slot.gd" id="1_fmai1"]
 [ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="2_item_icon_view"]
 [ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="3_r6kqw"]
+[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="4_3jdf7"]
+[ext_resource type="LabelSettings" uid="uid://bgx23o8d7b5eo" path="res://Themes/Fonts/text_8.tres" id="5_enfuk"]
 
 [node name="Slot" type="Panel" unique_id=89857366]
-custom_minimum_size = Vector2(32, 56)
+custom_minimum_size = Vector2(64, 72)
 anchors_preset = -1
 anchor_right = 0.133
 anchor_bottom = 0.1
-offset_right = 0.07999992
-offset_bottom = 24.0
+offset_left = -15.96
+offset_top = -16.0
+offset_right = 48.04
+offset_bottom = 56.0
 grow_horizontal = 2
 grow_vertical = 2
 script = ExtResource("1_fmai1")
 
-[node name="Icon" parent="." instance=ExtResource("2_item_icon_view")]
+[node name="Icon" parent="." unique_id=132030406 instance=ExtResource("2_item_icon_view")]
 layout_mode = 0
-offset_right = 32.0
+anchors_preset = 0
+offset_left = 16.0
+offset_right = 48.0
 offset_bottom = 32.0
 
 [node name="Price" type="Label" parent="." unique_id=123838856]
 layout_mode = 0
-offset_top = 40.0
-offset_right = 32.0
-offset_bottom = 52.0
+offset_top = 58.0
+offset_right = 64.0
+offset_bottom = 81.0
+theme_override_fonts/font = ExtResource("4_3jdf7")
+theme_override_font_sizes/font_size = 9
 text = "$ 30"
 label_settings = ExtResource("3_r6kqw")
+horizontal_alignment = 1
+
+[node name="Title" type="Label" parent="." unique_id=707921765]
+layout_mode = 0
+offset_top = 33.0
+offset_right = 64.0
+offset_bottom = 56.0
+text = "Item"
+label_settings = ExtResource("5_enfuk")
+horizontal_alignment = 1
+clip_text = true
+
+[node name="Type" type="Label" parent="." unique_id=902749389]
+layout_mode = 0
+offset_top = 45.0
+offset_right = 64.0
+offset_bottom = 68.0
+text = "Type"
+label_settings = ExtResource("5_enfuk")
+horizontal_alignment = 1
+clip_text = true
 
 [connection signal="gui_input" from="." to="." method="_on_gui_input"]

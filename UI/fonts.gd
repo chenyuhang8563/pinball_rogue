@@ -1,6 +1,7 @@
 extends RefCounted
 class_name UIFonts
-## Central font manager — locale-aware. English → quaver, Chinese → fusion pixel.
+## Central font manager. Composite resources use Quaver for Latin/digits and
+## the matching Fusion Pixel face as the CJK fallback.
 ##
 ## Integer-ratio rule: font_size must be an integer multiple of the fusion design size.
 ##   8px fusion → render at  8, 16, 24 ...
@@ -13,13 +14,19 @@ const FUSION_8: FontFile = preload("res://Assets/Fonts/fusion-pixel-8px-proporti
 const FUSION_10: FontFile = preload("res://Assets/Fonts/fusion-pixel-10px-proportional-zh_hans.ttf")
 const FUSION_12: FontFile = preload("res://Assets/Fonts/fusion-pixel-12px-proportional-zh_hans.ttf")
 
+const QUAVER_FUSION_8: FontVariation = preload("res://Themes/Fonts/quaver_fusion_8.tres")
+const QUAVER_FUSION_10: FontVariation = preload("res://Themes/Fonts/quaver_fusion_10.tres")
+const QUAVER_FUSION_12: FontVariation = preload("res://Themes/Fonts/quaver_fusion_12.tres")
+
 const DESIGN_SIZES: Dictionary = {
-	8: FUSION_8,
-	10: FUSION_10,
-	12: FUSION_12,
-	16: FUSION_8,
-	20: FUSION_10,
-	24: FUSION_12,
+	8: QUAVER_FUSION_8,
+	9: QUAVER_FUSION_10,
+	10: QUAVER_FUSION_10,
+	11: QUAVER_FUSION_10,
+	12: QUAVER_FUSION_12,
+	16: QUAVER_FUSION_8,
+	20: QUAVER_FUSION_10,
+	24: QUAVER_FUSION_12,
 }
 
 
@@ -28,13 +35,11 @@ static func is_zh() -> bool:
 	return TranslationServer.get_locale().begins_with("zh")
 
 
-## Return the correct font for *font_size* and the current locale.
-## Falls back to the closest fusion design size for Chinese, or quaver for English.
-static func font_for_size(font_size: int) -> FontFile:
-	if is_zh():
-		var design_size: int = _closest_design_size(font_size)
-		return DESIGN_SIZES.get(design_size, FUSION_12)
-	return QUAVER
+## Return a composite font for *font_size*. Quaver remains the primary face, so
+## English and digits never switch to Fusion when the locale is Chinese.
+static func font_for_size(font_size: int) -> Font:
+	var design_size: int = _closest_design_size(font_size)
+	return DESIGN_SIZES.get(design_size, QUAVER_FUSION_12)
 
 
 static func _closest_design_size(font_size: int) -> int:

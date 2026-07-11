@@ -1,18 +1,27 @@
 extends Node
 
+const DASH_SKILL_ITEM: Item = preload("res://Resources/dash_skill.tres")
+
 signal item_added(item: Item)
 signal inventory_changed
 
 @export var items: Array[Item] = []
 @export var marble_capacity: int = 3
 @export var relic_capacity: int = 3
+@export var skill_capacity: int = 1
 
 const RELIC_MAX_LEVEL: int = 3
 
 var marble_items: Array[Item] = []
 var relic_items: Array[Item] = []
+var skill_items: Array[Item] = []
+var skill_item: Item = null
 var relic_levels: Dictionary = {}
 var relic_awakened: Dictionary = {}
+
+
+func _ready() -> void:
+	_grant_starting_skill_once()
 
 func add_item(item: Item) -> bool:
 	if not can_add_item(item):
@@ -36,6 +45,9 @@ func add_item(item: Item) -> bool:
 		marble_items.append(item)
 	elif item.type == Item.ItemType.RELIC:
 		relic_items.append(item)
+	elif item.type == Item.ItemType.SKILL:
+		skill_items.append(item)
+		skill_item = item
 
 	item_added.emit(item)
 	inventory_changed.emit()
@@ -55,6 +67,9 @@ func remove_item(item: Item) -> bool:
 		var relic_key: String = _get_relic_key(item)
 		relic_levels.erase(relic_key)
 		relic_awakened.erase(relic_key)
+	elif item.type == Item.ItemType.SKILL:
+		_remove_from_array(skill_items, item)
+		skill_item = skill_items[0] if not skill_items.is_empty() else null
 
 	inventory_changed.emit()
 	return true
@@ -70,7 +85,26 @@ func can_add_item(item: Item) -> bool:
 		if current_level > 0:
 			return not is_relic_awakened(item)
 		return relic_items.size() < _get_capacity("relic_slot_count", relic_capacity)
+	if item.type == Item.ItemType.SKILL:
+		return skill_items.size() < skill_capacity and not has_item_id(item.id)
 	return false
+
+
+func replace_skill(item: Item) -> bool:
+	if item == null or item.type != Item.ItemType.SKILL or item.skill_definition == null:
+		return false
+	if has_item_id(item.id):
+		return false
+	var previous: Item = skill_item
+	if previous != null:
+		_remove_from_array(items, previous)
+		_remove_from_array(skill_items, previous)
+	items.append(item)
+	skill_items.append(item)
+	skill_item = item
+	item_added.emit(item)
+	inventory_changed.emit()
+	return true
 
 
 func get_relic_level(item: Item) -> int:
@@ -138,3 +172,9 @@ func _get_stat_system() -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null("StatSystem")
+
+
+func _grant_starting_skill_once() -> void:
+	if skill_item != null or has_item_id(DASH_SKILL_ITEM.id):
+		return
+	add_item(DASH_SKILL_ITEM)

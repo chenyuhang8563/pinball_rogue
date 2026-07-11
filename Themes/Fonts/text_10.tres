@@ -1,0 +1,7 @@
+[gd_resource type="LabelSettings" format=3 uid="uid://mxcocbqp833n"]
+
+[ext_resource type="FontVariation" uid="uid://bi65xp2y217fg" path="res://Themes/Fonts/quaver_fusion_10.tres" id="1_mpia6"]
+
+[resource]
+font = ExtResource("1_mpia6")
+font_size = 10

@@ -35,3 +35,10 @@ cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gu
 - **UI 约束:** 严禁使用代码（如 `Control.new()`）搭建、组装 UI 结构。所有 UI 必须在 Godot 编辑器中作为场景（.tscn）可视化创建（需要使用 hastur broker mcp）。
 - **代码职责:** 逻辑脚本仅允许处理数据传递、UI 状态刷新、信号（Signals）绑定与分发。动态生成的 UI 元素必须通过 `preload` 编辑器导出的场景并 `instantiate()` 载入，禁止代码硬编码布局。
 - **禁止在代码中编辑 UI 属性:** 所有 UI 属性（位置、大小、颜色、字体、间距、可见性等）必须在 `.tscn` 场景文件或 `.tres` 主题/资源中设置，不得通过 GDScript 修改。代码中写 `rect_position`、`size`、`color`、`visible` 等 UI 属性赋值视为违规。运行时动态样式需求应通过主题（Theme）或场景预制变体实现。
+
+## UI 字体规范
+- 中文字形一律使用 Fusion Pixel 系列字体；英文字母和数字一律使用 `quaver.ttf`。
+- UI 字体只允许使用 10px 和 12px 两档；禁止使用 8px、9px、11px 或其他字号。
+- 禁止引用 Fusion Pixel 8px 字体及其派生资源（包括 `quaver_fusion_8.tres`、`text_8.tres`）；已有界面在修改时必须迁移到 10px 或 12px。
+- 10px 文本使用 `quaver_fusion_10.tres` / `text_10.tres`，12px 文本使用 `quaver_fusion_12.tres` / `text_12.tres`。
+- 中英混排必须使用 `.tres` 复合字体资源：以 Quaver 为主字体、对应字号的 Fusion Pixel 为中文 fallback，确保英文和数字不会随中文语言环境切换为 Fusion。

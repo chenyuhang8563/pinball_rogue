@@ -1,0 +1,116 @@
+[gd_scene format=3 uid="uid://61hx8rxkhnyx"]
+
+[ext_resource type="Script" path="res://UI/skill_replace_dialog.gd" id="1_p8jeu"]
+[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="2_tnbc0"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_0kdae"]
+bg_color = Color(0.06, 0.07, 0.13, 0.98)
+border_width_left = 2
+border_width_top = 2
+border_width_right = 2
+border_width_bottom = 2
+border_color = Color(0.45, 0.55, 0.9, 1)
+
+[sub_resource type="Animation" id="Animation_d76pk"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_mixe6"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_tobcu"]
+_data = {
+&"hide_dialog": SubResource("Animation_d76pk"),
+&"show_dialog": SubResource("Animation_mixe6")
+}
+
+[node name="SkillReplaceDialog" type="Control" unique_id=1955345262]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_p8jeu")
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=2029829581]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.68)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=1998475550]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Panel" type="PanelContainer" parent="Center" unique_id=1881579835]
+custom_minimum_size = Vector2(208, 108)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_0kdae")
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel" unique_id=1070782948]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel/Margin" unique_id=1026965709]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Message" type="Label" parent="Center/Panel/Margin/Layout" unique_id=2015744235]
+custom_minimum_size = Vector2(188, 46)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_tnbc0")
+theme_override_font_sizes/font_size = 10
+text = "Replace current skill?"
+horizontal_alignment = 1
+vertical_alignment = 1
+autowrap_mode = 3
+
+[node name="Buttons" type="HBoxContainer" parent="Center/Panel/Margin/Layout" unique_id=1421409026]
+layout_mode = 2
+theme_override_constants/separation = 12
+alignment = 1
+
+[node name="Confirm" type="Button" parent="Center/Panel/Margin/Layout/Buttons" unique_id=1833193895]
+custom_minimum_size = Vector2(76, 26)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_tnbc0")
+theme_override_font_sizes/font_size = 10
+text = "Confirm"
+
+[node name="Cancel" type="Button" parent="Center/Panel/Margin/Layout/Buttons" unique_id=435202494]
+custom_minimum_size = Vector2(76, 26)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_tnbc0")
+theme_override_font_sizes/font_size = 10
+text = "Cancel"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=664813476]
+libraries/ = SubResource("AnimationLibrary_tobcu")

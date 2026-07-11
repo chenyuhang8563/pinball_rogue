@@ -12,6 +12,8 @@ const RunNodeOptionScript: GDScript = preload("res://Run/run_node_option.gd")
 const BattleSpawnerScript: GDScript = preload("res://Run/battle_spawner.gd")
 const StatRegistryScript: GDScript = preload("res://Stats/stat_registry.gd")
 const MarbleUpgradeSystemScript: GDScript = preload("res://Run/marble_upgrade_system.gd")
+const BattleRewardOptionScript: GDScript = preload("res://Run/battle_reward_option.gd")
+const DefaultBattleRewardConfig: Resource = preload("res://Run/default_battle_reward_config.tres")
 const EnemyScene: PackedScene = preload("res://Enemies/enemy.tscn")
 const WEAK_LEVEL_DEF_PATH: String = "res://Levels/level_001_weak.tres"
 const STRONG_LEVEL_DEF_PATH: String = "res://Levels/level_strong_normal.tres"
@@ -46,6 +48,7 @@ const ENEMY_HEALTH_PER_NODE: int = 5
 @export var draft_reward_panel: Control
 @export var upgrade_panel: Control
 @export var level_parent: Node
+@export var battle_reward_config: BattleRewardConfig = DefaultBattleRewardConfig
 
 var current_node_index: int = 0
 var choice_wave_index: int = 0
@@ -209,6 +212,13 @@ func _show_event_draft() -> void:
 
 
 func _show_battle_rewards(group_id: String) -> void:
+	if group_id.contains("normal"):
+		var options: Array[BattleRewardOption] = _pick_normal_battle_reward_options()
+		if draft_reward_panel == null or not draft_reward_panel.has_method("show_normal_battle_rewards"):
+			_start_next_node()
+			return
+		draft_reward_panel.call("show_normal_battle_rewards", options)
+		return
 	var gold_amount: int = _roll_battle_gold(group_id)
 	var items: Array[Item] = _pick_battle_reward_items(group_id)
 	if draft_reward_panel == null or not draft_reward_panel.has_method("show_battle_rewards"):
@@ -307,7 +317,17 @@ func _is_reward_item_available(item: Item) -> bool:
 		return false
 	if item.type == Item.ItemType.MARBLE:
 		return not _inventory_has_marble(item)
+	if item.type == Item.ItemType.SKILL:
+		return not _inventory_has_skill(item)
 	return true
+
+
+func _inventory_has_skill(item: Item) -> bool:
+	var inventory := _get_autoload_node(&"Inventory")
+	if inventory == null or item == null:
+		return false
+	var current: Item = inventory.get("skill_item") as Item
+	return current != null and current.id == item.id
 
 
 func _inventory_has_marble(item: Item) -> bool:
@@ -361,8 +381,84 @@ func _roll_battle_gold(group_id: String) -> int:
 	if group_id.contains("elite"):
 		return randi_range(ELITE_BATTLE_GOLD_MIN, ELITE_BATTLE_GOLD_MAX)
 	if group_id.contains("normal"):
-		return randi_range(NORMAL_BATTLE_GOLD_MIN, NORMAL_BATTLE_GOLD_MAX)
+		var minimum := battle_reward_config.gold_min if battle_reward_config != null else NORMAL_BATTLE_GOLD_MIN
+		var maximum := battle_reward_config.gold_max if battle_reward_config != null else NORMAL_BATTLE_GOLD_MAX
+		return randi_range(minimum, maximum)
 	return 0
+
+
+func get_normal_reward_weights() -> Dictionary:
+	if battle_reward_config == null:
+		return {"gold": 50, "marble": 35, "skill": 15}
+	return {
+		"gold": battle_reward_config.gold_weight,
+		"marble": battle_reward_config.marble_weight,
+		"skill": battle_reward_config.skill_weight,
+	}
+
+
+func _pick_normal_battle_reward_options() -> Array[BattleRewardOption]:
+	var result: Array[BattleRewardOption] = []
+	var marble_pool := _load_receivable_items(battle_reward_config.marble_item_paths, Item.ItemType.MARBLE)
+	var skill_pool := _load_receivable_items(battle_reward_config.skill_item_paths, Item.ItemType.SKILL)
+	var categories: Array[Dictionary] = []
+	var weights := get_normal_reward_weights()
+	categories.append({"id": "gold", "weight": int(weights.gold)})
+	if not marble_pool.is_empty():
+		categories.append({"id": "marble", "weight": int(weights.marble)})
+	if not skill_pool.is_empty():
+		categories.append({"id": "skill", "weight": int(weights.skill)})
+
+	while result.size() < 2 and not categories.is_empty():
+		var category_index := _roll_weighted_category_index(categories)
+		var category: Dictionary = categories[category_index]
+		categories.remove_at(category_index)
+		match String(category.id):
+			"gold":
+				result.append(BattleRewardOptionScript.gold(_roll_battle_gold("normal")))
+			"marble":
+				result.append(BattleRewardOptionScript.item_reward(marble_pool.pick_random()))
+			"skill":
+				result.append(BattleRewardOptionScript.item_reward(skill_pool.pick_random()))
+
+	if result.size() < 2 and not _has_gold_option(result):
+		result.append(BattleRewardOptionScript.gold(_roll_battle_gold("normal")))
+	return result
+
+
+func _load_receivable_items(paths: PackedStringArray, expected_type: Item.ItemType) -> Array[Item]:
+	var result: Array[Item] = []
+	var inventory := _get_autoload_node(&"Inventory")
+	for path: String in paths:
+		var item := load(path) as Item
+		if item == null or item.type != expected_type or not _is_reward_item_available(item):
+			continue
+		if item.type == Item.ItemType.MARBLE and inventory != null and inventory.has_method("can_add_item"):
+			if not bool(inventory.call("can_add_item", item)):
+				continue
+		result.append(item)
+	return result
+
+
+func _roll_weighted_category_index(categories: Array[Dictionary]) -> int:
+	var total := 0
+	for category: Dictionary in categories:
+		total += maxi(0, int(category.weight))
+	if total <= 0:
+		return 0
+	var roll := randi_range(1, total)
+	for index: int in range(categories.size()):
+		roll -= maxi(0, int(categories[index].weight))
+		if roll <= 0:
+			return index
+	return categories.size() - 1
+
+
+func _has_gold_option(options: Array[BattleRewardOption]) -> bool:
+	for option: BattleRewardOption in options:
+		if option != null and option.kind == BattleRewardOption.Kind.GOLD:
+			return true
+	return false
 
 
 func _add_gold(amount: int) -> void:

@@ -18,12 +18,39 @@ var _tooltip: Control
 
 		_set_icon_texture(value.icon)
 		$Price.text = "$ " + str(value.price)
+		refresh_localized_content()
 
 
 func _ready() -> void:
 		UIFontsScript.apply_number_label($Price, PRICE_FONT_SIZE)
+		_connect_localization()
+		refresh_localized_content()
 		mouse_entered.connect(_on_mouse_entered)
 		mouse_exited.connect(_on_mouse_exited)
+
+
+func refresh_localized_content() -> void:
+	if item == null:
+		return
+	var title_label := get_node_or_null("Title") as Label
+	if title_label != null:
+		title_label.text = _item_title(item)
+	var type_label := get_node_or_null("Type") as Label
+	if type_label != null:
+		type_label.text = _item_type_text(item)
+
+
+func _connect_localization() -> void:
+	var localization: Node = _get_autoload_node(&"Localization")
+	if localization == null or not localization.has_signal(&"locale_changed"):
+		return
+	var callback := Callable(self, "_on_locale_changed")
+	if not localization.is_connected(&"locale_changed", callback):
+		localization.connect(&"locale_changed", callback)
+
+
+func _on_locale_changed(_locale_code: String) -> void:
+	refresh_localized_content()
 
 func _on_gui_input(event) -> void:
 	if not event is InputEventMouseButton:
@@ -107,3 +134,26 @@ func _set_icon_texture(texture: Texture2D) -> void:
 		var texture_rect := icon as TextureRect
 		texture_rect.texture = texture
 		texture_rect.visible = texture != null
+
+
+func _item_title(value: Item) -> String:
+	if value == null:
+		return ""
+	if value.skill_definition != null:
+		return tr(String(value.skill_definition.get("name_key")))
+	var key := "ITEM_%s_TITLE" % value.id.to_upper()
+	var translated := tr(key)
+	return translated if translated != key else tr(value.title)
+
+
+func _item_type_text(value: Item) -> String:
+	if value == null:
+		return ""
+	match value.type:
+		Item.ItemType.SKILL:
+			return tr("UI_SKILL_TYPE")
+		Item.ItemType.RELIC:
+			return tr("UI_RELIC_TYPE")
+		Item.ItemType.MARBLE:
+			return tr("UI_MARBLE_TYPE")
+	return tr("UI_EMPTY")

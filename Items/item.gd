@@ -16,6 +16,7 @@ enum ItemType {
 	NONE,
 	MARBLE,
 	RELIC,
+	SKILL,
 }
 
 @export var id: String = ""
@@ -27,3 +28,4 @@ enum ItemType {
 @export var type: ItemType = ItemType.NONE
 @export var marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT
 @export var marble_segment_damage: int = 1
+@export var skill_definition: SkillDefinition

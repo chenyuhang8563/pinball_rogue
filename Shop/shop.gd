@@ -11,10 +11,14 @@ signal gold_changed(value: int)
 @export var shop_container: GridContainer
 @export var marble_box_container: HBoxContainer
 @export var relic_bar_container: HBoxContainer
+@export var skill_box_container: HBoxContainer
+@export var skill_replace_dialog: SkillReplaceDialog
 var gold: int = 0:
 	set(value):
 		gold = value
 		gold_changed.emit(value)
+
+var _pending_skill_purchase: Item = null
 
 enum MODE {
 	ON,
@@ -37,6 +41,7 @@ var mode: MODE = MODE.OFF:
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_bind_optional_nodes()
 	$UI.hide()
 	_connect_localization()
 	_apply_text()
@@ -48,8 +53,16 @@ func _ready() -> void:
 	load_shop_inventory()
 	_connect_collection_slot_inputs()
 	_connect_inventory()
+	_connect_skill_replace_dialog()
 	_grant_starting_marbles()
 	refresh_collection_rows()
+
+
+func _bind_optional_nodes() -> void:
+	if skill_box_container == null:
+		skill_box_container = get_node_or_null("UI/Panel/CollectionRows/SkillBox") as HBoxContainer
+	if skill_replace_dialog == null:
+		skill_replace_dialog = get_node_or_null("UI/Panel/SkillReplaceDialog") as SkillReplaceDialog
 
 func _input(event) -> void:
 	if event is InputEventKey and event.is_pressed():
@@ -80,6 +93,8 @@ func _apply_text() -> void:
 func sell_item(item: Item) -> bool:
 	if item == null:
 		return false
+	if item.type == Item.ItemType.SKILL:
+		return false
 
 	var inventory: Node = _get_autoload_node(&"Inventory")
 	if inventory == null or not inventory.has_method("remove_item"):
@@ -102,6 +117,8 @@ func purchase_item(item: Item) -> bool:
 	var inventory: Node = _get_autoload_node(&"Inventory")
 	if inventory == null or not inventory.has_method("add_item"):
 		return false
+	if item.type == Item.ItemType.SKILL:
+		return _request_skill_purchase(item, inventory)
 	if inventory.has_method("can_add_item") and not inventory.call("can_add_item", item):
 		if item.type == Item.ItemType.MARBLE:
 			print("弹珠槽位已满，无法获得")
@@ -115,6 +132,48 @@ func purchase_item(item: Item) -> bool:
 	_remove_shop_item(item)
 	refresh_collection_rows()
 	return true
+
+
+func _request_skill_purchase(item: Item, inventory: Node) -> bool:
+	if item == null or item.type != Item.ItemType.SKILL:
+		return false
+	if item.id != "" and inventory.has_method("has_item_id") and bool(inventory.call("has_item_id", item.id)):
+		return false
+	if get_buy_price(item) > gold:
+		return false
+	var current_skill: Item = inventory.get("skill_item") as Item
+	if current_skill == null:
+		if not inventory.call("add_item", item):
+			return false
+		gold -= get_buy_price(item)
+		_remove_shop_item(item)
+		refresh_collection_rows()
+		return true
+	_pending_skill_purchase = item
+	if skill_replace_dialog != null:
+		skill_replace_dialog.request_replace(current_skill, item)
+	return false
+
+
+func confirm_pending_skill_purchase() -> bool:
+	var item := _pending_skill_purchase
+	_pending_skill_purchase = null
+	if item == null or not shop_items.has(item):
+		return false
+	var inventory := _get_autoload_node(&"Inventory")
+	if inventory == null or not inventory.has_method("replace_skill"):
+		return false
+	var price := get_buy_price(item)
+	if price > gold or not bool(inventory.call("replace_skill", item)):
+		return false
+	gold -= price
+	_remove_shop_item(item)
+	refresh_collection_rows()
+	return true
+
+
+func cancel_pending_skill_purchase() -> void:
+	_pending_skill_purchase = null
 
 
 func _spend_gold_for_item(item: Item) -> bool:
@@ -179,14 +238,18 @@ func refresh_collection_rows() -> void:
 	if inventory == null:
 		_update_collection_icons(marble_box_container, [])
 		_update_collection_icons(relic_bar_container, [])
+		_update_collection_icons(skill_box_container, [])
 		return
 
 	var raw_marble_items: Variant = inventory.get("marble_items")
 	var raw_relic_items: Variant = inventory.get("relic_items")
+	var raw_skill_items: Variant = inventory.get("skill_items")
 	var marble_items: Array = raw_marble_items if raw_marble_items is Array else []
 	var relic_items: Array = raw_relic_items if raw_relic_items is Array else []
+	var skill_items: Array = raw_skill_items if raw_skill_items is Array else []
 	_update_collection_icons(marble_box_container, marble_items)
 	_update_collection_icons(relic_bar_container, relic_items)
+	_update_collection_icons(skill_box_container, skill_items)
 
 
 func _update_collection_icons(container: HBoxContainer, collection_items: Array) -> void:
@@ -221,6 +284,7 @@ func _remove_shop_item(item: Item) -> void:
 func _connect_collection_slot_inputs() -> void:
 	_connect_collection_slot_inputs_for_row(marble_box_container)
 	_connect_collection_slot_inputs_for_row(relic_bar_container)
+	_connect_collection_slot_inputs_for_row(skill_box_container)
 
 
 func _connect_collection_slot_inputs_for_row(container: HBoxContainer) -> void:
@@ -294,6 +358,21 @@ func _connect_inventory() -> void:
 		inventory.connect(&"inventory_changed", callable)
 
 
+func _connect_skill_replace_dialog() -> void:
+	if skill_replace_dialog == null:
+		return
+	var confirm_callback := Callable(self, "_on_skill_replace_confirmed")
+	if not skill_replace_dialog.confirmed.is_connected(confirm_callback):
+		skill_replace_dialog.confirmed.connect(confirm_callback)
+	var cancel_callback := Callable(self, "cancel_pending_skill_purchase")
+	if not skill_replace_dialog.cancelled.is_connected(cancel_callback):
+		skill_replace_dialog.cancelled.connect(cancel_callback)
+
+
+func _on_skill_replace_confirmed(_item: Item) -> void:
+	confirm_pending_skill_purchase()
+
+
 func _get_autoload_node(node_name: StringName) -> Node:
 	var tree: SceneTree = Engine.get_main_loop() as SceneTree
 	if tree == null:
@@ -325,4 +404,4 @@ func _filter_purchasable_items(list: Array[Item]) -> Array[Item]:
 func _is_purchasable_item(item: Item) -> bool:
 	if item == null:
 		return false
-	return item.type == Item.ItemType.MARBLE or item.type == Item.ItemType.RELIC
+	return item.type == Item.ItemType.MARBLE or item.type == Item.ItemType.RELIC or item.type == Item.ItemType.SKILL

@@ -1,0 +1,8 @@
+[gd_resource type="FontVariation" format=3 uid="uid://bdw1vnmpmotmx"]
+
+[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="1_0enhu"]
+[ext_resource type="FontFile" uid="uid://dqaymin51qlpj" path="res://Assets/Fonts/fusion-pixel-12px-proportional-zh_hans.ttf" id="2_03v2g"]
+
+[resource]
+fallbacks = Array[Font]([ExtResource("2_03v2g")])
+base_font = ExtResource("1_0enhu")

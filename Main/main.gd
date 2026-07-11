@@ -9,6 +9,8 @@ const InventoryPanelScene: PackedScene = preload("res://UI/inventory_panel.tscn"
 const PausePanelScene: PackedScene = preload("res://UI/pause_panel.tscn")
 
 @onready var marbles: Node2D = $Marbles
+@onready var skill_controller: SkillController = $SkillController
+@onready var active_skill_slot: ActiveSkillSlot = $CanvasLayer/SkillSlot
 @export var starting_marble_spawn_positions: Array[Vector2] = [
 	Vector2(56, 96),
 	Vector2(56, 72),
@@ -23,16 +25,16 @@ var marble_chain: MarbleChain = null
 var run_controller: RunController = null
 var battle_health_hud: Node = null
 var inventory_panel: Control = null
+var _active_skill_blocking_panels: Array[Node] = []
 
 
 func _ready() -> void:
 	var event_bus: Node = _get_autoload_node(&"Event")
 	if event_bus != null and event_bus.has_signal(&"marble_fell"):
 		_connect_once(event_bus, &"marble_fell", Callable(self, "_on_marble_fell"))
-	if event_bus != null and event_bus.has_signal(&"dash_skill_activated"):
-		_connect_once(event_bus, &"dash_skill_activated", Callable(self, "_on_dash_skill_activated"))
 	_connect_inventory_change()
 	_spawn_chain()
+	_setup_skill_system()
 	_setup_run_flow()
 
 
@@ -95,32 +97,22 @@ func _on_marble_fell(body: RigidBody2D) -> void:
 		return
 	# 确认掉落的确实是 Head
 	if body == marble_chain.head:
+		if skill_controller != null:
+			skill_controller.cancel_active_skill("head_fell")
 		marble_chain.queue_free()
 		marble_chain = null
 		call_deferred(&"_spawn_chain")
 
 
 ## Dash 技能激活。仅瞄准 Head（链中唯一物理体）。
-func _on_dash_skill_activated() -> void:
-	if marble_chain == null or not is_instance_valid(marble_chain):
-		return
-	var head_marble: Marble = marble_chain.head
-	if head_marble == null or not is_instance_valid(head_marble):
-		return
-
-	var target: Node2D = _find_nearest_enemy(head_marble.global_position)
-	if target == null:
-		return
-
-	var direction: Vector2 = (target.global_position - head_marble.global_position).normalized()
-	head_marble.dash_toward(direction)
-
-
 func _on_inventory_changed() -> void:
 	_spawn_chain()
 
 
 func reset_battle_state() -> void:
+	if skill_controller != null:
+		skill_controller.cancel_active_skill("battle_reset")
+		skill_controller.clear_projectiles()
 	_spawn_chain()
 
 
@@ -151,6 +143,24 @@ func _find_nearest_enemy(from: Vector2) -> Node2D:
 			nearest_dist = dist
 			nearest_enemy = enemy_node
 	return nearest_enemy
+
+
+func _setup_skill_system() -> void:
+	if skill_controller == null:
+		return
+	skill_controller.head_provider = Callable(self, "_get_active_marble")
+	skill_controller.projectile_parent_provider = Callable(self, "_get_skill_projectile_parent")
+	if active_skill_slot == null:
+		return
+	active_skill_slot.bind_controller(skill_controller)
+	if not active_skill_slot.skill_pressed.is_connected(skill_controller.press_active_skill):
+		active_skill_slot.skill_pressed.connect(skill_controller.press_active_skill)
+	if not active_skill_slot.skill_released.is_connected(skill_controller.release_active_skill):
+		active_skill_slot.skill_released.connect(skill_controller.release_active_skill)
+
+
+func _get_skill_projectile_parent() -> Node:
+	return self
 
 
 func _get_shop_marble_box_items() -> Array[Item]:
@@ -246,6 +256,7 @@ func _setup_run_flow() -> void:
 	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
 	run_controller.run_health_changed.connect(_on_run_health_changed)
 	add_child(run_controller)
+	_connect_active_skill_slot_to_battle_flow()
 
 	var event_bus: Node = _get_autoload_node(&"Event")
 	if event_bus != null:
@@ -255,6 +266,44 @@ func _setup_run_flow() -> void:
 		_connect_run_signal(run_controller, event_bus, &"run_completed")
 
 	run_controller.start_run()
+
+
+func _connect_active_skill_slot_to_battle_flow() -> void:
+	if run_controller == null or active_skill_slot == null:
+		return
+	_connect_once(run_controller, &"battle_started", Callable(active_skill_slot, "on_battle_started"))
+	_connect_once(run_controller, &"battle_completed", Callable(active_skill_slot, "on_battle_completed"))
+
+	_active_skill_blocking_panels.clear()
+	for panel_path: NodePath in [
+		^"CanvasLayer/PausePanel",
+		^"CanvasLayer/NodeChoicePanel",
+		^"CanvasLayer/DraftRewardPanel",
+		^"CanvasLayer/MarbleUpgradePanel",
+	]:
+		_register_active_skill_blocking_panel(get_node_or_null(panel_path))
+	if inventory_panel != null:
+		_register_active_skill_blocking_panel(inventory_panel.get_node_or_null("UI"))
+	var shop: Node = _get_autoload_node(&"Shop")
+	if shop != null:
+		_register_active_skill_blocking_panel(shop.get_node_or_null("UI"))
+	_sync_active_skill_panel_blocker()
+
+
+func _register_active_skill_blocking_panel(panel: Node) -> void:
+	if panel == null or not panel.has_signal(&"visibility_changed"):
+		return
+	_active_skill_blocking_panels.append(panel)
+	_connect_once(panel, &"visibility_changed", Callable(self, "_sync_active_skill_panel_blocker"))
+
+
+func _sync_active_skill_panel_blocker() -> void:
+	var blocked: bool = false
+	for panel: Node in _active_skill_blocking_panels:
+		if is_instance_valid(panel) and bool(panel.get("visible")):
+			blocked = true
+			break
+	active_skill_slot.set_blocked_by_panel(blocked)
 
 
 func _setup_battle_health_hud(ui_layer: Node) -> void:

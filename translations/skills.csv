@@ -1,0 +1,19 @@
+keys,en,zh_CN
+UI_SKILL_TYPE,Skill,技能
+UI_GOLD_REWARD_TYPE,Gold,金币
+UI_MARBLE_REWARD_TYPE,Marble,弹珠
+UI_SKILL_REWARD_TYPE,Skill,技能
+UI_BATTLE_REWARD_CHOICE_TITLE,Choose One Reward,选择一个奖励
+UI_REPLACE_SKILL_CONFIRM,Replace %s with %s?,要将 %s 替换为 %s 吗？
+UI_CONFIRM,Confirm,确认
+UI_CANCEL,Cancel,取消
+UI_SKILL_SLOT_FULL,Skill slot is full,技能栏已满
+SKILL_DASH_NAME,Dash,冲刺
+SKILL_DASH_DESC,Instantly dash toward the nearest enemy.,立即向最近的敌人冲刺。
+SKILL_MAGIC_MISSILE_NAME,Magic Missile,魔法飞弹
+SKILL_MAGIC_MISSILE_DESC,"Hold to aim, release to fire.",按住瞄准，释放发射。
+ITEM_DASH_TITLE,Dash,冲刺
+ITEM_DASH_DESC,Instantly dash toward the nearest enemy.,立即向最近的敌人冲刺。
+ITEM_MAGIC_MISSILE_TITLE,Magic Missile,魔法飞弹
+ITEM_MAGIC_MISSILE_DESC,"Hold to aim, release to fire.",按住瞄准，释放发射。
+ITEM_BROWN_MARBLE_DESC,Builds echo stacks on hit; full stacks add bonus damage.,命中时积累回响层数；满层后造成额外伤害。

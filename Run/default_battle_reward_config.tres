@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="BattleRewardConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Run/battle_reward_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+gold_weight = 50
+marble_weight = 35
+skill_weight = 15
+gold_min = 15
+gold_max = 20
+marble_item_paths = PackedStringArray("res://Resources/brown_marble.tres", "res://Resources/green_marble.tres", "res://Resources/bomb_marble.tres", "res://Resources/blue_marble.tres")
+skill_item_paths = PackedStringArray("res://Resources/dash_skill.tres", "res://Resources/magic_missile_skill.tres")

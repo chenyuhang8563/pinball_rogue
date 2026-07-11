@@ -4,10 +4,9 @@ class_name InventoryPanel
 const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const UI_FONT_SIZE: int = 12
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
-const InventoryIconSlotScene: PackedScene = preload("res://UI/inventory_icon_slot.tscn")
 
 @export var toggle_action: StringName = &"toggle_inventory"
-@export var skill_slot_count: int = 3
+@export var skill_slot_count: int = 1
 @export var marble_box_container: HBoxContainer
 @export var relic_bar_container: HBoxContainer
 @export var skill_bar_container: HBoxContainer
@@ -31,7 +30,6 @@ func _ready() -> void:
 	_apply_text()
 	_setup_language_button()
 	_apply_button_label_settings()
-	_ensure_skill_slots()
 	_connect_inventory()
 	refresh_inventory()
 	mode = MODE.OFF
@@ -204,19 +202,6 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 		_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item))
 
 
-func _ensure_skill_slots() -> void:
-	if skill_bar_container == null:
-		return
-	while skill_bar_container.get_child_count() < skill_slot_count:
-		skill_bar_container.add_child(_make_skill_slot(skill_bar_container.get_child_count() + 1))
-
-
-func _make_skill_slot(index: int) -> Panel:
-	var slot := InventoryIconSlotScene.instantiate() as Panel
-	slot.name = "SkillSlot%d" % index
-	return slot
-
-
 func _update_skill_slots() -> void:
 	if skill_bar_container == null:
 		return
@@ -228,33 +213,28 @@ func _update_skill_slots() -> void:
 		if icon_view == null:
 			continue
 		_clear_icon_view(icon_view)
-		if slot.has_meta("skill_source"):
-			slot.remove_meta("skill_source")
+		if slot.has_meta("item"):
+			slot.remove_meta("item")
 		if index >= skill_sources.size():
 			continue
 		var source: Dictionary = skill_sources[index]
 		_set_icon_view_texture(icon_view, source.get("icon") as Texture2D)
-		if source.has("source_path"):
-			slot.set_meta("skill_source", source["source_path"])
+		if source.has("item"):
+			slot.set_meta("item", source["item"])
 
 
 func _get_skill_slot_sources() -> Array[Dictionary]:
 	var sources: Array[Dictionary] = []
-	var tree: SceneTree = get_tree()
-	if tree == null or tree.current_scene == null:
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	if inventory == null:
 		return sources
-
-	var skill_slot: Node = tree.current_scene.get_node_or_null("CanvasLayer/SkillSlot")
-	if skill_slot == null:
-		skill_slot = tree.current_scene.get_node_or_null("CanvsLayer/SkillSlot")
-	if skill_slot == null:
+	var raw_skill_items: Variant = inventory.get("skill_items")
+	if not raw_skill_items is Array:
 		return sources
-
-	var icon: Node = skill_slot.get_node_or_null("Icon")
-	sources.append({
-		"icon": _get_icon_view_texture(icon),
-		"source_path": str(skill_slot.get_path()),
-	})
+	for value: Variant in raw_skill_items:
+		var item := value as Item
+		if item != null:
+			sources.append({"icon": item.icon, "item": item})
 	return sources
 
 

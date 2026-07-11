@@ -5,7 +5,6 @@ extends Node
 ## Systems that should not directly reference each other can communicate here.
 
 signal marble_fell(marble: RigidBody2D)
-signal dash_skill_activated
 
 ## Emitted when an enemy is killed and combat-drop buffs may be awarded.
 signal enemy_killed(enemy: Node2D)

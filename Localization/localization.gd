@@ -3,7 +3,10 @@ extends Node
 signal locale_changed(locale_code: String)
 
 const DEFAULT_LOCALE: String = "zh_CN"
-const TRANSLATION_CSV_PATH: String = "res://translations/game.csv"
+const TRANSLATION_CSV_PATHS: PackedStringArray = [
+	"res://translations/skills.csv",
+	"res://translations/game.csv",
+]
 const SETTINGS_SECTION: String = "locale"
 const SETTINGS_KEY_CODE: String = "code"
 
@@ -47,9 +50,14 @@ func set_locale(locale_code: String) -> void:
 func _load_translations() -> void:
 	if not _translations.is_empty():
 		return
-	var file := FileAccess.open(TRANSLATION_CSV_PATH, FileAccess.READ)
+	for path: String in TRANSLATION_CSV_PATHS:
+		_load_translation_file(path)
+
+
+func _load_translation_file(path: String) -> void:
+	var file := FileAccess.open(path, FileAccess.READ)
 	if file == null:
-		push_warning("Localization: missing translation CSV at %s" % TRANSLATION_CSV_PATH)
+		push_warning("Localization: missing translation CSV at %s" % path)
 		return
 
 	var header: PackedStringArray = file.get_csv_line()

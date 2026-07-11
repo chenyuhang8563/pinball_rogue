@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://ckuyvnyu6g21e"
+
+[deps]
+
+files=["res://translations/skills.en.translation", "res://translations/skills.zh_CN.translation"]
+
+source_file="res://translations/skills.csv"
+dest_files=["res://translations/skills.en.translation", "res://translations/skills.zh_CN.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

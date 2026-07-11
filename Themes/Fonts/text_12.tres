@@ -1,0 +1,7 @@
+[gd_resource type="LabelSettings" format=3 uid="uid://bdcmnx0npnilw"]
+
+[ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="1_s1mey"]
+
+[resource]
+font = ExtResource("1_s1mey")
+font_size = 12
