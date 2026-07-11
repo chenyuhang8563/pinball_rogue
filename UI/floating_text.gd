@@ -28,8 +28,8 @@ func display_damage_text(damage_amount: int) -> void:
 	position_tween.tween_property(self, "global_position", start_position + Vector2.UP * 16.0, 0.3)
 	scale_tween.tween_property(self, "scale", Vector2.ONE * 2, 0.15)
 	scale_tween.tween_property(self, "scale", Vector2.ONE, 0.15)
-	position_tween.tween_property(self, "global_position", start_position + Vector2.UP * 48.0, 0.4)
-	scale_tween.tween_property(self, "scale", Vector2.ZERO, 0.4)
+	position_tween.tween_property(self, "global_position", start_position + Vector2.UP * 25.0, 0.3)
+	scale_tween.tween_property(self, "scale", Vector2.ZERO, 0.3)
 	scale_tween.finished.connect(_on_animation_tween_finished)
 
 
