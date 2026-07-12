@@ -15,7 +15,7 @@
 [ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="11_eu4ty"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://UI/skill_replace_dialog.tscn" id="13_b5trs"]
 [ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/item_icon_view.gd" id="14_b5trs"]
-[ext_resource type="Script" uid="uid://cx514a2cawcvr" path="res://UI/skill_replace_dialog.gd" id="16_16e15"]
+[ext_resource type="Script" path="res://UI/skill_replace_dialog.gd" id="16_16e15"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6qmg5"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -29,7 +29,7 @@ border_color = Color(0.42, 0.5, 0.78, 1)
 layout_mode = 3
 anchors_preset = 0
 script = ExtResource("1_qlv7h")
-shop_items = Array[ExtResource("2_nunvh")]([ExtResource("3_u3phx"), ExtResource("4_bomb"), ExtResource("6_brown"), ExtResource("7_green"), ExtResource("9_blue"), ExtResource("8_jhfdn"), ExtResource("9_7nrtk")])
+shop_item_pool = Array[ExtResource("2_nunvh")]([ExtResource("3_u3phx"), ExtResource("4_bomb"), ExtResource("6_brown"), ExtResource("7_green"), ExtResource("9_blue"), ExtResource("8_jhfdn"), ExtResource("9_7nrtk")])
 shop_container = NodePath("UI/Panel/ScrollContainer/ShopInventory")
 marble_box_container = NodePath("UI/Panel/CollectionRows/MarbleBox")
 relic_bar_container = NodePath("UI/Panel/CollectionRows/RelicBar")

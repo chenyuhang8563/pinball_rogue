@@ -3,7 +3,7 @@ ITEM_FIRE_MARBLE_TITLE,Fire Marble,火焰弹珠
 ITEM_FIRE_MARBLE_DESC,Applies a burning debuff that deals decreasing damage every second.,命中敌人施加燃烧，每秒造成递减伤害。
 UPGRADE_FIRE_DURATION_4_DESC,Burn lasts 4 seconds,燃烧持续 4 秒
 UPGRADE_FIRE_DURATION_5_DESC,Burn lasts 5 seconds,燃烧持续 5 秒
-UPGRADE_FIRE_AWAKEN_DESC,Awaken: Ember spread transfers remaining burn to the nearest enemy,觉醒：余烬传播会将剩余燃烧传给最近的敌人
+UPGRADE_FIRE_AWAKEN_DESC,Awaken: Ember spread transfers remaining burn to the nearest enemy,觉醒：将剩余燃烧传给最近的敌人
 UI_INVENTORY_TITLE,Inventory,物品栏
 UI_SKILLS_TITLE,Skills,技能
 UI_EXIT,Exit,退出

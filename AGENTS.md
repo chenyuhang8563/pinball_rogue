@@ -20,6 +20,9 @@
 cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gdir=res://tests -ginclude_subdirs -gexit -glog=1 -gconfig="
 ```
 
+- 不要为了 TDD 人为编写“因为缺失某个实现而预期失败”的 GUT 测试；这类失败没有验证价值。
+- 只有在测试可正常执行时才运行 GUT：GUT 失败时 Godot 可能卡死且不产生有效输出，应先通过静态检查或代码审阅定位并消除该风险。
+
 - After GUT passes, run the game in Godot when runtime validation is relevant.
 - Capture screenshots from a running game only when a `game` executor is connected.
 - Save screenshot evidence under `E:\Projects\pinball_rogue\.codex\hud_screenshots`; do not use `.codex_validation`.

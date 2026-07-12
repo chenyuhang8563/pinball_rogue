@@ -13,7 +13,7 @@ func _init() -> void:
 	id = BURN_ID
 	display_name = "Burn"
 	description = "Deals decreasing fire damage once per second."
-	duration = 3.0
+	duration = float(_get_burn_duration_ticks())
 	stackable = false
 	max_stacks = 1
 	source = BuffSource.CHAIN_MECHANIC

@@ -3,10 +3,12 @@ extends Control
 const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const UI_FONT_SIZE: int = 12
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
+const SHOP_SLOT_COUNT: int = 6
 
 signal gold_changed(value: int)
 
 @export var shop_slot_node: PackedScene = preload("res://Items/slot.tscn")
+@export var shop_item_pool: Array[Item] = []
 @export var shop_items: Array[Item] = []
 @export var shop_container: GridContainer
 @export var marble_box_container: HBoxContainer
@@ -50,6 +52,7 @@ func _ready() -> void:
 		_apply_button_label_settings(exit_button)
 		exit_button.pressed.connect(close_shop)
 	set_initial_gold()
+	_roll_initial_shop_inventory()
 	load_shop_inventory()
 	_connect_collection_slot_inputs()
 	_connect_inventory()
@@ -229,6 +232,32 @@ func set_shop_inventory(list: Array[Item]):
 	shop_items = _filter_purchasable_items(list)
 	load_shop_inventory()
 
+
+func generate_shop_inventory(candidates: Array[Item]) -> Array[Item]:
+	var available_items := _unique_purchasable_items(candidates)
+	var selected_items: Array[Item] = []
+	for item_type: Item.ItemType in [Item.ItemType.RELIC, Item.ItemType.MARBLE, Item.ItemType.SKILL]:
+		var category_items := _items_of_type(available_items, item_type)
+		if not category_items.is_empty():
+			selected_items.append(category_items.pick_random())
+
+	var remaining_items: Array[Item] = []
+	for item: Item in available_items:
+		if not selected_items.has(item):
+			remaining_items.append(item)
+
+	var target_count := mini(SHOP_SLOT_COUNT, available_items.size())
+	while selected_items.size() < target_count and not remaining_items.is_empty():
+		selected_items.append(remaining_items.pop_at(randi_range(0, remaining_items.size() - 1)))
+	selected_items.shuffle()
+	return selected_items
+
+
+func _roll_initial_shop_inventory() -> void:
+	if shop_item_pool.is_empty():
+		shop_item_pool = shop_items.duplicate()
+	shop_items = generate_shop_inventory(shop_item_pool)
+
 func set_initial_gold():
 	gold = 100
 
@@ -399,6 +428,22 @@ func _filter_purchasable_items(list: Array[Item]) -> Array[Item]:
 		if _is_purchasable_item(item):
 			purchasable_items.append(item)
 	return purchasable_items
+
+
+func _unique_purchasable_items(list: Array[Item]) -> Array[Item]:
+	var unique_items: Array[Item] = []
+	for item: Item in _filter_purchasable_items(list):
+		if not unique_items.has(item):
+			unique_items.append(item)
+	return unique_items
+
+
+func _items_of_type(items: Array[Item], item_type: Item.ItemType) -> Array[Item]:
+	var category_items: Array[Item] = []
+	for item: Item in items:
+		if item.type == item_type:
+			category_items.append(item)
+	return category_items
 
 
 func _is_purchasable_item(item: Item) -> bool:

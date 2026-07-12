@@ -31,6 +31,11 @@ class DummyInventory extends Node:
 	var marble_items: Array[Item] = []
 
 
+class FireDurationStatSystem extends Node:
+	func get_stat(stat_id: String, _entity_id: String, _context: Variant = null) -> float:
+		return 5.0 if stat_id == "fire_burn_duration" else 0.0
+
+
 func test_burn_ticks_decrease_from_three_to_one() -> void:
 	var enemy := DummyEnemy.new()
 	var burn: BuffDef = FireDebuffScript.new()
@@ -41,6 +46,36 @@ func test_burn_ticks_decrease_from_three_to_one() -> void:
 	burn.on_process(enemy, state, 1.0)
 	assert_eq(enemy.damage_events, [3, 2, 1])
 	enemy.free()
+
+
+# 回归来源：觉醒火焰弹珠只结算 5、4、3，Buff 在固定 3 秒后提前移除。
+# 修复目标：Buff 的实际时长与升级后的 5 次燃烧结算一致，覆盖最后的 2、1 伤害边界。
+func test_awakened_burn_lasts_five_seconds_and_deals_all_five_ticks() -> void:
+	var root := get_tree().root
+	var previous_stat_system := root.get_node_or_null("StatSystem")
+	if previous_stat_system != null:
+		previous_stat_system.name = "PreviousStatSystemForFireDurationTest"
+	var stat_system := FireDurationStatSystem.new()
+	stat_system.name = "StatSystem"
+	root.add_child(stat_system)
+
+	var enemy := DummyEnemy.new()
+	add_child_autofree(enemy)
+	var host: BuffHost = BuffHostScript.new()
+	enemy.add_child(host)
+	await get_tree().process_frame
+	var burn: BuffDef = FireDebuffScript.new()
+	host.add_buff(burn)
+	for _index: int in range(5):
+		host._process(1.0)
+
+	assert_eq(burn.duration, 5.0)
+	assert_eq(enemy.damage_events, [5, 4, 3, 2, 1])
+	assert_false(host.has_buff("fire_burn_debuff"))
+	root.remove_child(stat_system)
+	stat_system.free()
+	if previous_stat_system != null:
+		previous_stat_system.name = "StatSystem"
 
 
 func test_reapplying_burn_keeps_original_remaining_time() -> void:
