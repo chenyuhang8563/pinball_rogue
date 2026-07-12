@@ -41,7 +41,7 @@ cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gu
 
 ## UI 字体规范
 - 中文字形一律使用 Fusion Pixel 系列字体；英文字母和数字一律使用 `quaver.ttf`。
-- UI 字体只允许使用 10px 和 12px 两档；禁止使用 8px、9px、11px 或其他字号。
+- UI 字体只允许使用 10px 和 12px 两档；禁止使用 8px、9px、11px 或其他字号。**例外：** 漂浮伤害数字（如 `burn_floating_text.tscn`、`floating_text.tscn`）统一使用 `quaver.ttf` 16px，与普通伤害字号对齐，无需走 `.tres` 复合字体。
 - 禁止引用 Fusion Pixel 8px 字体及其派生资源（包括 `quaver_fusion_8.tres`、`text_8.tres`）；已有界面在修改时必须迁移到 10px 或 12px。
 - 10px 文本使用 `quaver_fusion_10.tres` / `text_10.tres`，12px 文本使用 `quaver_fusion_12.tres` / `text_12.tres`。
 - 中英混排必须使用 `.tres` 复合字体资源：以 Quaver 为主字体、对应字号的 Fusion Pixel 为中文 fallback，确保英文和数字不会随中文语言环境切换为 Fusion。
