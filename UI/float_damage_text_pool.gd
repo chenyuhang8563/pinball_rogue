@@ -20,6 +20,22 @@ func show_damage(damage_amount: int, spawn_position: Vector2, style: StringName 
 	return text
 
 
+## Immediately clears all currently-displaying damage texts.
+## Used when transitioning between battles to prevent lingering texts
+## from a previous fight from bleeding into the next one.
+func release_all_active() -> void:
+	# Snapshot first — release_text mutates _active.
+	var snapshot: Array[Node2D] = _active.duplicate()
+	for text: Node2D in snapshot:
+		if text == null or not is_instance_valid(text):
+			continue
+		# Kill any in-flight tweens so the text snaps to its current state.
+		if text.has_method("kill_tweens"):
+			text.call("kill_tweens")
+		text.visible = false
+		release_text(text)
+
+
 func get_active_count() -> int:
 	return _active.size()
 

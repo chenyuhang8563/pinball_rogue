@@ -12,6 +12,17 @@ func _ready() -> void:
 	scale = Vector2.ZERO
 
 
+## Kills all in-flight tweens. Called when the text is forcibly recycled
+## (e.g. battle transition) before the animation naturally completes.
+func kill_tweens() -> void:
+	if position_tween != null and position_tween.is_valid():
+		position_tween.kill()
+		position_tween = null
+	if scale_tween != null and scale_tween.is_valid():
+		scale_tween.kill()
+		scale_tween = null
+
+
 func display_damage_text(damage_amount: int) -> void:
 	if position_tween != null and position_tween.is_valid():
 		position_tween.kill()

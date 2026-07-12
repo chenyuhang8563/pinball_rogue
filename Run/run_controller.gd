@@ -165,6 +165,12 @@ func _begin_battle(group: BattleGroupDef) -> void:
 	if group == null:
 		return
 
+	# Destroy any lingering floating damage texts from the previous battle
+	# before spawning new enemies. The pool persists across battle transitions
+	# (it's an autoload), so texts whose animation hadn't finished when the
+	# last enemy died would otherwise remain visible in the new battle.
+	_release_all_floating_texts()
+
 	_activate_level_scene_for_group(group)
 	_ensure_battle_spawner()
 	battle_is_active = true
@@ -787,6 +793,18 @@ func _options_have_kind_id(options: Array[RunNodeOption], kind_id: String) -> bo
 func _reset_battle_state() -> void:
 	if reset_battle_state_callable.is_valid():
 		reset_battle_state_callable.call()
+
+
+## Clears all active floating damage texts from the autoload pool.
+## Prevents texts from a previous battle (whose animations hadn't finished
+## when the last enemy died) from persisting into the next battle.
+func _release_all_floating_texts() -> void:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return
+	var pool: Node = tree.root.get_node_or_null("FloatDamageTextPool")
+	if pool != null and pool.has_method("release_all_active"):
+		pool.call("release_all_active")
 
 
 func _on_marble_fell(marble: RigidBody2D) -> void:
