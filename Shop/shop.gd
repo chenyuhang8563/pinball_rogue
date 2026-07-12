@@ -35,11 +35,11 @@ var mode: MODE = MODE.OFF:
 			refresh_collection_rows()
 			$UI.show()
 			get_tree().paused = true
-			#if inventory
-			#Inventory.grid.show()
+			_set_battle_scene_visible(false)
 		elif value == MODE.OFF:
 			$UI.hide()
 			get_tree().paused = false
+			_set_battle_scene_visible(true)
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -407,6 +407,21 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null(NodePath(node_name))
+
+
+## Hides/shows the battle scene (Main/CanvasLayer and Main/Marbles) so the shop
+## overlays a clean background, matching the behavior of other branch nodes whose
+## Backdrop ColorRect visually occludes the battle view.
+func _set_battle_scene_visible(visible: bool) -> void:
+	var main_node: Node = _get_autoload_node(&"Main")
+	if main_node == null:
+		return
+	var canvas_layer: Node = main_node.get_node_or_null("CanvasLayer")
+	if canvas_layer != null:
+		canvas_layer.visible = visible
+	var marbles: Node = main_node.get_node_or_null("Marbles")
+	if marbles != null:
+		marbles.visible = visible
 
 
 func _connect_localization() -> void:
