@@ -6,7 +6,6 @@ class_name MagicMissile
 @export var max_lifetime: float = 4.0
 
 var _shooter: PhysicsBody2D = null
-var _spent: bool = false
 var _damaged_enemy_ids: Dictionary = {}
 
 @onready var _lifetime_timer: Timer = $LifetimeTimer
@@ -48,7 +47,7 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
-	if _spent or body == null or not body.is_in_group("enemies"):
+	if body == null or not body.is_in_group("enemies"):
 		return
 	var instance_id: int = body.get_instance_id()
 	if _damaged_enemy_ids.has(instance_id):
@@ -56,9 +55,7 @@ func _on_body_entered(body: Node) -> void:
 	_damaged_enemy_ids[instance_id] = true
 	if not body.has_method("take_damage"):
 		return
-	_spent = true
 	body.call("take_damage", damage, Color(0.55, 0.75, 1.0, 1.0))
-	queue_free()
 
 
 func _on_safety_timer_timeout() -> void:
