@@ -50,6 +50,7 @@ func test_burn_ticks_decrease_from_three_to_one() -> void:
 
 # 回归来源：觉醒火焰弹珠只结算 5、4、3，Buff 在固定 3 秒后提前移除。
 # 修复目标：Buff 的实际时长与升级后的 5 次燃烧结算一致，覆盖最后的 2、1 伤害边界。
+# 首次 tick 在碰撞瞬间由 on_apply 立即结算，后续 4 次 tick 在每秒开始时结算。
 func test_awakened_burn_lasts_five_seconds_and_deals_all_five_ticks() -> void:
 	var root := get_tree().root
 	var previous_stat_system := root.get_node_or_null("StatSystem")
@@ -66,10 +67,15 @@ func test_awakened_burn_lasts_five_seconds_and_deals_all_five_ticks() -> void:
 	await get_tree().process_frame
 	var burn: BuffDef = FireDebuffScript.new()
 	host.add_buff(burn)
+	# on_apply already consumed the first tick (5 damage), so 4 remaining
+	# ticks fire at the start of each subsequent second via on_process.
 	for _index: int in range(5):
 		host._process(1.0)
 
 	assert_eq(burn.duration, 5.0)
+	# First tick (5) dealt immediately on collision; remaining ticks (4, 3, 2, 1)
+	# at the start of seconds 1–4. The 5th process frame expires the buff with
+	# no additional tick.
 	assert_eq(enemy.damage_events, [5, 4, 3, 2, 1])
 	assert_false(host.has_buff("fire_burn_debuff"))
 	root.remove_child(stat_system)
@@ -91,18 +97,23 @@ func test_reapplying_burn_keeps_original_remaining_time() -> void:
 	assert_eq(host.get_buff_remaining_time("fire_burn_debuff"), remaining_before)
 
 
+# Manual state setup bypasses on_apply, so pending_ticks must reflect the
+# post-immediate-tick value (original duration minus the first tick consumed
+# by on_apply). A "4-tick burn" has 3 remaining after the instant first tick.
 func test_burn_duration_stat_supports_four_and_five_ticks() -> void:
 	var enemy := DummyEnemy.new()
 	var burn: BuffDef = FireDebuffScript.new()
-	var state: Dictionary = {"pending_ticks": 4, "tick_accumulator": 0.0}
+	# 4-tick burn: on_apply would consume the first tick (4), leaving 3.
+	var state: Dictionary = {"pending_ticks": 3, "tick_accumulator": 0.0}
+	for _index: int in range(3):
+		burn.on_process(enemy, state, 1.0)
+	assert_eq(enemy.damage_events, [3, 2, 1])
+	enemy.damage_events.clear()
+	# 5-tick burn: on_apply would consume the first tick (5), leaving 4.
+	state = {"pending_ticks": 4, "tick_accumulator": 0.0}
 	for _index: int in range(4):
 		burn.on_process(enemy, state, 1.0)
 	assert_eq(enemy.damage_events, [4, 3, 2, 1])
-	enemy.damage_events.clear()
-	state = {"pending_ticks": 5, "tick_accumulator": 0.0}
-	for _index: int in range(5):
-		burn.on_process(enemy, state, 1.0)
-	assert_eq(enemy.damage_events, [5, 4, 3, 2, 1])
 	enemy.free()
 
 
@@ -159,6 +170,8 @@ func test_burn_damage_uses_red_floating_text_scene() -> void:
 	assert_eq(text.get_node("Label").get_theme_color("font_color"), Color(1.0, 0.2, 0.15, 1.0))
 
 
+# on_apply now consumes the first tick immediately, so a configured 3-tick burn
+# has 2 pending ticks remaining at the moment of death (spread = 2, not 3).
 func test_death_propagates_pending_ticks_to_nearest_unburned_enemy() -> void:
 	var source := DummyEnemy.new()
 	var destination := DummyEnemy.new()
@@ -177,7 +190,8 @@ func test_death_propagates_pending_ticks_to_nearest_unburned_enemy() -> void:
 	host.add_buff(burn)
 	host.notify_host_death()
 	assert_eq(destination.received_buffs.size(), 1)
-	assert_eq(destination.received_buffs[0].params.get("pending_ticks"), 3)
+	# First tick consumed by on_apply; spread carries the remaining 2 ticks.
+	assert_eq(destination.received_buffs[0].params.get("pending_ticks"), 2)
 	assert_eq(farther.received_buffs.size(), 0)
 
 
@@ -199,7 +213,10 @@ func test_real_enemy_death_spreads_burn_to_nearest_enemy() -> void:
 	assert_true(bool(target.call("has_buff", "fire_burn_debuff")))
 
 
-func test_death_propagation_appends_and_caps_existing_burn_at_ten_ticks() -> void:
+# on_apply consumes the first tick immediately, so a 3-tick burn starts with
+# pending_ticks=2. Appending 20s capped at 10s yields applied_duration=7, so
+# pending_ticks becomes 2+7=9 (one less than the cap due to the instant tick).
+func test_death_propagation_appends_and_caps_existing_burn_at_nine_ticks() -> void:
 	var enemy := DummyEnemy.new()
 	add_child_autofree(enemy)
 	var host: BuffHost = BuffHostScript.new()
@@ -207,4 +224,4 @@ func test_death_propagation_appends_and_caps_existing_burn_at_ten_ticks() -> voi
 	var burn: BuffDef = FireDebuffScript.new()
 	host.add_buff(burn)
 	host.append_buff_duration("fire_burn_debuff", 20.0, 10.0)
-	assert_eq(host.get_buff_pending_ticks("fire_burn_debuff"), 10)
+	assert_eq(host.get_buff_pending_ticks("fire_burn_debuff"), 9)

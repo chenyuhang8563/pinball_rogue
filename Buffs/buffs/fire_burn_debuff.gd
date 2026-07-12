@@ -22,6 +22,11 @@ func _init() -> void:
 
 func on_apply(host: Node, state: Dictionary) -> void:
 	var pending_ticks: int = clampi(int(params.get("pending_ticks", _get_burn_duration_ticks())), 1, MAX_PENDING_TICKS)
+	# Consume the first tick immediately on collision: the enemy takes damage
+	# equal to the burn duration right away, shifting the remaining ticks to
+	# fire at the START of each subsequent second (rather than the end).
+	_deal_tick_damage(host, pending_ticks)
+	pending_ticks -= 1
 	state["pending_ticks"] = pending_ticks
 	state["tick_accumulator"] = 0.0
 	state["hit_flash_color"] = FIRE_COLOR
@@ -32,10 +37,10 @@ func on_apply(host: Node, state: Dictionary) -> void:
 func on_process(host: Node, state: Dictionary, delta: float) -> void:
 	var tick_accumulator: float = float(state.get("tick_accumulator", 0.0)) + delta
 	var pending_ticks: int = int(state.get("pending_ticks", 0))
+	# Remaining ticks fire at the START of each subsequent second.
 	while tick_accumulator >= 1.0 and pending_ticks > 0:
 		tick_accumulator -= 1.0
-		if host.has_method("take_damage"):
-			host.call("take_damage", pending_ticks, FIRE_COLOR, &"burn")
+		_deal_tick_damage(host, pending_ticks)
 		pending_ticks -= 1
 	state["pending_ticks"] = pending_ticks
 	state["tick_accumulator"] = tick_accumulator
@@ -85,6 +90,16 @@ func _find_nearest_alive_enemy(host: Node) -> Node2D:
 			best = candidate_node
 			best_distance_squared = distance_squared
 	return best
+
+
+## Deals one burn tick to the host. The damage equals the current pending tick
+## count (i.e. the remaining burn duration), so the first tick hits for the full
+## burn duration and each subsequent tick decreases by one.
+func _deal_tick_damage(host: Node, pending_ticks: int) -> void:
+	if pending_ticks <= 0:
+		return
+	if host.has_method("take_damage"):
+		host.call("take_damage", pending_ticks, FIRE_COLOR, &"burn")
 
 
 func _get_burn_duration_ticks() -> int:
