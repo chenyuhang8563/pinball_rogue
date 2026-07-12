@@ -283,6 +283,7 @@ func _show_shop() -> void:
 		_start_next_node()
 		return
 
+	_set_battle_scene_visible(false)
 	shop.set("mode", SHOP_MODE_ON)
 	_watch_shop_close(shop)
 
@@ -823,11 +824,13 @@ func _watch_shop_close(shop: Node) -> void:
 	timer.timeout.connect(func() -> void:
 		if not is_instance_valid(shop):
 			timer.queue_free()
+			_set_battle_scene_visible(true)
 			_start_next_node()
 			return
 		if int(shop.get("mode")) != SHOP_MODE_OFF:
 			return
 		timer.queue_free()
+		_set_battle_scene_visible(true)
 		_start_next_node()
 	)
 	timer.start()
@@ -838,6 +841,26 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null(NodePath(node_name))
+
+
+## Hides/shows the battle scene (parent's CanvasLayer and Marbles children)
+## when the shop opens/closes, so the shop overlays a clean background —
+## matching the behavior of other branch nodes whose Backdrop ColorRect
+## visually occludes the battle view.
+##
+## Kept here (rather than in Shop) per the UI rule that forbids GDScript
+## from mutating `visible` properties; the flow orchestrator owns scene
+## visibility transitions between branch nodes.
+func _set_battle_scene_visible(visible: bool) -> void:
+	var parent_node: Node = get_parent()
+	if parent_node == null:
+		return
+	var canvas_layer: Node = parent_node.get_node_or_null("CanvasLayer")
+	if canvas_layer != null:
+		canvas_layer.visible = visible
+	var marbles: Node = parent_node.get_node_or_null("Marbles")
+	if marbles != null:
+		marbles.visible = visible
 
 
 func _reset_run_health() -> void:
