@@ -2,17 +2,20 @@ extends RefCounted
 class_name PoisonCultureEffect
 
 const PoisonDebuffScript: GDScript = preload("res://Buffs/buffs/poison_debuff.gd")
-const MAX_LEVEL: int = 3
-const REQUIRED_TICKS: int = 3
-const TARGET_COUNTS: Array[int] = [1, 2, 3]
+const DEFAULT_CONFIG: RelicLevelConfig = preload("res://Resources/relic_configs/poison_culture.tres")
 
+var _config: RelicLevelConfig = DEFAULT_CONFIG
 var _level: int = 1
 var _awakened: bool = false
 var _tick_counts: Dictionary = {}
 
 
+func set_config(config: RelicLevelConfig) -> void:
+	_config = config
+
+
 func set_level(level: int) -> void:
-	_level = clampi(level, 1, MAX_LEVEL)
+	_level = clampi(level, 1, _config.max_level)
 
 
 func get_level() -> int:
@@ -34,7 +37,7 @@ func on_poison_tick(enemy: Node2D) -> void:
 	var enemy_id: int = enemy.get_instance_id()
 	var entry: Dictionary = _tick_counts.get(enemy_id, {"enemy": weakref(enemy), "count": 0})
 	entry["count"] = int(entry.get("count", 0)) + 1
-	if int(entry["count"]) < REQUIRED_TICKS:
+	if int(entry["count"]) < int(_config.extra.get("required_ticks", 3)):
 		_tick_counts[enemy_id] = entry
 		return
 	_tick_counts.erase(enemy_id)
@@ -58,7 +61,7 @@ func _spread_poison(source: Node2D) -> void:
 			return a.get_instance_id() < b.get_instance_id()
 		return a_distance < b_distance
 	)
-	for index: int in range(mini(TARGET_COUNTS[_level - 1], candidates.size())):
+	for index: int in range(mini(_config.get_value(_level), candidates.size())):
 		var target: Node2D = candidates[index]
 		if target.has_method("add_buff"):
 			target.call("add_buff", PoisonDebuffScript.new())

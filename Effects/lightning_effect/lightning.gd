@@ -4,20 +4,23 @@ class_name LightningEffect
 const StatModifierScript: GDScript = preload("res://Stats/stat_modifier.gd")
 const LightningEffectScene := preload("res://Effects/lightning_effect/lightning_effect.tscn")
 
-const MAX_LEVEL: int = 3
-const AWAKENED_HIT_COUNT: int = 3
+const DEFAULT_CONFIG: RelicLevelConfig = preload("res://Resources/relic_configs/lightning.tres")
 const STAT_LIGHTNING_CHAIN_DAMAGE: String = "lightning_chain_damage"
 const STAT_ENTITY_LIGHTNING_CHAIN: String = "relic:lightning_chain"
 const MODIFIER_SOURCE: String = "relic_upgrade:lightning_chain"
 const OP_OVERRIDE: int = 2
-const LEVEL_DAMAGE: Array[int] = [1, 3, 5]
 
+var _config: RelicLevelConfig = DEFAULT_CONFIG
 var _level: int = 1
 var _awakened: bool = false
 
 
+func set_config(config: RelicLevelConfig) -> void:
+	_config = config
+
+
 func set_level(level: int) -> void:
-	_level = clampi(level, 1, MAX_LEVEL)
+	_level = clampi(level, 1, _config.max_level)
 	_sync_damage_modifier()
 
 
@@ -37,7 +40,7 @@ func on_enemy_hit_by_marble(enemy: Node2D) -> void:
 	if enemy == null:
 		return
 
-	var hit_count: int = AWAKENED_HIT_COUNT if _awakened else 1
+	var hit_count: int = int(_config.extra.get("awakened_hits", 3)) if _awakened else 1
 	var previous: Node2D = enemy
 	var visited: Array[Node2D] = [enemy]
 	for _hit_index: int in range(hit_count):
@@ -82,7 +85,7 @@ func _get_damage() -> int:
 	var stat_system: Node = _get_stat_system()
 	if stat_system != null and stat_system.has_method("get_stat"):
 		return int(stat_system.call("get_stat", STAT_LIGHTNING_CHAIN_DAMAGE, STAT_ENTITY_LIGHTNING_CHAIN))
-	return LEVEL_DAMAGE[_level - 1]
+	return _config.get_value(_level)
 
 
 func _sync_damage_modifier() -> void:
@@ -98,7 +101,7 @@ func _sync_damage_modifier() -> void:
 			MODIFIER_SOURCE,
 			STAT_LIGHTNING_CHAIN_DAMAGE,
 			OP_OVERRIDE,
-			float(LEVEL_DAMAGE[_level - 1]),
+			float(_config.get_value(_level)),
 			MODIFIER_SOURCE
 		)
 	)

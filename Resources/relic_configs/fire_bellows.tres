@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicLevelConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Effects/relic_level_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+max_level = 3
+level_values = [4, 3, 2]
+extra = {
+"awakened_preserve": true
+}
