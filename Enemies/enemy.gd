@@ -48,11 +48,15 @@ func _exit_tree() -> void:
 
 func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("marbles"):
+		var was_burning: bool = has_buff("fire_burn_debuff")
+		var was_frozen: bool = has_buff("frozen_debuff")
 		var effect_manager: Node = _get_effect_manager()
 		if effect_manager != null and effect_manager.has_method("on_enemy_hit_by_marble"):
 			effect_manager.call("on_enemy_hit_by_marble", self)
 		var hit_damage: int = _get_damage_from_body(body)
 		take_damage(hit_damage, _get_active_buff_flash_color())
+		if is_alive() and effect_manager != null and effect_manager.has_method("on_enemy_hit_resolved"):
+			effect_manager.call("on_enemy_hit_resolved", self, was_burning, was_frozen)
 		_apply_frozen_push_from_body(body)
 
 
@@ -105,6 +109,10 @@ func get_buff_stacks(buff_id: String) -> int:
 
 func append_buff_duration(buff_id: String, duration_to_append: float, max_duration: float = -1.0) -> bool:
 	return buff_host != null and buff_host.append_buff_duration(buff_id, duration_to_append, max_duration)
+
+
+func trigger_fire_relic_hit(hit_threshold: int, preserve_ticks: bool) -> bool:
+	return buff_host != null and buff_host.trigger_fire_relic_hit(hit_threshold, preserve_ticks)
 
 
 func is_alive() -> bool:

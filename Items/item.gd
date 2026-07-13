@@ -11,6 +11,9 @@ enum EffectType {
 	DARK_MARBLE,  # 默认黑色弹珠，初始即拥有
 	BLUE_MARBLE,
 	FIRE_MARBLE,
+	FIRE_BELLOWS,
+	POISON_CULTURE,
+	ICE_HAMMER,
 }
 
 enum ItemType {

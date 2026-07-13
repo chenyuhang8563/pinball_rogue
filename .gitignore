@@ -25,6 +25,11 @@ mono_crash.*.json
 
 # test ignores
 /tests/*
+!/tests/unit/
+!/tests/unit/test_elemental_relics.gd
+!/tests/runtime/
+!/tests/runtime/*.gd
+!/tests/runtime/*.tscn
 
 # generated image sources; final runtime assets live under Assets/ and Effects/
 /output/imagegen/

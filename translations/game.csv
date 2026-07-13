@@ -60,6 +60,12 @@ ITEM_BOMB_MARBLE_TITLE,Bomb Marble,炸弹弹珠
 ITEM_BOMB_MARBLE_DESC,Explodes on hit and damages nearby enemies.,命中时爆炸，伤害附近敌人。
 ITEM_LIGHTNING_TITLE,Lightning,闪电链
 ITEM_LIGHTNING_DESC,Releases a chain of lightning,释放一道闪电链。
+ITEM_FIRE_BELLOWS_TITLE,Bellows Core,风箱核心
+ITEM_FIRE_BELLOWS_DESC,Hits on burning enemies accelerate a burn tick.,命中燃烧中的敌人会加速一次燃烧结算。
+ITEM_POISON_CULTURE_TITLE,Plague Culture,瘟疫培养皿
+ITEM_POISON_CULTURE_DESC,Every third poison tick spreads poison to nearby enemies.,每三次中毒跳伤会把中毒传播给附近敌人。
+ITEM_ICE_HAMMER_TITLE,Icebreaker Hammer,碎冰锤
+ITEM_ICE_HAMMER_DESC,Hitting a frozen enemy shatters it and damages nearby enemies.,命中冻结的敌人会将其碎冰并伤害附近敌人。
 UPGRADE_DARK_DAMAGE_2_DESC,Damage 2,伤害 2
 UPGRADE_DARK_DAMAGE_3_DESC,Damage 3,伤害 3
 UPGRADE_DARK_AWAKEN_DESC,Awaken: Damage 4,觉醒：伤害 4

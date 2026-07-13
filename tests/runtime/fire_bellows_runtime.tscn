@@ -1,0 +1,32 @@
+[gd_scene format=3 uid="uid://s41dmt4s6qpk"]
+
+[ext_resource type="Script" path="res://tests/runtime/fire_bellows_runtime.gd" id="1_73l44"]
+[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="2_tkop8"]
+[ext_resource type="PackedScene" uid="uid://cw0103st1p7ap" path="res://Enemies/enemy.tscn" id="3_b3fe7"]
+[ext_resource type="Script" uid="uid://1kywgp3v2xwl" path="res://Enemies/enemy.gd" id="4_a66gd"]
+
+[node name="ElementalRelicRuntime" type="Node2D" unique_id=28279726]
+script = ExtResource("1_73l44")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1906224393]
+
+[node name="ResultLabel" type="Label" parent="CanvasLayer" unique_id=627358688]
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 228.0
+offset_bottom = 84.0
+text = "风箱核心运行验证"
+label_settings = ExtResource("2_tkop8")
+
+[node name="Target" type="RigidBody2D" parent="." unique_id=666898646 groups=["enemies"] instance=ExtResource("3_b3fe7")]
+position = Vector2(120, 175)
+collision_layer = 8
+collision_mask = 11
+gravity_scale = 0.0
+freeze = true
+freeze_mode = 1
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("4_a66gd")
+
+[connection signal="body_entered" from="Target" to="Target" method="_on_body_entered"]
