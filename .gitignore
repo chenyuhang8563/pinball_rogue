@@ -25,6 +25,7 @@ mono_crash.*.json
 
 # test ignores
 /tests/*
+!/tests/test_run_controller_node_options.gd
 
 # generated image sources; final runtime assets live under Assets/ and Effects/
 /output/imagegen/

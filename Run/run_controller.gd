@@ -5,6 +5,7 @@ signal run_node_completed(node_kind: String)
 signal battle_started(group_id: String)
 signal battle_completed(group_id: String)
 signal run_health_changed(health: int)
+signal floor_changed(floor_number: int)
 signal run_completed
 
 const BattleGroupDefScript: GDScript = preload("res://Run/battle_group_def.gd")
@@ -102,7 +103,7 @@ func build_node_options() -> Array[RunNodeOption]:
 
 func build_node_options_for_wave(wave_index: int) -> Array[RunNodeOption]:
 	var options: Array[RunNodeOption] = []
-	if wave_index == 4:
+	if wave_index == 2:
 		options.append(_make_shop_option())
 
 	var require_unique_kinds: bool = _get_enabled_node_option_kind_count() >= 3
@@ -164,6 +165,7 @@ func _start_next_node() -> void:
 		return
 
 	current_node_index += 1
+	floor_changed.emit(current_node_index)
 	if current_node_index >= boss_node_index:
 		_begin_battle(_make_boss_group())
 		return
