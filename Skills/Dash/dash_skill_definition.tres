@@ -13,6 +13,5 @@ icon = ExtResource("2")
 price = 0
 activation_mode = 0
 max_charges = 3
-recharge_time = 3.5
+recharge_time = 5.0
 executor_scene = ExtResource("3")
-
