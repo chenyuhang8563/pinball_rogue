@@ -23,6 +23,21 @@ UI_INVENTORY_FULL_GOLD_TOOLTIP,Inventory full: take +%d Gold,物品栏已满：�
 UI_TAKE_GOLD_TOOLTIP,Take +%d Gold,获得 +%d 金币
 RUN_BATTLE_TITLE,Battle,战斗
 RUN_EVENT_TITLE,Event,事件
+EVENT_DICE_TITLE,Roll of Fate,命运骰局
+EVENT_DICE_DESC,A six-sided die waits for your wager. Roll above 3 to win.,一枚六面骰等待你的下注。掷出大于 3 即可获胜。
+EVENT_CURRENT_GOLD,Gold: %d,金币：%d
+EVENT_DICE_SMALL_OPTION,Test the waters · Pay %d · Win %d,试试水 · 支付 %d · 成功获得 %d
+EVENT_DICE_LARGE_OPTION,Go big · Pay %d · Win %d,赌大的 · 支付 %d · 成功获得 %d
+EVENT_DICE_PROMPT,D6,D6
+EVENT_NOT_ENOUGH_GOLD,Not enough Gold to place a wager.,金币不足，无法下注。
+EVENT_DICE_SUCCESS,Rolled %d! You gain %d Gold · Net %+d,掷出 %d！获得 %d 金币 · 净变化 %+d
+EVENT_DICE_FAILURE,Rolled %d. Nothing happens · Net %+d,掷出 %d，什么也没发生 · 净变化 %+d
+EVENT_LEAVE_OPTION,Leave,离开
+EVENT_CROSSROADS_TITLE,Narrow Passage,狭路相逢
+EVENT_CROSSROADS_DESC,A powerful enemy blocks the road. Defeat it for elite rewards.,一名强敌挡住去路。击败它可获得丰厚的精英奖励。
+EVENT_CROSSROADS_FIGHT_OPTION,Fight for elite rewards,迎战 · 赢取精英奖励
+EVENT_CROSSROADS_ESCAPE_OPTION,Escape,逃跑
+EVENT_CROSSROADS_FIGHT_TITLE,Ambush Champion,狭路强敌
 RUN_UPGRADE_TITLE,Upgrade,升级
 RUN_SHOP_TITLE,Shop,商店
 RUN_UPGRADE_UNAVAILABLE_TITLE,Upgrade,升级
