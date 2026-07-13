@@ -130,6 +130,22 @@ func is_relic_max_level(item: Item) -> bool:
 	return is_relic_awakened(item)
 
 
+func upgrade_relic(item: Item) -> bool:
+	if item == null or item.type != Item.ItemType.RELIC or is_relic_awakened(item):
+		return false
+	var relic_key: String = _get_relic_key(item)
+	var current_level: int = get_relic_level(item)
+	if current_level <= 0:
+		return false
+	if current_level >= RELIC_MAX_LEVEL:
+		relic_awakened[relic_key] = true
+	else:
+		relic_levels[relic_key] = current_level + 1
+	item_added.emit(item)
+	inventory_changed.emit()
+	return true
+
+
 func has_item_id(id: String) -> bool:
 	for item in items:
 		if item != null and item.id == id:

@@ -53,7 +53,7 @@ const EVENT_CROSSROADS_ID: String = "crossroads"
 @export var battle_spawner: BattleSpawner
 @export var node_choice_panel: Control
 @export var draft_reward_panel: Control
-@export var upgrade_panel: Control
+@export var upgrade_inventory_panel: Node
 @export var event_panel: Control
 @export var level_parent: Node
 @export var battle_reward_config: BattleRewardConfig = DefaultBattleRewardConfig
@@ -348,13 +348,12 @@ func _show_upgrade_choices() -> void:
 	_ensure_marble_upgrade_system()
 	_connect_panels()
 	var inventory: Node = _get_autoload_node(&"Inventory")
-	var raw_options: Variant = marble_upgrade_system.call("get_upgrade_options", inventory, 3)
-	var options: Array[Dictionary] = raw_options if raw_options is Array else []
-	if options.is_empty():
+	var raw_items: Variant = marble_upgrade_system.call("get_upgradable_items", inventory)
+	if not raw_items is Array or (raw_items as Array).is_empty():
 		_show_no_upgrade_message()
 		return
-	if upgrade_panel != null and upgrade_panel.has_method("show_upgrades"):
-		upgrade_panel.call("show_upgrades", options)
+	if upgrade_inventory_panel != null and upgrade_inventory_panel.has_method("show_upgrade_selection"):
+		upgrade_inventory_panel.call("show_upgrade_selection")
 		return
 	_show_no_upgrade_message()
 
@@ -370,11 +369,13 @@ func _show_no_upgrade_message() -> void:
 		_start_next_node()
 
 
-func _on_upgrade_selected(option: Dictionary) -> void:
+func _on_upgrade_selected(item: Item) -> void:
 	_ensure_marble_upgrade_system()
-	var marble_type: Marble.MARBLE_TYPE = int(option.get("marble_type", Marble.MARBLE_TYPE.DEFAULT)) as Marble.MARBLE_TYPE
-	marble_upgrade_system.call("upgrade_marble", marble_type)
-	_start_next_node()
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	if bool(marble_upgrade_system.call("upgrade_item", item, inventory)):
+		if upgrade_inventory_panel != null and upgrade_inventory_panel.has_method("finish_upgrade_selection"):
+			upgrade_inventory_panel.call("finish_upgrade_selection")
+		_start_next_node()
 
 
 func _show_shop() -> void:
@@ -1049,10 +1050,10 @@ func _connect_panels() -> void:
 		if not draft_reward_panel.is_connected(&"draft_closed", draft_callable):
 			draft_reward_panel.connect(&"draft_closed", draft_callable)
 
-	if upgrade_panel != null and upgrade_panel.has_signal(&"upgrade_selected"):
-		var upgrade_callable: Callable = Callable(self, "_on_upgrade_selected")
-		if not upgrade_panel.is_connected(&"upgrade_selected", upgrade_callable):
-			upgrade_panel.connect(&"upgrade_selected", upgrade_callable)
+	if upgrade_inventory_panel != null and upgrade_inventory_panel.has_signal(&"upgrade_item_selected"):
+		var inventory_upgrade_callable := Callable(self, "_on_upgrade_selected")
+		if not upgrade_inventory_panel.is_connected(&"upgrade_item_selected", inventory_upgrade_callable):
+			upgrade_inventory_panel.connect(&"upgrade_item_selected", inventory_upgrade_callable)
 
 	if event_panel != null:
 		_connect_event_panel_signal(&"wager_requested", Callable(self, "_on_event_wager_requested"))

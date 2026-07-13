@@ -226,7 +226,8 @@ func _damage_enemies_in_radius(center: Vector2) -> void:
 		if enemy_node.global_position.distance_to(center) > explosion_radius:
 			continue
 		if enemy_node.has_method("take_damage"):
-			enemy_node.take_damage(explosion_damage)
+			var direct_damage := roundi(float(explosion_damage) * _get_stat_float("damage_multiplier", 1.0))
+			enemy_node.take_damage(direct_damage)
 
 
 func _spawn_explosion_effect(center: Vector2) -> void:

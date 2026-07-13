@@ -2,6 +2,7 @@ extends Node
 class_name MarbleUpgradeSystem
 
 signal marble_upgraded(marble_type: Marble.MARBLE_TYPE, level: int)
+signal skill_upgraded(skill_id: String, level: int)
 
 const StatModifierScript: GDScript = preload("res://Stats/stat_modifier.gd")
 
@@ -90,11 +91,28 @@ const UPGRADE_VALUES: Dictionary = {
 
 var _levels: Dictionary = {}
 var _awakened_types: Dictionary = {}
+var _skill_levels: Dictionary = {}
+
+const SKILL_LEVELS: Dictionary = {
+	"dash": [
+		{"recharge_time": 5.0, "dash_damage_multiplier": 1.0, "dash_damage_duration": 0.0},
+		{"recharge_time": 4.0, "dash_damage_multiplier": 1.0, "dash_damage_duration": 0.0},
+		{"recharge_time": 3.0, "dash_damage_multiplier": 1.2, "dash_damage_duration": 2.0},
+		{"recharge_time": 3.0, "dash_damage_multiplier": 1.4, "dash_damage_duration": 2.0},
+	],
+	"magic_missile": [
+		{"recharge_time": 4.0, "base_damage": 10, "projectile_lifetime": 4.0},
+		{"recharge_time": 3.0, "base_damage": 15, "projectile_lifetime": 4.0},
+		{"recharge_time": 2.5, "base_damage": 18, "projectile_lifetime": 4.0},
+		{"recharge_time": 2.5, "base_damage": 24, "projectile_lifetime": 6.0},
+	],
+}
 
 
 func reset_upgrades() -> void:
 	_levels.clear()
 	_awakened_types.clear()
+	_skill_levels.clear()
 	_clear_upgrade_modifiers()
 
 
@@ -110,6 +128,70 @@ func is_awakened(marble_type: Marble.MARBLE_TYPE) -> bool:
 
 func is_max_level(marble_type: Marble.MARBLE_TYPE) -> bool:
 	return is_awakened(marble_type)
+
+
+func get_skill_level(skill_id: String) -> int:
+	if not SKILL_LEVELS.has(skill_id):
+		return 0
+	return clampi(int(_skill_levels.get(skill_id, 1)), 1, 4)
+
+
+func is_skill_max_level(skill_id: String) -> bool:
+	return get_skill_level(skill_id) >= 4
+
+
+func get_skill_values(skill_id: String) -> Dictionary:
+	if not SKILL_LEVELS.has(skill_id):
+		return {}
+	var levels: Array = SKILL_LEVELS[skill_id]
+	return Dictionary(levels[get_skill_level(skill_id) - 1]).duplicate()
+
+
+func upgrade_skill(skill_id: String) -> bool:
+	if not SKILL_LEVELS.has(skill_id) or is_skill_max_level(skill_id):
+		return false
+	var next_level := get_skill_level(skill_id) + 1
+	_skill_levels[skill_id] = next_level
+	skill_upgraded.emit(skill_id, next_level)
+	return true
+
+
+func can_upgrade_item(item: Item, inventory: Node) -> bool:
+	if item == null:
+		return false
+	if item.type == Item.ItemType.MARBLE:
+		return UPGRADE_VALUES.has(item.marble_type) and not is_max_level(item.marble_type)
+	if item.type == Item.ItemType.SKILL:
+		return not is_skill_max_level(item.id)
+	if item.type == Item.ItemType.RELIC:
+		return inventory != null and inventory.has_method("is_relic_max_level") and not bool(inventory.call("is_relic_max_level", item))
+	return false
+
+
+func get_upgradable_items(inventory: Node) -> Array[Item]:
+	var result: Array[Item] = []
+	if inventory == null:
+		return result
+	var raw_items: Variant = inventory.get("items")
+	if not raw_items is Array:
+		return result
+	for value: Variant in raw_items:
+		var item := value as Item
+		if item != null and can_upgrade_item(item, inventory):
+			result.append(item)
+	return result
+
+
+func upgrade_item(item: Item, inventory: Node) -> bool:
+	if not can_upgrade_item(item, inventory):
+		return false
+	if item.type == Item.ItemType.MARBLE:
+		return upgrade_marble(item.marble_type)
+	if item.type == Item.ItemType.SKILL:
+		return upgrade_skill(item.id)
+	if item.type == Item.ItemType.RELIC and inventory != null and inventory.has_method("upgrade_relic"):
+		return bool(inventory.call("upgrade_relic", item))
+	return false
 
 
 func upgrade_marble(marble_type: Marble.MARBLE_TYPE) -> bool:

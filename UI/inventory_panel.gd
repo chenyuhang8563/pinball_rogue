@@ -1,6 +1,8 @@
 extends Control
 class_name InventoryPanel
 
+signal upgrade_item_selected(item: Item)
+
 const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const UI_FONT_SIZE: int = 12
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
@@ -21,6 +23,8 @@ var mode: MODE = MODE.OFF:
 		mode = value
 		_apply_mode()
 
+var _upgrade_selection_active: bool = false
+
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -38,6 +42,9 @@ func _ready() -> void:
 func _input(event: InputEvent) -> void:
 	if not _is_toggle_event(event):
 		return
+	if _upgrade_selection_active:
+		get_viewport().set_input_as_handled()
+		return
 
 	mode = MODE.OFF if mode == MODE.ON else MODE.ON
 	get_viewport().set_input_as_handled()
@@ -49,6 +56,19 @@ func is_open() -> bool:
 
 
 func close_inventory() -> void:
+	if _upgrade_selection_active:
+		return
+	mode = MODE.OFF
+
+
+func show_upgrade_selection() -> void:
+	_upgrade_selection_active = true
+	mode = MODE.ON
+	_set_upgrade_title()
+
+
+func finish_upgrade_selection() -> void:
+	_upgrade_selection_active = false
 	mode = MODE.OFF
 
 
@@ -81,6 +101,10 @@ func _apply_mode() -> void:
 	else:
 		ui_layer.hide()
 		get_tree().paused = false
+	if _upgrade_selection_active:
+		_set_upgrade_title()
+	else:
+		_apply_text()
 
 
 func _apply_text() -> void:
@@ -198,6 +222,7 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 		if item == null:
 			continue
 		slot.set_meta("item", item)
+		_connect_slot(slot)
 		_set_icon_view_texture(icon_view, item.icon)
 		_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item))
 
@@ -220,7 +245,48 @@ func _update_skill_slots() -> void:
 		var source: Dictionary = skill_sources[index]
 		_set_icon_view_texture(icon_view, source.get("icon") as Texture2D)
 		if source.has("item"):
-			slot.set_meta("item", source["item"])
+			var item := source["item"] as Item
+			slot.set_meta("item", item)
+			_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item))
+			_connect_slot(slot)
+
+
+func _connect_slot(slot: Node) -> void:
+	if slot == null or not slot is Control:
+		return
+	var callback := Callable(self, "_on_slot_gui_input").bind(slot)
+	if not (slot as Control).gui_input.is_connected(callback):
+		(slot as Control).gui_input.connect(callback)
+
+
+func _on_slot_gui_input(event: InputEvent, slot: Node) -> void:
+	if not _upgrade_selection_active or not event is InputEventMouseButton:
+		return
+	var mouse_event := event as InputEventMouseButton
+	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed or not slot.has_meta("item"):
+		return
+	var item := slot.get_meta("item") as Item
+	var system := _get_upgrade_system()
+	var inventory := _get_autoload_node(&"Inventory")
+	if item == null or system == null or not system.has_method("can_upgrade_item"):
+		return
+	if not bool(system.call("can_upgrade_item", item, inventory)):
+		return
+	get_viewport().set_input_as_handled()
+	upgrade_item_selected.emit(item)
+
+
+func _set_upgrade_title() -> void:
+	var title_label := get_node_or_null("UI/Panel/MarginContainer/Layout/Header/TitleLabel") as Label
+	if title_label != null:
+		title_label.text = tr("UI_UPGRADE_INVENTORY_TITLE")
+
+
+func _get_upgrade_system() -> Node:
+	var tree := get_tree()
+	if tree == null or tree.current_scene == null:
+		return null
+	return tree.current_scene.get_node_or_null("RunController/MarbleUpgradeSystem")
 
 
 func _get_skill_slot_sources() -> Array[Dictionary]:
