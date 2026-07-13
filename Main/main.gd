@@ -7,6 +7,7 @@ const MarbleUpgradePanelScene: PackedScene = preload("res://UI/marble_upgrade_pa
 const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.tscn")
 const InventoryPanelScene: PackedScene = preload("res://UI/inventory_panel.tscn")
 const PausePanelScene: PackedScene = preload("res://UI/pause_panel.tscn")
+const DevilShopScene: PackedScene = preload("res://DevilShop/devil_shop.tscn")
 
 @onready var marbles: Node2D = $Marbles
 @onready var skill_controller: SkillController = $SkillController
@@ -243,6 +244,10 @@ func _setup_run_flow() -> void:
 	upgrade_panel.name = "MarbleUpgradePanel"
 	ui_layer.add_child(upgrade_panel)
 
+	var devil_shop: DevilShop = DevilShopScene.instantiate() as DevilShop
+	devil_shop.name = "DevilShop"
+	ui_layer.add_child(devil_shop)
+
 	_setup_battle_health_hud(ui_layer)
 	_setup_pause_panel(ui_layer)
 	_setup_inventory_panel()
@@ -253,6 +258,7 @@ func _setup_run_flow() -> void:
 	run_controller.node_choice_panel = node_choice_panel
 	run_controller.draft_reward_panel = draft_reward_panel
 	run_controller.upgrade_panel = upgrade_panel
+	run_controller.devil_shop = devil_shop
 	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
 	run_controller.run_health_changed.connect(_on_run_health_changed)
 	add_child(run_controller)
@@ -280,6 +286,7 @@ func _connect_active_skill_slot_to_battle_flow() -> void:
 		^"CanvasLayer/NodeChoicePanel",
 		^"CanvasLayer/DraftRewardPanel",
 		^"CanvasLayer/MarbleUpgradePanel",
+		^"CanvasLayer/DevilShop",
 	]:
 		_register_active_skill_blocking_panel(get_node_or_null(panel_path))
 	if inventory_panel != null:
