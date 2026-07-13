@@ -281,7 +281,6 @@ func _connect_active_skill_slot_to_battle_flow() -> void:
 		^"CanvasLayer/PausePanel",
 		^"CanvasLayer/NodeChoicePanel",
 		^"CanvasLayer/DraftRewardPanel",
-		^"CanvasLayer/MarbleUpgradePanel",
 		^"CanvasLayer/RunEventPanel",
 	]:
 		_register_active_skill_blocking_panel(get_node_or_null(panel_path))

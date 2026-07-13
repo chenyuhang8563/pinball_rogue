@@ -6,6 +6,7 @@ signal upgrade_item_selected(item: Item)
 const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const UI_FONT_SIZE: int = 12
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
+const UpgradeDialogScene: PackedScene = preload("res://UI/skill_replace_dialog.tscn")
 
 @export var toggle_action: StringName = &"toggle_inventory"
 @export var skill_slot_count: int = 1
@@ -24,6 +25,7 @@ var mode: MODE = MODE.OFF:
 		_apply_mode()
 
 var _upgrade_selection_active: bool = false
+var _upgrade_dialog: SkillReplaceDialog = null
 
 
 func _ready() -> void:
@@ -32,8 +34,8 @@ func _ready() -> void:
 	_ensure_toggle_action()
 	_connect_localization()
 	_apply_text()
-	_setup_language_button()
 	_apply_button_label_settings()
+	_setup_upgrade_dialog()
 	_connect_inventory()
 	refresh_inventory()
 	mode = MODE.OFF
@@ -121,46 +123,6 @@ func _apply_text() -> void:
 		exit_button.text = tr("UI_EXIT")
 		if not exit_button.pressed.is_connected(close_inventory):
 			exit_button.pressed.connect(close_inventory)
-
-
-func _setup_language_button() -> void:
-	var language_button: OptionButton = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/LanguageButton") as OptionButton
-	if language_button == null:
-		return
-	language_button.clear()
-	var locales := _get_supported_locales()
-	for locale: Dictionary in locales:
-		language_button.add_item(String(locale.get("name", locale.get("code", ""))))
-	var callback := Callable(self, "_on_language_selected")
-	if not language_button.item_selected.is_connected(callback):
-		language_button.item_selected.connect(callback)
-	_sync_language_button()
-	UIFontsScript.apply_option_button_font(language_button, UI_FONT_SIZE)
-
-
-func _on_language_selected(index: int) -> void:
-	var locales := _get_supported_locales()
-	if index < 0 or index >= locales.size():
-		return
-	var localization := _get_localization()
-	var locale_code := String(locales[index].get("code", "zh_CN"))
-	if localization != null and localization.has_method("set_locale"):
-		localization.call("set_locale", locale_code)
-	else:
-		TranslationServer.set_locale(locale_code)
-		_apply_text()
-
-
-func _sync_language_button() -> void:
-	var language_button: OptionButton = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/LanguageButton") as OptionButton
-	if language_button == null:
-		return
-	var locales := _get_supported_locales()
-	var current_locale := _current_locale()
-	for index: int in range(locales.size()):
-		if String(locales[index].get("code", "")) == current_locale:
-			language_button.select(index)
-			return
 
 
 func _apply_button_label_settings() -> void:
@@ -271,8 +233,26 @@ func _on_slot_gui_input(event: InputEvent, slot: Node) -> void:
 	if item == null or system == null or not system.has_method("can_upgrade_item"):
 		return
 	if not bool(system.call("can_upgrade_item", item, inventory)):
+		if _upgrade_dialog != null:
+			_upgrade_dialog.request_upgrade_unavailable(item)
 		return
 	get_viewport().set_input_as_handled()
+	if _upgrade_dialog != null:
+		_upgrade_dialog.request_upgrade(item)
+
+
+func _setup_upgrade_dialog() -> void:
+	var ui_layer := get_node_or_null("UI") as CanvasLayer
+	if ui_layer == null:
+		return
+	_upgrade_dialog = UpgradeDialogScene.instantiate() as SkillReplaceDialog
+	if _upgrade_dialog == null:
+		return
+	ui_layer.add_child(_upgrade_dialog)
+	_upgrade_dialog.upgrade_confirmed.connect(_on_upgrade_confirmed)
+
+
+func _on_upgrade_confirmed(item: Item) -> void:
 	upgrade_item_selected.emit(item)
 
 
@@ -364,7 +344,7 @@ func _get_autoload_node(node_name: StringName) -> Node:
 
 
 func _connect_localization() -> void:
-	var localization := _get_localization()
+	var localization := _get_autoload_node(&"Localization")
 	if localization == null or not localization.has_signal(&"locale_changed"):
 		return
 	var callback := Callable(self, "_on_locale_changed")
@@ -374,32 +354,4 @@ func _connect_localization() -> void:
 
 func _on_locale_changed(_locale_code: String) -> void:
 	_apply_text()
-	_sync_language_button()
 	refresh_inventory()
-
-
-func _get_supported_locales() -> Array[Dictionary]:
-	var localization := _get_localization()
-	if localization != null and localization.has_method("get_supported_locales"):
-		var locales: Variant = localization.call("get_supported_locales")
-		if locales is Array:
-			var typed_locales: Array[Dictionary] = []
-			for locale: Variant in locales:
-				if locale is Dictionary:
-					typed_locales.append(locale)
-			return typed_locales
-	return [
-		{"code": "zh_CN", "name": "中文"},
-		{"code": "en", "name": "English"},
-	]
-
-
-func _current_locale() -> String:
-	var localization := _get_localization()
-	if localization != null and localization.has_method("get_locale"):
-		return String(localization.call("get_locale"))
-	return "en" if TranslationServer.get_locale() == "en" else "zh_CN"
-
-
-func _get_localization() -> Node:
-	return _get_autoload_node(&"Localization")
