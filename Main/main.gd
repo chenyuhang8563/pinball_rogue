@@ -4,6 +4,7 @@ const RunControllerScript: GDScript = preload("res://Run/run_controller.gd")
 const NodeChoicePanelScene: PackedScene = preload("res://UI/node_choice_panel.tscn")
 const DraftRewardPanelScene: PackedScene = preload("res://UI/draft_reward_panel.tscn")
 const MarbleUpgradePanelScene: PackedScene = preload("res://UI/marble_upgrade_panel.tscn")
+const RunEventPanelScene: PackedScene = preload("res://UI/run_event_panel.tscn")
 const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.tscn")
 const InventoryPanelScene: PackedScene = preload("res://UI/inventory_panel.tscn")
 const PausePanelScene: PackedScene = preload("res://UI/pause_panel.tscn")
@@ -243,6 +244,10 @@ func _setup_run_flow() -> void:
 	upgrade_panel.name = "MarbleUpgradePanel"
 	ui_layer.add_child(upgrade_panel)
 
+	var event_panel: RunEventPanel = RunEventPanelScene.instantiate() as RunEventPanel
+	event_panel.name = "RunEventPanel"
+	ui_layer.add_child(event_panel)
+
 	_setup_battle_health_hud(ui_layer)
 	_setup_pause_panel(ui_layer)
 	_setup_inventory_panel()
@@ -253,6 +258,7 @@ func _setup_run_flow() -> void:
 	run_controller.node_choice_panel = node_choice_panel
 	run_controller.draft_reward_panel = draft_reward_panel
 	run_controller.upgrade_panel = upgrade_panel
+	run_controller.event_panel = event_panel
 	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
 	run_controller.run_health_changed.connect(_on_run_health_changed)
 	add_child(run_controller)
@@ -280,6 +286,7 @@ func _connect_active_skill_slot_to_battle_flow() -> void:
 		^"CanvasLayer/NodeChoicePanel",
 		^"CanvasLayer/DraftRewardPanel",
 		^"CanvasLayer/MarbleUpgradePanel",
+		^"CanvasLayer/RunEventPanel",
 	]:
 		_register_active_skill_blocking_panel(get_node_or_null(panel_path))
 	if inventory_panel != null:

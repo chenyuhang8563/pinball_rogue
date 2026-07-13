@@ -1,0 +1,21 @@
+[gd_scene format=3 uid="uid://bct1njwyso3uu"]
+
+[ext_resource type="Script" path="res://tests/visual/run_event_visual_test.gd" id="1_2jq5n"]
+[ext_resource type="PackedScene" uid="uid://8sb7obwvywf4" path="res://UI/run_event_panel.tscn" id="2_sptes"]
+[ext_resource type="Script" uid="uid://stua304o6pbg" path="res://UI/run_event_panel.gd" id="3_a05ik"]
+
+[node name="RunEventDiceInsufficient" type="Control" unique_id=1255983442]
+layout_mode = 3
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_2jq5n")
+scenario = 2
+
+[node name="RunEventPanel" type="Control" parent="." unique_id=1407412393 instance=ExtResource("2_sptes")]
+visible = false
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("3_a05ik")
