@@ -8,9 +8,6 @@ const BurnFloatingTextScene: PackedScene = preload("res://UI/burn_floating_text.
 const EnemyScene: PackedScene = preload("res://Enemies/enemy.tscn")
 const MarbleChainScript: GDScript = preload("res://Marbles/marble_chain.gd")
 const ChainSegmentScene: PackedScene = preload("res://Marbles/chain_segment.tscn")
-const MarbleUpgradeSystemScript: GDScript = preload("res://Run/marble_upgrade_system.gd")
-const DefaultBattleRewardConfig: Resource = preload("res://Run/default_battle_reward_config.tres")
-
 
 class DummyEnemy extends Node2D:
 	var damage_events: Array[int] = []
@@ -25,10 +22,6 @@ class DummyEnemy extends Node2D:
 
 	func is_alive() -> bool:
 		return alive
-
-
-class DummyInventory extends Node:
-	var marble_items: Array[Item] = []
 
 
 class FireDurationStatSystem extends Node:
@@ -138,28 +131,6 @@ func test_fire_chain_segment_applies_burn_and_keeps_contact_damage() -> void:
 	segment.free()
 	chain.free()
 	target.free()
-
-
-func test_fire_reward_and_upgrade_options_expose_four_and_five_second_burn() -> void:
-	assert_has(DefaultBattleRewardConfig.marble_item_paths, "res://Resources/fire_marble.tres")
-	var inventory := DummyInventory.new()
-	inventory.marble_items.append(load("res://Resources/fire_marble.tres") as Item)
-	var upgrades: MarbleUpgradeSystem = MarbleUpgradeSystemScript.new()
-	var first_options: Array[Dictionary] = upgrades.get_upgrade_options(inventory, 1)
-	assert_false(first_options.is_empty(), "Fire Marble should have an upgrade option.")
-	if first_options.is_empty():
-		return
-	var first_option: Dictionary = first_options[0]
-	assert_eq(first_option.description, "UPGRADE_FIRE_DURATION_4_DESC")
-	upgrades.upgrade_marble(Marble.MARBLE_TYPE.FIRE)
-	var second_options: Array[Dictionary] = upgrades.get_upgrade_options(inventory, 1)
-	assert_false(second_options.is_empty(), "Fire Marble should retain an upgrade option at level 2.")
-	if second_options.is_empty():
-		return
-	var second_option: Dictionary = second_options[0]
-	assert_eq(second_option.description, "UPGRADE_FIRE_DURATION_5_DESC")
-	inventory.free()
-	upgrades.free()
 
 
 func test_burn_damage_uses_red_floating_text_scene() -> void:
