@@ -126,8 +126,17 @@ func purchase_item(item: Item) -> bool:
 	var inventory: Node = _get_autoload_node(&"Inventory")
 	if inventory == null or not inventory.has_method("add_item"):
 		return false
+	var marble_upgrade_system: Node = _get_marble_upgrade_system() if item.type == Item.ItemType.MARBLE else null
+	return purchase_item_with_dependencies(item, inventory, marble_upgrade_system)
+
+
+func purchase_item_with_dependencies(item: Item, inventory: Node, marble_upgrade_system: Node = null) -> bool:
+	if not _is_purchasable_item(item) or not shop_items.has(item) or inventory == null:
+		return false
 	if item.type == Item.ItemType.SKILL:
 		return _request_skill_purchase(item, inventory)
+	if item.type == Item.ItemType.MARBLE and _inventory_has_marble_type(inventory, item.marble_type):
+		return _purchase_owned_marble(item, inventory, marble_upgrade_system)
 	if inventory.has_method("can_add_item") and not inventory.call("can_add_item", item):
 		if item.type == Item.ItemType.MARBLE:
 			print("弹珠槽位已满，无法获得")
@@ -138,6 +147,19 @@ func purchase_item(item: Item) -> bool:
 		gold += get_buy_price(item)
 		return false
 
+	_remove_shop_item(item)
+	refresh_collection_rows()
+	return true
+
+
+func _purchase_owned_marble(item: Item, inventory: Node, marble_upgrade_system: Node) -> bool:
+	if marble_upgrade_system == null or not marble_upgrade_system.has_method("upgrade_item"):
+		return false
+	if not _spend_gold_for_item(item):
+		return false
+	if not bool(marble_upgrade_system.call("upgrade_item", item, inventory)):
+		gold += get_buy_price(item)
+		return false
 	_remove_shop_item(item)
 	refresh_collection_rows()
 	return true
@@ -420,6 +442,36 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	return tree.root.get_node_or_null(NodePath(node_name))
 
 
+func _get_marble_upgrade_system() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	var candidates: Array[Node] = []
+	if tree.current_scene != null:
+		candidates.append(tree.current_scene)
+	candidates.append(tree.root)
+	for candidate: Node in candidates:
+		var direct: Node = candidate.get_node_or_null("RunController/MarbleUpgradeSystem")
+		if _is_live_node(direct):
+			return direct
+		for run_controller: Node in candidate.find_children("RunController", "", true, false):
+			if not _is_live_node(run_controller):
+				continue
+			var system: Node = run_controller.get_node_or_null("MarbleUpgradeSystem")
+			if _is_live_node(system):
+				return system
+	return null
+
+
+func _is_live_node(node: Node) -> bool:
+	var current: Node = node
+	while current != null:
+		if current.is_queued_for_deletion():
+			return false
+		current = current.get_parent()
+	return node != null
+
+
 func _connect_localization() -> void:
 	var localization := _get_autoload_node(&"Localization")
 	if localization == null or not localization.has_signal(&"locale_changed"):
@@ -455,6 +507,18 @@ func _items_of_type(items: Array[Item], item_type: Item.ItemType) -> Array[Item]
 		if item.type == item_type:
 			category_items.append(item)
 	return category_items
+
+
+func _inventory_has_marble_type(inventory: Node, marble_type: Marble.MARBLE_TYPE) -> bool:
+	if inventory == null:
+		return false
+	var raw_marble_items: Variant = inventory.get("marble_items")
+	if not raw_marble_items is Array:
+		return false
+	for owned_item: Item in raw_marble_items as Array:
+		if owned_item != null and owned_item.type == Item.ItemType.MARBLE and owned_item.marble_type == marble_type:
+			return true
+	return false
 
 
 func _is_purchasable_item(item: Item) -> bool:
