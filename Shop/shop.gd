@@ -29,15 +29,24 @@ enum MODE {
 
 var mode: MODE = MODE.OFF:
 	set(value):
+		var previous_mode: MODE = mode
 		mode = value
 		if value == MODE.ON:
+			if previous_mode != MODE.ON:
+				refresh_shop_inventory()
 			_apply_text()
 			refresh_collection_rows()
-			$UI.show()
-			get_tree().paused = true
+			var ui: CanvasLayer = get_node_or_null("UI") as CanvasLayer
+			if ui != null:
+				ui.show()
+			if is_inside_tree():
+				get_tree().paused = true
 		elif value == MODE.OFF:
-			$UI.hide()
-			get_tree().paused = false
+			var ui: CanvasLayer = get_node_or_null("UI") as CanvasLayer
+			if ui != null:
+				ui.hide()
+			if is_inside_tree():
+				get_tree().paused = false
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
@@ -50,8 +59,7 @@ func _ready() -> void:
 		_apply_button_label_settings(exit_button)
 		exit_button.pressed.connect(close_shop)
 	set_initial_gold()
-	_roll_initial_shop_inventory()
-	load_shop_inventory()
+	refresh_shop_inventory()
 	_connect_collection_slot_inputs()
 	_connect_inventory()
 	_connect_skill_replace_dialog()
@@ -209,6 +217,8 @@ func _get_stat_price(item: Item, stat_id: String, fallback_multiplier: float, ro
 	return max(0, roundi(price) if round_to_nearest else floori(price))
 
 func free_previous_slots():
+	if shop_container == null:
+		return
 	for slot in shop_container.get_children():
 		if slot.is_inside_tree():
 			slot.hide()
@@ -218,6 +228,8 @@ func free_previous_slots():
 			slot.free()
 
 func load_shop_inventory():
+	if shop_container == null or shop_slot_node == null:
+		return
 	for item in shop_items:
 		if not _is_purchasable_item(item):
 			continue
@@ -228,6 +240,14 @@ func load_shop_inventory():
 func set_shop_inventory(list: Array[Item]):
 	free_previous_slots()
 	shop_items = _filter_purchasable_items(list)
+	load_shop_inventory()
+
+
+func refresh_shop_inventory() -> void:
+	if shop_item_pool.is_empty():
+		shop_item_pool = shop_items.duplicate()
+	shop_items = generate_shop_inventory(shop_item_pool)
+	free_previous_slots()
 	load_shop_inventory()
 
 
@@ -249,13 +269,6 @@ func generate_shop_inventory(candidates: Array[Item]) -> Array[Item]:
 		selected_items.append(remaining_items.pop_at(randi_range(0, remaining_items.size() - 1)))
 	selected_items.shuffle()
 	return selected_items
-
-
-func _roll_initial_shop_inventory() -> void:
-	if shop_item_pool.is_empty():
-		shop_item_pool = shop_items.duplicate()
-	shop_items = generate_shop_inventory(shop_item_pool)
-
 func set_initial_gold():
 	gold = 100
 
