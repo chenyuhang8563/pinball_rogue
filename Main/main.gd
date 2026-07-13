@@ -261,7 +261,7 @@ func _setup_run_flow() -> void:
 	run_controller.node_choice_panel = node_choice_panel
 	run_controller.draft_reward_panel = draft_reward_panel
 	run_controller.upgrade_inventory_panel = inventory_panel
-  run_controller.devil_shop = devil_shop
+	run_controller.devil_shop = devil_shop
 	run_controller.event_panel = event_panel
 	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
 	run_controller.run_health_changed.connect(_on_run_health_changed)
