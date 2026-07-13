@@ -5,8 +5,10 @@ const NodeChoicePanelScene: PackedScene = preload("res://UI/node_choice_panel.ts
 const DraftRewardPanelScene: PackedScene = preload("res://UI/draft_reward_panel.tscn")
 const RunEventPanelScene: PackedScene = preload("res://UI/run_event_panel.tscn")
 const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.tscn")
+const FloorHudScene: PackedScene = preload("res://UI/floor_hud.tscn")
 const InventoryPanelScene: PackedScene = preload("res://UI/inventory_panel.tscn")
 const PausePanelScene: PackedScene = preload("res://UI/pause_panel.tscn")
+const DevilShopScene: PackedScene = preload("res://DevilShop/devil_shop.tscn")
 
 @onready var marbles: Node2D = $Marbles
 @onready var skill_controller: SkillController = $SkillController
@@ -24,6 +26,7 @@ const PausePanelScene: PackedScene = preload("res://UI/pause_panel.tscn")
 var marble_chain: MarbleChain = null
 var run_controller: RunController = null
 var battle_health_hud: Node = null
+var floor_hud: Node = null
 var inventory_panel: Control = null
 var _active_skill_blocking_panels: Array[Node] = []
 
@@ -243,7 +246,12 @@ func _setup_run_flow() -> void:
 	event_panel.name = "RunEventPanel"
 	ui_layer.add_child(event_panel)
 
+	var devil_shop: DevilShop = DevilShopScene.instantiate() as DevilShop
+	devil_shop.name = "DevilShop"
+	ui_layer.add_child(devil_shop)
+
 	_setup_battle_health_hud(ui_layer)
+	_setup_floor_hud(ui_layer)
 	_setup_pause_panel(ui_layer)
 	_setup_inventory_panel()
 
@@ -253,9 +261,11 @@ func _setup_run_flow() -> void:
 	run_controller.node_choice_panel = node_choice_panel
 	run_controller.draft_reward_panel = draft_reward_panel
 	run_controller.upgrade_inventory_panel = inventory_panel
+	run_controller.devil_shop = devil_shop
 	run_controller.event_panel = event_panel
 	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
 	run_controller.run_health_changed.connect(_on_run_health_changed)
+	run_controller.floor_changed.connect(_on_floor_changed)
 	add_child(run_controller)
 	skill_controller.call("_connect_upgrade_system")
 	_connect_active_skill_slot_to_battle_flow()
@@ -281,6 +291,7 @@ func _connect_active_skill_slot_to_battle_flow() -> void:
 		^"CanvasLayer/PausePanel",
 		^"CanvasLayer/NodeChoicePanel",
 		^"CanvasLayer/DraftRewardPanel",
+		^"CanvasLayer/DevilShop",
 		^"CanvasLayer/RunEventPanel",
 	]:
 		_register_active_skill_blocking_panel(get_node_or_null(panel_path))
@@ -318,6 +329,14 @@ func _setup_battle_health_hud(ui_layer: Node) -> void:
 	_connect_shop_gold_changed()
 
 
+func _setup_floor_hud(ui_layer: Node) -> void:
+	floor_hud = ui_layer.get_node_or_null("FloorHud")
+	if floor_hud == null:
+		floor_hud = FloorHudScene.instantiate()
+		floor_hud.name = "FloorHud"
+		ui_layer.add_child(floor_hud)
+
+
 func _setup_pause_panel(ui_layer: Node) -> void:
 	var pause_panel: Node = ui_layer.get_node_or_null("PausePanel")
 	if pause_panel == null:
@@ -345,6 +364,11 @@ func _setup_inventory_panel() -> void:
 func _on_run_health_changed(health: int) -> void:
 	if battle_health_hud != null and battle_health_hud.has_method("set_health"):
 		battle_health_hud.call("set_health", health)
+
+
+func _on_floor_changed(floor_number: int) -> void:
+	if floor_hud != null and floor_hud.has_method("set_floor"):
+		floor_hud.call("set_floor", floor_number)
 
 
 func _sync_battle_hud_gold() -> void:

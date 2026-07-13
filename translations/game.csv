@@ -98,3 +98,11 @@ UI_LANGUAGE,Language,语言
 UI_MASTER_VOLUME,Total Volume,总音量
 UI_MUSIC_VOLUME_PLACEHOLDER,Music,音乐
 UI_SFX_VOLUME,SFX Volume,音效
+RUN_DEVIL_SHOP_TITLE,Devil Shop,恶魔商店
+DEVIL_SHOP_TITLE,Devil's Balance,恶魔天平
+DEVIL_SHOP_CONFIRM,Claim Reward,拿走奖励
+DEVIL_SHOP_SOLD_OUT,Sold Out,已售罄
+DEVIL_SHOP_GOLD_CHIPS,Gold: %d,金币：%d
+DEVIL_SHOP_HEALTH_CHIPS,Health: %d,生命：%d
+DEVIL_SHOP_PAYMENT_VALUE,Value: %d,价值：%d
+DEVIL_SHOP_PRICE,Price: %d,价格：%d

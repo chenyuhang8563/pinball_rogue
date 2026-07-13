@@ -8,6 +8,7 @@ enum Kind {
 	ELITE,
 	UPGRADE,
 	SHOP,
+	DEVIL_SHOP,
 }
 
 @export var kind: Kind = Kind.BATTLE

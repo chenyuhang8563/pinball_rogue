@@ -5,6 +5,7 @@ signal run_node_completed(node_kind: String)
 signal battle_started(group_id: String)
 signal battle_completed(group_id: String)
 signal run_health_changed(health: int)
+signal floor_changed(floor_number: int)
 signal run_completed
 
 const BattleGroupDefScript: GDScript = preload("res://Run/battle_group_def.gd")
@@ -52,6 +53,7 @@ const EVENT_CROSSROADS_ID: String = "crossroads"
 @export var battle_spawner: BattleSpawner
 @export var node_choice_panel: Control
 @export var draft_reward_panel: Control
+@export var devil_shop: DevilShop
 @export var upgrade_inventory_panel: Node
 @export var event_panel: Control
 @export var level_parent: Node
@@ -102,8 +104,9 @@ func build_node_options() -> Array[RunNodeOption]:
 
 func build_node_options_for_wave(wave_index: int) -> Array[RunNodeOption]:
 	var options: Array[RunNodeOption] = []
-	if wave_index == 4:
+	if wave_index == 2:
 		options.append(_make_shop_option())
+		options.append(_make_devil_shop_option())
 
 	var require_unique_kinds: bool = _get_enabled_node_option_kind_count() >= 3
 	while options.size() < 3:
@@ -151,6 +154,8 @@ func choose_option(option: RunNodeOption) -> void:
 			_show_upgrade_choices()
 		RunNodeOption.Kind.SHOP:
 			_show_shop()
+		RunNodeOption.Kind.DEVIL_SHOP:
+			_show_devil_shop()
 		_:
 			_show_node_choices()
 
@@ -164,6 +169,7 @@ func _start_next_node() -> void:
 		return
 
 	current_node_index += 1
+	floor_changed.emit(current_node_index)
 	if current_node_index >= boss_node_index:
 		_begin_battle(_make_boss_group())
 		return
@@ -385,6 +391,14 @@ func _show_shop() -> void:
 	_set_battle_scene_visible(false)
 	shop.set("mode", SHOP_MODE_ON)
 	_watch_shop_close(shop)
+
+
+func _show_devil_shop() -> void:
+	if devil_shop == null:
+		_start_next_node()
+		return
+	_ensure_marble_upgrade_system()
+	devil_shop.open_for_run(marble_upgrade_system)
 
 
 func _pick_reward_items() -> Array[Item]:
@@ -691,6 +705,10 @@ func _make_upgrade_option() -> RunNodeOption:
 
 func _make_shop_option() -> RunNodeOption:
 	return _make_option(RunNodeOption.Kind.SHOP, "shop", "RUN_SHOP_TITLE", "", null)
+
+
+func _make_devil_shop_option() -> RunNodeOption:
+	return _make_option(RunNodeOption.Kind.DEVIL_SHOP, "devil_shop", "RUN_DEVIL_SHOP_TITLE", "", null)
 
 
 func _make_weak_group() -> BattleGroupDef:
@@ -1064,6 +1082,23 @@ func _connect_event_panel_signal(signal_name: StringName, callable: Callable) ->
 	if not event_panel.has_signal(signal_name) or event_panel.is_connected(signal_name, callable):
 		return
 	event_panel.connect(signal_name, callable)
+
+	if devil_shop != null:
+		var close_callable: Callable = Callable(self, "_on_devil_shop_closed")
+		if not devil_shop.closed.is_connected(close_callable):
+			devil_shop.closed.connect(close_callable)
+		var health_callable: Callable = Callable(self, "_on_devil_shop_health_changed")
+		if not devil_shop.health_changed.is_connected(health_callable):
+			devil_shop.health_changed.connect(health_callable)
+
+
+func _on_devil_shop_closed() -> void:
+	_set_battle_scene_visible(true)
+	_start_next_node()
+
+
+func _on_devil_shop_health_changed(value: int) -> void:
+	run_health_changed.emit(value)
 
 
 func _ensure_marble_upgrade_system() -> void:
