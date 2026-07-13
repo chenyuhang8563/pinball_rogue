@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="SkillDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="SkillDefinition" format=3 uid="uid://dnx8807bstnqw"]
 
-[ext_resource type="Script" path="res://Skills/skill_definition.gd" id="1"]
-[ext_resource type="Texture2D" path="res://Assets/Items/Icon40.png" id="2"]
+[ext_resource type="Script" uid="uid://dclhr37w33nha" path="res://Skills/skill_definition.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bxpxvl2xpde65" path="res://Assets/Items/Icon40.png" id="2"]
 [ext_resource type="PackedScene" path="res://Skills/Dash/dash_skill_executor.tscn" id="3"]
 
 [resource]
@@ -10,8 +10,6 @@ id = "dash"
 name_key = "SKILL_DASH_NAME"
 description_key = "SKILL_DASH_DESC"
 icon = ExtResource("2")
-price = 0
-activation_mode = 0
 max_charges = 3
 recharge_time = 5.0
 executor_scene = ExtResource("3")

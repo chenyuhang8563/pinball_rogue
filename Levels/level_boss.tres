@@ -7,7 +7,7 @@
 script = ExtResource("1_def")
 id = "boss"
 title = "Boss Fight"
-level_index = 6
+level_index = 12
 kind = 3
 enemy_pool = 0
 level_scene = ExtResource("2_scene")

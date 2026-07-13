@@ -3,22 +3,28 @@ extends Panel
 const SHOP_MODE_ON := 0
 const ItemTooltipScene: PackedScene = preload("res://UI/item_tooltip.tscn")
 
+var _is_affordable: bool = true
+
 @export var item: Item = null:
 	set(value):
 		item = value
 
 		if value == null:
 			_set_icon_texture(null)
+			_refresh_affordability()
 			return
 
 		_set_icon_texture(value.icon)
 		$Price.text = "$ " + str(value.price)
 		refresh_localized_content()
+		_refresh_affordability()
 
 
 func _ready() -> void:
 		_connect_localization()
+		_connect_shop()
 		refresh_localized_content()
+		_refresh_affordability()
 
 
 func refresh_localized_content() -> void:
@@ -44,10 +50,34 @@ func _connect_localization() -> void:
 func _on_locale_changed(_locale_code: String) -> void:
 	refresh_localized_content()
 
+
+func _connect_shop() -> void:
+	var shop: Node = _get_autoload_node(&"Shop")
+	if shop == null or not shop.has_signal(&"gold_changed"):
+		return
+	var callback := Callable(self, "_on_gold_changed")
+	if not shop.is_connected(&"gold_changed", callback):
+		shop.connect(&"gold_changed", callback)
+
+
+func _on_gold_changed(_gold: int) -> void:
+	_refresh_affordability()
+
+
+func _refresh_affordability() -> void:
+	var shop: Node = _get_autoload_node(&"Shop")
+	var affordable: bool = item != null and (shop == null or not shop.has_method("can_afford_item") or bool(shop.call("can_afford_item", item)))
+	_is_affordable = affordable
+	var state_animation: AnimationPlayer = get_node_or_null("AffordabilityAnimation") as AnimationPlayer
+	if state_animation != null:
+		state_animation.play(&"affordable" if affordable else &"unaffordable")
+
 func _on_gui_input(event) -> void:
 	if not event is InputEventMouseButton:
 		return
 	if not event.is_pressed() or event.button_index != MOUSE_BUTTON_LEFT:
+		return
+	if not _is_affordable:
 		return
 
 	var shop: Node = _get_autoload_node(&"Shop")

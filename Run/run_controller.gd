@@ -15,6 +15,7 @@ const StatRegistryScript: GDScript = preload("res://Stats/stat_registry.gd")
 const MarbleUpgradeSystemScript: GDScript = preload("res://Run/marble_upgrade_system.gd")
 const BattleRewardOptionScript: GDScript = preload("res://Run/battle_reward_option.gd")
 const DefaultBattleRewardConfig: Resource = preload("res://Run/default_battle_reward_config.tres")
+const DefaultRunFloorConfig: RunFloorConfig = preload("res://Run/default_run_floor_config.tres")
 const EnemyScene: PackedScene = preload("res://Enemies/enemy.tscn")
 const WEAK_LEVEL_DEF_PATH: String = "res://Levels/level_001_weak.tres"
 const STRONG_LEVEL_DEF_PATH: String = "res://Levels/level_strong_normal.tres"
@@ -47,8 +48,9 @@ const STRONG_ENEMY_BASE_HEALTH: int = 40
 const ENEMY_HEALTH_PER_NODE: int = 5
 const EVENT_DICE_ID: String = "dice_gamble"
 const EVENT_CROSSROADS_ID: String = "crossroads"
+const BOSS_FLOOR: int = 12
 
-@export var boss_node_index: int = 6
+@export var floor_config: RunFloorConfig = DefaultRunFloorConfig
 @export var enemy_container: Node2D
 @export var battle_spawner: BattleSpawner
 @export var node_choice_panel: Control
@@ -104,9 +106,8 @@ func build_node_options() -> Array[RunNodeOption]:
 
 func build_node_options_for_wave(wave_index: int) -> Array[RunNodeOption]:
 	var options: Array[RunNodeOption] = []
-	if wave_index == 2:
-		options.append(_make_shop_option())
-		options.append(_make_devil_shop_option())
+	var floor_number: int = wave_index + 1
+	_append_guaranteed_node_options(options, floor_number)
 
 	var require_unique_kinds: bool = _get_enabled_node_option_kind_count() >= 3
 	while options.size() < 3:
@@ -114,6 +115,42 @@ func build_node_options_for_wave(wave_index: int) -> Array[RunNodeOption]:
 		if not require_unique_kinds or not _options_have_kind_id(options, option.kind_id):
 			options.append(option)
 	return options
+
+
+func get_boss_floor() -> int:
+	if floor_config != null:
+		return floor_config.boss_floor
+	return BOSS_FLOOR
+
+
+func _append_guaranteed_node_options(options: Array[RunNodeOption], floor_number: int) -> void:
+	if floor_config == null:
+		return
+	for rule: RunFloorNodeRule in floor_config.guaranteed_node_rules:
+		if rule == null or rule.floor_number != floor_number:
+			continue
+		var option: RunNodeOption = _make_node_option_for_kind(rule.node_kind)
+		if option != null and not _options_have_kind_id(options, option.kind_id):
+			options.append(option)
+
+
+func _make_node_option_for_kind(kind: RunNodeOption.Kind) -> RunNodeOption:
+	match kind:
+		RunNodeOption.Kind.BATTLE:
+			return _make_normal_battle_option()
+		RunNodeOption.Kind.EVENT:
+			return _make_event_option()
+		RunNodeOption.Kind.REWARD:
+			return _make_option(RunNodeOption.Kind.REWARD, "reward", "RUN_REWARD_TITLE", "", null)
+		RunNodeOption.Kind.ELITE:
+			return _make_elite_option()
+		RunNodeOption.Kind.UPGRADE:
+			return _make_upgrade_option()
+		RunNodeOption.Kind.SHOP:
+			return _make_shop_option()
+		RunNodeOption.Kind.DEVIL_SHOP:
+			return _make_devil_shop_option()
+	return null
 
 
 func get_option_weights() -> Dictionary:
@@ -170,7 +207,7 @@ func _start_next_node() -> void:
 
 	current_node_index += 1
 	floor_changed.emit(current_node_index)
-	if current_node_index >= boss_node_index:
+	if current_node_index >= get_boss_floor():
 		_begin_battle(_make_boss_group())
 		return
 

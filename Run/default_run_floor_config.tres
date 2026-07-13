@@ -1,0 +1,30 @@
+[gd_resource type="Resource" script_class="RunFloorConfig" format=3 uid="uid://cv00hdrbxtqx3"]
+
+[ext_resource type="Script" path="res://Run/run_floor_config.gd" id="1_config"]
+[ext_resource type="Script" path="res://Run/run_floor_node_rule.gd" id="2_rule"]
+
+[sub_resource type="Resource" id="Rule_shop_floor_3"]
+script = ExtResource("2_rule")
+floor_number = 3
+
+[sub_resource type="Resource" id="Rule_shop_floor_6"]
+script = ExtResource("2_rule")
+floor_number = 6
+
+[sub_resource type="Resource" id="Rule_shop_floor_9"]
+script = ExtResource("2_rule")
+floor_number = 9
+
+[sub_resource type="Resource" id="Rule_devil_shop_floor_9"]
+script = ExtResource("2_rule")
+floor_number = 8
+node_kind = 6
+
+[sub_resource type="Resource" id="Rule_devil_shop_floor_11"]
+script = ExtResource("2_rule")
+floor_number = 11
+node_kind = 6
+
+[resource]
+script = ExtResource("1_config")
+guaranteed_node_rules = Array[ExtResource("2_rule")]([SubResource("Rule_shop_floor_3"), SubResource("Rule_shop_floor_6"), SubResource("Rule_shop_floor_9"), SubResource("Rule_devil_shop_floor_9"), SubResource("Rule_devil_shop_floor_11")])

@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d14mlptotnpp8"]
 
-[ext_resource type="Script" uid="uid://1iou0ygb6nl" path="res://DevilShop/devil_shop.gd" id="1_c404g"]
+[ext_resource type="Script" uid="uid://bn2qbe5u22bcw" path="res://DevilShop/devil_shop.gd" id="1_c404g"]
 [ext_resource type="Resource" path="res://DevilShop/default_devil_shop_config.tres" id="2_4s7j1"]
 [ext_resource type="Texture2D" uid="uid://c2suvth5gut5n" path="res://Assets/DevilShop/devil_scale_right_heavy.png" id="3_80nln"]
 [ext_resource type="Texture2D" uid="uid://c36b66t3qbccw" path="res://Assets/DevilShop/devil_scale_balanced.png" id="4_c404g"]
@@ -10,7 +10,7 @@
 [ext_resource type="PackedScene" uid="uid://c4sf4r73fwjvw" path="res://Items/heart.tscn" id="7_8vsq8"]
 [ext_resource type="Texture2D" uid="uid://xf2y06gxijb1" path="res://Assets/Items/Big Heart Idle (18x14).png" id="8_6q3ay"]
 [ext_resource type="PackedScene" uid="uid://vbkihvbi1c5" path="res://Items/slot.tscn" id="9_c404g"]
-[ext_resource type="FontFile" uid="uid://doiwc4lh6s2he" path="res://Assets/Fonts/fusion-pixel-8px-proportional-zh_hans.ttf" id="11_80nln"]
+[ext_resource type="FontFile" uid="uid://pvelmkt4bth" path="res://Assets/Fonts/fusion-pixel-10px-proportional-zh_hans.ttf" id="11_c404g"]
 [ext_resource type="FontVariation" uid="uid://bi65xp2y217fg" path="res://Themes/Fonts/quaver_fusion_10.tres" id="12_gwky3"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://UI/skill_replace_dialog.tscn" id="13_ugyp2"]
 [ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://UI/battle_health_hud.tscn" id="14_c404g"]
@@ -589,7 +589,7 @@ offset_left = 84.0
 offset_top = 22.0
 offset_right = 144.0
 offset_bottom = 46.0
-theme_override_fonts/font = ExtResource("11_80nln")
+theme_override_fonts/font = ExtResource("11_c404g")
 theme_override_font_sizes/font_size = 8
 theme_override_styles/normal = SubResource("StyleBoxFlat_bfup0")
 
