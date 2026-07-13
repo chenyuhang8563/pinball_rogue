@@ -5,6 +5,9 @@ extends Node
 ## Marble chain data now lives directly on Item resources.
 const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	Item.EffectType.LIGHTNING_CHAIN: preload("res://Effects/lightning_effect/lightning.gd"),
+	Item.EffectType.FIRE_BELLOWS: preload("res://Effects/fire_bellows/fire_bellows.gd"),
+	Item.EffectType.POISON_CULTURE: preload("res://Effects/poison_culture/poison_culture.gd"),
+	Item.EffectType.ICE_HAMMER: preload("res://Effects/ice_hammer/ice_hammer.gd"),
 }
 
 

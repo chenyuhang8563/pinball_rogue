@@ -1,0 +1,56 @@
+[gd_scene format=3 uid="uid://5w3bfqhit0t4"]
+
+[ext_resource type="Script" path="res://tests/runtime/ice_hammer_runtime.gd" id="1_2404q"]
+[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="2_uvjpy"]
+[ext_resource type="PackedScene" uid="uid://cw0103st1p7ap" path="res://Enemies/enemy.tscn" id="3_nhfwv"]
+[ext_resource type="Script" uid="uid://1kywgp3v2xwl" path="res://Enemies/enemy.gd" id="4_88y23"]
+
+[node name="ElementalRelicRuntime" type="Node2D" unique_id=958960638]
+script = ExtResource("1_2404q")
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1031584520]
+
+[node name="ResultLabel" type="Label" parent="CanvasLayer" unique_id=1059528386]
+offset_left = 12.0
+offset_top = 12.0
+offset_right = 228.0
+offset_bottom = 84.0
+text = "碎冰锤运行验证"
+label_settings = ExtResource("2_uvjpy")
+
+[node name="Center" type="RigidBody2D" parent="." unique_id=666898646 groups=["enemies"] instance=ExtResource("3_nhfwv")]
+position = Vector2(80, 190)
+collision_layer = 8
+collision_mask = 11
+gravity_scale = 0.0
+freeze = true
+freeze_mode = 1
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("4_88y23")
+
+[node name="Nearby" type="RigidBody2D" parent="." unique_id=141552796 groups=["enemies"] instance=ExtResource("3_nhfwv")]
+position = Vector2(160, 190)
+collision_layer = 8
+collision_mask = 11
+gravity_scale = 0.0
+freeze = true
+freeze_mode = 1
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("4_88y23")
+
+[node name="Outside" type="RigidBody2D" parent="." unique_id=1346509021 groups=["enemies"] instance=ExtResource("3_nhfwv")]
+position = Vector2(220, 300)
+collision_layer = 8
+collision_mask = 11
+gravity_scale = 0.0
+freeze = true
+freeze_mode = 1
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("4_88y23")
+
+[connection signal="body_entered" from="Center" to="Center" method="_on_body_entered"]
+[connection signal="body_entered" from="Nearby" to="Nearby" method="_on_body_entered"]
+[connection signal="body_entered" from="Outside" to="Outside" method="_on_body_entered"]

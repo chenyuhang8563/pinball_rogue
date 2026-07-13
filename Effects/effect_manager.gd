@@ -2,6 +2,9 @@ extends Node
 
 const EFFECT_SCRIPTS: Dictionary = {
 	Item.EffectType.LIGHTNING_CHAIN: preload("res://Effects/lightning_effect/lightning.gd"),
+	Item.EffectType.FIRE_BELLOWS: preload("res://Effects/fire_bellows/fire_bellows.gd"),
+	Item.EffectType.POISON_CULTURE: preload("res://Effects/poison_culture/poison_culture.gd"),
+	Item.EffectType.ICE_HAMMER: preload("res://Effects/ice_hammer/ice_hammer.gd"),
 }
 
 var _active_effects: Dictionary = {}
@@ -18,6 +21,14 @@ func _ready() -> void:
 
 func on_enemy_hit_by_marble(enemy: Node2D) -> void:
 	_dispatch("on_enemy_hit_by_marble", [enemy])
+
+
+func on_enemy_hit_resolved(enemy: Node2D, was_burning: bool, was_frozen: bool) -> void:
+	_dispatch("on_enemy_hit_resolved", [enemy, was_burning, was_frozen])
+
+
+func on_poison_tick(enemy: Node2D) -> void:
+	_dispatch("on_poison_tick", [enemy])
 
 
 func _sync_active_effects() -> void:
