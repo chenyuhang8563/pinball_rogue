@@ -16,6 +16,7 @@ UI_DRAFT_REWARD_TITLE,Draft Reward,选择奖励
 UI_BATTLE_REWARD_TITLE,Battle Reward,战斗奖励
 UI_UPGRADE_MARBLE_TITLE,Upgrade Marble,升级弹珠
 UI_UPGRADE_MARBLE_DESC,Choose one marble to upgrade.,选择一个弹珠进行升级。
+UI_UPGRADE_INVENTORY_TITLE,Choose an Item to Upgrade,选择一个物品升级
 UI_RELIC_TYPE,Relic,遗物
 UI_MARBLE_TYPE,Marble,弹珠
 UI_EMPTY,Empty,空

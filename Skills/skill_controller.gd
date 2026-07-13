@@ -23,12 +23,23 @@ var head_provider: Callable = Callable()
 var projectile_parent_provider: Callable = Callable()
 
 var _executor: Node = null
+var _dash_damage_timer: Timer = null
+
+const DASH_BUFF_SOURCE: String = "dash_skill_damage_buff"
+const STAT_ENTITY_MARBLE_CHAIN: String = "marble_chain"
+const STAT_DAMAGE_MULTIPLIER: String = "damage_multiplier"
+const StatModifierScript: GDScript = preload("res://Stats/stat_modifier.gd")
 
 
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
+	_dash_damage_timer = Timer.new()
+	_dash_damage_timer.one_shot = true
+	_dash_damage_timer.timeout.connect(_clear_dash_damage_bonus)
+	add_child(_dash_damage_timer)
 	_connect_inventory()
 	_connect_battle_lifecycle()
+	_connect_upgrade_system()
 	_sync_from_inventory()
 
 
@@ -69,9 +80,10 @@ func _exit_tree() -> void:
 func equip_skill(item: Item) -> bool:
 	if item == null or item.type != Item.ItemType.SKILL or item.skill_definition == null:
 		return false
-	var next_definition: SkillDefinition = item.skill_definition as SkillDefinition
+	var next_definition: SkillDefinition = item.skill_definition.duplicate() as SkillDefinition
 	if next_definition == null or next_definition.executor_scene == null:
 		return false
+	_apply_skill_upgrade_values(next_definition)
 	cancel_active_skill("skill_replaced")
 	_free_executor()
 	equipped_item = item
@@ -187,6 +199,26 @@ func clear_projectiles(_unused: Variant = null) -> void:
 			projectile.queue_free()
 
 
+func apply_dash_damage_bonus(multiplier: float, duration: float) -> void:
+	if multiplier <= 1.0 or duration <= 0.0:
+		return
+	var stat_system := _get_autoload_node(&"StatSystem")
+	if stat_system == null or not stat_system.has_method("add_modifier"):
+		return
+	_clear_dash_damage_bonus()
+	if stat_system.has_method("register_entity"):
+		stat_system.call("register_entity", STAT_ENTITY_MARBLE_CHAIN, [STAT_DAMAGE_MULTIPLIER])
+	stat_system.call("add_modifier", STAT_ENTITY_MARBLE_CHAIN, StatModifierScript.new(
+		DASH_BUFF_SOURCE,
+		STAT_DAMAGE_MULTIPLIER,
+		StatModifier.ModOp.MULTIPLY,
+		multiplier,
+		DASH_BUFF_SOURCE
+	))
+	if _dash_damage_timer != null:
+		_dash_damage_timer.start(duration)
+
+
 func _set_idle_or_recharging() -> void:
 	_set_state(State.RECHARGING if runtime != null and not runtime.can_activate() else State.IDLE)
 
@@ -249,11 +281,56 @@ func _connect_battle_lifecycle() -> void:
 func _on_battle_completed(_group_id: String) -> void:
 	cancel_active_skill("battle_completed")
 	clear_projectiles()
+	_clear_dash_damage_bonus()
 
 
 func _on_run_completed() -> void:
 	cancel_active_skill("run_completed")
 	clear_projectiles()
+	_clear_dash_damage_bonus()
+
+
+func _clear_dash_damage_bonus() -> void:
+	var stat_system := _get_autoload_node(&"StatSystem")
+	if stat_system != null and stat_system.has_method("remove_modifiers_by_source"):
+		stat_system.call("remove_modifiers_by_source", STAT_ENTITY_MARBLE_CHAIN, DASH_BUFF_SOURCE)
+
+
+func _connect_upgrade_system() -> void:
+	var system := _get_upgrade_system()
+	if system == null or not system.has_signal(&"skill_upgraded"):
+		return
+	var callback := Callable(self, "_on_skill_upgraded")
+	if not system.is_connected(&"skill_upgraded", callback):
+		system.connect(&"skill_upgraded", callback)
+
+
+func _on_skill_upgraded(skill_id: String, _level: int) -> void:
+	if equipped_item != null and equipped_item.id == skill_id:
+		equip_skill(equipped_item)
+
+
+func _apply_skill_upgrade_values(target: SkillDefinition) -> void:
+	var system := _get_upgrade_system()
+	if system == null or not system.has_method("get_skill_values"):
+		return
+	var values: Variant = system.call("get_skill_values", target.id)
+	if not values is Dictionary:
+		return
+	for property_name: String in (values as Dictionary).keys():
+		match property_name:
+			"recharge_time", "base_damage", "projectile_lifetime", "dash_damage_multiplier", "dash_damage_duration":
+				target.set(property_name, values[property_name])
+
+
+func _get_upgrade_system() -> Node:
+	var tree := get_tree()
+	if tree == null:
+		return null
+	var scene := tree.current_scene
+	if scene == null:
+		return null
+	return scene.get_node_or_null("RunController/MarbleUpgradeSystem")
 
 
 func _get_autoload_node(node_name: StringName) -> Node:
