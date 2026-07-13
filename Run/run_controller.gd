@@ -5,6 +5,7 @@ signal run_node_completed(node_kind: String)
 signal battle_started(group_id: String)
 signal battle_completed(group_id: String)
 signal run_health_changed(health: int)
+signal floor_changed(floor_number: int)
 signal run_completed
 
 const BattleGroupDefScript: GDScript = preload("res://Run/battle_group_def.gd")
@@ -26,6 +27,9 @@ const DEFAULT_REWARD_ITEM_PATHS: PackedStringArray = [
 	"res://Resources/bomb_marble.tres",
 	"res://Resources/fire_marble.tres",
 	"res://Resources/lightning.tres",
+	"res://Resources/fire_bellows.tres",
+	"res://Resources/poison_culture.tres",
+	"res://Resources/ice_hammer.tres",
 ]
 const NORMAL_BATTLE_OPTION_WEIGHT: int = 30
 const EVENT_OPTION_WEIGHT: int = 30
@@ -41,14 +45,17 @@ const RUN_HEALTH_ENTITY_ID: String = "run:current"
 const WEAK_ENEMY_BASE_HEALTH: int = 15
 const STRONG_ENEMY_BASE_HEALTH: int = 40
 const ENEMY_HEALTH_PER_NODE: int = 5
+const EVENT_DICE_ID: String = "dice_gamble"
+const EVENT_CROSSROADS_ID: String = "crossroads"
 
 @export var boss_node_index: int = 6
 @export var enemy_container: Node2D
 @export var battle_spawner: BattleSpawner
 @export var node_choice_panel: Control
 @export var draft_reward_panel: Control
-@export var upgrade_panel: Control
 @export var devil_shop: DevilShop
+@export var upgrade_inventory_panel: Node
+@export var event_panel: Control
 @export var level_parent: Node
 @export var battle_reward_config: BattleRewardConfig = DefaultBattleRewardConfig
 
@@ -59,6 +66,11 @@ var reset_battle_state_callable: Callable = Callable()
 var battle_is_active: bool = false
 var marble_upgrade_system: Node
 var active_level_scene: Node = null
+var event_roll_callable: Callable = Callable()
+var dice_roll_callable: Callable = Callable()
+
+var _active_event_id: String = ""
+var _event_wager_resolved: bool = false
 
 
 func _ready() -> void:
@@ -76,6 +88,8 @@ func start_run() -> void:
 	choice_wave_index = 0
 	run_is_complete = false
 	battle_is_active = false
+	_active_event_id = ""
+	_event_wager_resolved = false
 	marble_upgrade_system.call("reset_upgrades")
 	_connect_event_bus()
 	_reset_run_health()
@@ -90,7 +104,7 @@ func build_node_options() -> Array[RunNodeOption]:
 
 func build_node_options_for_wave(wave_index: int) -> Array[RunNodeOption]:
 	var options: Array[RunNodeOption] = []
-	if wave_index == 4:
+	if wave_index == 2:
 		options.append(_make_shop_option())
 		options.append(_make_devil_shop_option())
 
@@ -133,7 +147,7 @@ func choose_option(option: RunNodeOption) -> void:
 		RunNodeOption.Kind.ELITE:
 			_begin_battle(option.battle_group)
 		RunNodeOption.Kind.EVENT:
-			_show_event_draft()
+			_show_random_event()
 		RunNodeOption.Kind.REWARD:
 			_show_reward_draft()
 		RunNodeOption.Kind.UPGRADE:
@@ -155,6 +169,7 @@ func _start_next_node() -> void:
 		return
 
 	current_node_index += 1
+	floor_changed.emit(current_node_index)
 	if current_node_index >= boss_node_index:
 		_begin_battle(_make_boss_group())
 		return
@@ -214,12 +229,91 @@ func _show_reward_draft() -> void:
 		draft_reward_panel.call("show_item_draft", _pick_reward_items())
 
 
-func _show_event_draft() -> void:
-	if draft_reward_panel == null:
+func _show_random_event() -> void:
+	if event_panel == null:
 		_start_next_node()
 		return
-	if draft_reward_panel.has_method("show_item_draft"):
-		draft_reward_panel.call("show_item_draft", _pick_event_items())
+
+	_active_event_id = _roll_event_id()
+	_event_wager_resolved = false
+	if _active_event_id == EVENT_DICE_ID:
+		var shop: Node = _get_autoload_node(&"Shop")
+		if shop == null or not event_panel.has_method("show_dice_event"):
+			_active_event_id = ""
+			_start_next_node()
+			return
+		event_panel.call("show_dice_event", int(shop.get("gold")))
+		return
+
+	if event_panel.has_method("show_crossroads_event"):
+		event_panel.call("show_crossroads_event")
+		return
+
+	_active_event_id = ""
+	_start_next_node()
+
+
+func _roll_event_id() -> String:
+	var roll: int = int(event_roll_callable.call()) if event_roll_callable.is_valid() else randi_range(0, 1)
+	return EVENT_DICE_ID if clampi(roll, 0, 1) == 0 else EVENT_CROSSROADS_ID
+
+
+func _roll_dice() -> int:
+	var roll: int = int(dice_roll_callable.call()) if dice_roll_callable.is_valid() else randi_range(1, 6)
+	return clampi(roll, 1, 6)
+
+
+func _on_event_wager_requested(cost: int, reward: int) -> void:
+	if _active_event_id != EVENT_DICE_ID or _event_wager_resolved:
+		return
+	if cost <= 0 or reward < 0:
+		return
+
+	var shop: Node = _get_autoload_node(&"Shop")
+	if shop == null:
+		_on_event_finished()
+		return
+
+	var gold_before: int = int(shop.get("gold"))
+	if gold_before < cost:
+		if event_panel != null and event_panel.has_method("show_dice_event"):
+			event_panel.call("show_dice_event", gold_before)
+		return
+
+	_event_wager_resolved = true
+	shop.set("gold", gold_before - cost)
+	var roll: int = _roll_dice()
+	var granted_reward: int = reward if roll > 3 else 0
+	if granted_reward > 0:
+		_add_gold(granted_reward)
+	var gold_delta: int = int(shop.get("gold")) - gold_before
+	if event_panel != null and event_panel.has_method("reveal_dice_result"):
+		event_panel.call("reveal_dice_result", roll, gold_delta, granted_reward)
+
+
+func _on_event_fight_requested() -> void:
+	if _active_event_id != EVENT_CROSSROADS_ID:
+		return
+	_active_event_id = ""
+	_dismiss_event_panel()
+	var group: BattleGroupDef = _make_event_strong_group()
+	if group == null:
+		_start_next_node()
+		return
+	_begin_battle(group)
+
+
+func _on_event_finished() -> void:
+	if _active_event_id.is_empty():
+		return
+	_active_event_id = ""
+	_dismiss_event_panel()
+	_start_next_node()
+
+
+func _dismiss_event_panel() -> void:
+	if event_panel != null and event_panel.has_method("dismiss"):
+		event_panel.call("dismiss")
 
 
 func _show_battle_rewards(group_id: String) -> void:
@@ -258,13 +352,12 @@ func _show_upgrade_choices() -> void:
 	_ensure_marble_upgrade_system()
 	_connect_panels()
 	var inventory: Node = _get_autoload_node(&"Inventory")
-	var raw_options: Variant = marble_upgrade_system.call("get_upgrade_options", inventory, 3)
-	var options: Array[Dictionary] = raw_options if raw_options is Array else []
-	if options.is_empty():
+	var raw_items: Variant = marble_upgrade_system.call("get_upgradable_items", inventory)
+	if not raw_items is Array or (raw_items as Array).is_empty():
 		_show_no_upgrade_message()
 		return
-	if upgrade_panel != null and upgrade_panel.has_method("show_upgrades"):
-		upgrade_panel.call("show_upgrades", options)
+	if upgrade_inventory_panel != null and upgrade_inventory_panel.has_method("show_upgrade_selection"):
+		upgrade_inventory_panel.call("show_upgrade_selection")
 		return
 	_show_no_upgrade_message()
 
@@ -280,11 +373,13 @@ func _show_no_upgrade_message() -> void:
 		_start_next_node()
 
 
-func _on_upgrade_selected(option: Dictionary) -> void:
+func _on_upgrade_selected(item: Item) -> void:
 	_ensure_marble_upgrade_system()
-	var marble_type: Marble.MARBLE_TYPE = int(option.get("marble_type", Marble.MARBLE_TYPE.DEFAULT)) as Marble.MARBLE_TYPE
-	marble_upgrade_system.call("upgrade_marble", marble_type)
-	_start_next_node()
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	if bool(marble_upgrade_system.call("upgrade_item", item, inventory)):
+		if upgrade_inventory_panel != null and upgrade_inventory_panel.has_method("finish_upgrade_selection"):
+			upgrade_inventory_panel.call("finish_upgrade_selection")
+		_start_next_node()
 
 
 func _show_shop() -> void:
@@ -646,6 +741,16 @@ func _make_strong_group() -> BattleGroupDef:
 	return _make_group("strong_normal_%d" % current_node_index, "RUN_STRONG_FIGHT_TITLE", BattleGroupDef.Kind.STRONG_NORMAL, entries)
 
 
+func _make_event_strong_group() -> BattleGroupDef:
+	var group: BattleGroupDef = _make_strong_group()
+	if group == null:
+		return null
+	group.id = "event_elite_%d" % current_node_index
+	group.title = "EVENT_CROSSROADS_FIGHT_TITLE"
+	group.kind = BattleGroupDef.Kind.ELITE
+	return group
+
+
 func _make_elite_group() -> BattleGroupDef:
 	var level_group: BattleGroupDef = _make_group_from_level_def(_load_level_def(ELITE_LEVEL_DEF_PATH))
 	if level_group != null:
@@ -961,10 +1066,22 @@ func _connect_panels() -> void:
 		if not draft_reward_panel.is_connected(&"draft_closed", draft_callable):
 			draft_reward_panel.connect(&"draft_closed", draft_callable)
 
-	if upgrade_panel != null and upgrade_panel.has_signal(&"upgrade_selected"):
-		var upgrade_callable: Callable = Callable(self, "_on_upgrade_selected")
-		if not upgrade_panel.is_connected(&"upgrade_selected", upgrade_callable):
-			upgrade_panel.connect(&"upgrade_selected", upgrade_callable)
+	if upgrade_inventory_panel != null and upgrade_inventory_panel.has_signal(&"upgrade_item_selected"):
+		var inventory_upgrade_callable := Callable(self, "_on_upgrade_selected")
+		if not upgrade_inventory_panel.is_connected(&"upgrade_item_selected", inventory_upgrade_callable):
+			upgrade_inventory_panel.connect(&"upgrade_item_selected", inventory_upgrade_callable)
+
+	if event_panel != null:
+		_connect_event_panel_signal(&"wager_requested", Callable(self, "_on_event_wager_requested"))
+		_connect_event_panel_signal(&"fight_requested", Callable(self, "_on_event_fight_requested"))
+		_connect_event_panel_signal(&"escape_requested", Callable(self, "_on_event_finished"))
+		_connect_event_panel_signal(&"continued", Callable(self, "_on_event_finished"))
+
+
+func _connect_event_panel_signal(signal_name: StringName, callable: Callable) -> void:
+	if not event_panel.has_signal(signal_name) or event_panel.is_connected(signal_name, callable):
+		return
+	event_panel.connect(signal_name, callable)
 
 	if devil_shop != null:
 		var close_callable: Callable = Callable(self, "_on_devil_shop_closed")

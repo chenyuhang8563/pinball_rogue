@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Item" format=3 uid="uid://gnhhl1ufmvmr"]
+
+[ext_resource type="Texture2D" uid="uid://brwm721kkqje7" path="res://Assets/Items/relic_fire_bellows.png" id="1_4hmyu"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Items/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "fire_bellows"
+title = "ITEM_FIRE_BELLOWS_TITLE"
+icon = ExtResource("1_4hmyu")
+price = 20
+description = "ITEM_FIRE_BELLOWS_DESC"
+effect_type = 7
+type = 2

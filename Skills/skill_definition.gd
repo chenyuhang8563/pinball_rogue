@@ -28,3 +28,6 @@ enum ActivationMode {
 @export var aim_radius: float = 20.0
 @export var spawn_safe_offset: float = 18.0
 
+@export_group("Dash")
+@export var dash_damage_multiplier: float = 1.0
+@export var dash_damage_duration: float = 0.0

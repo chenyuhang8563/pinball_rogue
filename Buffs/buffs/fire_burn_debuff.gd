@@ -51,6 +51,21 @@ func on_duration_appended(_host: Node, state: Dictionary, duration_to_append: fl
 	state["pending_ticks"] = mini(MAX_PENDING_TICKS, pending_ticks + roundi(duration_to_append))
 
 
+func trigger_relic_hit(host: Node, state: Dictionary, hit_threshold: int, preserve_ticks: bool) -> bool:
+	var pending_ticks: int = int(state.get("pending_ticks", 0))
+	if pending_ticks <= 0:
+		return false
+	var hit_count: int = int(state.get("relic_hit_count", 0)) + 1
+	if hit_count < maxi(1, hit_threshold):
+		state["relic_hit_count"] = hit_count
+		return false
+	state["relic_hit_count"] = 0
+	if not preserve_ticks:
+		state["pending_ticks"] = pending_ticks - 1
+	_deal_tick_damage(host, pending_ticks)
+	return true
+
+
 func on_remove(host: Node, _state: Dictionary) -> void:
 	if host.has_method("clear_fire_status_visual"):
 		host.call("clear_fire_status_visual")

@@ -1,7 +1,7 @@
 extends Node
 
 
-func execute(controller: Node, _definition: SkillDefinition) -> bool:
+func execute(controller: Node, definition: SkillDefinition) -> bool:
 	if controller == null or not controller.has_method("get_active_head"):
 		return false
 	var head: Node2D = controller.call("get_active_head") as Node2D
@@ -14,4 +14,6 @@ func execute(controller: Node, _definition: SkillDefinition) -> bool:
 	if direction == Vector2.ZERO:
 		return false
 	head.call("dash_toward", direction)
+	if controller.has_method("apply_dash_damage_bonus"):
+		controller.call("apply_dash_damage_bonus", definition.dash_damage_multiplier, definition.dash_damage_duration)
 	return true

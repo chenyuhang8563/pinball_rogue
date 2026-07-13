@@ -19,6 +19,11 @@ static func get_inventory_level(item: Item) -> int:
 				return 4
 			return int(upgrade_system.call("get_level", item.marble_type))
 		return 1
+	if item.type == Item.ItemType.SKILL:
+		var upgrade_system: Node = _get_marble_upgrade_system()
+		if upgrade_system != null and upgrade_system.has_method("get_skill_level"):
+			return int(upgrade_system.call("get_skill_level", item.id))
+		return 1
 	return 0
 
 

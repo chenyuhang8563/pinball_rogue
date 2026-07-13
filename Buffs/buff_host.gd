@@ -93,6 +93,19 @@ func append_buff_duration(buff_id: String, duration_to_append: float, max_durati
 	return applied_duration > 0.0
 
 
+func trigger_fire_relic_hit(hit_threshold: int, preserve_ticks: bool) -> bool:
+	var active_buff: ActiveBuff = _active_buffs.get("fire_burn_debuff") as ActiveBuff
+	if active_buff == null or not active_buff.definition.has_method("trigger_relic_hit"):
+		return false
+	return bool(active_buff.definition.call(
+		"trigger_relic_hit",
+		_host,
+		active_buff.state,
+		hit_threshold,
+		preserve_ticks
+	))
+
+
 func notify_host_death() -> void:
 	for value: Variant in _active_buffs.values():
 		var active_buff: ActiveBuff = value as ActiveBuff
