@@ -1,8 +1,13 @@
 [gd_scene format=3 uid="uid://cbbk5l2e1na0y"]
 
 [ext_resource type="Script" uid="uid://bsino3h1ad0fx" path="res://Main/main.gd" id="1_eunhr"]
+[ext_resource type="Script" uid="uid://hjovqtcmwm3b" path="res://UI/battle_health_hud.gd" id="3_qac2q"]
+[ext_resource type="Script" uid="uid://bokfa0c1usqvw" path="res://UI/pause_panel.gd" id="5_o60nc"]
 [ext_resource type="PackedScene" uid="uid://d3qrynyba4t0p" path="res://UI/active_skill_slot.tscn" id="6_qac2q"]
+[ext_resource type="Script" uid="uid://cpl5f7uunntxd" path="res://UI/active_skill_slot.gd" id="7_f3gf5"]
 [ext_resource type="Script" uid="uid://dw0mlxayubf41" path="res://Skills/skill_controller.gd" id="8_f3gf5"]
+[ext_resource type="PackedScene" uid="uid://dic0ihi3nvfwv" path="res://UI/run_failure_panel.tscn" id="8_rix8b"]
+[ext_resource type="Script" uid="uid://w70j7g05bq8a" path="res://UI/run_failure_panel.gd" id="9_0jx5h"]
 [ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://UI/battle_health_hud.tscn" id="11_health"]
 [ext_resource type="PackedScene" uid="uid://bfiq2ule5s2x8" path="res://UI/pause_panel.tscn" id="12_pause"]
 
@@ -22,21 +27,47 @@ metadata/_edit_horizontal_guides_ = [208.0]
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1475341812]
 
-[node name="BattleHealthHud" parent="CanvasLayer" unique_id=1820331821 instance=ExtResource("11_health")]
+[node name="BattleHealthHud" type="Control" parent="CanvasLayer" unique_id=1820331821 instance=ExtResource("11_health")]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 0
+offset_right = 92.0
+offset_bottom = 52.0
+mouse_filter = 2
+script = ExtResource("3_qac2q")
 
-[node name="PausePanel" parent="CanvasLayer" unique_id=1639927173 instance=ExtResource("12_pause")]
+[node name="PausePanel" type="Control" parent="CanvasLayer" unique_id=1639927173 instance=ExtResource("12_pause")]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+script = ExtResource("5_o60nc")
 
 [node name="Label" type="Label" parent="CanvasLayer" unique_id=1125416496]
 offset_right = 40.0
 offset_bottom = 23.0
 
-[node name="SkillSlot" parent="CanvasLayer" unique_id=1931073303 instance=ExtResource("6_qac2q")]
-visible = true
+[node name="SkillSlot" type="Panel" parent="CanvasLayer" unique_id=1931073303 instance=ExtResource("6_qac2q")]
+custom_minimum_size = Vector2(32, 32)
 offset_left = 200.0
 offset_top = 272.0
 offset_right = 232.0
 offset_bottom = 304.0
 theme_override_styles/panel = SubResource("StyleBoxFlat_jcs3y")
+script = ExtResource("7_f3gf5")
+
+[node name="RunFailurePanel" type="Control" parent="CanvasLayer" unique_id=564021983 instance=ExtResource("8_rix8b")]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("9_0jx5h")
 
 [node name="SkillController" type="Node" parent="." unique_id=1382697519]
 script = ExtResource("8_f3gf5")

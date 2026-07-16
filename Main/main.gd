@@ -28,7 +28,9 @@ var run_controller: RunController = null
 var battle_health_hud: Node = null
 var floor_hud: Node = null
 var inventory_panel: Control = null
+var run_failure_panel: Node = null
 var _active_skill_blocking_panels: Array[Node] = []
+var _restart_in_progress: bool = false
 
 
 func _ready() -> void:
@@ -46,6 +48,8 @@ func _ready() -> void:
 ## 用库存中的弹珠 Item 构建 MarbleChain。
 ## Head 永远为 DEFAULT（Dark），Body 段按 Shop 槽位顺序排序。
 func _spawn_chain() -> void:
+	if run_controller != null and run_controller.run_is_failed:
+		return
 	if marbles == null:
 		return
 
@@ -253,6 +257,7 @@ func _setup_run_flow() -> void:
 	_setup_battle_health_hud(ui_layer)
 	_setup_floor_hud(ui_layer)
 	_setup_pause_panel(ui_layer)
+	_setup_run_failure_panel(ui_layer)
 	_setup_inventory_panel()
 
 	run_controller = RunControllerScript.new()
@@ -265,6 +270,7 @@ func _setup_run_flow() -> void:
 	run_controller.event_panel = event_panel
 	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
 	run_controller.run_health_changed.connect(_on_run_health_changed)
+	run_controller.run_failed.connect(_on_run_failed)
 	run_controller.floor_changed.connect(_on_floor_changed)
 	add_child(run_controller)
 	skill_controller.call("_connect_upgrade_system")
@@ -289,6 +295,7 @@ func _connect_active_skill_slot_to_battle_flow() -> void:
 	_active_skill_blocking_panels.clear()
 	for panel_path: NodePath in [
 		^"CanvasLayer/PausePanel",
+		^"CanvasLayer/RunFailurePanel",
 		^"CanvasLayer/NodeChoicePanel",
 		^"CanvasLayer/DraftRewardPanel",
 		^"CanvasLayer/DevilShop",
@@ -351,6 +358,15 @@ func _setup_pause_panel(ui_layer: Node) -> void:
 		ui_layer.add_child(pause_panel)
 
 
+func _setup_run_failure_panel(ui_layer: Node) -> void:
+	run_failure_panel = ui_layer.get_node_or_null("RunFailurePanel")
+	if run_failure_panel == null or not run_failure_panel.has_signal(&"restart_requested"):
+		return
+	var restart_callable: Callable = Callable(self, "_on_failure_restart_requested")
+	if not run_failure_panel.is_connected(&"restart_requested", restart_callable):
+		run_failure_panel.connect(&"restart_requested", restart_callable)
+
+
 func _setup_inventory_panel() -> void:
 	inventory_panel = get_node_or_null("InventoryPanel") as Control
 	if inventory_panel != null:
@@ -364,6 +380,27 @@ func _setup_inventory_panel() -> void:
 func _on_run_health_changed(health: int) -> void:
 	if battle_health_hud != null and battle_health_hud.has_method("set_health"):
 		battle_health_hud.call("set_health", health)
+
+
+func _on_run_failed() -> void:
+	if skill_controller != null:
+		skill_controller.cancel_active_skill("run_failed")
+		skill_controller.clear_projectiles()
+	if marble_chain != null and is_instance_valid(marble_chain):
+		marble_chain.queue_free()
+	marble_chain = null
+	if run_failure_panel != null and run_failure_panel.has_method("open_failure"):
+		run_failure_panel.call("open_failure")
+
+
+func _on_failure_restart_requested() -> void:
+	if _restart_in_progress or run_controller == null or not run_controller.run_is_failed:
+		return
+	_restart_in_progress = true
+	run_controller.start_run()
+	if run_failure_panel != null and run_failure_panel.has_method("close_failure"):
+		run_failure_panel.call("close_failure")
+	_restart_in_progress = false
 
 
 func _on_floor_changed(floor_number: int) -> void:

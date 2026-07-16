@@ -47,6 +47,8 @@ RUN_UPGRADE_UNAVAILABLE_TITLE,Upgrade,升级
 RUN_UPGRADE_UNAVAILABLE_DESC,No marble upgrades available.,没有可升级的弹珠。
 RUN_COMPLETED_TITLE,Victory,胜利
 RUN_COMPLETED_DESC,Boss defeated. This v1 flow is complete.,首领已击败。当前流程已完成。
+RUN_FAILED_TITLE,You Failed,你失败了
+RUN_FAILED_CONFIRM,Confirm,确认
 RUN_WEAK_FIGHT_TITLE,Weak Fight,普通战斗
 RUN_STRONG_FIGHT_TITLE,Strong Fight,强敌战斗
 RUN_ELITE_FIGHT_TITLE,Elite Fight,精英战斗

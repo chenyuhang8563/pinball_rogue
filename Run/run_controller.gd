@@ -7,6 +7,7 @@ signal battle_completed(group_id: String)
 signal run_health_changed(health: int)
 signal floor_changed(floor_number: int)
 signal run_completed
+signal run_failed
 
 const BattleGroupDefScript: GDScript = preload("res://Run/battle_group_def.gd")
 const RunNodeOptionScript: GDScript = preload("res://Run/run_node_option.gd")
@@ -64,6 +65,7 @@ const BOSS_FLOOR: int = 12
 var current_node_index: int = 0
 var choice_wave_index: int = 0
 var run_is_complete: bool = false
+var run_is_failed: bool = false
 var reset_battle_state_callable: Callable = Callable()
 var battle_is_active: bool = false
 var marble_upgrade_system: Node
@@ -89,6 +91,7 @@ func start_run() -> void:
 	current_node_index = 0
 	choice_wave_index = 0
 	run_is_complete = false
+	run_is_failed = false
 	battle_is_active = false
 	_active_event_id = ""
 	_event_wager_resolved = false
@@ -171,7 +174,7 @@ func _get_enabled_node_option_kind_count() -> int:
 
 
 func choose_option(option: RunNodeOption) -> void:
-	if option == null or run_is_complete:
+	if option == null or run_is_complete or run_is_failed:
 		return
 
 	run_node_completed.emit(option.kind_id)
@@ -202,7 +205,7 @@ func continue_after_draft() -> void:
 
 
 func _start_next_node() -> void:
-	if run_is_complete:
+	if run_is_complete or run_is_failed:
 		return
 
 	current_node_index += 1
@@ -218,7 +221,7 @@ func _start_next_node() -> void:
 
 
 func _begin_battle(group: BattleGroupDef) -> void:
-	if group == null:
+	if group == null or run_is_failed:
 		return
 
 	# Destroy any lingering floating damage texts from the previous battle
@@ -238,6 +241,8 @@ func _begin_battle(group: BattleGroupDef) -> void:
 
 
 func _on_battle_completed(group_id: String) -> void:
+	if run_is_failed or not battle_is_active:
+		return
 	battle_is_active = false
 	run_health_changed.emit(_get_run_health())
 	battle_completed.emit(group_id)
@@ -966,7 +971,7 @@ func _release_all_floating_texts() -> void:
 
 
 func _on_marble_fell(marble: RigidBody2D) -> void:
-	if not battle_is_active:
+	if run_is_failed or not battle_is_active:
 		return
 	if marble == null or not marble.is_in_group("marbles"):
 		return
@@ -986,7 +991,18 @@ func _on_marble_fell(marble: RigidBody2D) -> void:
 		StatRegistryScript.RUN_HEALTH,
 		float(maxi(0, current_health - 1))
 	)
-	run_health_changed.emit(_get_run_health())
+	var updated_health: int = _get_run_health()
+	run_health_changed.emit(updated_health)
+	if updated_health == 0:
+		_fail_run()
+
+
+func _fail_run() -> void:
+	if run_is_complete or run_is_failed:
+		return
+	run_is_failed = true
+	battle_is_active = false
+	run_failed.emit()
 
 
 func _watch_shop_close(shop: Node) -> void:

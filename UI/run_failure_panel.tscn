@@ -1,0 +1,104 @@
+[gd_scene format=3 uid="uid://dic0ihi3nvfwv"]
+
+[ext_resource type="Script" uid="uid://w70j7g05bq8a" path="res://UI/run_failure_panel.gd" id="1_3alj2"]
+[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="2_ycrts"]
+[ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="3_q3efa"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_s06nn"]
+bg_color = Color(0.08, 0.08, 0.1, 0.92)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.53, 0.47, 1)
+
+[sub_resource type="Animation" id="Animation_ehc7l"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_r3tyb"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_72xg8"]
+_data = {
+&"hide_failure": SubResource("Animation_ehc7l"),
+&"show_failure": SubResource("Animation_r3tyb")
+}
+
+[node name="RunFailurePanel" type="Control" unique_id=564021983]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1_3alj2")
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1308313525]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0, 0, 0, 0.68)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=780492258]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+
+[node name="Panel" type="PanelContainer" parent="Center" unique_id=1285317013]
+custom_minimum_size = Vector2(176, 0)
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_s06nn")
+
+[node name="MarginContainer" type="MarginContainer" parent="Center/Panel" unique_id=91543916]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel/MarginContainer" unique_id=279090094]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout" unique_id=863427192]
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+text = "RUN_FAILED_TITLE"
+label_settings = ExtResource("2_ycrts")
+horizontal_alignment = 1
+
+[node name="ConfirmButton" type="Button" parent="Center/Panel/MarginContainer/Layout" unique_id=281755670]
+custom_minimum_size = Vector2(132, 24)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_q3efa")
+theme_override_font_sizes/font_size = 12
+text = "RUN_FAILED_CONFIRM"
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=2041274293]
+process_mode = 3
+libraries/ = SubResource("AnimationLibrary_72xg8")
