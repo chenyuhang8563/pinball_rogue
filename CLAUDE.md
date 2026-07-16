@@ -50,3 +50,13 @@ cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gu
 - 10px 文本使用 `quaver_fusion_10.tres` / `text_10.tres`，12px 文本使用 `quaver_fusion_12.tres` / `text_12.tres`。
 - 中英混排必须使用 `.tres` 复合字体资源：以 Quaver 为主字体、对应字号的 Fusion Pixel 为中文 fallback，确保英文和数字不会随中文语言环境切换为 Fusion。
 
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs are tracked in this repository's GitHub Issues. See `docs/agents/issue-tracker.md`.
+
+### Domain docs
+
+This repository uses a single-context domain documentation layout. See `docs/agents/domain.md`.
+
