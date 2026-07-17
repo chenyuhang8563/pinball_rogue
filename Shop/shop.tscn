@@ -12,12 +12,11 @@
 [ext_resource type="Resource" uid="uid://djc10yo52gqep" path="res://Resources/fire_marble.tres" id="9_7nrtk"]
 [ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="9_8sid2"]
 [ext_resource type="Resource" uid="uid://c100pjp7ilvk2" path="res://Resources/blue_marble.tres" id="9_blue"]
-[ext_resource type="Resource" path="res://Resources/fire_bellows.tres" id="10_b5trs"]
-[ext_resource type="Resource" path="res://Resources/poison_culture.tres" id="11_16e15"]
-[ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="11_eu4ty"]
-[ext_resource type="Resource" path="res://Resources/ice_hammer.tres" id="12_6qmg5"]
+[ext_resource type="Resource" uid="uid://gnhhl1ufmvmr" path="res://Resources/fire_bellows.tres" id="10_b5trs"]
+[ext_resource type="Resource" uid="uid://bbr7jeko8e7qe" path="res://Resources/poison_culture.tres" id="11_16e15"]
+[ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/item_icon_view.tscn" id="11_eu4ty"]
+[ext_resource type="Resource" uid="uid://bo4qentxbit4m" path="res://Resources/ice_hammer.tres" id="12_6qmg5"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://UI/skill_replace_dialog.tscn" id="13_b5trs"]
-[ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://UI/battle_health_hud.tscn" id="14_health"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_6qmg5"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -102,7 +101,6 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_6qmg5")
 
 [node name="Icon" parent="UI/Panel/CollectionRows/SkillBox/SkillSlot" unique_id=299050868 instance=ExtResource("11_eu4ty")]
 layout_mode = 0
-anchors_preset = 0
 anchor_right = 1.0
 anchor_bottom = 1.0
 
@@ -111,10 +109,3 @@ layout_mode = 1
 anchors_preset = 15
 grow_horizontal = 2
 grow_vertical = 2
-
-[node name="ShopResourceHud" parent="UI/Panel" unique_id=1924678144 instance=ExtResource("14_health")]
-layout_mode = 0
-offset_left = 4.0
-offset_top = 4.0
-offset_right = 96.0
-offset_bottom = 56.0

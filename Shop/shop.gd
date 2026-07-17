@@ -18,13 +18,10 @@ var shop_offers: Array = []
 @export var relic_bar_container: HBoxContainer
 @export var skill_box_container: HBoxContainer
 @export var skill_replace_dialog: SkillReplaceDialog
-var resource_hud: BattleHealthHud
 var gold: int = 0:
 	set(value):
 		gold = value
 		gold_changed.emit(value)
-		if resource_hud != null:
-			resource_hud.set_gold(value)
 
 var _pending_skill_purchase: Item = null
 var _pending_skill_offer: Variant = null
@@ -41,8 +38,6 @@ var mode: MODE = MODE.OFF:
 		if value == MODE.ON:
 			if previous_mode != MODE.ON:
 				refresh_shop_inventory()
-			_connect_run_controller_health()
-			_sync_resource_hud()
 			_apply_text()
 			refresh_collection_rows()
 			var ui: CanvasLayer = get_node_or_null("UI") as CanvasLayer
@@ -74,7 +69,6 @@ func _ready() -> void:
 	_connect_skill_replace_dialog()
 	_grant_starting_marbles()
 	refresh_collection_rows()
-	_sync_resource_hud()
 
 
 func _bind_optional_nodes() -> void:
@@ -82,8 +76,6 @@ func _bind_optional_nodes() -> void:
 		skill_box_container = get_node_or_null("UI/Panel/CollectionRows/SkillBox") as HBoxContainer
 	if skill_replace_dialog == null:
 		skill_replace_dialog = get_node_or_null("UI/Panel/SkillReplaceDialog") as SkillReplaceDialog
-	if resource_hud == null:
-		resource_hud = get_node_or_null("UI/Panel/ShopResourceHud") as BattleHealthHud
 
 func _input(event) -> void:
 	if event is InputEventKey and event.is_pressed():
@@ -589,29 +581,6 @@ func _connect_skill_replace_dialog() -> void:
 		skill_replace_dialog.cancelled.connect(cancel_callback)
 
 
-func _connect_run_controller_health() -> void:
-	var run_controller: Node = _get_run_controller()
-	if run_controller == null or not run_controller.has_signal(&"run_health_changed"):
-		return
-	var callback := Callable(self, "_on_run_health_changed")
-	if not run_controller.is_connected(&"run_health_changed", callback):
-		run_controller.connect(&"run_health_changed", callback)
-
-
-func _sync_resource_hud() -> void:
-	if resource_hud == null:
-		return
-	resource_hud.set_gold(gold)
-	var run_controller: Node = _get_run_controller()
-	if run_controller != null and run_controller.has_method("_get_run_health"):
-		resource_hud.set_health(int(run_controller.call("_get_run_health")))
-
-
-func _on_run_health_changed(value: int) -> void:
-	if resource_hud != null:
-		resource_hud.set_health(value)
-
-
 func _on_skill_replace_confirmed(_item: Item) -> void:
 	confirm_pending_skill_purchase()
 
@@ -621,24 +590,6 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null(NodePath(node_name))
-
-
-func _get_run_controller() -> Node:
-	var tree: SceneTree = Engine.get_main_loop() as SceneTree
-	if tree == null:
-		return null
-	var candidates: Array[Node] = []
-	if tree.current_scene != null:
-		candidates.append(tree.current_scene)
-	candidates.append(tree.root)
-	for candidate: Node in candidates:
-		var direct: Node = candidate.get_node_or_null("RunController")
-		if _is_live_node(direct):
-			return direct
-		for run_controller: Node in candidate.find_children("RunController", "", true, false):
-			if _is_live_node(run_controller):
-				return run_controller
-	return null
 
 
 func _get_marble_upgrade_system() -> Node:
