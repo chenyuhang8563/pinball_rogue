@@ -4,6 +4,60 @@ const SHOP_MODE_ON := 0
 const ItemTooltipScene: PackedScene = preload("res://UI/item_tooltip.tscn")
 
 var _is_affordable: bool = true
+var offer: ShopOffer = null
+
+
+## 将报价数据写入场景中已有节点；布局和显隐由场景动画负责。
+func set_offer(value: ShopOffer) -> void:
+	offer = value
+	item = value.item if value != null else null
+	if value == null:
+		_clear_offer_content()
+		_refresh_offer_presentation()
+		return
+	var icon: Node = get_node_or_null("Icon")
+	if icon != null and icon.has_method("set_level"):
+		icon.call("set_level", value.target_level)
+	var price_label := get_node_or_null("Price") as Label
+	if price_label != null:
+		price_label.text = "$ " + str(value.price)
+	_refresh_offer_presentation()
+
+
+## 返回场景动画应使用的新商品、升级或折扣升级状态。
+func get_offer_presentation_state() -> StringName:
+	if offer == null or not bool(offer.is_upgrade):
+		return &"regular"
+	if int(offer.original_price) > int(offer.price):
+		return &"discounted"
+	return &"upgrade"
+
+
+func _clear_offer_content() -> void:
+	for node_name: String in ["Price", "OriginalPrice", "Title", "Type"]:
+		var label := get_node_or_null(node_name) as Label
+		if label != null:
+			label.text = ""
+	var icon: Node = get_node_or_null("Icon")
+	if icon != null and icon.has_method("clear"):
+		icon.call("clear")
+
+
+func _refresh_offer_presentation() -> void:
+	var is_upgrade: bool = offer != null and bool(offer.is_upgrade)
+	var level_up := get_node_or_null("LevelUp") as Sprite2D
+	if level_up != null:
+		level_up.visible = is_upgrade
+	var original_price_label := get_node_or_null("OriginalPrice") as Label
+	var is_discounted: bool = is_upgrade and int(offer.original_price) > int(offer.price)
+	if original_price_label != null:
+		original_price_label.text = "$ " + str(offer.original_price) if is_discounted else ""
+	var presentation := get_node_or_null("OfferPresentationAnimation") as AnimationPlayer
+	if presentation != null:
+		var animation_name: StringName = &"discounted" if is_discounted else &"regular"
+		if presentation.has_animation(animation_name):
+			presentation.play(animation_name)
+
 
 @export var item: Item = null:
 	set(value):
@@ -66,7 +120,14 @@ func _on_gold_changed(_gold: int) -> void:
 
 func _refresh_affordability() -> void:
 	var shop: Node = _get_autoload_node(&"Shop")
-	var affordable: bool = item != null and (shop == null or not shop.has_method("can_afford_item") or bool(shop.call("can_afford_item", item)))
+	var affordable: bool = false
+	if item != null:
+		if offer is DevilShopOffer:
+			affordable = true
+		elif offer != null and shop != null and shop.has_method("can_afford_offer"):
+			affordable = bool(shop.call("can_afford_offer", offer))
+		else:
+			affordable = shop == null or not shop.has_method("can_afford_item") or bool(shop.call("can_afford_item", item))
 	_is_affordable = affordable
 	var state_animation: AnimationPlayer = get_node_or_null("AffordabilityAnimation") as AnimationPlayer
 	if state_animation != null:
@@ -88,6 +149,10 @@ func _on_gui_input(event) -> void:
 	if inventory == null:
 		return
 
+	if offer != null and shop.has_method("purchase_offer"):
+		if shop.call("purchase_offer", offer):
+			print("Bought " + item.title)
+		return
 	if shop.has_method("purchase_item"):
 		if shop.call("purchase_item", item):
 			print("Bought " + item.title)

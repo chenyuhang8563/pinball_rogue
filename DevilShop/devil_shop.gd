@@ -3,6 +3,7 @@ class_name DevilShop
 
 const StatRegistryScript: GDScript = preload("res://Stats/stat_registry.gd")
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
+const ShopItemPolicyScript: GDScript = preload("res://Shop/shop_item_policy.gd")
 const RUN_HEALTH_ENTITY_ID: String = "run:current"
 const PAYMENT_PAN_ANIMATION_REFERENCE_Y: float = 189.0
 
@@ -72,9 +73,34 @@ func open_for_run(marble_upgrade_system: Node) -> void:
 
 func close_shop() -> void:
 	_pending_skill_offer = null
+	if _skill_dialog != null and _skill_dialog.is_request_pending():
+		_skill_dialog.cancel_replace_request()
 	hide()
 	get_tree().paused = false
 	closed.emit()
+
+
+## Generates full-price acquisition quotes and discounted upgrades up to level IV.
+func generate_upgrade_offers(inventory: Node, marble_upgrade_system: Node) -> Array[DevilShopOffer]:
+	offers.clear()
+	current_offer_index = 0
+	_marble_upgrade_system = marble_upgrade_system
+	if config == null or inventory == null or marble_upgrade_system == null:
+		return offers
+	var candidates := _get_eligible_upgrade_items(inventory)
+	while offers.size() < config.stock_count and not candidates.is_empty():
+		var item: Item = candidates.pick_random()
+		candidates.erase(item)
+		var owned_item := _find_owned_matching_item(item, inventory)
+		var is_upgrade := owned_item != null
+		var current_level := _get_item_level(inventory, owned_item) if is_upgrade else 0
+		var target_level := _pick_target_level_from(current_level)
+		if target_level <= current_level:
+			continue
+		var full_target_price := _get_level_price(item, target_level)
+		var quoted_price := full_target_price - _get_level_price(item, current_level) if is_upgrade else full_target_price
+		offers.append(DevilShopOffer.new(item, target_level, quoted_price, is_upgrade, full_target_price))
+	return offers
 
 
 func get_current_offer() -> DevilShopOffer:
@@ -129,10 +155,12 @@ func confirm_purchase() -> bool:
 	if inventory == null:
 		return false
 	if offer.item.type == Item.ItemType.SKILL and inventory.get("skill_item") != null:
-		_pending_skill_offer = offer
-		if _skill_dialog != null:
-			_skill_dialog.request_replace(inventory.get("skill_item") as Item, offer.item)
-		return false
+		var equipped_skill := inventory.get("skill_item") as Item
+		if not _items_have_same_identity(equipped_skill, offer.item):
+			_pending_skill_offer = offer
+			if _skill_dialog != null:
+				_skill_dialog.request_replace(equipped_skill, offer.item)
+			return false
 	return _complete_purchase(offer, false)
 
 
@@ -143,13 +171,7 @@ func _complete_purchase(offer: DevilShopOffer, replace_skill: bool) -> bool:
 	var shop: Node = _get_autoload_node(&"Shop")
 	if inventory == null or shop == null:
 		return false
-	if offer.item.type == Item.ItemType.SKILL:
-		if replace_skill:
-			if not bool(inventory.call("replace_skill", offer.item)):
-				return false
-		elif not bool(inventory.call("add_item", offer.item)):
-			return false
-	elif not _grant_levelled_item(inventory, offer):
+	if not grant_levelled_item(inventory, offer, _marble_upgrade_system, replace_skill):
 		return false
 	shop.set("gold", int(shop.get("gold")) - gold_chips)
 	_set_run_health(_get_run_health() - health_chips)
@@ -164,78 +186,114 @@ func _complete_purchase(offer: DevilShopOffer, replace_skill: bool) -> bool:
 	return true
 
 
-func _grant_levelled_item(inventory: Node, offer: DevilShopOffer) -> bool:
-	if offer.item.type == Item.ItemType.RELIC:
-		while _get_relic_level(inventory, offer.item) < offer.target_level:
-			if not bool(inventory.call("add_item", offer.item)):
-				return false
-		if offer.target_level == 4 and not bool(inventory.call("is_relic_awakened", offer.item)):
-			if not bool(inventory.call("add_item", offer.item)):
-				return false
-		return true
-	if offer.item.type != Item.ItemType.MARBLE:
+## 发放报价物品并提升至目标等级；依赖参数用于测试及无 Autoload 的调用方。
+func grant_levelled_item(
+	inventory: Node,
+	offer: DevilShopOffer,
+	marble_upgrade_system: Node,
+	replace_skill: bool = false
+) -> bool:
+	if inventory == null or offer == null or offer.item == null or marble_upgrade_system == null:
 		return false
-	if not bool(inventory.call("has_item_id", offer.item.id)) and not bool(inventory.call("add_item", offer.item)):
+	_marble_upgrade_system = marble_upgrade_system
+	if offer.target_level < 2 or offer.target_level > 4:
 		return false
-	if _marble_upgrade_system == null:
-		return false
-	while _get_marble_level(offer.item) < offer.target_level:
-		if not bool(_marble_upgrade_system.call("upgrade_marble", offer.item.marble_type)):
+	var owned_item := _find_owned_matching_item(offer.item, inventory)
+	if owned_item == null:
+		if not _can_acquire_new_item(inventory, offer.item):
 			return false
-	if offer.target_level == 4 and not bool(_marble_upgrade_system.call("is_awakened", offer.item.marble_type)):
-		return bool(_marble_upgrade_system.call("upgrade_marble", offer.item.marble_type))
-	return true
+		if not _can_reach_target(inventory, offer.item, 1, offer.target_level):
+			return false
+	elif not _can_reach_target(inventory, owned_item, _get_item_level(inventory, owned_item), offer.target_level):
+		return false
+	if owned_item == null:
+		var equipped_skill := inventory.get("skill_item") as Item
+		if offer.item.type == Item.ItemType.SKILL and equipped_skill != null:
+			if not replace_skill or not bool(inventory.call("replace_skill", offer.item)):
+				return false
+			if marble_upgrade_system.has_method("reset_skill_level"):
+				marble_upgrade_system.call("reset_skill_level", equipped_skill.id)
+		elif not bool(inventory.call("add_item", offer.item)):
+			return false
+		owned_item = offer.item
+	while _get_item_level(inventory, owned_item) < offer.target_level:
+		if not bool(marble_upgrade_system.call("upgrade_item", owned_item, inventory)):
+			return false
+	return _get_item_level(inventory, owned_item) == offer.target_level
 
 
 func _generate_offers() -> void:
-	offers.clear()
-	current_offer_index = 0
-	if config == null:
-		_refresh_ui()
-		return
-	var candidates := _get_eligible_items()
-	while offers.size() < config.stock_count and not candidates.is_empty():
-		var item: Item = candidates.pick_random()
-		candidates.erase(item)
-		var target_level := _pick_target_level(item)
-		var multiplier: float = float(config.level_price_multipliers.get(target_level, 1.0))
-		offers.append(DevilShopOffer.new(item, target_level, roundi(item.price * multiplier)))
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	generate_upgrade_offers(inventory, _marble_upgrade_system)
 	offer_changed.emit(get_current_offer())
 	_refresh_ui()
 
 
-func _get_eligible_items() -> Array[Item]:
+func _get_eligible_upgrade_items(inventory: Node) -> Array[Item]:
 	var result: Array[Item] = []
-	if config == null:
+	if config == null or inventory == null or _marble_upgrade_system == null:
 		return result
-	for item: Item in config.item_pool:
-		if item != null and _is_item_eligible(item):
-			result.append(item)
+	for candidate: Item in config.item_pool:
+		if candidate == null:
+			continue
+		var owned_item := _find_owned_matching_item(candidate, inventory)
+		var eligible_item: Item = null
+		if owned_item != null:
+			if _can_upgrade_item(inventory, owned_item):
+				eligible_item = owned_item
+		elif _can_acquire_new_item(inventory, candidate):
+			eligible_item = candidate
+		if eligible_item == null:
+			continue
+		var already_listed := false
+		for existing_item: Item in result:
+			if _items_have_same_identity(existing_item, eligible_item):
+				already_listed = true
+				break
+		if not already_listed:
+			result.append(eligible_item)
 	return result
 
 
-func _is_item_eligible(item: Item) -> bool:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null:
+func _find_owned_matching_item(candidate: Item, inventory: Node) -> Item:
+	return ShopItemPolicyScript.find_owned_item(candidate, inventory)
+
+
+func _items_have_same_identity(first: Item, second: Item) -> bool:
+	return ShopItemPolicyScript.has_same_identity(first, second)
+
+
+func _can_upgrade_item(inventory: Node, item: Item) -> bool:
+	if item == null or _marble_upgrade_system == null:
+		return false
+	return bool(_marble_upgrade_system.call("can_upgrade_item", item, inventory))
+
+
+func _can_acquire_new_item(inventory: Node, item: Item) -> bool:
+	if inventory == null or item == null or not _can_upgrade_item(inventory, item):
 		return false
 	if item.type == Item.ItemType.SKILL:
-		return item.id == "" or not bool(inventory.call("has_item_id", item.id))
-	if item.type == Item.ItemType.RELIC:
-		return not bool(inventory.call("is_relic_max_level", item))
-	if item.type == Item.ItemType.MARBLE:
-		if _marble_upgrade_system == null:
-			return false
-		return not bool(_marble_upgrade_system.call("is_max_level", item.marble_type))
-	return false
+		var equipped_skill := inventory.get("skill_item") as Item
+		if equipped_skill != null:
+			return not _items_have_same_identity(equipped_skill, item)
+		return inventory.has_method("can_add_item") and bool(inventory.call("can_add_item", item))
+	return inventory.has_method("can_add_item") and bool(inventory.call("can_add_item", item))
 
 
-func _pick_target_level(item: Item) -> int:
-	if item.type == Item.ItemType.SKILL or config == null:
+func _can_reach_target(inventory: Node, item: Item, current_level: int, target_level: int) -> bool:
+	if item == null or current_level < 1 or target_level < 2 or target_level > 4:
+		return false
+	if current_level >= target_level:
+		return false
+	return _can_upgrade_item(inventory, item)
+
+
+func _pick_target_level_from(current_level: int) -> int:
+	if config == null:
 		return 0
-	var current_level: int = _get_relic_level(_get_autoload_node(&"Inventory"), item) if item.type == Item.ItemType.RELIC else _get_marble_level(item)
 	var choices: Array[int] = []
 	for level: int in [2, 3, 4]:
-		if level > current_level:
+		if level > current_level and int(config.level_weights.get(level, 1)) > 0:
 			choices.append(level)
 	if choices.is_empty():
 		return 0
@@ -250,33 +308,26 @@ func _pick_target_level(item: Item) -> int:
 	return choices.back()
 
 
+func _get_level_price(item: Item, level: int) -> int:
+	if item == null or level <= 0:
+		return 0
+	var multiplier: float = float(config.level_price_multipliers.get(level, 1.0)) if config != null else 1.0
+	return roundi(item.price * multiplier)
+
+
 func _can_grant_offer(offer: DevilShopOffer) -> bool:
 	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null or offer == null:
+	if inventory == null or offer == null or offer.item == null:
 		return false
-	if offer.item.type == Item.ItemType.SKILL:
-		return offer.item.id == "" or not bool(inventory.call("has_item_id", offer.item.id))
-	if offer.item.type == Item.ItemType.RELIC:
-		return not bool(inventory.call("is_relic_max_level", offer.item))
-	if offer.item.type == Item.ItemType.MARBLE:
-		return _marble_upgrade_system != null and not bool(_marble_upgrade_system.call("is_max_level", offer.item.marble_type))
-	return false
+	var owned_item := _find_owned_matching_item(offer.item, inventory)
+	if owned_item == null:
+		return _can_acquire_new_item(inventory, offer.item) \
+				and _can_reach_target(inventory, offer.item, 1, offer.target_level)
+	return _can_reach_target(inventory, owned_item, _get_item_level(inventory, owned_item), offer.target_level)
 
 
-func _get_relic_level(inventory: Node, item: Item) -> int:
-	if inventory == null:
-		return 0
-	if bool(inventory.call("is_relic_awakened", item)):
-		return 4
-	return int(inventory.call("get_relic_level", item))
-
-
-func _get_marble_level(item: Item) -> int:
-	if _marble_upgrade_system == null:
-		return 0
-	if bool(_marble_upgrade_system.call("is_awakened", item.marble_type)):
-		return 4
-	return int(_marble_upgrade_system.call("get_level", item.marble_type))
+func _get_item_level(inventory: Node, item: Item) -> int:
+	return ShopItemPolicyScript.get_level(item, inventory, _marble_upgrade_system)
 
 
 func _get_run_health() -> int:
@@ -412,7 +463,7 @@ func _apply_chip_delta(delta: int) -> void:
 	if abs(delta) == 1:
 		adjust_gold_chips(delta)
 	else:
-		adjust_health_chips(delta / 2)
+		adjust_health_chips(roundi(float(delta) / 2.0))
 
 
 func _on_skill_replace_confirmed(_item: Item) -> void:
@@ -449,7 +500,10 @@ func _refresh_ui(animate_scale: bool = false) -> void:
 		_confirm_button.disabled = not can_confirm_purchase()
 	if offer == null:
 		if _offer_slot != null:
-			_offer_slot.set("item", null)
+			if _offer_slot.has_method("set_offer"):
+				_offer_slot.call("set_offer", null)
+			else:
+				_offer_slot.set("item", null)
 		_set_scale_pose(ScaleState.BALANCED, false)
 		return
 	_refresh_offer_slot(offer)
@@ -512,6 +566,9 @@ func _scale_state_name(state: int) -> String:
 
 func _refresh_offer_slot(offer: DevilShopOffer) -> void:
 	if _offer_slot == null:
+		return
+	if _offer_slot.has_method("set_offer"):
+		_offer_slot.call("set_offer", offer)
 		return
 	_offer_slot.set("item", offer.item)
 	var icon := _offer_slot.get_node_or_null("Icon")

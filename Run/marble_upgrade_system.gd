@@ -156,13 +156,29 @@ func upgrade_skill(skill_id: String) -> bool:
 	return true
 
 
+## Removes a replaced skill's progression so acquiring it again starts from its base level.
+func reset_skill_level(skill_id: String) -> void:
+	if skill_id != "":
+		_skill_levels.erase(skill_id)
+
+
+## 清除已出售弹珠的等级和觉醒进度。
+func reset_marble_level(marble_type: Marble.MARBLE_TYPE) -> void:
+	if not UPGRADE_VALUES.has(marble_type):
+		return
+	_levels.erase(int(marble_type))
+	_awakened_types.erase(int(marble_type))
+	_sync_stat_modifiers()
+	marble_upgraded.emit(marble_type, get_level(marble_type))
+
+
 func can_upgrade_item(item: Item, inventory: Node) -> bool:
 	if item == null:
 		return false
 	if item.type == Item.ItemType.MARBLE:
 		return UPGRADE_VALUES.has(item.marble_type) and not is_max_level(item.marble_type)
 	if item.type == Item.ItemType.SKILL:
-		return not is_skill_max_level(item.id)
+		return SKILL_LEVELS.has(item.id) and not is_skill_max_level(item.id)
 	if item.type == Item.ItemType.RELIC:
 		return inventory != null and inventory.has_method("is_relic_max_level") and not bool(inventory.call("is_relic_max_level", item))
 	return false

@@ -5,9 +5,9 @@ const UpgradeSystemScript: GDScript = preload("res://Run/marble_upgrade_system.g
 const InventoryScript: GDScript = preload("res://Inventory/inventory.gd")
 
 
-# Verifies each skill upgrade reaches the requested values and stops at its maximum level.
+# 验证技能升级达到指定数值并在最高等级停止。
 func test_skill_levels_match_the_requested_dash_and_missile_values() -> void:
-	var system := UpgradeSystemScript.new()
+	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
 	add_child_autofree(system)
 
 	assert_eq(system.get_skill_values("dash").get("recharge_time"), 5.0)
@@ -29,10 +29,10 @@ func test_skill_levels_match_the_requested_dash_and_missile_values() -> void:
 	assert_eq(missile_values.get("projectile_lifetime"), 6.0)
 
 
-# Verifies relic, marble, and skill upgrade candidates apply to their intended owner state.
+# 验证遗物、弹珠和技能升级候选作用于正确的持有状态。
 func test_upgrade_candidates_include_owned_relic_marble_and_skill_then_apply_the_selected_type() -> void:
-	var inventory := InventoryScript.new()
-	var system := UpgradeSystemScript.new()
+	var inventory: Variant = InventoryScript.new()
+	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
 	add_child_autofree(inventory)
 	add_child_autofree(system)
 
@@ -53,3 +53,30 @@ func test_upgrade_candidates_include_owned_relic_marble_and_skill_then_apply_the
 	assert_eq(system.get_level(Marble.MARBLE_TYPE.DEFAULT), 2)
 	assert_true(system.upgrade_item(relic, inventory))
 	assert_eq(inventory.get_relic_level(relic), 2)
+
+
+# 验证替换技能后清除旧技能升级进度。
+func test_reset_skill_level_discards_replaced_skill_progression() -> void:
+	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
+	add_child_autofree(system)
+
+	assert_true(system.upgrade_skill("dash"))
+	assert_true(system.upgrade_skill("dash"))
+	assert_eq(system.get_skill_level("dash"), 3)
+
+	system.reset_skill_level("dash")
+
+	assert_eq(system.get_skill_level("dash"), 1)
+
+
+# 验证没有升级定义的技能不会被误判为可升级商品。
+func test_unknown_skill_is_not_upgradeable() -> void:
+	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
+	var inventory: Variant = InventoryScript.new()
+	add_child_autofree(system)
+	add_child_autofree(inventory)
+	var skill := Item.new()
+	skill.id = "teleport"
+	skill.type = Item.ItemType.SKILL
+
+	assert_false(system.can_upgrade_item(skill, inventory))

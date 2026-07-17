@@ -25,6 +25,8 @@ mono_crash.*.json
 
 # test ignores
 /tests/*
+!/tests/test_shop_upgrade_offers.gd
+!/tests/test_devil_shop_upgrade_offers.gd
 
 # generated image sources; final runtime assets live under Assets/ and Effects/
 /output/imagegen/

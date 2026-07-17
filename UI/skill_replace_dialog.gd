@@ -37,6 +37,15 @@ func is_request_pending() -> bool:
 	return _pending_skill != null
 
 
+func cancel_replace_request() -> void:
+	if _pending_skill == null:
+		return
+	_pending_skill = null
+	_animation_player.play("hide_dialog")
+	_animation_player.advance(0.0)
+	cancelled.emit()
+
+
 func request_upgrade(item: Item) -> void:
 	_pending_upgrade = item
 	_upgrade_notice_active = false
