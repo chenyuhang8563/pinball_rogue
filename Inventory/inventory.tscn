@@ -1,6 +1,6 @@
-[gd_scene load_steps=8 format=3 uid="uid://bx6h7a1u1u7xb"]
+[gd_scene format=3 uid="uid://bx6h7a1u1u7xb"]
 
-[ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="1_item_icon_view"]
+[ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/item_icon_view.tscn" id="1_item_icon_view"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1jgv4"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -11,6 +11,14 @@ border_width_bottom = 1
 border_color = Color(0.55, 0.53, 0.47, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_uov6c"]
+bg_color = Color(0.08, 0.08, 0.1, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.53, 0.47, 1)
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_marble3"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
 border_width_left = 1
 border_width_top = 1
@@ -35,14 +43,6 @@ border_width_bottom = 1
 border_color = Color(0.55, 0.53, 0.47, 1)
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_2aw4r"]
-bg_color = Color(0.08, 0.08, 0.1, 0.85)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.55, 0.53, 0.47, 1)
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_marble3"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
 border_width_left = 1
 border_width_top = 1
