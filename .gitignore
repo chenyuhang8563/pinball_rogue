@@ -4,6 +4,29 @@
 # Godot 4.2+ specific ignores
 ~*.dll
 *.gd.uid
+# Keep first-party script UIDs stable across worktrees and resource moves.
+!/Buffs/**/*.gd.uid
+!/DevilShop/**/*.gd.uid
+!/Effects/**/*.gd.uid
+!/Enemies/**/*.gd.uid
+!/Fliper/**/*.gd.uid
+!/Inventory/**/*.gd.uid
+!/Items/**/*.gd.uid
+!/Levels/**/*.gd.uid
+!/Localization/**/*.gd.uid
+!/Main/**/*.gd.uid
+!/Marbles/**/*.gd.uid
+!/Run/**/*.gd.uid
+!/Shop/**/*.gd.uid
+!/Skills/**/*.gd.uid
+!/Stats/**/*.gd.uid
+!/UI/**/*.gd.uid
+!/Commerce/**/*.gd.uid
+!/Loadout/**/*.gd.uid
+!/Combat/**/*.gd.uid
+!/Content/**/*.gd.uid
+!/Core/**/*.gd.uid
+!/Game/**/*.gd.uid
 *.gdshader.uid
 
 # Godot 4+ specific ignores
@@ -23,10 +46,9 @@ export_credentials.cfg
 data_*/
 mono_crash.*.json
 
-# test ignores
-/tests/*
-!/tests/test_shop_upgrade_offers.gd
-!/tests/test_devil_shop_upgrade_offers.gd
+# Tests stay visible so architecture migration assets cannot be hidden.
+# Checkpoint commits must still exclude every tests/** change.
+!/tests/**
 
 # generated image sources; final runtime assets live under Assets/ and Effects/
 /output/imagegen/

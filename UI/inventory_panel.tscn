@@ -1,9 +1,9 @@
 [gd_scene format=3 uid="uid://dgob675lfpkcv"]
 
-[ext_resource type="Script" uid="uid://bdx7lt0b5vbid" path="res://UI/inventory_panel.gd" id="1_inventory_panel"]
+[ext_resource type="Script" uid="uid://bjfai71a1nsp2" path="res://UI/inventory_panel.gd" id="1_inventory_panel"]
 [ext_resource type="PackedScene" uid="uid://bx6h7a1u1u7xb" path="res://Inventory/inventory.tscn" id="2_collection_rows"]
 [ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="3_label_settings"]
-[ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="4_item_icon_view"]
+[ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/item_icon_view.tscn" id="4_item_icon_view"]
 [ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/item_icon_view.gd" id="5_3ouoh"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]

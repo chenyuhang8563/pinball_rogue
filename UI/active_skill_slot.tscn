@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d3qrynyba4t0p"]
 
-[ext_resource type="Script" uid="uid://cpl5f7uunntxd" path="res://UI/active_skill_slot.gd" id="1_02jbl"]
+[ext_resource type="Script" uid="uid://bdw7uutgq4qwi" path="res://UI/active_skill_slot.gd" id="1_02jbl"]
 [ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="2_pgcsl"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jcs3y"]

@@ -1,0 +1,43 @@
+command="/c/Users/16085/Desktop/Godot_v4.6.1-stable_win64.exe" --path "E:/Projects/pinball_rogue/.claude/worktrees/architecture-review" --quit-after 3
+recorded_at=2026-07-18T15:22:39+08:00
+Godot Engine v4.6.1.stable.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 596.49 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 4070
+
+WARNING: res://UI/item_tooltip.tscn:3 - ext_resource, invalid UID: uid://claltvuvxjqqy - using text path instead: res://UI/item_tooltip.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://Skills/Dash/dash_skill_definition.tres:3 - ext_resource, invalid UID: uid://dclhr37w33nha - using text path instead: res://Skills/skill_definition.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://UI/floating_text.tscn:3 - ext_resource, invalid UID: uid://bs7xbrcu7mmck - using text path instead: res://UI/floating_text.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://UI/burn_floating_text.tscn:3 - ext_resource, invalid UID: uid://dq5xum5c3t5ui - using text path instead: res://UI/floating_text.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://UI/node_choice_panel.tscn:3 - ext_resource, invalid UID: uid://d3pq0vhu422qh - using text path instead: res://UI/node_choice_panel.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://UI/draft_reward_panel.tscn:3 - ext_resource, invalid UID: uid://48i1f34wpeay - using text path instead: res://UI/draft_reward_panel.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://UI/draft_reward_panel.tscn:7 - ext_resource, invalid UID: uid://blctx7unse4cs - using text path instead: res://UI/skill_replace_dialog.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://UI/battle_health_hud.tscn:3 - ext_resource, invalid UID: uid://hjovqtcmwm3b - using text path instead: res://UI/battle_health_hud.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://UI/floor_hud.tscn:3 - ext_resource, invalid UID: uid://cv1rgntgh0gx5 - using text path instead: res://UI/floor_hud.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://UI/inventory_panel.tscn:3 - ext_resource, invalid UID: uid://bdx7lt0b5vbid - using text path instead: res://UI/inventory_panel.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://DevilShop/devil_shop.tscn:3 - ext_resource, invalid UID: uid://bn2qbe5u22bcw - using text path instead: res://DevilShop/devil_shop.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://Enemies/enemy.tscn:7 - ext_resource, invalid UID: uid://cg78cc0m0feu5 - using text path instead: res://Buffs/buff_host.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://Enemies/enemy.tscn:10 - ext_resource, invalid UID: uid://dof4mkgah0wm0 - using text path instead: res://Enemies/physics_states/frozen_physics_state.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://Main/main.tscn:4 - ext_resource, invalid UID: uid://hjovqtcmwm3b - using text path instead: res://UI/battle_health_hud.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://Main/main.tscn:5 - ext_resource, invalid UID: uid://bokfa0c1usqvw - using text path instead: res://UI/pause_panel.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://UI/active_skill_slot.tscn:3 - ext_resource, invalid UID: uid://cpl5f7uunntxd - using text path instead: res://UI/active_skill_slot.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://Main/main.tscn:7 - ext_resource, invalid UID: uid://cpl5f7uunntxd - using text path instead: res://UI/active_skill_slot.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://Main/main.tscn:8 - ext_resource, invalid UID: uid://dw0mlxayubf41 - using text path instead: res://Skills/skill_controller.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+
+exit_code=0

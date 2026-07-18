@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://dswyin2csgpeb"]
 
-[ext_resource type="Script" uid="uid://d3pq0vhu422qh" path="res://UI/node_choice_panel.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://ccdngv3yeudy5" path="res://UI/node_choice_panel.gd" id="1_script"]
 [ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="2_label_settings"]
 
 [node name="NodeChoicePanel" type="Control" unique_id=1365636953]

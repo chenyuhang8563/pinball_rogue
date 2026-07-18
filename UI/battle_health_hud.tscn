@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://bbpoxb65e2l6d"]
 
-[ext_resource type="Script" uid="uid://hjovqtcmwm3b" path="res://UI/battle_health_hud.gd" id="1_hud"]
+[ext_resource type="Script" uid="uid://chim3ilwxgpw0" path="res://UI/battle_health_hud.gd" id="1_hud"]
 [ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="2_label"]
 [ext_resource type="PackedScene" uid="uid://c4sf4r73fwjvw" path="res://Items/heart.tscn" id="3_heart"]
 [ext_resource type="Texture2D" uid="uid://du2jk7gtqvcd1" path="res://Assets/Items/Coin.png" id="4_coin"]

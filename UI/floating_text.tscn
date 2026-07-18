@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://b8u1xi3vix7m"]
 
-[ext_resource type="Script" uid="uid://bs7xbrcu7mmck" path="res://UI/floating_text.gd" id="1_rodqu"]
+[ext_resource type="Script" uid="uid://5u0k16edxtu2" path="res://UI/floating_text.gd" id="1_rodqu"]
 [ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="2_qt5hr"]
 
 [node name="FloatingText" type="Node2D" unique_id=560581050]

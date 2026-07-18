@@ -1,0 +1,132 @@
+command="/c/Users/16085/Desktop/Godot_v4.6.1-stable_win64.exe" -d -s addons/gut/gut_cmdln.gd --path "E:/Projects/pinball_rogue/.claude/worktrees/architecture-review" -gdir=res://tests -gexit -glog=1 -gconfig=
+recorded_at=2026-07-18T15:23:06+08:00
+Godot Engine v4.6.1.stable.official.14d19694e - https://godotengine.org
+OpenGL API 3.3.0 NVIDIA 596.49 - Compatibility - Using Device: NVIDIA - NVIDIA GeForce RTX 4070
+
+WARNING: res://addons/gut/GutScene.tscn:3 - ext_resource, invalid UID: uid://bw7tukh738kw1 - using text path instead: res://addons/gut/GutScene.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+   GDScript backtrace (most recent call first):
+       [0] @static_initializer (res://addons/gut/utils.gd:61)
+       [1] _static_init (res://addons/gut/gut_loader.gd:40)
+       [2] @static_initializer (res://addons/gut/gut_loader.gd:1)
+       [3] _init (res://addons/gut/gut_cmdln.gd:23)
+WARNING: res://addons/gut/gui/NormalGui.tscn:4 - ext_resource, invalid UID: uid://blvhsbnsvfyow - using text path instead: res://addons/gut/gui/gut_gui.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+   GDScript backtrace (most recent call first):
+       [0] @static_initializer (res://addons/gut/utils.gd:61)
+       [1] _static_init (res://addons/gut/gut_loader.gd:40)
+       [2] @static_initializer (res://addons/gut/gut_loader.gd:1)
+       [3] _init (res://addons/gut/gut_cmdln.gd:23)
+WARNING: res://addons/gut/gui/ResizeHandle.tscn:3 - ext_resource, invalid UID: uid://duf6rfdqr6yoc - using text path instead: res://addons/gut/gui/ResizeHandle.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+   GDScript backtrace (most recent call first):
+       [0] @static_initializer (res://addons/gut/utils.gd:61)
+       [1] _static_init (res://addons/gut/gut_loader.gd:40)
+       [2] @static_initializer (res://addons/gut/gut_loader.gd:1)
+       [3] _init (res://addons/gut/gut_cmdln.gd:23)
+WARNING: res://addons/gut/gui/MinGui.tscn:5 - ext_resource, invalid UID: uid://blvhsbnsvfyow - using text path instead: res://addons/gut/gui/gut_gui.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+   GDScript backtrace (most recent call first):
+       [0] @static_initializer (res://addons/gut/utils.gd:61)
+       [1] _static_init (res://addons/gut/gut_loader.gd:40)
+       [2] @static_initializer (res://addons/gut/gut_loader.gd:1)
+       [3] _init (res://addons/gut/gut_cmdln.gd:23)
+WARNING: res://addons/gut/gui/RunExternally.tscn:3 - ext_resource, invalid UID: uid://bi8pg352un4om - using text path instead: res://addons/gut/gui/RunExternally.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+   GDScript backtrace (most recent call first):
+       [0] @static_initializer (res://addons/gut/utils.gd:66)
+       [1] _static_init (res://addons/gut/gut_loader.gd:40)
+       [2] @static_initializer (res://addons/gut/gut_loader.gd:1)
+       [3] _init (res://addons/gut/gut_cmdln.gd:23)
+WARNING: The signal "marble_fell" is declared but never explicitly used in the class.
+   at: GDScript::reload (res://Main/event.gd:7)
+WARNING: The signal "enemy_killed" is declared but never explicitly used in the class.
+   at: GDScript::reload (res://Main/event.gd:10)
+WARNING: The signal "wave_completed" is declared but never explicitly used in the class.
+   at: GDScript::reload (res://Main/event.gd:13)
+WARNING: The signal "chain_collision" is declared but never explicitly used in the class.
+   at: GDScript::reload (res://Main/event.gd:16)
+WARNING: The signal "run_node_completed" is declared but never explicitly used in the class.
+   at: GDScript::reload (res://Main/event.gd:19)
+WARNING: The signal "battle_started" is declared but never explicitly used in the class.
+   at: GDScript::reload (res://Main/event.gd:22)
+WARNING: The signal "battle_completed" is declared but never explicitly used in the class.
+   at: GDScript::reload (res://Main/event.gd:25)
+WARNING: The signal "run_completed" is declared but never explicitly used in the class.
+   at: GDScript::reload (res://Main/event.gd:28)
+WARNING: res://UI/item_tooltip.tscn:3 - ext_resource, invalid UID: uid://claltvuvxjqqy - using text path instead: res://UI/item_tooltip.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: Values of the ternary operator are not mutually compatible.
+   at: GDScript::reload (res://Marbles/marble_chain.gd:282)
+WARNING: res://Skills/Dash/dash_skill_definition.tres:3 - ext_resource, invalid UID: uid://dclhr37w33nha - using text path instead: res://Skills/skill_definition.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: Values of the ternary operator are not mutually compatible.
+   at: GDScript::reload (res://Stats/stat_system.gd:162)
+WARNING: res://UI/floating_text.tscn:3 - ext_resource, invalid UID: uid://bs7xbrcu7mmck - using text path instead: res://UI/floating_text.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://UI/burn_floating_text.tscn:3 - ext_resource, invalid UID: uid://dq5xum5c3t5ui - using text path instead: res://UI/floating_text.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+WARNING: res://addons/gut/gui/GutRunner.tscn:3 - ext_resource, invalid UID: uid://eg8k46gd42a4 - using text path instead: res://addons/gut/gui/GutRunner.gd
+   at: load (scene/resources/resource_format_text.cpp:500)
+   GDScript backtrace (most recent call first):
+       [0] @implicit_new (res://addons/gut/cli/gut_cli.gd:5)
+       [1] _init (res://addons/gut/gut_cmdln.gd:35)
+---  GUT  ---
+[1m[INFO]:  [0musing [C:/Users/16085/AppData/Roaming/Godot/app_userdata/RoguePinball] for temporary output.
+Godot version:  4.6.1
+GUT version:  9.6.0
+[4m
+
+res://tests/test_devil_shop_upgrade_offers.gd
+[0m* test_devil_shop_quotes_owned_items_at_higher_levels
+* test_devil_shop_jump_quote_uses_discounted_level_value_difference
+* test_devil_shop_filters_max_level_items_from_upgrade_quotes
+* test_unowned_items_use_full_price_and_public_grant_seam
+* test_different_skill_is_full_price_and_replacement_resets_old_level
+* test_unowned_items_at_full_capacity_are_not_quoted
+* test_devil_shop_deduplicates_candidates_by_item_identity
+[1m7/7 passed.
+[0m[4m
+
+res://tests/test_shop_upgrade_offers.gd
+[0m* test_normal_shop_quote_targets_next_owned_marble_level_without_discount
+* test_slot_displays_upgrade_quote_level_and_regular_price
+* test_purchase_upgrade_offer_spends_gold_and_upgrades_owned_item
+* test_normal_shop_quotes_owned_relic_and_skill_at_next_level_without_discount
+* test_normal_shop_generates_owned_upgrade_quotes_for_each_category
+* test_purchase_same_skill_upgrade_quote_keeps_equipped_skill_and_increases_level
+* test_normal_shop_keeps_and_sells_unowned_items
+* test_normal_shop_filters_maxed_item_and_backfills_from_other_candidates
+* test_slot_reports_regular_upgrade_and_discounted_states
+* test_upgrade_offer_rejects_item_removed_after_quote_generation
+* test_selling_marble_resets_progress_and_rebuilds_quote
+[1m11/11 passed.
+[0m[4m
+
+res://tests/test_skill_upgrade_system.gd
+[0m* test_skill_levels_match_the_requested_dash_and_missile_values
+* test_upgrade_candidates_include_owned_relic_marble_and_skill_then_apply_the_selected_type
+* test_reset_skill_level_discards_replaced_skill_progression
+* test_unknown_skill_is_not_upgradeable
+[1m4/4 passed.
+[0m
+
+
+
+[33m==============================================
+[0m[33m= Run Summary
+[0m[33m==============================================
+[0m
+Totals
+------
+Scripts               3
+Tests                22
+Passing Tests        22
+Asserts             160
+Time              0.515s
+
+
+[32m---- All tests passed! ----
+[0m
+
+exit_code=0

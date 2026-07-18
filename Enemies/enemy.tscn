@@ -1,13 +1,13 @@
-[gd_scene load_steps=6 format=3 uid="uid://cw0103st1p7ap"]
+[gd_scene format=3 uid="uid://cw0103st1p7ap"]
 
 [ext_resource type="Texture2D" uid="uid://dxyoaq8ier8ws" path="res://Enemies/red_marble.png" id="1_8hjb8"]
 [ext_resource type="Script" uid="uid://1kywgp3v2xwl" path="res://Enemies/enemy.gd" id="1_572h1"]
 [ext_resource type="Shader" uid="uid://xwfud13h1mq4" path="res://Enemies/enemy.gdshader" id="2_lawal"]
 [ext_resource type="Script" uid="uid://jos4pct5bhu0" path="res://Enemies/hit_flash.gd" id="4_fy0xy"]
-[ext_resource type="Script" uid="uid://cg78cc0m0feu5" path="res://Buffs/buff_host.gd" id="5_buff_host"]
+[ext_resource type="Script" uid="uid://dtm100r3y7utl" path="res://Buffs/buff_host.gd" id="5_buff_host"]
 [ext_resource type="Script" uid="uid://bukjyv5a1hx1x" path="res://Enemies/physics_states/physics_state_machine.gd" id="6_state_machine"]
 [ext_resource type="Script" uid="uid://bvlrskmccxcv3" path="res://Enemies/physics_states/normal_physics_state.gd" id="7_normal_state"]
-[ext_resource type="Script" uid="uid://dof4mkgah0wm0" path="res://Enemies/physics_states/frozen_physics_state.gd" id="8_frozen_state"]
+[ext_resource type="Script" uid="uid://c8erywcanalhd" path="res://Enemies/physics_states/frozen_physics_state.gd" id="8_frozen_state"]
 [ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="9_label"]
 
 [sub_resource type="ShaderMaterial" id="ShaderMaterial_l2g5i"]
