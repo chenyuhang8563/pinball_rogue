@@ -7,7 +7,7 @@
 | Phase | 状态 | 目标 | 关键验收 |
 | --- | --- | --- | --- |
 | 0 | **完成；本提交为 Phase 0 checkpoint** | 冻结运行图、依赖、Autoload、场景、UID 与测试基线。 | 初始 GUT 3/22/160；契约套件及 UID 修复后完整 GUT 4/24/196；图形主场景启动 smoke；未移动资源、未改变节点属性或业务行为。 |
-| 1 | 未开始 | 建立 Content 逻辑边界与 Commerce 首个垂直切片；普通店/恶魔店委托 scoped Session。 | 交易原子性、报价过期、容量、技能替换、重复结算有 GUT；旧脚本不再保留第二套报价/结算规则；Commerce domain/application 无 `Control`、`get_tree()`、`/root`。 |
+| 1 | **完成；本提交为 Phase 1 checkpoint** | 建立 Content 逻辑边界与 Commerce 首个垂直切片；普通店/恶魔店委托 scoped Session。 | 完整 GUT 9 scripts / 54 tests / 494 asserts；覆盖交易原子性、报价过期、容量、技能替换、出售、重复结算及真实 presentation delegation；旧迁移入口与第二套报价/结算规则清零；Commerce domain/application 无 `Control`、`get_tree()`、`/root`、`NodePath`。 |
 | 2 | 未开始 | 将持有物品、弹珠排列、容量、技能槽与成长迁入 Loadout 和 run-scoped 状态。 | 不从 Shop UI 读取领域顺序；不搜索 `RunController/MarbleUpgradeSystem`；删除旧 Inventory/升级 adapter 与对应 Autoload。 |
 | 3 | 未开始 | 拆分 RunState、RunFlowController、BattlePlanFactory、RewardService、EventResolver。 | RunController 只编排；所有节点类型路径只推进一次；验收前删除旧奖励、事件和流程实现。 |
 | 4 | 未开始 | 建立 BattleSession，并将敌人死亡、弹珠跌落/碰撞、战斗生命周期迁为局部 typed signals；退役 Event。 | 业务目录无 `/root/Event`；正常死亡/跌出、多敌人、重复信号均只完成一次战斗；Event bridge 归零。 |
@@ -25,14 +25,18 @@
 - 修复后的图形主场景运行 3 帧后 exit 0，日志无 `invalid UID`、`ERROR`、Parse、Missing Script/Resource（[原始日志](../testing/evidence/phase0-main-smoke-uid-fixed.log)）。这只证明启动 contract，不证明交互或完整流程。
 - headless 变体出现 shader compiler 条件 `ERROR`，不作为干净证据（[原始日志](../testing/evidence/phase0-main-smoke-headless.log)）。
 
+## Phase 1 实际证据
+
+- 新增 `Commerce/domain` 的身份、报价、定价和结果模型，以及 `Commerce/application` 的 Normal/Devil Session、PurchasePlan、出售服务和四个 current-state adapters；`Content/README.md` 仅锁定逻辑所有权，未移动 `Items/item.gd` 或既有资源。
+- `Shop` 与 `DevilShop` 只保留 presentation、依赖配置、意图转发和结果刷新；Slot 只发出稳定 `offer_id` 意图。Phase 1 使用过的 `purchase_*_with_dependencies`、`generate_upgrade_offers`、`grant_levelled_item`、`grant_offer_for_compat` 等迁移入口已在本 Phase 删除，生产与 tests 中调用者均为 0。
+- PurchasePlan 对 Inventory、Progression、Wallet、Health 快照后执行奖励/支付；任一步失败逆序恢复并区分 `COMMIT_FAILED` 与 `ROLLBACK_FAILED`。普通出售同样原子覆盖移除、成长重置和入账。
+- 完整 GUT：9 scripts / 54 tests / 494 asserts，exit 0；日志不含 ObjectDB、RID、orphan 或 resources-in-use 泄漏（[原始日志](../testing/evidence/phase1-gut.log)）。覆盖纯 Session、current adapters、真实 Shop Slot signal、真实 Shop 出售和 DevilShop confirm delegation。
+- 用户明确当前游戏流程无需随时可运行，优先完成重构和测试。因此 verify 记录为 **DEFERRED**：本 Phase 不声明 runtime PASS，真实游戏交互验证推迟到后续收敛阶段。
+- `Shop._grant_starting_marbles()` 仍直接修改当前 Inventory；它不是 Commerce 交易入口，登记为 Phase 2 Loadout 调用者迁移项。
+
 ## 工作树内长期未提交测试资产
 
-当前新增资产：
-
-- `tests/Integration/test_scene_contracts.gd`：2 个契约测试，当前 `git hash-object` 为 `f0f0c8b80709a18dad17adfd95f12ca7b1e781bb`；
-- `tests/Integration/test_scene_contracts.gd.uid`：`d67bcd4f71d0a260e011415436882c410ee0fa7a`；
-- `tests/test_devil_shop_upgrade_offers.gd.uid`：`001f8d7cd1a6fdecb5aa2cb380493753bfe323be`；
-- `tests/test_shop_upgrade_offers.gd.uid`：`c7ce8a47641760d36ad403cd75fa6bc9012e3c78`。
+当前工作树包含 24 个已修改或新增的测试脚本/UID 侧车；完整路径与 `git hash-object` 见 [Phase 1 未提交测试资产](../testing/phase1-test-assets.md)。其中包括迁移后的两份既有 Commerce characterization、`tests/Commerce/**` 和扩展后的 `tests/Integration/test_scene_contracts.gd`。
 
 上述文件及后续新增/更新/迁移的所有 `tests/**` 文件均保持可见且未提交，并在阶段台账更新路径与哈希。
 
@@ -50,7 +54,11 @@
 
 | 名称 | 创建 Phase | 调用者 | 删除条件 | 状态 |
 | --- | --- | --- | --- | --- |
-| 无 | — | — | — | Phase 0 未引入兼容层 |
+| Commerce current Inventory adapter | 1 | Normal/Devil Session、SaleService | Phase 2 切换 scoped Loadout 后删除 | 活跃，仅适配当前 Inventory，不保存第二份状态 |
+| Commerce current Progression adapter | 1 | Normal/Devil Session、SaleService | Phase 2 切换 ItemProgression 后删除 | 活跃，仅适配 MarbleUpgradeSystem |
+| Commerce current Wallet adapter | 1 | Normal/Devil Session、SaleService | Phase 2 切换 RunWallet 后删除 | 活跃，仅适配 Shop.gold |
+| Commerce current Health adapter | 1 | DevilShopSession | Phase 2 切换 RunHealth 后删除 | 活跃，仅适配 scoped 前的 StatSystem |
+| Phase 1 旧购买/发放 seam | 1 | 无 | Phase 1 验收前删除 | **已删除，调用者为 0** |
 
 ## 停止条件
 

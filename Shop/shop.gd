@@ -3,8 +3,14 @@ extends Control
 const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const UI_FONT_SIZE: int = 12
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
-const ShopOfferScript: GDScript = preload("res://Shop/shop_offer.gd")
-const ShopItemPolicyScript: GDScript = preload("res://Shop/shop_item_policy.gd")
+const NormalShopSessionScript: GDScript = preload("res://Commerce/application/normal_shop_session.gd")
+const NormalShopSaleServiceScript: GDScript = preload("res://Commerce/application/normal_shop_sale_service.gd")
+const CurrentInventoryAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_inventory_adapter.gd")
+const CurrentProgressionAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_progression_adapter.gd")
+const CurrentWalletAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_wallet_adapter.gd")
+const ItemIdentityScript: GDScript = preload("res://Commerce/domain/item_identity.gd")
+const NormalShopPricingScript: GDScript = preload("res://Commerce/domain/normal_shop_pricing.gd")
+const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
 const SHOP_SLOT_COUNT: int = 6
 
 signal gold_changed(value: int)
@@ -22,9 +28,18 @@ var gold: int = 0:
 	set(value):
 		gold = value
 		gold_changed.emit(value)
+		_refresh_slot_affordability()
 
-var _pending_skill_purchase: Item = null
-var _pending_skill_offer: Variant = null
+var normal_shop_session: RefCounted = null
+var normal_shop_sale_service: RefCounted = null
+var current_inventory_adapter: RefCounted = null
+var current_progression_adapter: RefCounted = null
+var current_wallet_adapter: RefCounted = null
+
+var _commerce_inventory: Node = null
+var _commerce_progression: Node = null
+var _commerce_quote_sources: Dictionary = {}
+var _pending_skill_offer_id: StringName = &""
 
 enum MODE {
 	ON,
@@ -105,230 +120,225 @@ func _apply_text() -> void:
 		_apply_button_label_settings(exit_button)
 
 func sell_item(item: Item) -> bool:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	return sell_item_with_dependencies(item, inventory, _get_marble_upgrade_system())
+	if normal_shop_sale_service == null and not _configure_from_runtime_fallback():
+		return false
+	return _sell_item(item)
 
 
-## 出售物品后同步清理其成长状态，并按最新库存重建报价。
-func sell_item_with_dependencies(item: Item, inventory: Node, marble_upgrade_system: Node) -> bool:
-	if item == null or item.type == Item.ItemType.SKILL:
+func _sell_item(item: Item) -> bool:
+	if normal_shop_sale_service == null or normal_shop_session == null:
 		return false
-	if inventory == null or not inventory.has_method("remove_item"):
+	var result: RefCounted = normal_shop_sale_service.call("sell", item)
+	if int(result.get("code")) != PurchaseResultScript.Code.SUCCESS \
+			or not bool(result.get("committed")):
+		_handle_failed_result(result)
 		return false
-	if not bool(inventory.call("remove_item", item)):
-		return false
-	if item.type == Item.ItemType.MARBLE and marble_upgrade_system != null \
-			and marble_upgrade_system.has_method("reset_marble_level"):
-		marble_upgrade_system.call("reset_marble_level", item.marble_type)
-	gold += get_sell_price(item)
-	if not shop_item_pool.is_empty():
-		set_upgrade_offers(generate_upgrade_offers(shop_item_pool, inventory, marble_upgrade_system))
+	normal_shop_session.call("invalidate_snapshot")
+	_regenerate_from_pool(true)
 	refresh_collection_rows()
 	return true
 
-func buy_item(item: Item) -> bool:
-	return purchase_item(item)
+
+func configure(inventory: Node, progression: Node) -> bool:
+	return _configure_commerce(inventory, progression)
 
 
-## 为已拥有物品创建原价、升一级的升级报价。
-func create_upgrade_offer(item: Item, inventory: Node, marble_upgrade_system: Node):
-	var owned_item := _find_owned_matching_item(item, inventory)
-	if owned_item == null or marble_upgrade_system == null:
+func _configure_commerce(inventory: Node, marble_upgrade_system: Node) -> bool:
+	if inventory == null or marble_upgrade_system == null:
+		return false
+	if normal_shop_session != null or normal_shop_sale_service != null:
+		return normal_shop_session != null and normal_shop_sale_service != null \
+			and inventory == _commerce_inventory \
+			and marble_upgrade_system == _commerce_progression
+	_commerce_inventory = inventory
+	_commerce_progression = marble_upgrade_system
+	current_inventory_adapter = CurrentInventoryAdapterScript.new(inventory)
+	current_progression_adapter = CurrentProgressionAdapterScript.new(
+		marble_upgrade_system,
+		current_inventory_adapter
+	)
+	current_wallet_adapter = CurrentWalletAdapterScript.new(
+		self,
+		Callable(self, "_quote_commerce_item"),
+		Callable(self, "get_sell_price")
+	)
+	normal_shop_session = NormalShopSessionScript.new()
+	normal_shop_sale_service = NormalShopSaleServiceScript.new()
+	var session_configured := bool(normal_shop_session.call(
+		"configure",
+		current_inventory_adapter,
+		current_progression_adapter,
+		current_wallet_adapter
+	))
+	var sale_configured := bool(normal_shop_sale_service.call(
+		"configure",
+		current_inventory_adapter,
+		current_progression_adapter,
+		current_wallet_adapter
+	))
+	var configured := session_configured and sale_configured
+	if not configured:
+		normal_shop_session = null
+		normal_shop_sale_service = null
+	return configured
+
+
+func _configure_from_runtime_fallback() -> bool:
+	var inventory: Node = _get_autoload_node(&"Inventory")
+	var progression: Node = _get_marble_upgrade_system()
+	return _configure_commerce(inventory, progression)
+
+
+## Purchases an upgrade quote using the runtime dependencies resolved from the active run.
+func purchase_offer(offer: Variant) -> bool:
+	if offer == null:
+		return false
+	if normal_shop_session == null and not _configure_from_runtime_fallback():
+		return false
+	var offer_id := StringName(offer.get("offer_id"))
+	return offer_id != &"" and _purchase_offer_id(offer_id)
+
+
+func confirm_pending_skill_purchase() -> bool:
+	var offer_id := _pending_skill_offer_id
+	_pending_skill_offer_id = &""
+	if offer_id == &"" or normal_shop_session == null:
+		return false
+	if not bool(normal_shop_session.call("authorize_skill_replacement", offer_id)):
+		return false
+	return _purchase_offer_id(offer_id)
+
+
+func cancel_pending_skill_purchase() -> void:
+	_pending_skill_offer_id = &""
+	if skill_replace_dialog != null and skill_replace_dialog.is_request_pending():
+		skill_replace_dialog.cancel_replace_request()
+
+
+func _purchase_offer_id(offer_id: StringName) -> bool:
+	if normal_shop_session == null or offer_id == &"":
+		return false
+	var offer: Variant = _find_session_offer_by_id(offer_id)
+	var result: RefCounted = normal_shop_session.call("purchase", offer_id)
+	var code := int(result.get("code"))
+	if code == PurchaseResultScript.Code.SUCCESS and bool(result.get("committed")):
+		_pending_skill_offer_id = &""
+		_sync_presentation_from_session()
+		refresh_collection_rows()
+		return true
+	if code == PurchaseResultScript.Code.SKILL_REPLACEMENT_REQUIRED and offer != null:
+		_request_skill_replacement(offer_id, offer)
+		return false
+	_handle_failed_result(result)
+	return false
+
+
+func _request_skill_replacement(offer_id: StringName, offer: Variant) -> void:
+	_pending_skill_offer_id = offer_id
+	var current_skill: Item = null
+	if current_inventory_adapter != null:
+		current_skill = current_inventory_adapter.call("current_skill") as Item
+	if skill_replace_dialog != null:
+		skill_replace_dialog.request_replace(current_skill, offer.item)
+
+
+func _handle_failed_result(result: RefCounted) -> void:
+	if result == null:
+		_set_presentation_offers([])
+		return
+	match int(result.get("code")):
+		PurchaseResultScript.Code.STALE_SNAPSHOT, \
+		PurchaseResultScript.Code.OWNERSHIP_CHANGED, \
+		PurchaseResultScript.Code.LEVEL_CHANGED, \
+		PurchaseResultScript.Code.CAPACITY_CHANGED:
+			if shop_item_pool.is_empty():
+				_set_presentation_offers([])
+			else:
+				_regenerate_from_pool(false)
+		PurchaseResultScript.Code.INSUFFICIENT_FUNDS:
+			_refresh_slot_affordability()
+		PurchaseResultScript.Code.COMMIT_FAILED:
+			if bool(result.get("rollback_completed")):
+				_sync_balance_from_wallet()
+				_sync_presentation_from_session()
+				refresh_collection_rows()
+			else:
+				_set_presentation_offers([])
+		PurchaseResultScript.Code.ROLLBACK_FAILED:
+			_set_presentation_offers([])
+		PurchaseResultScript.Code.OFFER_CONSUMED:
+			_sync_presentation_from_session()
+		PurchaseResultScript.Code.UNKNOWN_OFFER, PurchaseResultScript.Code.NOT_CONFIGURED:
+			_set_presentation_offers([])
+		_:
+			_sync_presentation_from_session()
+
+
+func _sync_balance_from_wallet() -> void:
+	if current_wallet_adapter != null:
+		gold = int(current_wallet_adapter.call("balance"))
+
+
+func _regenerate_from_pool(regenerate_empty_pool: bool) -> void:
+	if normal_shop_session == null:
+		_set_presentation_offers([])
+		return
+	if shop_item_pool.is_empty() and not regenerate_empty_pool:
+		_set_presentation_offers([])
+		return
+	_set_commerce_quote_sources(shop_item_pool)
+	normal_shop_session.call("regenerate", shop_item_pool, SHOP_SLOT_COUNT)
+	_sync_presentation_from_session()
+
+
+func _find_session_offer_by_id(offer_id: StringName) -> Variant:
+	if normal_shop_session == null:
 		return null
-	if not marble_upgrade_system.has_method("can_upgrade_item"):
-		return null
-	if not bool(marble_upgrade_system.call("can_upgrade_item", owned_item, inventory)):
-		return null
-	var current_level := _get_item_level(owned_item, inventory, marble_upgrade_system)
-	if current_level <= 0:
-		return null
-	return ShopOfferScript.new(owned_item, current_level + 1, get_buy_price(item), true)
+	for offer: Variant in normal_shop_session.call("get_offers"):
+		if offer != null and StringName(offer.offer_id) == offer_id:
+			return offer
+	return null
 
 
-## 将候选转换成新商品或同一物品升级报价；满级同物不再出售。
-func create_shop_offer(item: Item, inventory: Node, marble_upgrade_system: Node):
-	if not _is_purchasable_item(item):
-		return null
-	if _find_owned_matching_item(item, inventory) == null:
-		return ShopOfferScript.new(item, 1, get_buy_price(item), false)
-	return create_upgrade_offer(item, inventory, marble_upgrade_system)
+func _sync_presentation_from_session() -> void:
+	if normal_shop_session == null:
+		_set_presentation_offers([])
+		return
+	var active_offers: Array = []
+	for offer: Variant in normal_shop_session.call("get_offers"):
+		if offer != null and not bool(offer.consumed):
+			active_offers.append(offer)
+	_set_presentation_offers(active_offers)
 
 
-## Replaces the normal-shop stock with upgrade quotes and preserves legacy item stock for other callers.
-func set_upgrade_offers(offers: Array) -> void:
-	cancel_pending_skill_purchase()
+func _set_presentation_offers(offers: Array) -> void:
 	shop_offers = offers.duplicate()
 	shop_items.clear()
-	for offer in shop_offers:
+	for offer: Variant in shop_offers:
 		if offer != null and offer.item != null:
 			shop_items.append(offer.item)
 	free_previous_slots()
 	load_shop_inventory()
 
 
-## Purchases an upgrade quote using the runtime dependencies resolved from the active run.
-func purchase_offer(offer: Variant) -> bool:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	var marble_upgrade_system: Node = _get_marble_upgrade_system()
-	return purchase_offer_with_dependencies(offer, inventory, marble_upgrade_system)
+func _set_commerce_quote_sources(candidates: Array) -> void:
+	_commerce_quote_sources.clear()
+	for value: Variant in candidates:
+		var candidate := value as Item
+		if candidate != null:
+			_commerce_quote_sources[ItemIdentityScript.key(candidate)] = candidate
 
 
-## 按报价购买新商品或升级，成功后同步移除同一索引的商品与报价。
-func purchase_offer_with_dependencies(offer: Variant, inventory: Node, marble_upgrade_system: Node) -> bool:
-	if offer == null or not shop_offers.has(offer) or inventory == null:
-		return false
-	if offer.item == null or offer.price > gold:
-		return false
-	if offer.is_upgrade:
-		if marble_upgrade_system == null:
-			return false
-		var owned_item := _find_owned_matching_item(offer.item, inventory)
-		if owned_item == null:
-			return false
-		if _get_item_level(owned_item, inventory, marble_upgrade_system) + 1 != offer.target_level:
-			return false
-		if not bool(marble_upgrade_system.call("upgrade_item", owned_item, inventory)):
-			return false
-	else:
-		if _find_owned_matching_item(offer.item, inventory) != null:
-			return false
-		if offer.item.type == Item.ItemType.SKILL and inventory.get("skill_item") != null:
-			_pending_skill_offer = offer
-			var current_skill := inventory.get("skill_item") as Item
-			if skill_replace_dialog != null:
-				skill_replace_dialog.request_replace(current_skill, offer.item)
-			return false
-		if inventory.has_method("can_add_item") and not bool(inventory.call("can_add_item", offer.item)):
-			return false
-		if not bool(inventory.call("add_item", offer.item)):
-			return false
-	gold -= offer.price
-	_remove_shop_offer(offer)
-	refresh_collection_rows()
-	return true
-
-
-func purchase_item(item: Item) -> bool:
-	if not _is_purchasable_item(item) or not shop_items.has(item):
-		return false
-
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null or not inventory.has_method("add_item"):
-		return false
-	var marble_upgrade_system: Node = _get_marble_upgrade_system() if item.type == Item.ItemType.MARBLE else null
-	return purchase_item_with_dependencies(item, inventory, marble_upgrade_system)
-
-
-func purchase_item_with_dependencies(item: Item, inventory: Node, marble_upgrade_system: Node = null) -> bool:
-	if not _is_purchasable_item(item) or not shop_items.has(item) or inventory == null:
-		return false
-	if item.type == Item.ItemType.SKILL:
-		return _request_skill_purchase(item, inventory)
-	if item.type == Item.ItemType.MARBLE and _inventory_has_marble_type(inventory, item.marble_type):
-		return _purchase_owned_marble(item, inventory, marble_upgrade_system)
-	if inventory.has_method("can_add_item") and not inventory.call("can_add_item", item):
-		if item.type == Item.ItemType.MARBLE:
-			print("弹珠槽位已满，无法获得")
-		return false
-	if not _spend_gold_for_item(item):
-		return false
-	if not inventory.call("add_item", item):
-		gold += get_buy_price(item)
-		return false
-
-	_remove_shop_item(item)
-	refresh_collection_rows()
-	return true
-
-
-func _purchase_owned_marble(item: Item, inventory: Node, marble_upgrade_system: Node) -> bool:
-	if marble_upgrade_system == null or not marble_upgrade_system.has_method("upgrade_item"):
-		return false
-	if not _spend_gold_for_item(item):
-		return false
-	if not bool(marble_upgrade_system.call("upgrade_item", item, inventory)):
-		gold += get_buy_price(item)
-		return false
-	_remove_shop_item(item)
-	refresh_collection_rows()
-	return true
-
-
-func _request_skill_purchase(item: Item, inventory: Node) -> bool:
-	if item == null or item.type != Item.ItemType.SKILL:
-		return false
-	if item.id != "" and inventory.has_method("has_item_id") and bool(inventory.call("has_item_id", item.id)):
-		return false
-	if get_buy_price(item) > gold:
-		return false
-	var current_skill: Item = inventory.get("skill_item") as Item
-	if current_skill == null:
-		if not inventory.call("add_item", item):
-			return false
-		gold -= get_buy_price(item)
-		_remove_shop_item(item)
-		refresh_collection_rows()
-		return true
-	_pending_skill_purchase = item
-	if skill_replace_dialog != null:
-		skill_replace_dialog.request_replace(current_skill, item)
-	return false
-
-
-func confirm_pending_skill_purchase() -> bool:
-	var pending_offer: Variant = _pending_skill_offer
-	_pending_skill_offer = null
-	var item: Item = pending_offer.item as Item if pending_offer != null else _pending_skill_purchase
-	_pending_skill_purchase = null
-	if item == null or not shop_items.has(item):
-		return false
-	if pending_offer != null and not shop_offers.has(pending_offer):
-		return false
-	var inventory := _get_autoload_node(&"Inventory")
-	if inventory == null or not inventory.has_method("replace_skill"):
-		return false
-	var price: int = int(pending_offer.price) if pending_offer != null else get_buy_price(item)
-	if price > gold:
-		return false
-	var previous_skill := inventory.get("skill_item") as Item
-	if not bool(inventory.call("replace_skill", item)):
-		return false
-	var marble_upgrade_system := _get_marble_upgrade_system()
-	if previous_skill != null and marble_upgrade_system != null and marble_upgrade_system.has_method("reset_skill_level"):
-		marble_upgrade_system.call("reset_skill_level", previous_skill.id)
-	gold -= price
-	if pending_offer != null:
-		_remove_shop_offer(pending_offer)
-	else:
-		_remove_shop_item(item)
-	refresh_collection_rows()
-	return true
-
-
-func cancel_pending_skill_purchase() -> void:
-	_pending_skill_purchase = null
-	_pending_skill_offer = null
-	if skill_replace_dialog != null and skill_replace_dialog.is_request_pending():
-		skill_replace_dialog.cancel_replace_request()
-
-
-func _spend_gold_for_item(item: Item) -> bool:
-	if item == null:
-		return false
-	var buy_price: int = get_buy_price(item)
-	if buy_price > gold:
-		return false
-
-	gold -= buy_price
-	return true
+func _quote_commerce_item(item: Item) -> int:
+	var source := _commerce_quote_sources.get(ItemIdentityScript.key(item), item) as Item
+	return get_buy_price(source)
 
 
 func get_buy_price(item: Item) -> int:
-	return _get_stat_price(item, "buy_price_multiplier", 1.0, true)
-
-
-func can_afford_item(item: Item) -> bool:
-	return item != null and gold >= get_buy_price(item)
+	return NormalShopPricingScript.quote(
+		item,
+		_get_stat_multiplier("buy_price_multiplier", 1.0)
+	)
 
 
 ## Returns whether the player can pay this quote's actual price.
@@ -337,20 +347,18 @@ func can_afford_offer(offer: Variant) -> bool:
 
 
 func get_sell_price(item: Item) -> int:
-	return _get_stat_price(item, "sell_price_multiplier", 0.5, false)
+	return NormalShopPricingScript.sell_quote(
+		item,
+		_get_stat_multiplier("sell_price_multiplier", 0.5)
+	)
 
 
-func _get_stat_price(item: Item, stat_id: String, fallback_multiplier: float, round_to_nearest: bool) -> int:
-	if item == null:
-		return 0
-
+func _get_stat_multiplier(stat_id: String, fallback_multiplier: float) -> float:
 	var multiplier: float = fallback_multiplier
 	var stat_system: Node = _get_autoload_node(&"StatSystem")
 	if stat_system != null and stat_system.has_method("get_stat"):
 		multiplier = float(stat_system.call("get_stat", stat_id, "player"))
-
-	var price: float = float(item.price) * multiplier
-	return max(0, roundi(price) if round_to_nearest else floori(price))
+	return multiplier
 
 func free_previous_slots():
 	if shop_container == null:
@@ -375,58 +383,40 @@ func load_shop_inventory():
 		var offer: Variant = shop_offers[offer_index] if offer_index < shop_offers.size() else null
 		if offer != null and shop_slot.has_method("set_offer"):
 			shop_slot.call("set_offer", offer)
+			if shop_slot.has_signal(&"purchase_requested"):
+				var purchase_callback := Callable(self, "_on_shop_slot_purchase_requested")
+				if not shop_slot.is_connected(&"purchase_requested", purchase_callback):
+					shop_slot.connect(&"purchase_requested", purchase_callback)
+			if shop_slot.has_method("set_affordable"):
+				shop_slot.call("set_affordable", can_afford_offer(offer))
 		else:
 			shop_slot.item = item
 
-func set_shop_inventory(list: Array[Item]):
-	cancel_pending_skill_purchase()
-	free_previous_slots()
-	shop_offers.clear()
-	shop_items = _filter_purchasable_items(list)
-	load_shop_inventory()
 
+func _on_shop_slot_purchase_requested(offer_id: StringName) -> void:
+	var offer: Variant = _find_session_offer_by_id(offer_id)
+	if offer != null:
+		purchase_offer(offer)
+
+
+func _refresh_slot_affordability() -> void:
+	if shop_container == null:
+		return
+	for slot: Node in shop_container.get_children():
+		if not slot.has_method("set_affordable"):
+			continue
+		var slot_offer: Variant = slot.get("offer")
+		slot.call("set_affordable", can_afford_offer(slot_offer))
 
 func refresh_shop_inventory() -> void:
 	if shop_item_pool.is_empty():
 		shop_item_pool = shop_items.duplicate()
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	set_upgrade_offers(generate_upgrade_offers(shop_item_pool, inventory, _get_marble_upgrade_system()))
-
-
-## 生成混合库存：新物品保留，已有物转成升级报价，满级同物过滤后由其他候选补位。
-func generate_upgrade_offers(candidates: Array, inventory: Node, marble_upgrade_system: Node) -> Array:
-	var available_offers: Array = []
-	for candidate_value in candidates:
-		var candidate := candidate_value as Item
-		if candidate == null:
-			continue
-		var offer: Variant = create_shop_offer(candidate, inventory, marble_upgrade_system)
-		if offer == null:
-			continue
-		var already_listed := false
-		for existing_offer in available_offers:
-			if _items_have_same_identity(existing_offer.item, offer.item):
-				already_listed = true
-				break
-		if not already_listed:
-			available_offers.append(offer)
-	var selected_offers: Array = []
-	for item_type: Item.ItemType in [Item.ItemType.RELIC, Item.ItemType.MARBLE, Item.ItemType.SKILL]:
-		var category_offers: Array = []
-		for offer in available_offers:
-			if offer.item.type == item_type:
-				category_offers.append(offer)
-		if not category_offers.is_empty():
-			selected_offers.append(category_offers.pick_random())
-	var remaining_offers: Array = []
-	for offer in available_offers:
-		if not selected_offers.has(offer):
-			remaining_offers.append(offer)
-	var target_count := mini(SHOP_SLOT_COUNT, available_offers.size())
-	while selected_offers.size() < target_count and not remaining_offers.is_empty():
-		selected_offers.append(remaining_offers.pop_at(randi_range(0, remaining_offers.size() - 1)))
-	selected_offers.shuffle()
-	return selected_offers
+	if normal_shop_session == null and not _configure_from_runtime_fallback():
+		_set_presentation_offers([])
+		return
+	_set_commerce_quote_sources(shop_item_pool)
+	normal_shop_session.call("regenerate", shop_item_pool, SHOP_SLOT_COUNT)
+	_sync_presentation_from_session()
 
 
 func set_initial_gold():
@@ -434,7 +424,8 @@ func set_initial_gold():
 
 
 func refresh_collection_rows() -> void:
-	var inventory: Node = _get_autoload_node(&"Inventory")
+	var inventory: Node = _commerce_inventory if _is_live_node(_commerce_inventory) \
+		else _get_autoload_node(&"Inventory")
 	if inventory == null:
 		_update_collection_icons(marble_box_container, [])
 		_update_collection_icons(relic_bar_container, [])
@@ -469,28 +460,13 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 			if item != null:
 				slot.set_meta("item", item)
 				_set_icon_view_texture(icon_view, item.icon)
-				_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item))
+				_set_icon_view_level(icon_view, _get_presentation_item_level(item))
 
 
-func _remove_shop_item(item: Item) -> void:
-	var index := shop_items.find(item)
-	if index == -1:
-		return
-	shop_items.remove_at(index)
-	free_previous_slots()
-	load_shop_inventory()
-
-
-func _remove_shop_offer(offer: Variant) -> void:
-	var offer_index := shop_offers.find(offer)
-	if offer_index == -1:
-		return
-	shop_offers.remove_at(offer_index)
-	var item_index := shop_items.find(offer.item)
-	if item_index != -1:
-		shop_items.remove_at(item_index)
-	free_previous_slots()
-	load_shop_inventory()
+func _get_presentation_item_level(item: Item) -> int:
+	if current_progression_adapter != null:
+		return int(current_progression_adapter.call("level_of", item))
+	return ItemLevelResolverScript.get_inventory_level(item)
 
 
 func _connect_collection_slot_inputs() -> void:
@@ -553,7 +529,8 @@ func _on_collection_slot_gui_input(event: InputEvent, slot: Node) -> void:
 
 
 func _grant_starting_marbles() -> void:
-	var inventory: Node = _get_autoload_node(&"Inventory")
+	var inventory: Node = _commerce_inventory if _is_live_node(_commerce_inventory) \
+		else _get_autoload_node(&"Inventory")
 	if inventory == null or not inventory.has_method("has_effect"):
 		return
 	if not inventory.call("has_effect", Item.EffectType.DARK_MARBLE):
@@ -562,7 +539,8 @@ func _grant_starting_marbles() -> void:
 
 
 func _connect_inventory() -> void:
-	var inventory: Node = _get_autoload_node(&"Inventory")
+	var inventory: Node = _commerce_inventory if _is_live_node(_commerce_inventory) \
+		else _get_autoload_node(&"Inventory")
 	if inventory == null or not inventory.has_signal(&"inventory_changed"):
 		return
 	var callable := Callable(self, "refresh_collection_rows")
@@ -633,42 +611,6 @@ func _connect_localization() -> void:
 
 func _on_locale_changed(_locale_code: String) -> void:
 	_apply_text()
-
-
-func _filter_purchasable_items(list: Array[Item]) -> Array[Item]:
-	var purchasable_items: Array[Item] = []
-	for item: Item in list:
-		if _is_purchasable_item(item):
-			purchasable_items.append(item)
-	return purchasable_items
-
-
-func _inventory_has_marble_type(inventory: Node, marble_type: Marble.MARBLE_TYPE) -> bool:
-	return _find_owned_matching_item_by_marble_type(inventory, marble_type) != null
-
-
-func _find_owned_matching_item(item: Item, inventory: Node) -> Item:
-	return ShopItemPolicyScript.find_owned_item(item, inventory)
-
-
-func _find_owned_matching_item_by_marble_type(inventory: Node, marble_type: Marble.MARBLE_TYPE) -> Item:
-	if inventory == null:
-		return null
-	var raw_marble_items: Variant = inventory.get("marble_items")
-	if not raw_marble_items is Array:
-		return null
-	for owned_item: Item in raw_marble_items as Array:
-		if owned_item != null and owned_item.type == Item.ItemType.MARBLE and owned_item.marble_type == marble_type:
-			return owned_item
-	return null
-
-
-func _items_have_same_identity(first: Item, second: Item) -> bool:
-	return ShopItemPolicyScript.has_same_identity(first, second)
-
-
-func _get_item_level(item: Item, inventory: Node, marble_upgrade_system: Node) -> int:
-	return ShopItemPolicyScript.get_level(item, inventory, marble_upgrade_system)
 
 
 func _is_purchasable_item(item: Item) -> bool:

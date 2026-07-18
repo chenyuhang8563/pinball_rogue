@@ -26,6 +26,20 @@ cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gu
 
 集成脚本当前包含两个场景契约测试：Main 的必要组合节点和关卡的生成/敌人容器（`tests/Integration/test_scene_contracts.gd:14-41`）。它是后续迁移期间的长期预期脏测试资产：每阶段必须以 `git hash-object tests/Integration/test_scene_contracts.gd` 对照 `f0f0c8b80709a18dad17adfd95f12ca7b1e781bb`；若哈希变化，必须在迁移台账登记原因、责任阶段和新的预期值，不能静默覆盖。
 
+## Phase 1 Commerce 证据
+
+Phase 1 收口后的递归完整 GUT 为 **9 scripts / 54 tests / 494 asserts，全通过，exit 0**。原始输出见 [phase1-gut.log](evidence/phase1-gut.log)；该日志不含 ObjectDB、RID、orphan 或 resources-in-use 泄漏。
+
+新增/迁移测试覆盖：
+
+- NormalShopSession 与 DevilShopSession 的稳定 offer ID、snapshot version、consumed、stale、容量、最低生命、overpay 和重复结算；
+- PurchasePlan 在 add/upgrade/debit/remove/reset/credit 的 mutation-after-failure 下完整恢复，以及 rollback failure 的明确结果；
+- 技能替换授权前无突变，成功后清除旧技能成长；
+- Current Inventory/Progression/Wallet/Health adapters 的真实节点映射和 snapshot/restore；
+- 真实 `Slot.purchase_requested → Shop → NormalShopSession`、真实 Shop 出售，以及 `DevilShop.confirm_purchase → select_payment/purchase` 的 presentation delegation。
+
+用户已明确当前阶段无需保证完整游戏流程随时可运行。因此这份 GUT 是测试证据，不是 runtime observation；verify 状态为 **DEFERRED**，不声明实际游戏交互 PASS。
+
 ## 当前覆盖范围
 
 已有 GUT 主要覆盖：

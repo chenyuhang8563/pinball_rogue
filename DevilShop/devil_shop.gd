@@ -2,8 +2,12 @@ extends Control
 class_name DevilShop
 
 const StatRegistryScript: GDScript = preload("res://Stats/stat_registry.gd")
-const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
-const ShopItemPolicyScript: GDScript = preload("res://Shop/shop_item_policy.gd")
+const DevilShopSessionScript: GDScript = preload("res://Commerce/application/devil_shop_session.gd")
+const CurrentInventoryAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_inventory_adapter.gd")
+const CurrentProgressionAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_progression_adapter.gd")
+const CurrentWalletAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_wallet_adapter.gd")
+const CurrentHealthAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_health_adapter.gd")
+const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
 const RUN_HEALTH_ENTITY_ID: String = "run:current"
 const PAYMENT_PAN_ANIMATION_REFERENCE_Y: float = 189.0
 
@@ -24,8 +28,15 @@ var offers: Array[DevilShopOffer] = []
 var current_offer_index: int = 0
 var gold_chips: int = 0
 var health_chips: int = 0
-var _marble_upgrade_system: Node
-var _pending_skill_offer: DevilShopOffer
+var devil_shop_session: RefCounted = DevilShopSessionScript.new()
+var current_inventory_adapter: RefCounted = null
+var current_progression_adapter: RefCounted = null
+var current_wallet_adapter: RefCounted = null
+var current_health_adapter: RefCounted = null
+
+var _wallet_source: Node = null
+var _pending_skill_offer_id: StringName = &""
+var _purchases_disabled: bool = false
 var _held_delta: int = 0
 var _scale_state: int = -1
 var _pending_scale_frame: int = -1
@@ -51,19 +62,29 @@ func _ready() -> void:
 	_rebase_payment_pan_animations()
 	_connect_buttons()
 	_apply_text()
-	_connect_battle_health_hud()
-	_refresh_battle_health_hud()
 	if _scale_sprite != null and not _scale_sprite.frame_changed.is_connected(_on_scale_frame_changed):
 		_scale_sprite.frame_changed.connect(_on_scale_frame_changed)
 	hide()
 
 
 func open_for_run(marble_upgrade_system: Node) -> void:
-	_marble_upgrade_system = marble_upgrade_system
-	_generate_offers()
+	_purchases_disabled = false
+	var inventory := _get_autoload_node(&"Inventory")
+	var shop := _get_autoload_node(&"Shop")
+	var stat_system := _get_autoload_node(&"StatSystem")
+	var opened: Array = []
+	if config != null and _configure_production_session(
+		inventory,
+		marble_upgrade_system,
+		shop,
+		stat_system
+	):
+		opened = devil_shop_session.call("open", config, config.item_pool) as Array
+	_set_offer_views(opened)
 	_reset_chips()
 	_connect_battle_health_hud()
 	_refresh_battle_health_hud()
+	offer_changed.emit(get_current_offer())
 	_refresh_ui()
 	show()
 	get_tree().paused = true
@@ -72,35 +93,12 @@ func open_for_run(marble_upgrade_system: Node) -> void:
 
 
 func close_shop() -> void:
-	_pending_skill_offer = null
+	_pending_skill_offer_id = &""
 	if _skill_dialog != null and _skill_dialog.is_request_pending():
 		_skill_dialog.cancel_replace_request()
 	hide()
 	get_tree().paused = false
 	closed.emit()
-
-
-## Generates full-price acquisition quotes and discounted upgrades up to level IV.
-func generate_upgrade_offers(inventory: Node, marble_upgrade_system: Node) -> Array[DevilShopOffer]:
-	offers.clear()
-	current_offer_index = 0
-	_marble_upgrade_system = marble_upgrade_system
-	if config == null or inventory == null or marble_upgrade_system == null:
-		return offers
-	var candidates := _get_eligible_upgrade_items(inventory)
-	while offers.size() < config.stock_count and not candidates.is_empty():
-		var item: Item = candidates.pick_random()
-		candidates.erase(item)
-		var owned_item := _find_owned_matching_item(item, inventory)
-		var is_upgrade := owned_item != null
-		var current_level := _get_item_level(inventory, owned_item) if is_upgrade else 0
-		var target_level := _pick_target_level_from(current_level)
-		if target_level <= current_level:
-			continue
-		var full_target_price := _get_level_price(item, target_level)
-		var quoted_price := full_target_price - _get_level_price(item, current_level) if is_upgrade else full_target_price
-		offers.append(DevilShopOffer.new(item, target_level, quoted_price, is_upgrade, full_target_price))
-	return offers
 
 
 func get_current_offer() -> DevilShopOffer:
@@ -127,8 +125,8 @@ func get_scale_state() -> ScaleState:
 
 
 func adjust_gold_chips(amount: int) -> void:
-	var shop: Node = _get_autoload_node(&"Shop")
-	var available_gold: int = int(shop.get("gold")) if shop != null else 0
+	var available_gold := int(current_wallet_adapter.call("balance")) \
+			if current_wallet_adapter != null else 0
 	var previous_value := gold_chips
 	gold_chips = clampi(gold_chips + amount, 0, available_gold)
 	_refresh_ui(gold_chips != previous_value)
@@ -136,7 +134,7 @@ func adjust_gold_chips(amount: int) -> void:
 
 func adjust_health_chips(amount: int) -> void:
 	var minimum_health: int = config.minimum_remaining_health if config != null else 1
-	var available_health: int = maxi(0, _get_run_health() - minimum_health)
+	var available_health: int = maxi(0, _current_health() - minimum_health)
 	var previous_value := health_chips
 	health_chips = clampi(health_chips + amount, 0, available_health)
 	_refresh_ui(health_chips != previous_value)
@@ -144,207 +142,203 @@ func adjust_health_chips(amount: int) -> void:
 
 func can_confirm_purchase() -> bool:
 	var offer := get_current_offer()
-	return offer != null and get_payment_value() >= offer.price and _can_grant_offer(offer)
+	if _purchases_disabled or offer == null or offer.offer_id == &"" \
+			or devil_shop_session == null or config == null \
+			or current_inventory_adapter == null or current_progression_adapter == null \
+			or current_wallet_adapter == null or current_health_adapter == null:
+		return false
+	if gold_chips < 0 or health_chips < 0 or get_payment_value() < offer.price:
+		return false
+	var wallet_balance := int(current_wallet_adapter.call("balance"))
+	if gold_chips > wallet_balance \
+			or not bool(current_wallet_adapter.call("can_debit", gold_chips)):
+		return false
+	var current_health := int(current_health_adapter.call("current"))
+	if current_health - health_chips < config.minimum_remaining_health:
+		return false
+	return bool(current_health_adapter.call("can_debit", health_chips))
 
 
 func confirm_purchase() -> bool:
 	var offer := get_current_offer()
-	if offer == null or not can_confirm_purchase():
+	if not can_confirm_purchase():
 		return false
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null:
+	var selected: RefCounted = devil_shop_session.call(
+		"select_payment",
+		offer.offer_id,
+		gold_chips,
+		health_chips
+	)
+	if not _result_is_success(selected):
+		return _handle_purchase_result(selected, offer)
+	var result: RefCounted = devil_shop_session.call("purchase", offer.offer_id)
+	return _handle_purchase_result(result, offer)
+
+
+func _configure_production_session(
+	inventory: Node,
+	progression: Node,
+	wallet: Node,
+	stat_system: Node
+) -> bool:
+	if inventory == null or progression == null or wallet == null or stat_system == null:
 		return false
-	if offer.item.type == Item.ItemType.SKILL and inventory.get("skill_item") != null:
-		var equipped_skill := inventory.get("skill_item") as Item
-		if not _items_have_same_identity(equipped_skill, offer.item):
-			_pending_skill_offer = offer
+	devil_shop_session = DevilShopSessionScript.new()
+	current_inventory_adapter = CurrentInventoryAdapterScript.new(inventory)
+	current_progression_adapter = CurrentProgressionAdapterScript.new(
+		progression,
+		current_inventory_adapter
+	)
+	current_wallet_adapter = CurrentWalletAdapterScript.new(wallet)
+	current_health_adapter = CurrentHealthAdapterScript.new(
+		stat_system,
+		StatRegistryScript.RUN_HEALTH,
+		RUN_HEALTH_ENTITY_ID,
+		config.minimum_remaining_health
+	)
+	_wallet_source = wallet
+	return bool(devil_shop_session.call(
+		"configure",
+		current_inventory_adapter,
+		current_progression_adapter,
+		current_wallet_adapter,
+		current_health_adapter
+	))
+func _set_offer_views(session_views: Array) -> void:
+	offers.clear()
+	for view: Variant in session_views:
+		var wrapper := DevilShopOffer.from_commerce(view)
+		if wrapper != null:
+			offers.append(wrapper)
+	current_offer_index = 0 if not offers.is_empty() else offers.size()
+
+
+func _sync_presentation_from_session() -> void:
+	if devil_shop_session == null:
+		_set_offer_views([])
+		return
+	_set_offer_views(devil_shop_session.call("get_offers") as Array)
+	var current: Variant = devil_shop_session.call("get_current_offer")
+	if current == null:
+		current_offer_index = offers.size()
+		return
+	var current_id := StringName(current.get("offer_id"))
+	current_offer_index = offers.size()
+	for index: int in offers.size():
+		if offers[index].offer_id == current_id:
+			current_offer_index = index
+			break
+
+
+func _find_offer_by_id(offer_id: StringName) -> DevilShopOffer:
+	for offer: DevilShopOffer in offers:
+		if offer.offer_id == offer_id:
+			return offer
+	return null
+
+
+func _handle_purchase_result(result: RefCounted, completed_offer: DevilShopOffer) -> bool:
+	if result == null:
+		return false
+	var code := int(result.get("code"))
+	match code:
+		PurchaseResultScript.Code.SKILL_REPLACEMENT_REQUIRED:
+			_pending_skill_offer_id = completed_offer.offer_id
+			var equipped_skill: Item = current_inventory_adapter.call("current_skill") as Item \
+					if current_inventory_adapter != null else null
 			if _skill_dialog != null:
-				_skill_dialog.request_replace(equipped_skill, offer.item)
+				_skill_dialog.request_replace(equipped_skill, completed_offer.item)
 			return false
-	return _complete_purchase(offer, false)
-
-
-func _complete_purchase(offer: DevilShopOffer, replace_skill: bool) -> bool:
-	if offer == null or offer != get_current_offer() or not can_confirm_purchase():
-		return false
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	var shop: Node = _get_autoload_node(&"Shop")
-	if inventory == null or shop == null:
-		return false
-	if not grant_levelled_item(inventory, offer, _marble_upgrade_system, replace_skill):
-		return false
-	shop.set("gold", int(shop.get("gold")) - gold_chips)
-	_set_run_health(_get_run_health() - health_chips)
-	var completed_offer := offer
-	current_offer_index += 1
+		PurchaseResultScript.Code.STALE_SNAPSHOT, \
+		PurchaseResultScript.Code.OWNERSHIP_CHANGED, \
+		PurchaseResultScript.Code.LEVEL_CHANGED, \
+		PurchaseResultScript.Code.CAPACITY_CHANGED:
+			_regenerate_after_invalid_offer()
+			return false
+		PurchaseResultScript.Code.INSUFFICIENT_FUNDS, \
+		PurchaseResultScript.Code.MINIMUM_HEALTH_VIOLATED, \
+		PurchaseResultScript.Code.INVALID_PAYMENT, \
+		PurchaseResultScript.Code.PAYMENT_NOT_SELECTED:
+			_refresh_after_failed_purchase(false)
+			return false
+		PurchaseResultScript.Code.COMMIT_FAILED:
+			if bool(result.get("rollback_completed")):
+				_refresh_after_failed_purchase(true)
+			else:
+				_disable_purchases_after_rollback_failure()
+			return false
+		PurchaseResultScript.Code.ROLLBACK_FAILED, PurchaseResultScript.Code.NOT_CONFIGURED:
+			_disable_purchases_after_rollback_failure()
+			return false
+		PurchaseResultScript.Code.OFFER_CONSUMED, PurchaseResultScript.Code.UNKNOWN_OFFER:
+			_refresh_after_failed_purchase(true)
+			return false
+		PurchaseResultScript.Code.SUCCESS:
+			if not bool(result.get("committed")):
+				return false
+		_:
+			_refresh_after_failed_purchase(false)
+			return false
+	_pending_skill_offer_id = &""
+	_sync_presentation_from_session()
 	_reset_chips()
 	purchase_completed.emit(completed_offer)
 	offer_changed.emit(get_current_offer())
-	if current_offer_index >= offers.size():
+	health_changed.emit(_current_health())
+	_refresh_battle_health_hud()
+	if get_current_offer() == null:
 		_status_text("DEVIL_SHOP_SOLD_OUT")
 	_refresh_ui()
 	return true
 
 
-## 发放报价物品并提升至目标等级；依赖参数用于测试及无 Autoload 的调用方。
-func grant_levelled_item(
-	inventory: Node,
-	offer: DevilShopOffer,
-	marble_upgrade_system: Node,
-	replace_skill: bool = false
-) -> bool:
-	if inventory == null or offer == null or offer.item == null or marble_upgrade_system == null:
-		return false
-	_marble_upgrade_system = marble_upgrade_system
-	if offer.target_level < 2 or offer.target_level > 4:
-		return false
-	var owned_item := _find_owned_matching_item(offer.item, inventory)
-	if owned_item == null:
-		if not _can_acquire_new_item(inventory, offer.item):
-			return false
-		if not _can_reach_target(inventory, offer.item, 1, offer.target_level):
-			return false
-	elif not _can_reach_target(inventory, owned_item, _get_item_level(inventory, owned_item), offer.target_level):
-		return false
-	if owned_item == null:
-		var equipped_skill := inventory.get("skill_item") as Item
-		if offer.item.type == Item.ItemType.SKILL and equipped_skill != null:
-			if not replace_skill or not bool(inventory.call("replace_skill", offer.item)):
-				return false
-			if marble_upgrade_system.has_method("reset_skill_level"):
-				marble_upgrade_system.call("reset_skill_level", equipped_skill.id)
-		elif not bool(inventory.call("add_item", offer.item)):
-			return false
-		owned_item = offer.item
-	while _get_item_level(inventory, owned_item) < offer.target_level:
-		if not bool(marble_upgrade_system.call("upgrade_item", owned_item, inventory)):
-			return false
-	return _get_item_level(inventory, owned_item) == offer.target_level
-
-
-func _generate_offers() -> void:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	generate_upgrade_offers(inventory, _marble_upgrade_system)
+func _regenerate_after_invalid_offer() -> void:
+	_pending_skill_offer_id = &""
+	if devil_shop_session != null and config != null:
+		devil_shop_session.call("open", config, config.item_pool)
+		_sync_presentation_from_session()
+	else:
+		_clear_session_offers()
+	_reset_chips()
 	offer_changed.emit(get_current_offer())
+	_refresh_battle_health_hud()
 	_refresh_ui()
 
 
-func _get_eligible_upgrade_items(inventory: Node) -> Array[Item]:
-	var result: Array[Item] = []
-	if config == null or inventory == null or _marble_upgrade_system == null:
-		return result
-	for candidate: Item in config.item_pool:
-		if candidate == null:
-			continue
-		var owned_item := _find_owned_matching_item(candidate, inventory)
-		var eligible_item: Item = null
-		if owned_item != null:
-			if _can_upgrade_item(inventory, owned_item):
-				eligible_item = owned_item
-		elif _can_acquire_new_item(inventory, candidate):
-			eligible_item = candidate
-		if eligible_item == null:
-			continue
-		var already_listed := false
-		for existing_item: Item in result:
-			if _items_have_same_identity(existing_item, eligible_item):
-				already_listed = true
-				break
-		if not already_listed:
-			result.append(eligible_item)
-	return result
+func _refresh_after_failed_purchase(sync_session_views: bool) -> void:
+	_pending_skill_offer_id = &""
+	if sync_session_views:
+		_sync_presentation_from_session()
+	_reset_chips()
+	if sync_session_views:
+		offer_changed.emit(get_current_offer())
+	_refresh_battle_health_hud()
+	_refresh_ui()
 
 
-func _find_owned_matching_item(candidate: Item, inventory: Node) -> Item:
-	return ShopItemPolicyScript.find_owned_item(candidate, inventory)
+func _disable_purchases_after_rollback_failure() -> void:
+	_pending_skill_offer_id = &""
+	_purchases_disabled = true
+	_clear_session_offers()
+	_reset_chips()
+	offer_changed.emit(null)
+	_refresh_battle_health_hud()
+	_refresh_ui()
 
 
-func _items_have_same_identity(first: Item, second: Item) -> bool:
-	return ShopItemPolicyScript.has_same_identity(first, second)
+func _clear_session_offers() -> void:
+	if devil_shop_session != null:
+		devil_shop_session.call("replace_offers", [])
+	_set_offer_views([])
 
 
-func _can_upgrade_item(inventory: Node, item: Item) -> bool:
-	if item == null or _marble_upgrade_system == null:
-		return false
-	return bool(_marble_upgrade_system.call("can_upgrade_item", item, inventory))
+func _result_is_success(result: RefCounted) -> bool:
+	return result != null \
+			and int(result.get("code")) == PurchaseResultScript.Code.SUCCESS
 
 
-func _can_acquire_new_item(inventory: Node, item: Item) -> bool:
-	if inventory == null or item == null or not _can_upgrade_item(inventory, item):
-		return false
-	if item.type == Item.ItemType.SKILL:
-		var equipped_skill := inventory.get("skill_item") as Item
-		if equipped_skill != null:
-			return not _items_have_same_identity(equipped_skill, item)
-		return inventory.has_method("can_add_item") and bool(inventory.call("can_add_item", item))
-	return inventory.has_method("can_add_item") and bool(inventory.call("can_add_item", item))
-
-
-func _can_reach_target(inventory: Node, item: Item, current_level: int, target_level: int) -> bool:
-	if item == null or current_level < 1 or target_level < 2 or target_level > 4:
-		return false
-	if current_level >= target_level:
-		return false
-	return _can_upgrade_item(inventory, item)
-
-
-func _pick_target_level_from(current_level: int) -> int:
-	if config == null:
-		return 0
-	var choices: Array[int] = []
-	for level: int in [2, 3, 4]:
-		if level > current_level and int(config.level_weights.get(level, 1)) > 0:
-			choices.append(level)
-	if choices.is_empty():
-		return 0
-	var total_weight := 0
-	for level: int in choices:
-		total_weight += int(config.level_weights.get(level, 1))
-	var roll := randi_range(1, total_weight)
-	for level: int in choices:
-		roll -= int(config.level_weights.get(level, 1))
-		if roll <= 0:
-			return level
-	return choices.back()
-
-
-func _get_level_price(item: Item, level: int) -> int:
-	if item == null or level <= 0:
-		return 0
-	var multiplier: float = float(config.level_price_multipliers.get(level, 1.0)) if config != null else 1.0
-	return roundi(item.price * multiplier)
-
-
-func _can_grant_offer(offer: DevilShopOffer) -> bool:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null or offer == null or offer.item == null:
-		return false
-	var owned_item := _find_owned_matching_item(offer.item, inventory)
-	if owned_item == null:
-		return _can_acquire_new_item(inventory, offer.item) \
-				and _can_reach_target(inventory, offer.item, 1, offer.target_level)
-	return _can_reach_target(inventory, owned_item, _get_item_level(inventory, owned_item), offer.target_level)
-
-
-func _get_item_level(inventory: Node, item: Item) -> int:
-	return ShopItemPolicyScript.get_level(item, inventory, _marble_upgrade_system)
-
-
-func _get_run_health() -> int:
-	var stat_system := _get_autoload_node(&"StatSystem")
-	if stat_system == null:
-		return 0
-	return int(stat_system.call("get_stat", StatRegistryScript.RUN_HEALTH, RUN_HEALTH_ENTITY_ID))
-
-
-func _set_run_health(value: int) -> void:
-	var stat_system := _get_autoload_node(&"StatSystem")
-	if stat_system == null:
-		return
-	stat_system.call("set_stat_base", RUN_HEALTH_ENTITY_ID, StatRegistryScript.RUN_HEALTH, float(maxi(0, value)))
-	if _battle_health_hud != null:
-		_battle_health_hud.set_health(_get_run_health())
-	health_changed.emit(_get_run_health())
+func _current_health() -> int:
+	return int(current_health_adapter.call("current")) if current_health_adapter != null else 0
 
 
 func _rebase_payment_pan_animations() -> void:
@@ -378,20 +372,20 @@ func _rebase_payment_pan_animations() -> void:
 
 
 func _connect_battle_health_hud() -> void:
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop == null or not shop.has_signal(&"gold_changed"):
+	if _wallet_source == null or not _wallet_source.has_signal(&"gold_changed"):
 		return
 	var callback := Callable(self, "_on_battle_health_hud_gold_changed")
-	if not shop.is_connected(&"gold_changed", callback):
-		shop.connect(&"gold_changed", callback)
+	if not _wallet_source.is_connected(&"gold_changed", callback):
+		_wallet_source.connect(&"gold_changed", callback)
 
 
 func _refresh_battle_health_hud() -> void:
 	if _battle_health_hud == null:
 		return
-	_battle_health_hud.set_health(_get_run_health())
-	var shop: Node = _get_autoload_node(&"Shop")
-	_battle_health_hud.set_gold(int(shop.get("gold")) if shop != null else 0)
+	_battle_health_hud.set_health(_current_health())
+	var gold := int(current_wallet_adapter.call("balance")) \
+			if current_wallet_adapter != null else 0
+	_battle_health_hud.set_gold(gold)
 
 
 func _on_battle_health_hud_gold_changed(value: int) -> void:
@@ -467,13 +461,19 @@ func _apply_chip_delta(delta: int) -> void:
 
 
 func _on_skill_replace_confirmed(_item: Item) -> void:
-	var offer := _pending_skill_offer
-	_pending_skill_offer = null
-	_complete_purchase(offer, true)
+	var offer_id := _pending_skill_offer_id
+	_pending_skill_offer_id = &""
+	if offer_id == &"" or devil_shop_session == null:
+		return
+	var offer := _find_offer_by_id(offer_id)
+	if offer == null or not bool(devil_shop_session.call("authorize_skill_replacement", offer_id)):
+		return
+	var result: RefCounted = devil_shop_session.call("purchase", offer_id)
+	_handle_purchase_result(result, offer)
 
 
 func _on_skill_replace_cancelled() -> void:
-	_pending_skill_offer = null
+	_pending_skill_offer_id = &""
 
 
 func _apply_text() -> void:

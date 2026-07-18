@@ -1,14 +1,15 @@
 extends Panel
 
-const SHOP_MODE_ON := 0
 const ItemTooltipScene: PackedScene = preload("res://UI/item_tooltip.tscn")
 
+signal purchase_requested(offer_id: StringName)
+
 var _is_affordable: bool = true
-var offer: ShopOffer = null
+var offer: RefCounted = null
 
 
 ## 将报价数据写入场景中已有节点；布局和显隐由场景动画负责。
-func set_offer(value: ShopOffer) -> void:
+func set_offer(value: RefCounted) -> void:
 	offer = value
 	item = value.item if value != null else null
 	if value == null:
@@ -76,7 +77,6 @@ func _refresh_offer_presentation() -> void:
 
 func _ready() -> void:
 		_connect_localization()
-		_connect_shop()
 		refresh_localized_content()
 		_refresh_affordability()
 
@@ -105,33 +105,15 @@ func _on_locale_changed(_locale_code: String) -> void:
 	refresh_localized_content()
 
 
-func _connect_shop() -> void:
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop == null or not shop.has_signal(&"gold_changed"):
-		return
-	var callback := Callable(self, "_on_gold_changed")
-	if not shop.is_connected(&"gold_changed", callback):
-		shop.connect(&"gold_changed", callback)
-
-
-func _on_gold_changed(_gold: int) -> void:
-	_refresh_affordability()
-
-
 func _refresh_affordability() -> void:
-	var shop: Node = _get_autoload_node(&"Shop")
-	var affordable: bool = false
-	if item != null:
-		if offer is DevilShopOffer:
-			affordable = true
-		elif offer != null and shop != null and shop.has_method("can_afford_offer"):
-			affordable = bool(shop.call("can_afford_offer", offer))
-		else:
-			affordable = shop == null or not shop.has_method("can_afford_item") or bool(shop.call("can_afford_item", item))
-	_is_affordable = affordable
 	var state_animation: AnimationPlayer = get_node_or_null("AffordabilityAnimation") as AnimationPlayer
 	if state_animation != null:
-		state_animation.play(&"affordable" if affordable else &"unaffordable")
+		state_animation.play(&"affordable" if _is_affordable else &"unaffordable")
+
+
+func set_affordable(value: bool) -> void:
+	_is_affordable = value
+	_refresh_affordability()
 
 func _on_gui_input(event) -> void:
 	if not event is InputEventMouseButton:
@@ -141,22 +123,12 @@ func _on_gui_input(event) -> void:
 	if not _is_affordable:
 		return
 
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop == null or shop.get("mode") != SHOP_MODE_ON:
+	if offer == null:
 		return
-
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null:
+	var raw_offer_id: Variant = offer.get("offer_id")
+	if raw_offer_id == null or String(raw_offer_id) == "":
 		return
-
-	if offer != null and shop.has_method("purchase_offer"):
-		if shop.call("purchase_offer", offer):
-			print("Bought " + item.title)
-		return
-	if shop.has_method("purchase_item"):
-		if shop.call("purchase_item", item):
-			print("Bought " + item.title)
-		return
+	purchase_requested.emit(StringName(raw_offer_id))
 
 
 func _get_autoload_node(node_name: StringName) -> Node:
