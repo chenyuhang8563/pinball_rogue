@@ -24,11 +24,25 @@ var projectile_parent_provider: Callable = Callable()
 
 var _executor: Node = null
 var _dash_damage_timer: Timer = null
+var _loadout: RefCounted = null
+var _progression: RefCounted = null
 
 const DASH_BUFF_SOURCE: String = "dash_skill_damage_buff"
 const STAT_ENTITY_MARBLE_CHAIN: String = "marble_chain"
 const STAT_DAMAGE_MULTIPLIER: String = "damage_multiplier"
 const StatModifierScript: GDScript = preload("res://Stats/stat_modifier.gd")
+
+
+func configure(loadout: RefCounted, progression: RefCounted) -> bool:
+	if not _has_port_api(loadout, [&"current_skill"]) \
+			or not _has_port_api(progression, [&"get_skill_values"]):
+		return false
+	_disconnect_port_signals()
+	_loadout = loadout
+	_progression = progression
+	_connect_port_signals()
+	_sync_from_loadout(true)
+	return true
 
 
 func _ready() -> void:
@@ -37,10 +51,9 @@ func _ready() -> void:
 	_dash_damage_timer.one_shot = true
 	_dash_damage_timer.timeout.connect(_clear_dash_damage_bonus)
 	add_child(_dash_damage_timer)
-	_connect_inventory()
+	_connect_port_signals()
 	_connect_battle_lifecycle()
-	_connect_upgrade_system()
-	_sync_from_inventory()
+	_sync_from_loadout()
 
 
 func _process(delta: float) -> void:
@@ -73,6 +86,7 @@ func _notification(what: int) -> void:
 
 
 func _exit_tree() -> void:
+	_disconnect_port_signals()
 	cancel_active_skill("exit_tree")
 	clear_projectiles()
 
@@ -246,22 +260,59 @@ func _free_executor() -> void:
 	_executor = null
 
 
-func _sync_from_inventory() -> void:
-	var inventory := _get_autoload_node(&"Inventory")
-	if inventory == null:
+func _sync_from_loadout(force: bool = false) -> void:
+	if _loadout == null or not is_instance_valid(_loadout):
+		_clear_equipped_skill()
 		return
-	var item: Item = inventory.get("skill_item") as Item
-	if item != null and (equipped_item == null or equipped_item.id != item.id):
+	var item: Item = _loadout.call("current_skill") as Item
+	if item == null:
+		_clear_equipped_skill()
+	elif force or equipped_item == null or equipped_item.id != item.id:
 		equip_skill(item)
 
 
-func _connect_inventory() -> void:
-	var inventory := _get_autoload_node(&"Inventory")
-	if inventory == null or not inventory.has_signal(&"inventory_changed"):
+func _clear_equipped_skill() -> void:
+	if equipped_item == null and definition == null and runtime == null and _executor == null:
 		return
-	var callback := Callable(self, "_sync_from_inventory")
-	if not inventory.is_connected(&"inventory_changed", callback):
-		inventory.connect(&"inventory_changed", callback)
+	cancel_active_skill("skill_removed")
+	_free_executor()
+	equipped_item = null
+	definition = null
+	runtime = null
+	_set_state(State.IDLE)
+	skill_changed.emit(null)
+	_emit_runtime_changed()
+
+
+func _connect_port_signals() -> void:
+	var slot_callback := Callable(self, "_on_skill_slot_changed")
+	if _loadout != null and is_instance_valid(_loadout) and _loadout.has_signal(&"skill_slot_changed") \
+			and not _loadout.is_connected(&"skill_slot_changed", slot_callback):
+		_loadout.connect(&"skill_slot_changed", slot_callback)
+	var progression_callback := Callable(self, "_on_skill_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"skill_progressed") \
+			and not _progression.is_connected(&"skill_progressed", progression_callback):
+		_progression.connect(&"skill_progressed", progression_callback)
+
+
+func _disconnect_port_signals() -> void:
+	var slot_callback := Callable(self, "_on_skill_slot_changed")
+	if _loadout != null and is_instance_valid(_loadout) and _loadout.has_signal(&"skill_slot_changed") \
+			and _loadout.is_connected(&"skill_slot_changed", slot_callback):
+		_loadout.disconnect(&"skill_slot_changed", slot_callback)
+	var progression_callback := Callable(self, "_on_skill_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"skill_progressed") \
+			and _progression.is_connected(&"skill_progressed", progression_callback):
+		_progression.disconnect(&"skill_progressed", progression_callback)
+
+
+func _on_skill_slot_changed(item: Item) -> void:
+	if item == null:
+		_clear_equipped_skill()
+	else:
+		equip_skill(item)
 
 
 func _connect_battle_lifecycle() -> void:
@@ -296,25 +347,15 @@ func _clear_dash_damage_bonus() -> void:
 		stat_system.call("remove_modifiers_by_source", STAT_ENTITY_MARBLE_CHAIN, DASH_BUFF_SOURCE)
 
 
-func _connect_upgrade_system() -> void:
-	var system := _get_upgrade_system()
-	if system == null or not system.has_signal(&"skill_upgraded"):
-		return
-	var callback := Callable(self, "_on_skill_upgraded")
-	if not system.is_connected(&"skill_upgraded", callback):
-		system.connect(&"skill_upgraded", callback)
-
-
-func _on_skill_upgraded(skill_id: String, _level: int) -> void:
+func _on_skill_progressed(skill_id: String, _level: int) -> void:
 	if equipped_item != null and equipped_item.id == skill_id:
 		equip_skill(equipped_item)
 
 
 func _apply_skill_upgrade_values(target: SkillDefinition) -> void:
-	var system := _get_upgrade_system()
-	if system == null or not system.has_method("get_skill_values"):
+	if _progression == null or not is_instance_valid(_progression):
 		return
-	var values: Variant = system.call("get_skill_values", target.id)
+	var values: Variant = _progression.call("get_skill_values", target.id)
 	if not values is Dictionary:
 		return
 	for property_name: String in (values as Dictionary).keys():
@@ -323,14 +364,13 @@ func _apply_skill_upgrade_values(target: SkillDefinition) -> void:
 				target.set(property_name, values[property_name])
 
 
-func _get_upgrade_system() -> Node:
-	var tree := get_tree()
-	if tree == null:
-		return null
-	var scene := tree.current_scene
-	if scene == null:
-		return null
-	return scene.get_node_or_null("RunController/MarbleUpgradeSystem")
+func _has_port_api(port: RefCounted, methods: Array[StringName]) -> bool:
+	if port == null or not is_instance_valid(port):
+		return false
+	for method: StringName in methods:
+		if not port.has_method(method):
+			return false
+	return true
 
 
 func _get_autoload_node(node_name: StringName) -> Node:

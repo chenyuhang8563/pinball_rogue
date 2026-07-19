@@ -33,6 +33,20 @@ var _button_icons: Array[TextureRect] = []
 var _title_label: Label
 var _button_row: HBoxContainer
 var _skill_replace_dialog: SkillReplaceDialog
+var _loadout: RefCounted = null
+var _progression: RefCounted = null
+var _wallet: RefCounted = null
+
+
+func configure(loadout: RefCounted, progression: RefCounted, wallet: RefCounted) -> bool:
+	if not _has_port_api(loadout, [&"find_owned", &"can_add", &"add", &"current_skill", &"replace_skill"]) \
+			or not _has_port_api(progression, [&"can_upgrade", &"upgrade_one", &"reset_skill"]) \
+			or not _has_port_api(wallet, [&"credit"]):
+		return false
+	_loadout = loadout
+	_progression = progression
+	_wallet = wallet
+	return true
 
 
 func _ready() -> void:
@@ -181,21 +195,26 @@ func choose_battle_reward(index: int) -> void:
 
 
 func _grant_item(item: Item) -> bool:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null or not inventory.has_method("add_item"):
+	if item == null or _loadout == null or not is_instance_valid(_loadout):
 		return false
-	if inventory.has_method("can_add_item") and not bool(inventory.call("can_add_item", item)):
-		return false
-	return bool(inventory.call("add_item", item))
+	var owned: Item = _loadout.call("find_owned", item) as Item
+	if owned != null:
+		return owned.type == Item.ItemType.RELIC \
+			and _progression != null and is_instance_valid(_progression) \
+			and bool(_progression.call("can_upgrade", owned)) \
+			and bool(_progression.call("upgrade_one", owned))
+	return bool(_loadout.call("can_add", item)) and bool(_loadout.call("add", item))
 
 
 func _can_add_item(item: Item) -> bool:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null:
+	if item == null or _loadout == null or not is_instance_valid(_loadout):
 		return false
-	if inventory.has_method("can_add_item"):
-		return bool(inventory.call("can_add_item", item))
-	return inventory.has_method("add_item")
+	var owned: Item = _loadout.call("find_owned", item) as Item
+	if owned != null:
+		return owned.type == Item.ItemType.RELIC \
+			and _progression != null and is_instance_valid(_progression) \
+			and bool(_progression.call("can_upgrade", owned))
+	return bool(_loadout.call("can_add", item))
 
 
 func _grant_gold_compensation() -> void:
@@ -203,9 +222,8 @@ func _grant_gold_compensation() -> void:
 
 
 func _grant_gold(amount: int) -> void:
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop != null:
-		shop.set("gold", int(shop.get("gold")) + amount)
+	if _wallet != null and is_instance_valid(_wallet):
+		_wallet.call("credit", amount)
 
 
 func _all_visible_rewards_blocked() -> bool:
@@ -316,8 +334,8 @@ func _choose_normal_reward(index: int) -> void:
 	if item == null:
 		return
 	if item.type == Item.ItemType.SKILL:
-		var inventory := _get_autoload_node(&"Inventory")
-		var current_skill: Item = inventory.get("skill_item") as Item if inventory != null else null
+		var current_skill: Item = _loadout.call("current_skill") as Item \
+			if _loadout != null and is_instance_valid(_loadout) else null
 		if current_skill != null:
 			_pending_normal_skill_index = index
 			if _skill_replace_dialog != null:
@@ -326,6 +344,12 @@ func _choose_normal_reward(index: int) -> void:
 	if _grant_item(item):
 		_normal_choice_resolved = true
 		reward_selected.emit(item)
+		_close_panel()
+	elif item.type == Item.ItemType.RELIC \
+			and _loadout != null and is_instance_valid(_loadout) \
+			and _loadout.call("find_owned", item) != null:
+		_normal_choice_resolved = true
+		_grant_gold_compensation()
 		_close_panel()
 
 
@@ -410,11 +434,13 @@ func _connect_skill_replace_dialog() -> void:
 func _on_normal_skill_replace_confirmed(item: Item) -> void:
 	if _pending_normal_skill_index < 0:
 		return
-	var inventory := _get_autoload_node(&"Inventory")
-	if inventory == null or not inventory.has_method("replace_skill"):
+	if _loadout == null or not is_instance_valid(_loadout):
 		_pending_normal_skill_index = -1
 		return
-	if bool(inventory.call("replace_skill", item)):
+	var previous_skill := _loadout.call("current_skill") as Item
+	if bool(_loadout.call("replace_skill", item)):
+		if previous_skill != null and _progression != null and is_instance_valid(_progression):
+			_progression.call("reset_skill", previous_skill.id)
 		_normal_choice_resolved = true
 		reward_selected.emit(item)
 		_pending_normal_skill_index = -1
@@ -457,6 +483,15 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null(NodePath(node_name))
+
+
+func _has_port_api(port: RefCounted, methods: Array[StringName]) -> bool:
+	if port == null or not is_instance_valid(port):
+		return false
+	for method: StringName in methods:
+		if not port.has_method(method):
+			return false
+	return true
 
 
 func _set_tree_paused(paused: bool) -> void:

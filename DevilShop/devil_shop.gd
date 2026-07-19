@@ -1,14 +1,8 @@
 extends Control
 class_name DevilShop
 
-const StatRegistryScript: GDScript = preload("res://Stats/stat_registry.gd")
 const DevilShopSessionScript: GDScript = preload("res://Commerce/application/devil_shop_session.gd")
-const CurrentInventoryAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_inventory_adapter.gd")
-const CurrentProgressionAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_progression_adapter.gd")
-const CurrentWalletAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_wallet_adapter.gd")
-const CurrentHealthAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_health_adapter.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
-const RUN_HEALTH_ENTITY_ID: String = "run:current"
 const PAYMENT_PAN_ANIMATION_REFERENCE_Y: float = 189.0
 
 signal closed
@@ -28,13 +22,13 @@ var offers: Array[DevilShopOffer] = []
 var current_offer_index: int = 0
 var gold_chips: int = 0
 var health_chips: int = 0
-var devil_shop_session: RefCounted = DevilShopSessionScript.new()
-var current_inventory_adapter: RefCounted = null
-var current_progression_adapter: RefCounted = null
-var current_wallet_adapter: RefCounted = null
-var current_health_adapter: RefCounted = null
+var devil_shop_session: RefCounted = null
 
-var _wallet_source: Node = null
+var _loadout: RefCounted = null
+var _progression: RefCounted = null
+var _wallet: RefCounted = null
+var _health: RefCounted = null
+var _configured: bool = false
 var _pending_skill_offer_id: StringName = &""
 var _purchases_disabled: bool = false
 var _held_delta: int = 0
@@ -67,22 +61,46 @@ func _ready() -> void:
 	hide()
 
 
-func open_for_run(marble_upgrade_system: Node) -> void:
+func _exit_tree() -> void:
+	_disconnect_port_signals()
+
+
+func configure(
+	loadout: RefCounted,
+	progression: RefCounted,
+	wallet: RefCounted,
+	health: RefCounted
+) -> bool:
+	if loadout == null or progression == null or wallet == null or health == null \
+			or not is_instance_valid(loadout) or not is_instance_valid(progression) \
+			or not is_instance_valid(wallet) or not is_instance_valid(health):
+		return false
+	var session: RefCounted = DevilShopSessionScript.new()
+	if not bool(session.call("configure", loadout, progression, wallet, health)):
+		return false
+	_disconnect_port_signals()
+	_loadout = loadout
+	_progression = progression
+	_wallet = wallet
+	_health = health
+	devil_shop_session = session
+	_configured = true
 	_purchases_disabled = false
-	var inventory := _get_autoload_node(&"Inventory")
-	var shop := _get_autoload_node(&"Shop")
-	var stat_system := _get_autoload_node(&"StatSystem")
+	_connect_port_signals()
+	_set_offer_views([])
+	_reset_chips()
+	_refresh_battle_health_hud()
+	return true
+
+
+func open_for_run() -> void:
+	_purchases_disabled = false
 	var opened: Array = []
-	if config != null and _configure_production_session(
-		inventory,
-		marble_upgrade_system,
-		shop,
-		stat_system
-	):
+	if _configured and devil_shop_session != null and config != null:
 		opened = devil_shop_session.call("open", config, config.item_pool) as Array
 	_set_offer_views(opened)
 	_reset_chips()
-	_connect_battle_health_hud()
+	_connect_port_signals()
 	_refresh_battle_health_hud()
 	offer_changed.emit(get_current_offer())
 	_refresh_ui()
@@ -125,15 +143,14 @@ func get_scale_state() -> ScaleState:
 
 
 func adjust_gold_chips(amount: int) -> void:
-	var available_gold := int(current_wallet_adapter.call("balance")) \
-			if current_wallet_adapter != null else 0
+	var available_gold := int(_wallet.call("balance")) if _wallet != null else 0
 	var previous_value := gold_chips
 	gold_chips = clampi(gold_chips + amount, 0, available_gold)
 	_refresh_ui(gold_chips != previous_value)
 
 
 func adjust_health_chips(amount: int) -> void:
-	var minimum_health: int = config.minimum_remaining_health if config != null else 1
+	var minimum_health := _minimum_remaining_health()
 	var available_health: int = maxi(0, _current_health() - minimum_health)
 	var previous_value := health_chips
 	health_chips = clampi(health_chips + amount, 0, available_health)
@@ -143,20 +160,19 @@ func adjust_health_chips(amount: int) -> void:
 func can_confirm_purchase() -> bool:
 	var offer := get_current_offer()
 	if _purchases_disabled or offer == null or offer.offer_id == &"" \
-			or devil_shop_session == null or config == null \
-			or current_inventory_adapter == null or current_progression_adapter == null \
-			or current_wallet_adapter == null or current_health_adapter == null:
+			or not _configured or devil_shop_session == null or config == null \
+			or _loadout == null or _progression == null or _wallet == null or _health == null:
 		return false
 	if gold_chips < 0 or health_chips < 0 or get_payment_value() < offer.price:
 		return false
-	var wallet_balance := int(current_wallet_adapter.call("balance"))
+	var wallet_balance := int(_wallet.call("balance"))
 	if gold_chips > wallet_balance \
-			or not bool(current_wallet_adapter.call("can_debit", gold_chips)):
+			or not bool(_wallet.call("can_debit", gold_chips)):
 		return false
-	var current_health := int(current_health_adapter.call("current"))
-	if current_health - health_chips < config.minimum_remaining_health:
+	var current_health := int(_health.call("current"))
+	if current_health - health_chips < _minimum_remaining_health():
 		return false
-	return bool(current_health_adapter.call("can_debit", health_chips))
+	return bool(_health.call("can_debit", health_chips))
 
 
 func confirm_purchase() -> bool:
@@ -175,35 +191,8 @@ func confirm_purchase() -> bool:
 	return _handle_purchase_result(result, offer)
 
 
-func _configure_production_session(
-	inventory: Node,
-	progression: Node,
-	wallet: Node,
-	stat_system: Node
-) -> bool:
-	if inventory == null or progression == null or wallet == null or stat_system == null:
-		return false
-	devil_shop_session = DevilShopSessionScript.new()
-	current_inventory_adapter = CurrentInventoryAdapterScript.new(inventory)
-	current_progression_adapter = CurrentProgressionAdapterScript.new(
-		progression,
-		current_inventory_adapter
-	)
-	current_wallet_adapter = CurrentWalletAdapterScript.new(wallet)
-	current_health_adapter = CurrentHealthAdapterScript.new(
-		stat_system,
-		StatRegistryScript.RUN_HEALTH,
-		RUN_HEALTH_ENTITY_ID,
-		config.minimum_remaining_health
-	)
-	_wallet_source = wallet
-	return bool(devil_shop_session.call(
-		"configure",
-		current_inventory_adapter,
-		current_progression_adapter,
-		current_wallet_adapter,
-		current_health_adapter
-	))
+
+
 func _set_offer_views(session_views: Array) -> void:
 	offers.clear()
 	for view: Variant in session_views:
@@ -244,8 +233,8 @@ func _handle_purchase_result(result: RefCounted, completed_offer: DevilShopOffer
 	match code:
 		PurchaseResultScript.Code.SKILL_REPLACEMENT_REQUIRED:
 			_pending_skill_offer_id = completed_offer.offer_id
-			var equipped_skill: Item = current_inventory_adapter.call("current_skill") as Item \
-					if current_inventory_adapter != null else null
+			var equipped_skill: Item = _loadout.call("current_skill") as Item \
+					if _loadout != null else null
 			if _skill_dialog != null:
 				_skill_dialog.request_replace(equipped_skill, completed_offer.item)
 			return false
@@ -284,7 +273,6 @@ func _handle_purchase_result(result: RefCounted, completed_offer: DevilShopOffer
 	_reset_chips()
 	purchase_completed.emit(completed_offer)
 	offer_changed.emit(get_current_offer())
-	health_changed.emit(_current_health())
 	_refresh_battle_health_hud()
 	if get_current_offer() == null:
 		_status_text("DEVIL_SHOP_SOLD_OUT")
@@ -338,7 +326,14 @@ func _result_is_success(result: RefCounted) -> bool:
 
 
 func _current_health() -> int:
-	return int(current_health_adapter.call("current")) if current_health_adapter != null else 0
+	return int(_health.call("current")) if _health != null else 0
+
+
+func _minimum_remaining_health() -> int:
+	var configured_minimum := config.minimum_remaining_health if config != null else 1
+	if _health != null and _health.has_method("minimum_remaining"):
+		return maxi(configured_minimum, int(_health.call("minimum_remaining")))
+	return configured_minimum
 
 
 func _rebase_payment_pan_animations() -> void:
@@ -371,26 +366,45 @@ func _rebase_payment_pan_animations() -> void:
 				)
 
 
-func _connect_battle_health_hud() -> void:
-	if _wallet_source == null or not _wallet_source.has_signal(&"gold_changed"):
-		return
-	var callback := Callable(self, "_on_battle_health_hud_gold_changed")
-	if not _wallet_source.is_connected(&"gold_changed", callback):
-		_wallet_source.connect(&"gold_changed", callback)
+func _connect_port_signals() -> void:
+	if _wallet != null and _wallet.has_signal(&"changed"):
+		var wallet_callback := Callable(self, "_on_wallet_changed")
+		if not _wallet.is_connected(&"changed", wallet_callback):
+			_wallet.connect(&"changed", wallet_callback)
+	if _health != null and _health.has_signal(&"changed"):
+		var health_callback := Callable(self, "_on_health_port_changed")
+		if not _health.is_connected(&"changed", health_callback):
+			_health.connect(&"changed", health_callback)
+
+
+func _disconnect_port_signals() -> void:
+	if _wallet != null and is_instance_valid(_wallet) and _wallet.has_signal(&"changed"):
+		var wallet_callback := Callable(self, "_on_wallet_changed")
+		if _wallet.is_connected(&"changed", wallet_callback):
+			_wallet.disconnect(&"changed", wallet_callback)
+	if _health != null and is_instance_valid(_health) and _health.has_signal(&"changed"):
+		var health_callback := Callable(self, "_on_health_port_changed")
+		if _health.is_connected(&"changed", health_callback):
+			_health.disconnect(&"changed", health_callback)
 
 
 func _refresh_battle_health_hud() -> void:
 	if _battle_health_hud == null:
 		return
 	_battle_health_hud.set_health(_current_health())
-	var gold := int(current_wallet_adapter.call("balance")) \
-			if current_wallet_adapter != null else 0
+	var gold := int(_wallet.call("balance")) if _wallet != null else 0
 	_battle_health_hud.set_gold(gold)
 
 
-func _on_battle_health_hud_gold_changed(value: int) -> void:
+func _on_wallet_changed(value: int) -> void:
 	if _battle_health_hud != null:
 		_battle_health_hud.set_gold(value)
+
+
+func _on_health_port_changed(value: int) -> void:
+	if _battle_health_hud != null:
+		_battle_health_hud.set_health(value)
+	health_changed.emit(value)
 
 
 func _reset_chips() -> void:
@@ -608,10 +622,3 @@ func _item_title(item: Item) -> String:
 	if item.skill_definition != null:
 		return tr(String(item.skill_definition.get("name_key")))
 	return tr("ITEM_%s_TITLE" % item.id.to_upper())
-
-
-func _get_autoload_node(node_name: StringName) -> Node:
-	var tree := Engine.get_main_loop() as SceneTree
-	if tree == null:
-		return null
-	return tree.root.get_node_or_null(NodePath(node_name))

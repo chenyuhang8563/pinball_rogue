@@ -26,6 +26,20 @@ var mode: MODE = MODE.OFF:
 
 var _upgrade_selection_active: bool = false
 var _upgrade_dialog: SkillReplaceDialog = null
+var _loadout: RefCounted = null
+var _progression: RefCounted = null
+
+
+func configure(loadout: RefCounted, progression: RefCounted) -> bool:
+	if not _has_port_api(loadout, [&"marbles", &"relics", &"skills"]) \
+			or not _has_port_api(progression, [&"level_of", &"can_upgrade"]):
+		return false
+	_disconnect_port_signals()
+	_loadout = loadout
+	_progression = progression
+	_connect_port_signals()
+	refresh_inventory()
+	return true
 
 
 func _ready() -> void:
@@ -36,9 +50,13 @@ func _ready() -> void:
 	_apply_text()
 	_apply_button_label_settings()
 	_setup_upgrade_dialog()
-	_connect_inventory()
+	_connect_port_signals()
 	refresh_inventory()
 	mode = MODE.OFF
+
+
+func _exit_tree() -> void:
+	_disconnect_port_signals()
 
 
 func _input(event: InputEvent) -> void:
@@ -75,17 +93,14 @@ func finish_upgrade_selection() -> void:
 
 
 func refresh_inventory() -> void:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null:
+	if _loadout == null or not is_instance_valid(_loadout):
 		_update_collection_icons(marble_box_container, [])
 		_update_collection_icons(relic_bar_container, [])
 		_update_skill_slots()
 		return
 
-	var raw_marble_items: Variant = inventory.get("marble_items")
-	var raw_relic_items: Variant = inventory.get("relic_items")
-	var marble_items: Array = raw_marble_items if raw_marble_items is Array else []
-	var relic_items: Array = raw_relic_items if raw_relic_items is Array else []
+	var marble_items: Array = _loadout.call("marbles") as Array
+	var relic_items: Array = _loadout.call("relics") as Array
 	_update_collection_icons(marble_box_container, marble_items)
 	_update_collection_icons(relic_bar_container, relic_items)
 	_update_skill_slots()
@@ -186,7 +201,7 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 		slot.set_meta("item", item)
 		_connect_slot(slot)
 		_set_icon_view_texture(icon_view, item.icon)
-		_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item))
+		_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item, _progression))
 
 
 func _update_skill_slots() -> void:
@@ -209,7 +224,7 @@ func _update_skill_slots() -> void:
 		if source.has("item"):
 			var item := source["item"] as Item
 			slot.set_meta("item", item)
-			_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item))
+			_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item, _progression))
 			_connect_slot(slot)
 
 
@@ -228,11 +243,9 @@ func _on_slot_gui_input(event: InputEvent, slot: Node) -> void:
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed or not slot.has_meta("item"):
 		return
 	var item := slot.get_meta("item") as Item
-	var system := _get_upgrade_system()
-	var inventory := _get_autoload_node(&"Inventory")
-	if item == null or system == null or not system.has_method("can_upgrade_item"):
+	if item == null or _progression == null or not is_instance_valid(_progression):
 		return
-	if not bool(system.call("can_upgrade_item", item, inventory)):
+	if not bool(_progression.call("can_upgrade", item)):
 		if _upgrade_dialog != null:
 			_upgrade_dialog.request_upgrade_unavailable(item)
 		return
@@ -262,22 +275,11 @@ func _set_upgrade_title() -> void:
 		title_label.text = tr("UI_UPGRADE_INVENTORY_TITLE")
 
 
-func _get_upgrade_system() -> Node:
-	var tree := get_tree()
-	if tree == null or tree.current_scene == null:
-		return null
-	return tree.current_scene.get_node_or_null("RunController/MarbleUpgradeSystem")
-
-
 func _get_skill_slot_sources() -> Array[Dictionary]:
 	var sources: Array[Dictionary] = []
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null:
+	if _loadout == null or not is_instance_valid(_loadout):
 		return sources
-	var raw_skill_items: Variant = inventory.get("skill_items")
-	if not raw_skill_items is Array:
-		return sources
-	for value: Variant in raw_skill_items:
+	for value: Variant in _loadout.call("skills") as Array:
 		var item := value as Item
 		if item != null:
 			sources.append({"icon": item.icon, "item": item})
@@ -327,13 +329,55 @@ func _get_icon_view_texture(icon_view: Node) -> Texture2D:
 	return null
 
 
-func _connect_inventory() -> void:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null or not inventory.has_signal(&"inventory_changed"):
-		return
-	var callable := Callable(self, "refresh_inventory")
-	if not inventory.is_connected(&"inventory_changed", callable):
-		inventory.connect(&"inventory_changed", callable)
+func _connect_port_signals() -> void:
+	var refresh_callback := Callable(self, "refresh_inventory")
+	if _loadout != null and is_instance_valid(_loadout) and _loadout.has_signal(&"changed") \
+			and not _loadout.is_connected(&"changed", refresh_callback):
+		_loadout.connect(&"changed", refresh_callback)
+	var item_callback := Callable(self, "_on_item_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"item_progressed") \
+			and not _progression.is_connected(&"item_progressed", item_callback):
+		_progression.connect(&"item_progressed", item_callback)
+	var skill_callback := Callable(self, "_on_skill_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"skill_progressed") \
+			and not _progression.is_connected(&"skill_progressed", skill_callback):
+		_progression.connect(&"skill_progressed", skill_callback)
+
+
+func _disconnect_port_signals() -> void:
+	var refresh_callback := Callable(self, "refresh_inventory")
+	if _loadout != null and is_instance_valid(_loadout) and _loadout.has_signal(&"changed") \
+			and _loadout.is_connected(&"changed", refresh_callback):
+		_loadout.disconnect(&"changed", refresh_callback)
+	var item_callback := Callable(self, "_on_item_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"item_progressed") \
+			and _progression.is_connected(&"item_progressed", item_callback):
+		_progression.disconnect(&"item_progressed", item_callback)
+	var skill_callback := Callable(self, "_on_skill_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"skill_progressed") \
+			and _progression.is_connected(&"skill_progressed", skill_callback):
+		_progression.disconnect(&"skill_progressed", skill_callback)
+
+
+func _on_item_progressed(_item: Item, _level: int, _awakened: bool) -> void:
+	refresh_inventory()
+
+
+func _on_skill_progressed(_skill_id: String, _level: int) -> void:
+	refresh_inventory()
+
+
+func _has_port_api(port: RefCounted, methods: Array[StringName]) -> bool:
+	if port == null or not is_instance_valid(port):
+		return false
+	for method: StringName in methods:
+		if not port.has_method(method):
+			return false
+	return true
 
 
 func _get_autoload_node(node_name: StringName) -> Node:

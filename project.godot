@@ -19,8 +19,6 @@ config/icon="res://icon.svg"
 
 Event="*uid://drugq0ej64rno"
 Localization="*res://Localization/localization.gd"
-Shop="*uid://fjioorpo70mx"
-Inventory="*uid://dt1roo6rgl6kg"
 EffectManager="*res://Effects/effect_manager.gd"
 EffectRegistry="*res://Items/effect_registry.gd"
 GameExecutor="*uid://7yjc3ixh2laf"

@@ -13,7 +13,6 @@ const BattleGroupDefScript: GDScript = preload("res://Run/battle_group_def.gd")
 const RunNodeOptionScript: GDScript = preload("res://Run/run_node_option.gd")
 const BattleSpawnerScript: GDScript = preload("res://Run/battle_spawner.gd")
 const StatRegistryScript: GDScript = preload("res://Stats/stat_registry.gd")
-const MarbleUpgradeSystemScript: GDScript = preload("res://Run/marble_upgrade_system.gd")
 const BattleRewardOptionScript: GDScript = preload("res://Run/battle_reward_option.gd")
 const DefaultBattleRewardConfig: Resource = preload("res://Run/default_battle_reward_config.tres")
 const DefaultRunFloorConfig: RunFloorConfig = preload("res://Run/default_run_floor_config.tres")
@@ -43,7 +42,6 @@ const NORMAL_BATTLE_GOLD_MIN: int = 15
 const NORMAL_BATTLE_GOLD_MAX: int = 20
 const ELITE_BATTLE_GOLD_MIN: int = 35
 const ELITE_BATTLE_GOLD_MAX: int = 40
-const RUN_HEALTH_ENTITY_ID: String = "run:current"
 const WEAK_ENEMY_BASE_HEALTH: int = 15
 const STRONG_ENEMY_BASE_HEALTH: int = 40
 const ENEMY_HEALTH_PER_NODE: int = 5
@@ -68,25 +66,54 @@ var run_is_complete: bool = false
 var run_is_failed: bool = false
 var reset_battle_state_callable: Callable = Callable()
 var battle_is_active: bool = false
-var marble_upgrade_system: Node
 var active_level_scene: Node = null
 var event_roll_callable: Callable = Callable()
 var dice_roll_callable: Callable = Callable()
 
+var _run_scope: RunScope = null
+var _loadout: RefCounted = null
+var _progression: RefCounted = null
+var _wallet: RefCounted = null
+var _health: RefCounted = null
+var _normal_shop: Node = null
 var _active_event_id: String = ""
 var _event_wager_resolved: bool = false
 
 
+func configure(run_scope: RunScope, normal_shop: Node) -> bool:
+	if run_scope == null or not is_instance_valid(run_scope) \
+			or not run_scope.is_initialized() or normal_shop == null \
+			or not is_instance_valid(normal_shop):
+		return false
+	if run_scope.loadout == null or run_scope.progression == null \
+			or run_scope.wallet == null or run_scope.health == null:
+		return false
+	_disconnect_scope_signals()
+	_run_scope = run_scope
+	_loadout = run_scope.loadout
+	_progression = run_scope.progression
+	_wallet = run_scope.wallet
+	_health = run_scope.health
+	_normal_shop = normal_shop
+	_connect_scope_signals()
+	return _loadout != null and _progression != null and _wallet != null and _health != null
+
+
 func _ready() -> void:
 	_ensure_battle_spawner()
-	_ensure_marble_upgrade_system()
 	_connect_event_bus()
 	_connect_panels()
+	_connect_scope_signals()
+
+
+func _exit_tree() -> void:
+	_disconnect_scope_signals()
 
 
 func start_run() -> void:
+	if _run_scope == null or not _run_scope.reset_for_run():
+		return
 	_ensure_battle_spawner()
-	_ensure_marble_upgrade_system()
 	_connect_panels()
 	current_node_index = 0
 	choice_wave_index = 0
@@ -95,9 +122,7 @@ func start_run() -> void:
 	battle_is_active = false
 	_active_event_id = ""
 	_event_wager_resolved = false
-	marble_upgrade_system.call("reset_upgrades")
 	_connect_event_bus()
-	_reset_run_health()
 	run_health_changed.emit(_get_run_health())
 	_start_next_node()
 
@@ -279,12 +304,11 @@ func _show_random_event() -> void:
 	_active_event_id = _roll_event_id()
 	_event_wager_resolved = false
 	if _active_event_id == EVENT_DICE_ID:
-		var shop: Node = _get_autoload_node(&"Shop")
-		if shop == null or not event_panel.has_method("show_dice_event"):
+		if _wallet == null or not event_panel.has_method("show_dice_event"):
 			_active_event_id = ""
 			_start_next_node()
 			return
-		event_panel.call("show_dice_event", int(shop.get("gold")))
+		event_panel.call("show_dice_event", int(_wallet.call("balance")))
 		return
 
 	if event_panel.has_method("show_crossroads_event"):
@@ -311,24 +335,25 @@ func _on_event_wager_requested(cost: int, reward: int) -> void:
 	if cost <= 0 or reward < 0:
 		return
 
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop == null:
+	if _wallet == null:
 		_on_event_finished()
 		return
 
-	var gold_before: int = int(shop.get("gold"))
-	if gold_before < cost:
+	var gold_before := int(_wallet.call("balance"))
+	if not bool(_wallet.call("can_debit", cost)):
 		if event_panel != null and event_panel.has_method("show_dice_event"):
 			event_panel.call("show_dice_event", gold_before)
 		return
 
 	_event_wager_resolved = true
-	shop.set("gold", gold_before - cost)
+	if not bool(_wallet.call("debit", cost)):
+		_event_wager_resolved = false
+		return
 	var roll: int = _roll_dice()
 	var granted_reward: int = reward if roll > 3 else 0
 	if granted_reward > 0:
 		_add_gold(granted_reward)
-	var gold_delta: int = int(shop.get("gold")) - gold_before
+	var gold_delta := int(_wallet.call("balance")) - gold_before
 	if event_panel != null and event_panel.has_method("reveal_dice_result"):
 		event_panel.call("reveal_dice_result", roll, gold_delta, granted_reward)
 
@@ -391,11 +416,8 @@ func _show_upgrade_placeholder() -> void:
 
 
 func _show_upgrade_choices() -> void:
-	_ensure_marble_upgrade_system()
 	_connect_panels()
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	var raw_items: Variant = marble_upgrade_system.call("get_upgradable_items", inventory)
-	if not raw_items is Array or (raw_items as Array).is_empty():
+	if _progression == null or (_progression.call("upgradable_owned_items") as Array).is_empty():
 		_show_no_upgrade_message()
 		return
 	if upgrade_inventory_panel != null and upgrade_inventory_panel.has_method("show_upgrade_selection"):
@@ -416,31 +438,28 @@ func _show_no_upgrade_message() -> void:
 
 
 func _on_upgrade_selected(item: Item) -> void:
-	_ensure_marble_upgrade_system()
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if bool(marble_upgrade_system.call("upgrade_item", item, inventory)):
+	if _progression != null and bool(_progression.call("can_upgrade", item)) \
+			and bool(_progression.call("upgrade_one", item)):
 		if upgrade_inventory_panel != null and upgrade_inventory_panel.has_method("finish_upgrade_selection"):
 			upgrade_inventory_panel.call("finish_upgrade_selection")
 		_start_next_node()
 
 
 func _show_shop() -> void:
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop == null:
+	if _normal_shop == null:
 		_start_next_node()
 		return
 
 	_set_battle_scene_visible(false)
-	shop.set("mode", SHOP_MODE_ON)
-	_watch_shop_close(shop)
+	_normal_shop.set("mode", SHOP_MODE_ON)
+	_watch_shop_close(_normal_shop)
 
 
 func _show_devil_shop() -> void:
 	if devil_shop == null:
 		_start_next_node()
 		return
-	_ensure_marble_upgrade_system()
-	devil_shop.open_for_run(marble_upgrade_system)
+	devil_shop.open_for_run()
 
 
 func _pick_reward_items() -> Array[Item]:
@@ -480,29 +499,15 @@ func _is_reward_item_available(item: Item) -> bool:
 
 
 func _inventory_has_skill(item: Item) -> bool:
-	var inventory := _get_autoload_node(&"Inventory")
-	if inventory == null or item == null:
+	if _loadout == null or item == null:
 		return false
-	var current: Item = inventory.get("skill_item") as Item
+	var current := _loadout.call("current_skill") as Item
 	return current != null and current.id == item.id
 
 
 func _inventory_has_marble(item: Item) -> bool:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null or item == null:
-		return false
-	if item.id != "" and inventory.has_method("has_item_id") and bool(inventory.call("has_item_id", item.id)):
-		return true
-
-	var raw_marble_items: Variant = inventory.get("marble_items")
-	if not raw_marble_items is Array:
-		return false
-
-	var marble_items: Array = raw_marble_items
-	for owned_item: Item in marble_items:
-		if _is_same_marble_reward(owned_item, item):
-			return true
-	return false
+	return _loadout != null and item != null \
+		and (_loadout.call("find_owned", item) as Item) != null
 
 
 func _is_same_marble_reward(owned_item: Item, reward_item: Item) -> bool:
@@ -585,14 +590,12 @@ func _pick_normal_battle_reward_options() -> Array[BattleRewardOption]:
 
 func _load_receivable_items(paths: PackedStringArray, expected_type: Item.ItemType) -> Array[Item]:
 	var result: Array[Item] = []
-	var inventory := _get_autoload_node(&"Inventory")
 	for path: String in paths:
 		var item := load(path) as Item
 		if item == null or item.type != expected_type or not _is_reward_item_available(item):
 			continue
-		if item.type == Item.ItemType.MARBLE and inventory != null and inventory.has_method("can_add_item"):
-			if not bool(inventory.call("can_add_item", item)):
-				continue
+		if item.type == Item.ItemType.MARBLE and (_loadout == null or not bool(_loadout.call("can_add", item))):
+			continue
 		result.append(item)
 	return result
 
@@ -619,10 +622,8 @@ func _has_gold_option(options: Array[BattleRewardOption]) -> bool:
 
 
 func _add_gold(amount: int) -> void:
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop == null:
-		return
-	shop.set("gold", int(shop.get("gold")) + amount)
+	if _wallet != null and amount >= 0:
+		_wallet.call("credit", amount)
 
 
 func _pick_normal_battle_group() -> BattleGroupDef:
@@ -976,24 +977,9 @@ func _on_marble_fell(marble: RigidBody2D) -> void:
 	if marble == null or not marble.is_in_group("marbles"):
 		return
 
-	var stat_system: Node = _get_stat_system()
-	if stat_system == null:
+	if _health == null or not bool(_health.call("damage", 1)):
 		return
-
-	var current_health: int = int(stat_system.call(
-		"get_stat",
-		StatRegistryScript.RUN_HEALTH,
-		RUN_HEALTH_ENTITY_ID
-	))
-	stat_system.call(
-		"set_stat_base",
-		RUN_HEALTH_ENTITY_ID,
-		StatRegistryScript.RUN_HEALTH,
-		float(maxi(0, current_health - 1))
-	)
-	var updated_health: int = _get_run_health()
-	run_health_changed.emit(updated_health)
-	if updated_health == 0:
+	if _get_run_health() == 0:
 		_fail_run()
 
 
@@ -1055,30 +1041,35 @@ func _set_battle_scene_visible(visible: bool) -> void:
 		marbles.visible = visible
 
 
-func _reset_run_health() -> void:
-	var stat_system: Node = _get_stat_system()
-	if stat_system == null:
-		return
-	if stat_system.has_method("unregister_entity"):
-		stat_system.call("unregister_entity", RUN_HEALTH_ENTITY_ID)
-	if stat_system.has_method("register_entity"):
-		stat_system.call("register_entity", RUN_HEALTH_ENTITY_ID, [StatRegistryScript.RUN_HEALTH])
-
-
 func _get_run_health() -> int:
-	var stat_system: Node = _get_stat_system()
-	if stat_system == null:
+	if _health == null:
 		return 0
-	return int(stat_system.call(
-		"get_stat",
-		StatRegistryScript.RUN_HEALTH,
-		RUN_HEALTH_ENTITY_ID
-	))
+	return int(_health.call("current"))
+
+
+func _on_run_health_port_changed(value: int) -> void:
+	run_health_changed.emit(value)
+
+
+func _connect_scope_signals() -> void:
+	if _health == null or not is_instance_valid(_health) or not _health.has_signal(&"changed"):
+		return
+	var health_callable := Callable(self, "_on_run_health_port_changed")
+	if not _health.is_connected(&"changed", health_callable):
+		_health.connect(&"changed", health_callable)
+
+
+func _disconnect_scope_signals() -> void:
+	if _health == null or not is_instance_valid(_health) or not _health.has_signal(&"changed"):
+		return
+	var health_callable := Callable(self, "_on_run_health_port_changed")
+	if _health.is_connected(&"changed", health_callable):
+		_health.disconnect(&"changed", health_callable)
 
 
 func _get_stat_system() -> Node:
 	var stat_system: Node = _get_autoload_node(&"StatSystem")
-	if stat_system == null or not stat_system.has_method("get_stat") or not stat_system.has_method("set_stat_base"):
+	if stat_system == null or not stat_system.has_method("get_stat"):
 		return null
 	return stat_system
 
@@ -1130,35 +1121,18 @@ func _connect_panels() -> void:
 		_connect_event_panel_signal(&"escape_requested", Callable(self, "_on_event_finished"))
 		_connect_event_panel_signal(&"continued", Callable(self, "_on_event_finished"))
 
+	if devil_shop != null:
+		var close_callable := Callable(self, "_on_devil_shop_closed")
+		if not devil_shop.closed.is_connected(close_callable):
+			devil_shop.closed.connect(close_callable)
+
 
 func _connect_event_panel_signal(signal_name: StringName, callable: Callable) -> void:
 	if not event_panel.has_signal(signal_name) or event_panel.is_connected(signal_name, callable):
 		return
 	event_panel.connect(signal_name, callable)
 
-	if devil_shop != null:
-		var close_callable: Callable = Callable(self, "_on_devil_shop_closed")
-		if not devil_shop.closed.is_connected(close_callable):
-			devil_shop.closed.connect(close_callable)
-		var health_callable: Callable = Callable(self, "_on_devil_shop_health_changed")
-		if not devil_shop.health_changed.is_connected(health_callable):
-			devil_shop.health_changed.connect(health_callable)
-
 
 func _on_devil_shop_closed() -> void:
 	_set_battle_scene_visible(true)
 	_start_next_node()
-
-
-func _on_devil_shop_health_changed(value: int) -> void:
-	run_health_changed.emit(value)
-
-
-func _ensure_marble_upgrade_system() -> void:
-	if marble_upgrade_system != null and is_instance_valid(marble_upgrade_system):
-		return
-	marble_upgrade_system = get_node_or_null("MarbleUpgradeSystem")
-	if marble_upgrade_system == null:
-		marble_upgrade_system = MarbleUpgradeSystemScript.new()
-		marble_upgrade_system.name = "MarbleUpgradeSystem"
-		add_child(marble_upgrade_system)

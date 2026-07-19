@@ -1,6 +1,8 @@
 extends Node2D
 
 const RunControllerScript: GDScript = preload("res://Run/run_controller.gd")
+const RunScopeScript: GDScript = preload("res://Game/Bootstrap/run_scope.gd")
+const ShopScene: PackedScene = preload("res://Shop/shop.tscn")
 const NodeChoicePanelScene: PackedScene = preload("res://UI/node_choice_panel.tscn")
 const DraftRewardPanelScene: PackedScene = preload("res://UI/draft_reward_panel.tscn")
 const RunEventPanelScene: PackedScene = preload("res://UI/run_event_panel.tscn")
@@ -24,7 +26,9 @@ const DevilShopScene: PackedScene = preload("res://DevilShop/devil_shop.tscn")
 
 ## 当前活跃的弹珠链。由 _spawn_chain() 创建，整条链只有一个 RigidBody2D（Head）。
 var marble_chain: MarbleChain = null
+var run_scope: RunScope = null
 var run_controller: RunController = null
+var normal_shop: Control = null
 var battle_health_hud: Node = null
 var floor_hud: Node = null
 var inventory_panel: Control = null
@@ -34,19 +38,22 @@ var _restart_in_progress: bool = false
 
 
 func _ready() -> void:
+	if not _setup_run_scope():
+		return
 	var event_bus: Node = _get_autoload_node(&"Event")
 	if event_bus != null and event_bus.has_signal(&"marble_fell"):
 		_connect_once(event_bus, &"marble_fell", Callable(self, "_on_marble_fell"))
-	_connect_inventory_change()
+	_connect_loadout_change()
 	_spawn_chain()
-	_setup_skill_system()
-	_setup_run_flow()
+	if not _setup_skill_system():
+		return
+	if not _setup_run_flow():
+		return
 
 
 # ---- 链生成 ----
 
-## 用库存中的弹珠 Item 构建 MarbleChain。
-## Head 永远为 DEFAULT（Dark），Body 段按 Shop 槽位顺序排序。
+## 用当前 RunScope 的 MarbleLoadout 顺序构建 MarbleChain。
 func _spawn_chain() -> void:
 	if run_controller != null and run_controller.run_is_failed:
 		return
@@ -68,31 +75,11 @@ func _spawn_chain() -> void:
 	marble_chain.build_chain(chain_items, starting_marble_spawn_positions)
 
 
-## 获取按 Shop MarbleBox 槽位从左到右排序的 Item 列表。
-## 生成时该顺序映射到出生点自下而上，Head 始终使用 dark marble。
+## 用当前 RunScope 的 MarbleLoadout 顺序构建弹珠链。
 func _get_chain_items() -> Array[Item]:
-	var ordered_items: Array[Item] = _get_shop_marble_box_items()
-	if ordered_items.is_empty():
-		ordered_items = _get_inventory_marble_items()
-
-	var head_item: Item = null
-	var body_items: Array[Item] = []
-	for item: Item in ordered_items:
-		if item == null or item.type != Item.ItemType.MARBLE:
-			continue
-		if item.marble_type == Marble.MARBLE_TYPE.DEFAULT and head_item == null:
-			head_item = item
-		else:
-			body_items.append(item)
-
-	if head_item == null:
-		head_item = _get_default_marble_item()
-
-	var result: Array[Item] = []
-	if head_item != null:
-		result.append(head_item)
-	result.append_array(body_items)
-	return result
+	if run_scope == null or run_scope.loadout == null:
+		return []
+	return run_scope.loadout.call("get_chain_items") as Array[Item]
 
 
 # ---- 事件处理 ----
@@ -111,8 +98,7 @@ func _on_marble_fell(body: RigidBody2D) -> void:
 		call_deferred(&"_spawn_chain")
 
 
-## Dash 技能激活。仅瞄准 Head（链中唯一物理体）。
-func _on_inventory_changed() -> void:
+func _on_marble_loadout_changed(_items: Array[Item]) -> void:
 	_spawn_chain()
 
 
@@ -152,63 +138,70 @@ func _find_nearest_enemy(from: Vector2) -> Node2D:
 	return nearest_enemy
 
 
-func _setup_skill_system() -> void:
-	if skill_controller == null:
-		return
+func _setup_skill_system() -> bool:
+	if skill_controller == null or run_scope == null:
+		return false
+	if not skill_controller.configure(run_scope.loadout, run_scope.progression):
+		return false
 	skill_controller.head_provider = Callable(self, "_get_active_marble")
 	skill_controller.projectile_parent_provider = Callable(self, "_get_skill_projectile_parent")
 	if active_skill_slot == null:
-		return
+		return false
 	active_skill_slot.bind_controller(skill_controller)
 	if not active_skill_slot.skill_pressed.is_connected(skill_controller.press_active_skill):
 		active_skill_slot.skill_pressed.connect(skill_controller.press_active_skill)
 	if not active_skill_slot.skill_released.is_connected(skill_controller.release_active_skill):
 		active_skill_slot.skill_released.connect(skill_controller.release_active_skill)
+	return true
 
 
 func _get_skill_projectile_parent() -> Node:
 	return self
 
 
-func _get_shop_marble_box_items() -> Array[Item]:
-	var items: Array[Item] = []
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop == null:
-		return items
-
-	var marble_box: Node = shop.get_node_or_null("UI/Panel/CollectionRows/MarbleBox")
-	if marble_box == null:
-		return items
-
-	for index: int in range(marble_box.get_child_count()):
-		var slot: Node = marble_box.get_child(index)
-		if not slot.has_meta("item"):
-			continue
-		var item: Item = slot.get_meta("item") as Item
-		if item != null and item.type == Item.ItemType.MARBLE:
-			items.append(item)
-	return items
-
-
-func _get_inventory_marble_items() -> Array[Item]:
-	var items: Array[Item] = []
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory == null:
-		return items
-
-	var raw_marble_items: Variant = inventory.get("marble_items")
-	if not raw_marble_items is Array:
-		return items
-
-	var marble_items: Array = raw_marble_items
-	for item: Item in marble_items:
-		if item != null and item.type == Item.ItemType.MARBLE:
-			items.append(item)
-	return items
+func _setup_run_scope(
+	stat_system_override: Object = null,
+	effect_manager_override: Node = null
+) -> bool:
+	if run_scope != null:
+		return is_instance_valid(run_scope) and run_scope.is_initialized()
+	var stat_system: Object = stat_system_override
+	if stat_system == null:
+		stat_system = _get_autoload_node(&"StatSystem")
+	if stat_system == null:
+		return false
+	run_scope = RunScopeScript.new() as RunScope
+	run_scope.name = "RunScope"
+	add_child(run_scope)
+	if not run_scope.initialize(stat_system):
+		_discard_run_scope()
+		return false
+	var dark_marble := preload("res://Resources/dark_marble.tres") as Item
+	var dash_skill := preload("res://Resources/dash_skill.tres") as Item
+	if dark_marble == null or dash_skill == null \
+			or not bool(run_scope.loadout.call("add", dark_marble)) \
+			or not bool(run_scope.loadout.call("add", dash_skill)):
+		_discard_run_scope()
+		return false
+	var effect_manager: Node = effect_manager_override
+	if effect_manager == null:
+		effect_manager = _get_autoload_node(&"EffectManager")
+	if effect_manager == null or not effect_manager.has_method("configure") \
+			or not bool(effect_manager.call("configure", run_scope.loadout, run_scope.progression)):
+		_discard_run_scope()
+		return false
+	return true
 
 
-func _get_default_marble_item() -> Item:
-	return preload("res://Resources/dark_marble.tres") as Item
+func _discard_run_scope() -> void:
+	if run_scope == null or not is_instance_valid(run_scope):
+		run_scope = null
+		return
+	run_scope.dispose()
+	if run_scope.get_parent() == self:
+		remove_child(run_scope)
+	run_scope.free()
+	run_scope = null
 
 
 func _get_autoload_node(node_name: StringName) -> Node:
@@ -223,20 +216,20 @@ func _connect_once(source: Object, signal_name: StringName, callable: Callable) 
 		source.connect(signal_name, callable)
 
 
-func _connect_inventory_change() -> void:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	if inventory != null and inventory.has_signal(&"inventory_changed"):
-		_connect_once(inventory, &"inventory_changed", Callable(self, "_on_inventory_changed"))
+func _connect_loadout_change() -> void:
+	if run_scope == null or run_scope.loadout == null:
+		return
+	_connect_once(
+		run_scope.loadout,
+		&"marble_loadout_changed",
+		Callable(self, "_on_marble_loadout_changed")
+	)
 
 
-func _setup_run_flow() -> void:
+func _setup_run_flow() -> bool:
 	var ui_layer: Node = get_node_or_null("CanvasLayer")
 	if ui_layer == null:
-		ui_layer = get_node_or_null("CanvsLayer")
-	if ui_layer == null:
-		ui_layer = CanvasLayer.new()
-		ui_layer.name = "RunFlowLayer"
-		add_child(ui_layer)
+		return false
 
 	var node_choice_panel: NodeChoicePanel = NodeChoicePanelScene.instantiate() as NodeChoicePanel
 	node_choice_panel.name = "NodeChoicePanel"
@@ -254,11 +247,24 @@ func _setup_run_flow() -> void:
 	devil_shop.name = "DevilShop"
 	ui_layer.add_child(devil_shop)
 
+	normal_shop = ShopScene.instantiate() as Control
+	normal_shop.name = "Shop"
+	add_child(normal_shop)
+
+	if not bool(normal_shop.call("configure", run_scope.loadout, run_scope.progression, run_scope.wallet)) \
+			or not devil_shop.configure(run_scope.loadout, run_scope.progression, run_scope.wallet, run_scope.health) \
+			or not draft_reward_panel.configure(run_scope.loadout, run_scope.progression, run_scope.wallet):
+		return false
+
 	_setup_battle_health_hud(ui_layer)
 	_setup_floor_hud(ui_layer)
 	_setup_pause_panel(ui_layer)
 	_setup_run_failure_panel(ui_layer)
 	_setup_inventory_panel()
+	if inventory_panel == null or not bool(inventory_panel.call(
+		"configure", run_scope.loadout, run_scope.progression
+	)):
+		return false
 
 	run_controller = RunControllerScript.new()
 	run_controller.name = "RunController"
@@ -269,11 +275,12 @@ func _setup_run_flow() -> void:
 	run_controller.devil_shop = devil_shop
 	run_controller.event_panel = event_panel
 	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
+	if not run_controller.configure(run_scope, normal_shop):
+		return false
 	run_controller.run_health_changed.connect(_on_run_health_changed)
 	run_controller.run_failed.connect(_on_run_failed)
 	run_controller.floor_changed.connect(_on_floor_changed)
 	add_child(run_controller)
-	skill_controller.call("_connect_upgrade_system")
 	_connect_active_skill_slot_to_battle_flow()
 
 	var event_bus: Node = _get_autoload_node(&"Event")
@@ -284,6 +291,7 @@ func _setup_run_flow() -> void:
 		_connect_run_signal(run_controller, event_bus, &"run_completed")
 
 	run_controller.start_run()
+	return true
 
 
 func _connect_active_skill_slot_to_battle_flow() -> void:
@@ -304,9 +312,8 @@ func _connect_active_skill_slot_to_battle_flow() -> void:
 		_register_active_skill_blocking_panel(get_node_or_null(panel_path))
 	if inventory_panel != null:
 		_register_active_skill_blocking_panel(inventory_panel.get_node_or_null("UI"))
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop != null:
-		_register_active_skill_blocking_panel(shop.get_node_or_null("UI"))
+	if normal_shop != null:
+		_register_active_skill_blocking_panel(normal_shop.get_node_or_null("UI"))
 	_sync_active_skill_panel_blocker()
 
 
@@ -333,7 +340,7 @@ func _setup_battle_health_hud(ui_layer: Node) -> void:
 		battle_health_hud.name = "BattleHealthHud"
 		ui_layer.add_child(battle_health_hud)
 	_sync_battle_hud_gold()
-	_connect_shop_gold_changed()
+	_connect_wallet_changed()
 
 
 func _setup_floor_hud(ui_layer: Node) -> void:
@@ -409,20 +416,17 @@ func _on_floor_changed(floor_number: int) -> void:
 
 
 func _sync_battle_hud_gold() -> void:
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop == null:
+	if run_scope != null and run_scope.wallet != null:
+		_on_wallet_changed(int(run_scope.wallet.call("balance")))
+
+
+func _connect_wallet_changed() -> void:
+	if run_scope == null or run_scope.wallet == null:
 		return
-	_on_shop_gold_changed(int(shop.get("gold")))
+	_connect_once(run_scope.wallet, &"changed", Callable(self, "_on_wallet_changed"))
 
 
-func _connect_shop_gold_changed() -> void:
-	var shop: Node = _get_autoload_node(&"Shop")
-	if shop == null or not shop.has_signal(&"gold_changed"):
-		return
-	_connect_once(shop, &"gold_changed", Callable(self, "_on_shop_gold_changed"))
-
-
-func _on_shop_gold_changed(value: int) -> void:
+func _on_wallet_changed(value: int) -> void:
 	if battle_health_hud != null and battle_health_hud.has_method("set_gold"):
 		battle_health_hud.call("set_gold", value)
 

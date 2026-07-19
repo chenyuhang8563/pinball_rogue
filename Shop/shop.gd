@@ -2,14 +2,8 @@ extends Control
 
 const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const UI_FONT_SIZE: int = 12
-const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
 const NormalShopSessionScript: GDScript = preload("res://Commerce/application/normal_shop_session.gd")
 const NormalShopSaleServiceScript: GDScript = preload("res://Commerce/application/normal_shop_sale_service.gd")
-const CurrentInventoryAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_inventory_adapter.gd")
-const CurrentProgressionAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_progression_adapter.gd")
-const CurrentWalletAdapterScript: GDScript = preload("res://Commerce/application/adapters/current_wallet_adapter.gd")
-const ItemIdentityScript: GDScript = preload("res://Commerce/domain/item_identity.gd")
-const NormalShopPricingScript: GDScript = preload("res://Commerce/domain/normal_shop_pricing.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
 const SHOP_SLOT_COUNT: int = 6
 
@@ -24,21 +18,18 @@ var shop_offers: Array = []
 @export var relic_bar_container: HBoxContainer
 @export var skill_box_container: HBoxContainer
 @export var skill_replace_dialog: SkillReplaceDialog
-var gold: int = 0:
+var gold: int:
+	get:
+		return int(_wallet.call("balance")) if _wallet != null else 0
 	set(value):
-		gold = value
-		gold_changed.emit(value)
-		_refresh_slot_affordability()
+		if _wallet != null:
+			_wallet.call("set_balance", value)
 
 var normal_shop_session: RefCounted = null
 var normal_shop_sale_service: RefCounted = null
-var current_inventory_adapter: RefCounted = null
-var current_progression_adapter: RefCounted = null
-var current_wallet_adapter: RefCounted = null
-
-var _commerce_inventory: Node = null
-var _commerce_progression: Node = null
-var _commerce_quote_sources: Dictionary = {}
+var _loadout: RefCounted = null
+var _progression: RefCounted = null
+var _wallet: RefCounted = null
 var _pending_skill_offer_id: StringName = &""
 
 enum MODE {
@@ -77,13 +68,13 @@ func _ready() -> void:
 	if exit_button != null and not exit_button.pressed.is_connected(close_shop):
 		_apply_button_label_settings(exit_button)
 		exit_button.pressed.connect(close_shop)
-	set_initial_gold()
-	refresh_shop_inventory()
 	_connect_collection_slot_inputs()
-	_connect_inventory()
 	_connect_skill_replace_dialog()
-	_grant_starting_marbles()
-	refresh_collection_rows()
+	_connect_port_signals()
+
+
+func _exit_tree() -> void:
+	_disconnect_port_signals()
 
 
 func _bind_optional_nodes() -> void:
@@ -107,7 +98,7 @@ func close_shop() -> void:
 
 
 func _apply_button_label_settings(button: Button) -> void:
-		UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
+	UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
 
 
 func _apply_text() -> void:
@@ -120,8 +111,6 @@ func _apply_text() -> void:
 		_apply_button_label_settings(exit_button)
 
 func sell_item(item: Item) -> bool:
-	if normal_shop_sale_service == null and not _configure_from_runtime_fallback():
-		return false
 	return _sell_item(item)
 
 
@@ -139,61 +128,103 @@ func _sell_item(item: Item) -> bool:
 	return true
 
 
-func configure(inventory: Node, progression: Node) -> bool:
-	return _configure_commerce(inventory, progression)
+func _connect_port_signals() -> void:
+	var wallet_callback := Callable(self, "_on_wallet_changed")
+	if _wallet != null and is_instance_valid(_wallet) and _wallet.has_signal(&"changed") \
+			and not _wallet.is_connected(&"changed", wallet_callback):
+		_wallet.connect(&"changed", wallet_callback)
+	var loadout_callback := Callable(self, "_on_loadout_changed")
+	if _loadout != null and is_instance_valid(_loadout) and _loadout.has_signal(&"changed") \
+			and not _loadout.is_connected(&"changed", loadout_callback):
+		_loadout.connect(&"changed", loadout_callback)
+	var item_progressed_callback := Callable(self, "_on_item_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"item_progressed") \
+			and not _progression.is_connected(&"item_progressed", item_progressed_callback):
+		_progression.connect(&"item_progressed", item_progressed_callback)
+	var skill_progressed_callback := Callable(self, "_on_skill_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"skill_progressed") \
+			and not _progression.is_connected(&"skill_progressed", skill_progressed_callback):
+		_progression.connect(&"skill_progressed", skill_progressed_callback)
 
 
-func _configure_commerce(inventory: Node, marble_upgrade_system: Node) -> bool:
-	if inventory == null or marble_upgrade_system == null:
+func _disconnect_port_signals() -> void:
+	var wallet_callback := Callable(self, "_on_wallet_changed")
+	if _wallet != null and is_instance_valid(_wallet) and _wallet.has_signal(&"changed") \
+			and _wallet.is_connected(&"changed", wallet_callback):
+		_wallet.disconnect(&"changed", wallet_callback)
+	var loadout_callback := Callable(self, "_on_loadout_changed")
+	if _loadout != null and is_instance_valid(_loadout) and _loadout.has_signal(&"changed") \
+			and _loadout.is_connected(&"changed", loadout_callback):
+		_loadout.disconnect(&"changed", loadout_callback)
+	var item_progressed_callback := Callable(self, "_on_item_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"item_progressed") \
+			and _progression.is_connected(&"item_progressed", item_progressed_callback):
+		_progression.disconnect(&"item_progressed", item_progressed_callback)
+	var skill_progressed_callback := Callable(self, "_on_skill_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"skill_progressed") \
+			and _progression.is_connected(&"skill_progressed", skill_progressed_callback):
+		_progression.disconnect(&"skill_progressed", skill_progressed_callback)
+
+
+func _on_wallet_changed(value: int) -> void:
+	gold_changed.emit(value)
+	_refresh_slot_affordability()
+
+
+func _on_loadout_changed() -> void:
+	refresh_collection_rows()
+
+
+func _on_item_progressed(_item: Item, _level: int, _awakened: bool) -> void:
+	refresh_collection_rows()
+
+
+func _on_skill_progressed(_skill_id: String, _level: int) -> void:
+	refresh_collection_rows()
+
+
+func configure(loadout: RefCounted, progression: RefCounted, wallet: RefCounted) -> bool:
+	if not _has_port_api(loadout, [
+		&"find_owned", &"can_add", &"add", &"remove", &"replace_skill", &"current_skill",
+		&"revision", &"marbles", &"relics", &"skills",
+	]) or not _has_port_api(progression, [
+		&"level_of", &"can_upgrade", &"upgrade_one", &"reset_skill", &"reset_item", &"revision",
+	]) or not _has_port_api(wallet, [
+		&"balance", &"set_balance", &"quote_price", &"quote_sell_price", &"can_debit",
+		&"debit", &"credit", &"revision",
+	]):
 		return false
-	if normal_shop_session != null or normal_shop_sale_service != null:
-		return normal_shop_session != null and normal_shop_sale_service != null \
-			and inventory == _commerce_inventory \
-			and marble_upgrade_system == _commerce_progression
-	_commerce_inventory = inventory
-	_commerce_progression = marble_upgrade_system
-	current_inventory_adapter = CurrentInventoryAdapterScript.new(inventory)
-	current_progression_adapter = CurrentProgressionAdapterScript.new(
-		marble_upgrade_system,
-		current_inventory_adapter
-	)
-	current_wallet_adapter = CurrentWalletAdapterScript.new(
-		self,
-		Callable(self, "_quote_commerce_item"),
-		Callable(self, "get_sell_price")
-	)
-	normal_shop_session = NormalShopSessionScript.new()
-	normal_shop_sale_service = NormalShopSaleServiceScript.new()
-	var session_configured := bool(normal_shop_session.call(
-		"configure",
-		current_inventory_adapter,
-		current_progression_adapter,
-		current_wallet_adapter
-	))
-	var sale_configured := bool(normal_shop_sale_service.call(
-		"configure",
-		current_inventory_adapter,
-		current_progression_adapter,
-		current_wallet_adapter
-	))
-	var configured := session_configured and sale_configured
-	if not configured:
-		normal_shop_session = null
-		normal_shop_sale_service = null
-	return configured
-
-
-func _configure_from_runtime_fallback() -> bool:
-	var inventory: Node = _get_autoload_node(&"Inventory")
-	var progression: Node = _get_marble_upgrade_system()
-	return _configure_commerce(inventory, progression)
+	if loadout == _loadout and progression == _progression and wallet == _wallet \
+			and normal_shop_session != null and normal_shop_sale_service != null:
+		_connect_port_signals()
+		_on_wallet_changed(gold)
+		refresh_collection_rows()
+		return true
+	var session: RefCounted = NormalShopSessionScript.new()
+	var sale_service: RefCounted = NormalShopSaleServiceScript.new()
+	if not bool(session.call("configure", loadout, progression, wallet)) \
+			or not bool(sale_service.call("configure", loadout, progression, wallet)):
+		return false
+	cancel_pending_skill_purchase()
+	_disconnect_port_signals()
+	_loadout = loadout
+	_progression = progression
+	_wallet = wallet
+	normal_shop_session = session
+	normal_shop_sale_service = sale_service
+	_connect_port_signals()
+	_on_wallet_changed(gold)
+	refresh_collection_rows()
+	return true
 
 
 ## Purchases an upgrade quote using the runtime dependencies resolved from the active run.
 func purchase_offer(offer: Variant) -> bool:
-	if offer == null:
-		return false
-	if normal_shop_session == null and not _configure_from_runtime_fallback():
+	if offer == null or normal_shop_session == null:
 		return false
 	var offer_id := StringName(offer.get("offer_id"))
 	return offer_id != &"" and _purchase_offer_id(offer_id)
@@ -235,9 +266,7 @@ func _purchase_offer_id(offer_id: StringName) -> bool:
 
 func _request_skill_replacement(offer_id: StringName, offer: Variant) -> void:
 	_pending_skill_offer_id = offer_id
-	var current_skill: Item = null
-	if current_inventory_adapter != null:
-		current_skill = current_inventory_adapter.call("current_skill") as Item
+	var current_skill: Item = _loadout.call("current_skill") as Item if _loadout != null else null
 	if skill_replace_dialog != null:
 		skill_replace_dialog.request_replace(current_skill, offer.item)
 
@@ -275,8 +304,8 @@ func _handle_failed_result(result: RefCounted) -> void:
 
 
 func _sync_balance_from_wallet() -> void:
-	if current_wallet_adapter != null:
-		gold = int(current_wallet_adapter.call("balance"))
+	if _wallet != null:
+		_on_wallet_changed(int(_wallet.call("balance")))
 
 
 func _regenerate_from_pool(regenerate_empty_pool: bool) -> void:
@@ -286,7 +315,6 @@ func _regenerate_from_pool(regenerate_empty_pool: bool) -> void:
 	if shop_item_pool.is_empty() and not regenerate_empty_pool:
 		_set_presentation_offers([])
 		return
-	_set_commerce_quote_sources(shop_item_pool)
 	normal_shop_session.call("regenerate", shop_item_pool, SHOP_SLOT_COUNT)
 	_sync_presentation_from_session()
 
@@ -321,24 +349,8 @@ func _set_presentation_offers(offers: Array) -> void:
 	load_shop_inventory()
 
 
-func _set_commerce_quote_sources(candidates: Array) -> void:
-	_commerce_quote_sources.clear()
-	for value: Variant in candidates:
-		var candidate := value as Item
-		if candidate != null:
-			_commerce_quote_sources[ItemIdentityScript.key(candidate)] = candidate
-
-
-func _quote_commerce_item(item: Item) -> int:
-	var source := _commerce_quote_sources.get(ItemIdentityScript.key(item), item) as Item
-	return get_buy_price(source)
-
-
 func get_buy_price(item: Item) -> int:
-	return NormalShopPricingScript.quote(
-		item,
-		_get_stat_multiplier("buy_price_multiplier", 1.0)
-	)
+	return int(_wallet.call("quote_price", item)) if _wallet != null else 0
 
 
 ## Returns whether the player can pay this quote's actual price.
@@ -347,18 +359,7 @@ func can_afford_offer(offer: Variant) -> bool:
 
 
 func get_sell_price(item: Item) -> int:
-	return NormalShopPricingScript.sell_quote(
-		item,
-		_get_stat_multiplier("sell_price_multiplier", 0.5)
-	)
-
-
-func _get_stat_multiplier(stat_id: String, fallback_multiplier: float) -> float:
-	var multiplier: float = fallback_multiplier
-	var stat_system: Node = _get_autoload_node(&"StatSystem")
-	if stat_system != null and stat_system.has_method("get_stat"):
-		multiplier = float(stat_system.call("get_stat", stat_id, "player"))
-	return multiplier
+	return int(_wallet.call("quote_sell_price", item)) if _wallet != null else 0
 
 func free_previous_slots():
 	if shop_container == null:
@@ -411,33 +412,22 @@ func _refresh_slot_affordability() -> void:
 func refresh_shop_inventory() -> void:
 	if shop_item_pool.is_empty():
 		shop_item_pool = shop_items.duplicate()
-	if normal_shop_session == null and not _configure_from_runtime_fallback():
+	if normal_shop_session == null:
 		_set_presentation_offers([])
 		return
-	_set_commerce_quote_sources(shop_item_pool)
 	normal_shop_session.call("regenerate", shop_item_pool, SHOP_SLOT_COUNT)
 	_sync_presentation_from_session()
 
 
-func set_initial_gold():
-	gold = 100
-
-
 func refresh_collection_rows() -> void:
-	var inventory: Node = _commerce_inventory if _is_live_node(_commerce_inventory) \
-		else _get_autoload_node(&"Inventory")
-	if inventory == null:
+	if _loadout == null:
 		_update_collection_icons(marble_box_container, [])
 		_update_collection_icons(relic_bar_container, [])
 		_update_collection_icons(skill_box_container, [])
 		return
-
-	var raw_marble_items: Variant = inventory.get("marble_items")
-	var raw_relic_items: Variant = inventory.get("relic_items")
-	var raw_skill_items: Variant = inventory.get("skill_items")
-	var marble_items: Array = raw_marble_items if raw_marble_items is Array else []
-	var relic_items: Array = raw_relic_items if raw_relic_items is Array else []
-	var skill_items: Array = raw_skill_items if raw_skill_items is Array else []
+	var marble_items: Array = _loadout.call("marbles") as Array
+	var relic_items: Array = _loadout.call("relics") as Array
+	var skill_items: Array = _loadout.call("skills") as Array
 	_update_collection_icons(marble_box_container, marble_items)
 	_update_collection_icons(relic_bar_container, relic_items)
 	_update_collection_icons(skill_box_container, skill_items)
@@ -464,9 +454,7 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 
 
 func _get_presentation_item_level(item: Item) -> int:
-	if current_progression_adapter != null:
-		return int(current_progression_adapter.call("level_of", item))
-	return ItemLevelResolverScript.get_inventory_level(item)
+	return int(_progression.call("level_of", item)) if _progression != null else 0
 
 
 func _connect_collection_slot_inputs() -> void:
@@ -528,26 +516,6 @@ func _on_collection_slot_gui_input(event: InputEvent, slot: Node) -> void:
 		print("Sold " + item.title)
 
 
-func _grant_starting_marbles() -> void:
-	var inventory: Node = _commerce_inventory if _is_live_node(_commerce_inventory) \
-		else _get_autoload_node(&"Inventory")
-	if inventory == null or not inventory.has_method("has_effect"):
-		return
-	if not inventory.call("has_effect", Item.EffectType.DARK_MARBLE):
-		var dark_marble_item: Item = preload("res://Resources/dark_marble.tres")
-		inventory.call("add_item", dark_marble_item)
-
-
-func _connect_inventory() -> void:
-	var inventory: Node = _commerce_inventory if _is_live_node(_commerce_inventory) \
-		else _get_autoload_node(&"Inventory")
-	if inventory == null or not inventory.has_signal(&"inventory_changed"):
-		return
-	var callable := Callable(self, "refresh_collection_rows")
-	if not inventory.is_connected(&"inventory_changed", callable):
-		inventory.connect(&"inventory_changed", callable)
-
-
 func _connect_skill_replace_dialog() -> void:
 	if skill_replace_dialog == null:
 		return
@@ -570,36 +538,6 @@ func _get_autoload_node(node_name: StringName) -> Node:
 	return tree.root.get_node_or_null(NodePath(node_name))
 
 
-func _get_marble_upgrade_system() -> Node:
-	var tree: SceneTree = Engine.get_main_loop() as SceneTree
-	if tree == null:
-		return null
-	var candidates: Array[Node] = []
-	if tree.current_scene != null:
-		candidates.append(tree.current_scene)
-	candidates.append(tree.root)
-	for candidate: Node in candidates:
-		var direct: Node = candidate.get_node_or_null("RunController/MarbleUpgradeSystem")
-		if _is_live_node(direct):
-			return direct
-		for run_controller: Node in candidate.find_children("RunController", "", true, false):
-			if not _is_live_node(run_controller):
-				continue
-			var system: Node = run_controller.get_node_or_null("MarbleUpgradeSystem")
-			if _is_live_node(system):
-				return system
-	return null
-
-
-func _is_live_node(node: Node) -> bool:
-	var current: Node = node
-	while current != null:
-		if current.is_queued_for_deletion():
-			return false
-		current = current.get_parent()
-	return node != null
-
-
 func _connect_localization() -> void:
 	var localization := _get_autoload_node(&"Localization")
 	if localization == null or not localization.has_signal(&"locale_changed"):
@@ -617,3 +555,12 @@ func _is_purchasable_item(item: Item) -> bool:
 	if item == null:
 		return false
 	return item.type == Item.ItemType.MARBLE or item.type == Item.ItemType.RELIC or item.type == Item.ItemType.SKILL
+
+
+func _has_port_api(port: RefCounted, methods: Array[StringName]) -> bool:
+	if port == null or not is_instance_valid(port):
+		return false
+	for method: StringName in methods:
+		if not port.has_method(method):
+			return false
+	return true

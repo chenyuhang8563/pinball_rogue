@@ -8,7 +8,7 @@
 | --- | --- | --- | --- |
 | 0 | **完成；本提交为 Phase 0 checkpoint** | 冻结运行图、依赖、Autoload、场景、UID 与测试基线。 | 初始 GUT 3/22/160；契约套件及 UID 修复后完整 GUT 4/24/196；图形主场景启动 smoke；未移动资源、未改变节点属性或业务行为。 |
 | 1 | **完成；本提交为 Phase 1 checkpoint** | 建立 Content 逻辑边界与 Commerce 首个垂直切片；普通店/恶魔店委托 scoped Session。 | 完整 GUT 9 scripts / 54 tests / 494 asserts；覆盖交易原子性、报价过期、容量、技能替换、出售、重复结算及真实 presentation delegation；旧迁移入口与第二套报价/结算规则清零；Commerce domain/application 无 `Control`、`get_tree()`、`/root`、`NodePath`。 |
-| 2 | 未开始 | 将持有物品、弹珠排列、容量、技能槽与成长迁入 Loadout 和 run-scoped 状态。 | 不从 Shop UI 读取领域顺序；不搜索 `RunController/MarbleUpgradeSystem`；删除旧 Inventory/升级 adapter 与对应 Autoload。 |
+| 2 | **完成；本提交为 Phase 2 checkpoint** | 将持有物品、弹珠排列、容量、技能槽与成长迁入 Loadout 和 run-scoped 状态。 | 唯一 RunScope 同时持有 Loadout/ItemProgression/RunWallet/RunHealth；Main 不再从 Shop UI 读取领域顺序；旧 Inventory、MarbleUpgradeSystem、四个 current adapter 与 Shop/Inventory Autoload 已删除。 |
 | 3 | 未开始 | 拆分 RunState、RunFlowController、BattlePlanFactory、RewardService、EventResolver。 | RunController 只编排；所有节点类型路径只推进一次；验收前删除旧奖励、事件和流程实现。 |
 | 4 | 未开始 | 建立 BattleSession，并将敌人死亡、弹珠跌落/碰撞、战斗生命周期迁为局部 typed signals；退役 Event。 | 业务目录无 `/root/Event`；正常死亡/跌出、多敌人、重复信号均只完成一次战斗；Event bridge 归零。 |
 | 5 | 未开始 | 合并 Effect/Buff registry，建立 RelicEffectService、PlayerBuffService、BuffCatalog，保留 BuffHost 单位组件。 | registry 唯一、无 root 服务查找、modifier 可按稳定 source 清理，遗物与毒/冰/火状态有 GUT。 |
@@ -34,9 +34,19 @@
 - 用户明确当前游戏流程无需随时可运行，优先完成重构和测试。因此 verify 记录为 **DEFERRED**：本 Phase 不声明 runtime PASS，真实游戏交互验证推迟到后续收敛阶段。
 - `Shop._grant_starting_marbles()` 仍直接修改当前 Inventory；它不是 Commerce 交易入口，登记为 Phase 2 Loadout 调用者迁移项。
 
+## Phase 2 实际证据
+
+- 新增唯一 `RunScope`，持有 `Loadout`、`MarbleLoadout`、`ItemProgression`、`RunWallet` 与 `RunHealth`。Main 首次初始化只播种 Dark marble 与 Dash；`reset_for_run()` 保留持有物和弹珠链顺序，仅重置成长、金币和生命。RunHealth 默认 10，Commerce `debit()` 至少保留 1，战斗 `damage()` 可降到 0。
+- Main 通过预制场景装配普通 Shop 与 DevilShop，并向 InventoryPanel、DraftRewardPanel、SkillController、EffectManager、RunController 注入同一组 scoped ports。弹珠链只读取 `Loadout.get_chain_items()`；金币 HUD 监听 RunWallet；RunController 的奖励、事件、升级和生命访问已切换到 scoped 状态。
+- 删除 `Inventory/inventory.gd`、`Run/marble_upgrade_system.gd`、四个 `Commerce/application/adapters/current_*` 及 UID 侧车，并删除 `project.godot` 的 Shop/Inventory Autoload。保留 `Inventory/inventory.tscn`、`Shop/shop.tscn`、StatSystem 与 EffectManager Autoload。
+- 静态验收清零：生产代码中不存在 `/root/Inventory`、`/root/Shop`、`MarbleUpgradeSystem`、旧升级脚本路径、current adapter 路径、`RunController/MarbleUpgradeSystem`、Main 的 Shop MarbleBox 顺序回读或 Shop/Inventory Autoload 条目。`git diff --check` 通过。
+- 关键 GUT：Loadout 5 scripts / 18 tests / 220 asserts；Commerce 4 / 25 / 204；普通/恶魔商店升级报价 2 / 18 / 177；Phase 2 装配契约 1 / 1 / 21，均全部通过。Commerce 测试退出时仍报告既有 RID/Texture/ObjectDB 资源泄漏信息；测试断言本身全部通过。本阶段未运行全量 GUT、完整游戏流程或截图。
+- 首次 Loadout GUT 暴露 `Loadout.restore()` 的 Variant 推断解析错误；修复后又暴露 Dark marble 觉醒主属性 override 仍为 3.0。两项均修复并由上述 18/18 Loadout GUT 覆盖。
+- Phase 3 的 RunFlow/Reward/Event 深拆分、Phase 5 的 Effect/Buff 收敛、Phase 6 的正式可视化 composition root、Phase 7/8 的 UI/字体与目录/资源迁移均明确延后。
+
 ## 工作树内长期未提交测试资产
 
-当前工作树包含 24 个已修改或新增的测试脚本/UID 侧车；完整路径与 `git hash-object` 见 [Phase 1 未提交测试资产](../testing/phase1-test-assets.md)。其中包括迁移后的两份既有 Commerce characterization、`tests/Commerce/**` 和扩展后的 `tests/Integration/test_scene_contracts.gd`。
+当前工作树包含 36 个已修改或新增且继续保留的测试脚本/UID 侧车；完整路径与 `git hash-object` 见 [Phase 2 未提交测试资产](../testing/phase2-test-assets.md)。其中包括 scoped Commerce、Loadout/Progression/Run 资源、presentation delegation、升级报价回归和 Phase 2 装配契约。Phase 2 另删除了 2 份只验证旧 adapter/升级所有者的测试及 UID 侧车，有效断言已迁入保留资产。
 
 上述文件及后续新增/更新/迁移的所有 `tests/**` 文件均保持可见且未提交，并在阶段台账更新路径与哈希。
 
@@ -54,10 +64,10 @@
 
 | 名称 | 创建 Phase | 调用者 | 删除条件 | 状态 |
 | --- | --- | --- | --- | --- |
-| Commerce current Inventory adapter | 1 | Normal/Devil Session、SaleService | Phase 2 切换 scoped Loadout 后删除 | 活跃，仅适配当前 Inventory，不保存第二份状态 |
-| Commerce current Progression adapter | 1 | Normal/Devil Session、SaleService | Phase 2 切换 ItemProgression 后删除 | 活跃，仅适配 MarbleUpgradeSystem |
-| Commerce current Wallet adapter | 1 | Normal/Devil Session、SaleService | Phase 2 切换 RunWallet 后删除 | 活跃，仅适配 Shop.gold |
-| Commerce current Health adapter | 1 | DevilShopSession | Phase 2 切换 RunHealth 后删除 | 活跃，仅适配 scoped 前的 StatSystem |
+| Commerce current Inventory adapter | 1 | 无 | Phase 2 切换 scoped Loadout 后删除 | **Phase 2 已删除** |
+| Commerce current Progression adapter | 1 | 无 | Phase 2 切换 ItemProgression 后删除 | **Phase 2 已删除** |
+| Commerce current Wallet adapter | 1 | 无 | Phase 2 切换 RunWallet 后删除 | **Phase 2 已删除** |
+| Commerce current Health adapter | 1 | 无 | Phase 2 切换 RunHealth 后删除 | **Phase 2 已删除** |
 | Phase 1 旧购买/发放 seam | 1 | 无 | Phase 1 验收前删除 | **已删除，调用者为 0** |
 
 ## 停止条件
