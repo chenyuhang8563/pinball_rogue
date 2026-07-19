@@ -1,35 +1,31 @@
 extends GutTest
 
-
-const ShopScript: GDScript = preload("res://Shop/shop.gd")
-const InventoryScript: GDScript = preload("res://Inventory/inventory.gd")
-const UpgradeSystemScript: GDScript = preload("res://Run/marble_upgrade_system.gd")
+const NormalShopSessionScript: GDScript = preload("res://Commerce/application/normal_shop_session.gd")
+const NormalShopSaleServiceScript: GDScript = preload("res://Commerce/application/normal_shop_sale_service.gd")
+const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
+const FakeInventoryScript: GDScript = preload("res://tests/Commerce/fake_inventory_adapter.gd")
+const FakeProgressionScript: GDScript = preload("res://tests/Commerce/fake_progression_adapter.gd")
+const FakeWalletScript: GDScript = preload("res://tests/Commerce/fake_wallet_adapter.gd")
 const ShopOfferScript: GDScript = preload("res://Shop/shop_offer.gd")
 const SlotScene: PackedScene = preload("res://Items/slot.tscn")
 
 
-# 验证普通商店以原价把已拥有弹珠提升一级。
 func test_normal_shop_quote_targets_next_owned_marble_level_without_discount() -> void:
-	var shop: Variant = ShopScript.new()
-	var inventory: Variant = InventoryScript.new()
-	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
-	add_child_autofree(inventory)
-	add_child_autofree(system)
-
+	var fixture := _normal_fixture(100)
 	var marble := _make_marble("normal_marble", 40)
-	assert_true(inventory.add_item(marble))
-	assert_true(system.upgrade_item(marble, inventory))
+	assert_true(fixture.inventory.add(marble))
+	fixture.progression.set_level(marble, 2)
 
-	var offer = shop.create_upgrade_offer(marble, inventory, system)
+	var offers: Array = fixture.session.regenerate([marble], 1)
 
-	assert_not_null(offer)
+	assert_eq(offers.size(), 1)
+	var offer: Variant = offers[0]
+	assert_ne(offer.offer_id, &"")
 	assert_eq(offer.target_level, 3)
 	assert_eq(offer.price, 40)
 	assert_true(offer.is_upgrade)
-	shop.free()
 
 
-# 验证 Slot 通过公共展示接缝显示升级目标等级和原价。
 func test_slot_displays_upgrade_quote_level_and_regular_price() -> void:
 	var slot: Variant = SlotScene.instantiate()
 	add_child_autofree(slot)
@@ -44,143 +40,114 @@ func test_slot_displays_upgrade_quote_level_and_regular_price() -> void:
 	assert_eq((slot.get_node("Price") as Label).text, "$ 25")
 
 
-# 验证购买普通升级报价会扣除报价金额并只升级一次。
 func test_purchase_upgrade_offer_spends_gold_and_upgrades_owned_item() -> void:
-	var shop: Variant = ShopScript.new()
-	var inventory: Variant = InventoryScript.new()
-	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
-	add_child_autofree(inventory)
-	add_child_autofree(system)
-
+	var fixture := _normal_fixture(30)
 	var marble := _make_marble("purchase_marble", 30)
-	assert_true(inventory.add_item(marble))
-	var offer = shop.create_upgrade_offer(marble, inventory, system)
-	shop.set_upgrade_offers([offer])
-	shop.gold = 30
+	assert_true(fixture.inventory.add(marble))
+	fixture.progression.set_level(marble, 1)
+	var offer: Variant = fixture.session.regenerate([marble], 1)[0]
+	var offer_id := StringName(offer.offer_id)
 
-	assert_true(shop.purchase_offer_with_dependencies(offer, inventory, system))
-	assert_eq(shop.gold, 0)
-	assert_eq(system.get_level(marble.marble_type), 2)
-	assert_false(shop.shop_offers.has(offer))
-	shop.free()
+	var result: RefCounted = fixture.session.purchase(offer_id)
+
+	assert_eq(result.code, PurchaseResultScript.Code.SUCCESS)
+	assert_true(result.committed)
+	assert_eq(fixture.wallet.amount, 0)
+	assert_eq(fixture.progression.level_of(marble), 2)
+	assert_true(fixture.session.get_offers()[0].consumed)
 
 
-# 验证普通商店对已拥有遗物和技能也生成原价的下一级报价。
 func test_normal_shop_quotes_owned_relic_and_skill_at_next_level_without_discount() -> void:
-	var shop: Variant = ShopScript.new()
-	var inventory: Variant = InventoryScript.new()
-	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
-	add_child_autofree(inventory)
-	add_child_autofree(system)
-
+	var fixture := _normal_fixture(100)
 	var relic := _make_relic("normal_relic", 17)
 	var skill := _make_skill("dash", 23)
-	assert_true(inventory.add_item(relic))
-	assert_true(inventory.has_item_id("dash"))
+	assert_true(fixture.inventory.add(relic))
+	assert_true(fixture.inventory.add(skill))
+	fixture.progression.set_level(relic, 1)
+	fixture.progression.set_level(skill, 1)
 
-	var relic_offer = shop.create_upgrade_offer(relic, inventory, system)
-	var skill_offer = shop.create_upgrade_offer(skill, inventory, system)
+	var offers: Array = fixture.session.regenerate([relic, skill], 2)
+	var relic_offer: Variant = _offer_for_type(offers, Item.ItemType.RELIC)
+	var skill_offer: Variant = _offer_for_type(offers, Item.ItemType.SKILL)
 
+	assert_not_null(relic_offer)
+	assert_not_null(skill_offer)
 	assert_eq(relic_offer.target_level, 2)
 	assert_eq(relic_offer.price, 17)
 	assert_eq(skill_offer.target_level, 2)
 	assert_eq(skill_offer.price, 23)
-	shop.free()
 
 
-# 验证普通商店库存为每个可升级类别保留一个报价。
 func test_normal_shop_generates_owned_upgrade_quotes_for_each_category() -> void:
-	var shop: Variant = ShopScript.new()
-	var inventory: Variant = InventoryScript.new()
-	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
-	add_child_autofree(inventory)
-	add_child_autofree(system)
-
+	var fixture := _normal_fixture(100)
 	var marble := _make_marble("stock_marble", 10)
 	var relic := _make_relic("stock_relic", 10)
 	var skill := _make_skill("dash", 10)
-	assert_true(inventory.add_item(marble))
-	assert_true(inventory.add_item(relic))
-	assert_true(inventory.has_item_id("dash"))
+	assert_true(fixture.inventory.add(marble))
+	assert_true(fixture.inventory.add(relic))
+	assert_true(fixture.inventory.add(skill))
 
-	var offers: Array = shop.generate_upgrade_offers([marble, relic, skill], inventory, system)
+	var offers: Array = fixture.session.regenerate([marble, relic, skill], 3)
 
 	assert_eq(offers.size(), 3)
 	assert_eq(offers.filter(func(offer): return offer.item.type == Item.ItemType.MARBLE).size(), 1)
 	assert_eq(offers.filter(func(offer): return offer.item.type == Item.ItemType.RELIC).size(), 1)
 	assert_eq(offers.filter(func(offer): return offer.item.type == Item.ItemType.SKILL).size(), 1)
-	shop.free()
+	for offer: Variant in offers:
+		assert_ne(offer.offer_id, &"")
 
 
-# 验证购买同技能报价会升级当前技能而不是替换。
 func test_purchase_same_skill_upgrade_quote_keeps_equipped_skill_and_increases_level() -> void:
-	var shop: Variant = ShopScript.new()
-	var inventory: Variant = InventoryScript.new()
-	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
-	add_child_autofree(inventory)
-	add_child_autofree(system)
-
+	var fixture := _normal_fixture(12)
 	var skill := _make_skill("dash", 12)
-	assert_true(inventory.has_item_id("dash"))
-	var offer = shop.create_upgrade_offer(skill, inventory, system)
-	shop.set_upgrade_offers([offer])
-	shop.gold = 12
+	assert_true(fixture.inventory.add(skill))
+	fixture.progression.set_level(skill, 1)
+	var offer: Variant = fixture.session.regenerate([skill], 1)[0]
 
-	assert_true(shop.purchase_offer_with_dependencies(offer, inventory, system))
-	assert_eq(inventory.skill_item.id, "dash")
-	assert_eq(system.get_skill_level("dash"), 2)
-	shop.free()
+	var result: RefCounted = fixture.session.purchase(offer.offer_id)
+
+	assert_eq(result.code, PurchaseResultScript.Code.SUCCESS)
+	assert_eq(fixture.inventory.current_skill(), skill)
+	assert_eq(fixture.progression.level_of(skill), 2)
+	assert_eq(fixture.wallet.amount, 0)
 
 
-# 验证未拥有的新商品仍会进入普通商店并可按报价购买。
 func test_normal_shop_keeps_and_sells_unowned_items() -> void:
-	var shop: Variant = ShopScript.new()
-	var inventory: Variant = InventoryScript.new()
-	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
-	add_child_autofree(inventory)
-	add_child_autofree(system)
+	var fixture := _normal_fixture(18)
 	var relic := _make_relic("new_relic", 18)
 
-	var offers: Array = shop.generate_upgrade_offers([relic], inventory, system)
+	var offers: Array = fixture.session.regenerate([relic], 1)
 	assert_eq(offers.size(), 1)
 	assert_false(offers[0].is_upgrade)
-	shop.set_upgrade_offers(offers)
-	shop.gold = 18
+	assert_ne(offers[0].offer_id, &"")
 
-	assert_true(shop.purchase_offer_with_dependencies(offers[0], inventory, system))
-	assert_true(inventory.has_item_id("new_relic"))
-	assert_eq(shop.gold, 0)
-	shop.free()
+	var result: RefCounted = fixture.session.purchase(offers[0].offer_id)
+
+	assert_eq(result.code, PurchaseResultScript.Code.SUCCESS)
+	assert_eq(fixture.inventory.find_owned(relic), relic)
+	assert_eq(fixture.wallet.amount, 0)
 
 
-# 验证满级同物会被过滤并由其他候选补足普通商店库存。
 func test_normal_shop_filters_maxed_item_and_backfills_from_other_candidates() -> void:
-	var shop: Variant = ShopScript.new()
-	var inventory: Variant = InventoryScript.new()
-	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
-	add_child_autofree(inventory)
-	add_child_autofree(system)
-	var maxed := _make_marble("maxed", 10, Marble.MARBLE_TYPE.DEFAULT)
-	assert_true(inventory.add_item(maxed))
-	for _index: int in 3:
-		assert_true(system.upgrade_item(maxed, inventory))
+	var fixture := _normal_fixture(100)
+	var maxed := _make_marble("maxed", 10)
+	assert_true(fixture.inventory.add(maxed))
+	fixture.progression.set_level(maxed, 4)
 	var candidates: Array[Item] = [maxed]
 	for index: int in 6:
 		candidates.append(_make_relic("replacement_%d" % index, 10))
 
-	var offers: Array = shop.generate_upgrade_offers(candidates, inventory, system)
+	var offers: Array = fixture.session.regenerate(candidates, 6)
 
 	assert_eq(offers.size(), 6)
 	assert_eq(offers.filter(func(offer): return offer.item == maxed).size(), 0)
-	shop.free()
+	assert_eq(offers.filter(func(offer): return offer.item.type == Item.ItemType.RELIC).size(), 6)
 
 
-# 验证 Slot 可区分新商品、普通升级和折扣升级三种展示状态。
 func test_slot_reports_regular_upgrade_and_discounted_states() -> void:
 	var slot: Variant = SlotScene.instantiate()
 	add_child_autofree(slot)
 	var marble := _make_marble("states", 20)
-
 	var presentation := slot.get_node("OfferPresentationAnimation") as AnimationPlayer
 	var level_up := slot.get_node("LevelUp") as Sprite2D
 	var original_price := slot.get_node("OriginalPrice") as Label
@@ -210,47 +177,75 @@ func test_slot_reports_regular_upgrade_and_discounted_states() -> void:
 	assert_eq((slot.get_node("Price") as Label).text, "$ 40")
 
 
-# 验证升级报价在物品已被移出库存后不能扣款或升级残留等级。
 func test_upgrade_offer_rejects_item_removed_after_quote_generation() -> void:
-	var shop: Variant = ShopScript.new()
-	var inventory: Variant = InventoryScript.new()
-	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
-	add_child_autofree(inventory)
-	add_child_autofree(system)
+	var fixture := _normal_fixture(30)
 	var marble := _make_marble("removed_marble", 30)
-	assert_true(inventory.add_item(marble))
-	var offer = shop.create_upgrade_offer(marble, inventory, system)
-	shop.set_upgrade_offers([offer])
-	shop.gold = 30
-	assert_true(inventory.remove_item(marble))
+	assert_true(fixture.inventory.add(marble))
+	fixture.progression.set_level(marble, 1)
+	var offer: Variant = fixture.session.regenerate([marble], 1)[0]
+	var offer_id := StringName(offer.offer_id)
+	assert_true(fixture.inventory.remove(marble))
+	var state_before := _fixture_state(fixture)
 
-	assert_false(shop.purchase_offer_with_dependencies(offer, inventory, system))
-	assert_eq(shop.gold, 30)
-	assert_eq(system.get_level(marble.marble_type), 1)
-	shop.free()
+	var result: RefCounted = fixture.session.purchase(offer_id)
+
+	assert_eq(result.code, PurchaseResultScript.Code.OWNERSHIP_CHANGED)
+	assert_false(result.committed)
+	assert_eq(_fixture_state(fixture), state_before)
+	assert_eq(fixture.wallet.amount, 30)
+	assert_eq(fixture.progression.level_of(marble), 1)
 
 
-# 验证出售弹珠会清除等级进度，并把旧升级报价重建为新商品报价。
 func test_selling_marble_resets_progress_and_rebuilds_quote() -> void:
-	var shop: Variant = ShopScript.new()
-	var inventory: Variant = InventoryScript.new()
-	var system: MarbleUpgradeSystem = UpgradeSystemScript.new() as MarbleUpgradeSystem
-	add_child_autofree(inventory)
-	add_child_autofree(system)
+	var fixture := _normal_fixture(0)
 	var marble := _make_marble("sold_marble", 30)
-	assert_true(inventory.add_item(marble))
-	assert_true(system.upgrade_item(marble, inventory))
-	var pool: Array[Item] = [marble]
-	shop.shop_item_pool = pool
-	shop.set_upgrade_offers(shop.generate_upgrade_offers(shop.shop_item_pool, inventory, system))
+	assert_true(fixture.inventory.add(marble))
+	fixture.progression.set_level(marble, 2)
+	var old_offer: Variant = fixture.session.regenerate([marble], 1)[0]
+	assert_true(old_offer.is_upgrade)
+	var sale_service: RefCounted = NormalShopSaleServiceScript.new()
+	assert_true(sale_service.configure(fixture.inventory, fixture.progression, fixture.wallet))
 
-	assert_true(shop.sell_item_with_dependencies(marble, inventory, system))
-	assert_eq(system.get_level(marble.marble_type), 1)
-	assert_false(inventory.has_item_id(marble.id))
-	assert_eq(shop.shop_offers.size(), 1)
-	assert_false(shop.shop_offers[0].is_upgrade)
-	assert_eq(shop.shop_offers[0].target_level, 1)
-	shop.free()
+	var sale_result: RefCounted = sale_service.sell(marble)
+
+	assert_eq(sale_result.code, PurchaseResultScript.Code.SUCCESS)
+	assert_eq(fixture.progression.level_of(marble), 1)
+	assert_null(fixture.inventory.find_owned(marble))
+	assert_eq(fixture.wallet.amount, 15)
+	var rebuilt: Array = fixture.session.regenerate([marble], 1)
+	assert_eq(rebuilt.size(), 1)
+	assert_false(rebuilt[0].is_upgrade)
+	assert_eq(rebuilt[0].target_level, 1)
+	assert_ne(rebuilt[0].offer_id, old_offer.offer_id)
+
+
+func _normal_fixture(balance: int) -> Dictionary:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(balance)
+	var session: RefCounted = NormalShopSessionScript.new()
+	assert_true(session.configure(inventory, progression, wallet))
+	return {
+		&"inventory": inventory,
+		&"progression": progression,
+		&"wallet": wallet,
+		&"session": session,
+	}
+
+
+func _fixture_state(fixture: Dictionary) -> Dictionary:
+	return {
+		&"inventory": fixture.inventory.snapshot(),
+		&"progression": fixture.progression.snapshot(),
+		&"wallet": fixture.wallet.snapshot(),
+	}
+
+
+func _offer_for_type(offers: Array, item_type: int) -> Variant:
+	for offer: Variant in offers:
+		if offer.item.type == item_type:
+			return offer
+	return null
 
 
 func _make_relic(item_id: String, price: int) -> Item:
@@ -269,10 +264,9 @@ func _make_skill(item_id: String, price: int) -> Item:
 	return skill
 
 
-func _make_marble(item_id: String, price: int, marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT) -> Item:
+func _make_marble(item_id: String, price: int) -> Item:
 	var marble := Item.new()
 	marble.id = item_id
 	marble.type = Item.ItemType.MARBLE
-	marble.marble_type = marble_type
 	marble.price = price
 	return marble
