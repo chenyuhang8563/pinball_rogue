@@ -32,7 +32,7 @@
 - PurchasePlan 对 Inventory、Progression、Wallet、Health 快照后执行奖励/支付；任一步失败逆序恢复并区分 `COMMIT_FAILED` 与 `ROLLBACK_FAILED`。普通出售同样原子覆盖移除、成长重置和入账。
 - 完整 GUT：9 scripts / 54 tests / 494 asserts，exit 0；日志不含 ObjectDB、RID、orphan 或 resources-in-use 泄漏（[原始日志](../testing/evidence/phase1-gut.log)）。覆盖纯 Session、current adapters、真实 Shop Slot signal、真实 Shop 出售和 DevilShop confirm delegation。
 - 用户明确当前游戏流程无需随时可运行，优先完成重构和测试。因此 verify 记录为 **DEFERRED**：本 Phase 不声明 runtime PASS，真实游戏交互验证推迟到后续收敛阶段。
-- `Shop._grant_starting_marbles()` 仍直接修改当前 Inventory；它不是 Commerce 交易入口，登记为 Phase 2 Loadout 调用者迁移项。
+- Phase 1 曾将 `Shop._grant_starting_marbles()` 登记为待迁移调用者；Phase 2 已删除该入口，改由 Main 在唯一 RunScope 首次初始化时播种 Dark marble 与 Dash。
 
 ## Phase 2 实际证据
 
