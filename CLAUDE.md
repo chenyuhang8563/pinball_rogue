@@ -73,7 +73,7 @@ This repository uses a single-context domain documentation layout. See `docs/age
    ```
 2. Claude 正常停止 → Stop Hook 触发
 3. Hook 自动执行：git add + commit → gh issue create → 注入下一 Phase prompt
-4. Claude 被 block（不停止），继续执行下一个 Phase
+4. **每个 Phase 完成并给出下一阶段 spec 后，必须 `/clear` 清空上下文再进入下一 Phase**（每个 Phase 以干净上下文开始；下一阶段从交接文档 `docs/handoffs/phaseN-handoff.md`、`docs/architecture/migration-ledger.md` 与 GitHub Issue 恢复，不依赖上一 Phase 的对话上下文）
 5. 循环直到 Phase 9 完成
 
 ### Phase 完成前的必做事项

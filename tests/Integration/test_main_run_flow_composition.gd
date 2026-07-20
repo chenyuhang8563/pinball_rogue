@@ -263,6 +263,92 @@ func test_reward_panel_emits_typed_identity_once_without_settling_reward() -> vo
 	assert_false(offer.consumed)
 
 
+func test_setup_uses_preplaced_scene_bootstrap_nodes_not_new_instances() -> void:
+	var main: Node = autofree(MainScene.instantiate())
+	var stats: Node = autofree(_stats())
+	var effect_manager: Node = autofree(EffectManagerScript.new())
+	var pre_spawner := main.get_node("BattleSpawner")
+	var pre_enemies := main.get_node("Enemies")
+	var pre_gateway := main.get_node("BattleGateway")
+	var pre_controller := main.get_node("RunFlowController")
+
+	assert_true(main.call("_setup_run_flow_composition", stats, effect_manager))
+	assert_eq(main.get("battle_spawner"), pre_spawner, "pre-placed BattleSpawner used")
+	assert_eq(main.get("base_enemies"), pre_enemies, "pre-placed Enemies used")
+	assert_eq(main.get("battle_gateway"), pre_gateway, "pre-placed BattleGateway used")
+	assert_eq(main.get("run_flow_controller"), pre_controller, "pre-placed RunFlowController used")
+
+
+func test_valid_override_replaces_the_preplaced_slot() -> void:
+	var main: Node = autofree(MainScene.instantiate())
+	var stats: Node = autofree(_stats())
+	var effect_manager: Node = autofree(EffectManagerScript.new())
+	var pre_spawner: Node = main.get_node("BattleSpawner")
+	var override_spawner := BattleSpawner.new()
+
+	assert_true(main.call(
+		"_setup_run_flow_composition", stats, effect_manager,
+		{&"battle_spawner": override_spawner}
+	))
+	assert_eq(main.get("battle_spawner"), override_spawner)
+	assert_eq(override_spawner.name, "BattleSpawner")
+	assert_eq(override_spawner.get_parent(), main)
+	assert_false(is_instance_valid(pre_spawner), "replaced pre-placed node is freed")
+
+
+func test_wrong_type_override_is_rejected_and_preplaced_node_kept() -> void:
+	var main: Node = autofree(MainScene.instantiate())
+	var stats: Node = autofree(_stats())
+	var effect_manager: Node = autofree(EffectManagerScript.new())
+	var pre_spawner: Node = main.get_node("BattleSpawner")
+	var wrong_type := Node.new()
+	autofree(wrong_type)
+
+	assert_true(main.call(
+		"_setup_run_flow_composition", stats, effect_manager,
+		{&"battle_spawner": wrong_type}
+	))
+	assert_eq(main.get("battle_spawner"), pre_spawner, "wrong-typed override treated as none")
+	assert_true(is_instance_valid(pre_spawner), "pre-placed node not disturbed")
+
+
+func test_externally_parented_override_is_rejected_without_releasing_anything() -> void:
+	var main: Node = autofree(MainScene.instantiate())
+	var stats: Node = autofree(_stats())
+	var effect_manager: Node = autofree(EffectManagerScript.new())
+	var pre_spawner: Node = main.get_node("BattleSpawner")
+	var external_parent := Node.new()
+	autofree(external_parent)
+	var override_spawner := BattleSpawner.new()
+	external_parent.add_child(override_spawner)
+
+	assert_true(main.call(
+		"_setup_run_flow_composition", stats, effect_manager,
+		{&"battle_spawner": override_spawner}
+	))
+	assert_eq(main.get("battle_spawner"), pre_spawner, "externally owned override rejected")
+	assert_true(is_instance_valid(pre_spawner))
+	assert_eq(override_spawner.get_parent(), external_parent, "external node untouched")
+
+
+func test_dispose_then_resetup_recreates_dynamic_bootstrap_slots() -> void:
+	var main: Node = autofree(MainScene.instantiate())
+	var stats: Node = autofree(_stats())
+	var effect_manager: Node = autofree(EffectManagerScript.new())
+	assert_true(main.call("_setup_run_flow_composition", stats, effect_manager))
+	main.call("_dispose_run_flow_composition")
+	assert_null(main.get_node_or_null("BattleSpawner"))
+
+	assert_true(main.call("_setup_run_flow_composition", stats, effect_manager))
+	var spawner: Node = main.get_node_or_null("BattleSpawner")
+	assert_not_null(spawner)
+	assert_true(spawner is BattleSpawner)
+	assert_eq(spawner.get_parent(), main)
+	assert_true(main.get_node_or_null("Enemies") is Node2D)
+	assert_true(main.get_node_or_null("BattleGateway") is BattleGateway)
+	assert_true(main.get_node_or_null("RunFlowController") is RunFlowController)
+
+
 func _assert_composition_cleared(main: Node) -> void:
 	for property_name: StringName in [
 		&"battle_spawner",

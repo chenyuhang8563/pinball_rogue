@@ -1,6 +1,6 @@
 extends Node2D
 
-const RunScopeScript: GDScript = preload("res://Game/Bootstrap/run_scope.gd")
+const RunScopeScene: PackedScene = preload("res://Game/Bootstrap/run_scope.tscn")
 const RunFlowUIAdapterScript: GDScript = preload("res://UI/run_flow_ui_adapter.gd")
 const DefaultBattleRewardConfig: BattleRewardConfig = preload(
 	"res://Run/default_battle_reward_config.tres"
@@ -195,7 +195,7 @@ func _setup_run_scope(
 		stat_system = _get_autoload_node(&"StatSystem")
 	if stat_system == null:
 		return false
-	run_scope = RunScopeScript.new() as RunScope
+	run_scope = RunScopeScene.instantiate() as RunScope
 	run_scope.name = "RunScope"
 	add_child(run_scope)
 	if not run_scope.initialize(stat_system):
@@ -252,18 +252,27 @@ func _setup_run_flow_composition(
 			_discard_run_scope()
 		return false
 
-	# Creation order is kept explicit so the composition has one clear owner
-	# and one shared random stream. Overrides exist only for focused failure
-	# injection and become Main-owned once accepted here.
-	battle_spawner = component_overrides.get(&"battle_spawner") as BattleSpawner
-	if battle_spawner == null:
-		battle_spawner = BattleSpawner.new()
-	base_enemies = component_overrides.get(&"base_enemies") as Node2D
-	if base_enemies == null:
-		base_enemies = Node2D.new()
-	battle_gateway = component_overrides.get(&"battle_gateway") as BattleGateway
-	if battle_gateway == null:
-		battle_gateway = BattleGateway.new()
+	# Bootstrap nodes are pre-placed in main.tscn (visualized and auditable).
+	# Slots resolve here: an injected override wins (replacing the pre-placed
+	# node of the same name), otherwise the scene's pre-placed node is used,
+	# falling back to dynamic creation only when neither exists (e.g. a
+	# re-setup after dispose). RefCounted collaborators stay dynamic. The
+	# shared random stream is always created once per composition.
+	battle_spawner = _resolve_composition_node(
+		&"BattleSpawner", component_overrides.get(&"battle_spawner"),
+		func() -> Node: return BattleSpawner.new(),
+		func(node: Node) -> bool: return node is BattleSpawner
+	) as BattleSpawner
+	base_enemies = _resolve_composition_node(
+		&"Enemies", component_overrides.get(&"base_enemies"),
+		func() -> Node: return Node2D.new(),
+		func(node: Node) -> bool: return node is Node2D
+	) as Node2D
+	battle_gateway = _resolve_composition_node(
+		&"BattleGateway", component_overrides.get(&"battle_gateway"),
+		func() -> Node: return BattleGateway.new(),
+		func(node: Node) -> bool: return node is BattleGateway
+	) as BattleGateway
 	reward_service = component_overrides.get(&"reward_service") as RewardService
 	if reward_service == null:
 		reward_service = RewardService.new()
@@ -273,9 +282,11 @@ func _setup_run_flow_composition(
 	battle_plan_factory = component_overrides.get(&"battle_plan_factory") as BattlePlanFactory
 	if battle_plan_factory == null:
 		battle_plan_factory = BattlePlanFactory.new()
-	run_flow_controller = component_overrides.get(&"run_flow_controller") as RunFlowController
-	if run_flow_controller == null:
-		run_flow_controller = RunFlowController.new()
+	run_flow_controller = _resolve_composition_node(
+		&"RunFlowController", component_overrides.get(&"run_flow_controller"),
+		func() -> Node: return RunFlowController.new(),
+		func(node: Node) -> bool: return node is RunFlowController
+	) as RunFlowController
 	run_random_source = RunRandomSource.new()
 	reset_battle_callable = Callable(self, "reset_battle_state")
 	release_floating_texts_callable = Callable(self, "_release_all_floating_texts")
@@ -283,15 +294,11 @@ func _setup_run_flow_composition(
 	battle_reward_config = DefaultBattleRewardConfig
 	run_floor_config = DefaultRunFloorConfig
 
-	battle_spawner.name = "BattleSpawner"
-	base_enemies.name = "Enemies"
-	battle_gateway.name = "BattleGateway"
-	run_flow_controller.name = "RunFlowController"
+	if battle_spawner == null or base_enemies == null or battle_gateway == null \
+			or run_flow_controller == null:
+		_dispose_failed_run_flow_composition(created_run_scope)
+		return false
 	battle_spawner.enemy_container = base_enemies
-	add_child(battle_spawner)
-	add_child(base_enemies)
-	add_child(battle_gateway)
-	add_child(run_flow_controller)
 
 	# phase4-plan.md locks this configure order. Stop at the first failure and
 	# route every failure through the same reverse-order cleanup path.
@@ -412,6 +419,45 @@ func _free_owned_run_flow_node(node: Node) -> void:
 	if node.get_parent() != null:
 		node.get_parent().remove_child(node)
 	node.free()
+
+
+## Resolves a Bootstrap slot to a single, correctly-typed node owned by Main.
+## Transactional: a rejected candidate never disturbs the pre-placed node.
+## - an override of the wrong type, or one owned by another branch, is rejected
+##   and treated as no valid override;
+## - a valid override replaces the pre-placed node of the same name;
+## - without an override the scene's pre-placed node is used, recreated only if
+##   it is missing or mistyped (e.g. after a dispose freed it).
+func _resolve_composition_node(
+	slot_name: StringName,
+	override_value: Variant,
+	creator: Callable,
+	type_check: Callable
+) -> Node:
+	var override: Node = override_value as Node
+	if override != null:
+		var parent: Node = override.get_parent()
+		if not bool(type_check.call(override)) or (parent != null and parent != self):
+			override = null
+	var existing: Node = get_node_or_null(NodePath(slot_name))
+	var candidate: Node = override
+	if candidate != null:
+		if existing != null and existing != candidate:
+			if existing.get_parent() == self:
+				remove_child(existing)
+			existing.free()
+	else:
+		candidate = existing
+		if candidate != null and not bool(type_check.call(candidate)):
+			candidate = null
+		if candidate == null:
+			candidate = creator.call()
+	if candidate != null:
+		if candidate.get_parent() == null:
+			add_child(candidate)
+		if candidate.name != String(slot_name):
+			candidate.name = String(slot_name)
+	return candidate
 
 
 func _has_valid_run_flow_composition() -> bool:

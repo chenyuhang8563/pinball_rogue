@@ -10,6 +10,9 @@
 [ext_resource type="Script" uid="uid://w70j7g05bq8a" path="res://UI/run_failure_panel.gd" id="9_0jx5h"]
 [ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://UI/battle_health_hud.tscn" id="11_health"]
 [ext_resource type="PackedScene" uid="uid://bfiq2ule5s2x8" path="res://UI/pause_panel.tscn" id="12_pause"]
+[ext_resource type="Script" uid="uid://bf7et742rbw7a" path="res://Run/battle_spawner.gd" id="20_spawner"]
+[ext_resource type="Script" uid="uid://c50047c5576eg" path="res://Run/battle_gateway.gd" id="21_gateway"]
+[ext_resource type="Script" uid="uid://d3dwc01dyf7e7" path="res://Run/run_flow_controller.gd" id="22_controller"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jcs3y"]
 bg_color = Color(0.08, 0.08, 0.1, 0.92)
@@ -71,3 +74,14 @@ script = ExtResource("9_0jx5h")
 
 [node name="SkillController" type="Node" parent="." unique_id=1382697519]
 script = ExtResource("8_f3gf5")
+
+[node name="BattleSpawner" type="Node" parent="."]
+script = ExtResource("20_spawner")
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="BattleGateway" type="Node" parent="."]
+script = ExtResource("21_gateway")
+
+[node name="RunFlowController" type="Node" parent="."]
+script = ExtResource("22_controller")

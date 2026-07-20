@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" uid="uid://dkwyw0so1dg3o" path="res://Game/Bootstrap/run_scope.gd" id="1_scope"]
+
+[node name="RunScope" type="Node"]
+script = ExtResource("1_scope")

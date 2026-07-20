@@ -30,6 +30,11 @@ func test_main_scene_exposes_required_composition_nodes() -> void:
 	assert_not_null(main.get_node_or_null("CanvasLayer/BattleHealthHud"))
 	assert_not_null(main.get_node_or_null("CanvasLayer/PausePanel"))
 	assert_not_null(main.get_node_or_null("CanvasLayer/RunFailurePanel"))
+	# Phase 6：Bootstrap 组合节点可视化预置于主场景，且脚本基类匹配。
+	assert_true(main.get_node_or_null("BattleSpawner") is BattleSpawner)
+	assert_true(main.get_node_or_null("Enemies") is Node2D)
+	assert_true(main.get_node_or_null("BattleGateway") is BattleGateway)
+	assert_true(main.get_node_or_null("RunFlowController") is RunFlowController)
 
 
 # 固化关卡读取与战斗实例化共同依赖的容器命名。
