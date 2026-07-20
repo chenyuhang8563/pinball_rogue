@@ -8,6 +8,7 @@ const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_r
 const SHOP_SLOT_COUNT: int = 6
 
 signal gold_changed(value: int)
+signal shop_close_intent(token: RunFlowToken, shop_kind: StringName)
 
 @export var shop_slot_node: PackedScene = preload("res://Items/slot.tscn")
 @export var shop_item_pool: Array[Item] = []
@@ -31,6 +32,8 @@ var _loadout: RefCounted = null
 var _progression: RefCounted = null
 var _wallet: RefCounted = null
 var _pending_skill_offer_id: StringName = &""
+var _run_flow_token: RunFlowToken = null
+var _run_flow_shop_kind: StringName = &""
 
 enum MODE {
 	ON,
@@ -83,16 +86,46 @@ func _bind_optional_nodes() -> void:
 	if skill_replace_dialog == null:
 		skill_replace_dialog = get_node_or_null("UI/Panel/SkillReplaceDialog") as SkillReplaceDialog
 
-func _input(event) -> void:
+func _input(event: InputEvent) -> void:
 	if event is InputEventKey and event.is_pressed():
-		if event.keycode == KEY_U:
-			if mode == MODE.ON:
-				mode = MODE.OFF
-			elif mode == MODE.OFF:
-				mode = MODE.ON
+		if event.keycode == KEY_U and mode == MODE.ON and _run_flow_token != null:
+			close_shop()
+
+
+func present_shop(token: RunFlowToken, shop_kind: StringName) -> bool:
+	if token == null or not token.is_valid() or shop_kind != &"shop":
+		return false
+	_run_flow_token = token
+	_run_flow_shop_kind = shop_kind
+	mode = MODE.ON
+	return true
 
 
 func close_shop() -> void:
+	cancel_pending_skill_purchase()
+	mode = MODE.OFF
+	if _run_flow_token == null:
+		return
+	var token: RunFlowToken = _run_flow_token
+	var shop_kind: StringName = _run_flow_shop_kind
+	_run_flow_token = null
+	_run_flow_shop_kind = &""
+	shop_close_intent.emit(token, shop_kind)
+
+
+func dismiss_shop(token: RunFlowToken, shop_kind: StringName) -> void:
+	if _run_flow_token == null or token == null or not _run_flow_token.matches(token) \
+			or _run_flow_shop_kind != shop_kind:
+		return
+	_run_flow_token = null
+	_run_flow_shop_kind = &""
+	cancel_pending_skill_purchase()
+	mode = MODE.OFF
+
+
+func clear_run_presentation() -> void:
+	_run_flow_token = null
+	_run_flow_shop_kind = &""
 	cancel_pending_skill_purchase()
 	mode = MODE.OFF
 

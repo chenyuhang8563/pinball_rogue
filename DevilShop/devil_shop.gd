@@ -5,7 +5,7 @@ const DevilShopSessionScript: GDScript = preload("res://Commerce/application/dev
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
 const PAYMENT_PAN_ANIMATION_REFERENCE_Y: float = 189.0
 
-signal closed
+signal shop_close_intent(token: RunFlowToken, shop_kind: StringName)
 signal health_changed(value: int)
 signal offer_changed(offer: DevilShopOffer)
 signal purchase_completed(offer: DevilShopOffer)
@@ -34,6 +34,8 @@ var _purchases_disabled: bool = false
 var _held_delta: int = 0
 var _scale_state: int = -1
 var _pending_scale_frame: int = -1
+var _run_flow_token: RunFlowToken = null
+var _run_flow_shop_kind: StringName = &""
 
 @onready var _offer_slot: Node = get_node_or_null("OfferPan/OfferSlot")
 @onready var _payment_pan: Control = get_node_or_null("PaymentPan") as Control
@@ -93,7 +95,16 @@ func configure(
 	return true
 
 
-func open_for_run() -> void:
+func present_shop(token: RunFlowToken, shop_kind: StringName) -> bool:
+	if token == null or not token.is_valid() or shop_kind != &"devil_shop":
+		return false
+	_run_flow_token = token
+	_run_flow_shop_kind = shop_kind
+	_open_for_run()
+	return true
+
+
+func _open_for_run() -> void:
 	_purchases_disabled = false
 	var opened: Array = []
 	if _configured and devil_shop_session != null and config != null:
@@ -116,7 +127,38 @@ func close_shop() -> void:
 		_skill_dialog.cancel_replace_request()
 	hide()
 	get_tree().paused = false
-	closed.emit()
+	if _run_flow_token == null:
+		return
+	var token: RunFlowToken = _run_flow_token
+	var shop_kind: StringName = _run_flow_shop_kind
+	_run_flow_token = null
+	_run_flow_shop_kind = &""
+	shop_close_intent.emit(token, shop_kind)
+
+
+func dismiss_shop(token: RunFlowToken, shop_kind: StringName) -> void:
+	if _run_flow_token == null or token == null or not _run_flow_token.matches(token) \
+			or _run_flow_shop_kind != shop_kind:
+		return
+	_run_flow_token = null
+	_run_flow_shop_kind = &""
+	_pending_skill_offer_id = &""
+	if _skill_dialog != null and _skill_dialog.is_request_pending():
+		_skill_dialog.cancel_replace_request()
+	hide()
+	if is_inside_tree():
+		get_tree().paused = false
+
+
+func clear_run_presentation() -> void:
+	_run_flow_token = null
+	_run_flow_shop_kind = &""
+	_pending_skill_offer_id = &""
+	if _skill_dialog != null and _skill_dialog.is_request_pending():
+		_skill_dialog.cancel_replace_request()
+	hide()
+	if is_inside_tree():
+		get_tree().paused = false
 
 
 func get_current_offer() -> DevilShopOffer:

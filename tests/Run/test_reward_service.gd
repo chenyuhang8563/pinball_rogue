@@ -147,6 +147,8 @@ func test_duplicate_relic_upgrades_owned_instance_then_full_level_compensates() 
 		assert_true(result.was_granted())
 		assert_eq(progression.call("level_of", owned), expected_level)
 		assert_eq(loadout.call("find_owned", candidate), owned)
+		# Elite drafts claim-all; settle the abandoned gold so the next draft is legal.
+		assert_true(service.clear_active())
 
 	var full_draft: RewardOffer = service.create_elite_draft(_token, &"elite-full", [candidate])
 	var compensation := _item_offer(full_draft)
@@ -226,7 +228,10 @@ func test_claim_rejects_illegal_stale_and_consumed_intents_with_typed_codes() ->
 		RewardResult.Code.STALE_DRAFT
 	)
 
-	var fresh: RewardOffer = service.create_normal_draft(_token, &"normal-fresh")
+	var fresh: RewardOffer
+	# The stale draft was never consumed; settle it before requesting a new one.
+	assert_true(service.clear_active())
+	fresh = service.create_normal_draft(_token, &"normal-fresh")
 	var fresh_gold := fresh.options()[0]
 	assert_true(service.claim(_token, fresh.draft_id, fresh_gold.offer_id).was_granted())
 	assert_eq(

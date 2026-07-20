@@ -1,16 +1,20 @@
 extends Control
 class_name RunEventPanel
 
-signal wager_requested(cost: int, reward: int)
-signal fight_requested
-signal escape_requested
-signal continued
+signal event_intent(
+	token: RunFlowToken,
+	event_id: StringName,
+	option_id: StringName,
+	intent: EventResolver.EventIntent
+)
 
 const SMALL_WAGER_COST: int = 20
 const SMALL_WAGER_REWARD: int = 30
 const LARGE_WAGER_COST: int = 60
 const LARGE_WAGER_REWARD: int = 120
 
+var _wallet: RefCounted = null
+var _active_presentation: EventPresentation = null
 var _current_gold: int = 0
 var _pending_roll: int = 0
 var _pending_gold_delta: int = 0
@@ -30,6 +34,13 @@ var _showing_dice_event: bool = false
 @onready var _animation_player: AnimationPlayer = $AnimationPlayer
 
 
+func configure(wallet: RefCounted) -> bool:
+	if wallet == null or not is_instance_valid(wallet) or not wallet.has_method(&"balance"):
+		return false
+	_wallet = wallet
+	return true
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_connect_buttons()
@@ -38,7 +49,56 @@ func _ready() -> void:
 	_animation_player.advance(0.0)
 
 
-func show_dice_event(gold: int) -> void:
+func present_event(presentation: EventPresentation) -> bool:
+	if presentation == null or not presentation.is_valid() or presentation.consumed:
+		return false
+	_active_presentation = presentation
+	if presentation.phase == EventPresentation.Phase.RESULT:
+		return presentation.event_id == EventResolver.EVENT_DICE \
+			and presentation.has_option(EventResolver.RESULT_CONTINUE)
+	match presentation.event_id:
+		EventResolver.EVENT_DICE:
+			if not presentation.has_option(EventResolver.DICE_WAGER_20) \
+					or not presentation.has_option(EventResolver.DICE_WAGER_60) \
+					or not presentation.has_option(EventResolver.DICE_LEAVE):
+				return false
+			_show_dice_event(_wallet_balance())
+		EventResolver.EVENT_CROSSROADS:
+			if not presentation.has_option(EventResolver.CROSSROADS_FIGHT) \
+					or not presentation.has_option(EventResolver.CROSSROADS_ESCAPE):
+				return false
+			_show_crossroads_event()
+		_:
+			return false
+	return true
+
+
+func apply_resolution(resolution: EventResolution) -> void:
+	if resolution == null or not resolution.was_resolved():
+		return
+	if resolution.action != EventResolution.Action.SHOW_RESULT:
+		dismiss()
+		return
+	var reward: int = 0
+	if resolution.roll > 3:
+		reward = LARGE_WAGER_REWARD \
+			if resolution.option_id == EventResolver.DICE_WAGER_60 else SMALL_WAGER_REWARD
+	_reveal_dice_result(resolution.roll, resolution.gold_delta, reward)
+
+
+func clear_presentation() -> void:
+	_active_presentation = null
+	dismiss()
+
+
+func dismiss() -> void:
+	if _animation_player != null:
+		_animation_player.play(&"hide")
+		_animation_player.advance(0.0)
+	_set_tree_paused(false)
+
+
+func _show_dice_event(gold: int) -> void:
 	_current_gold = maxi(0, gold)
 	_pending_roll = 0
 	_pending_gold_delta = 0
@@ -49,15 +109,15 @@ func show_dice_event(gold: int) -> void:
 	_large_wager_button.disabled = _current_gold < LARGE_WAGER_COST
 	_continue_button.disabled = false
 	_continue_button.text = tr("EVENT_LEAVE_OPTION")
-
-	var state_animation: StringName = &"show_dice_broke" if _current_gold < SMALL_WAGER_COST else &"show_dice"
+	var state_animation: StringName = &"show_dice_broke" \
+		if _current_gold < SMALL_WAGER_COST else &"show_dice"
 	_play_state(state_animation)
 	_set_tree_paused(true)
 	if is_inside_tree():
 		_focus_first_affordable_wager()
 
 
-func show_crossroads_event() -> void:
+func _show_crossroads_event() -> void:
 	_pending_roll = 0
 	_showing_dice_event = false
 	_title_label.text = tr("EVENT_CROSSROADS_TITLE")
@@ -72,7 +132,7 @@ func show_crossroads_event() -> void:
 		_fight_button.grab_focus()
 
 
-func reveal_dice_result(roll: int, gold_delta: int, reward: int) -> void:
+func _reveal_dice_result(roll: int, gold_delta: int, reward: int) -> void:
 	_pending_roll = clampi(roll, 1, 6)
 	_pending_gold_delta = gold_delta
 	_pending_reward = maxi(0, reward)
@@ -81,26 +141,71 @@ func reveal_dice_result(roll: int, gold_delta: int, reward: int) -> void:
 	_animation_player.play(&"dice_roll")
 
 
-func dismiss() -> void:
-	_animation_player.play(&"hide")
-	_animation_player.advance(0.0)
-	_set_tree_paused(false)
+func _emit_intent(option_id: StringName, intent: EventResolver.EventIntent) -> void:
+	var presentation: EventPresentation = _active_presentation
+	if presentation == null or presentation.consumed or not presentation.has_option(option_id):
+		return
+	event_intent.emit(presentation.token, presentation.event_id, option_id, intent)
+
+
+func _on_small_wager_pressed() -> void:
+	if _small_wager_button.disabled:
+		return
+	_small_wager_button.disabled = true
+	_large_wager_button.disabled = true
+	_emit_intent(EventResolver.DICE_WAGER_20, EventResolver.EventIntent.DICE_WAGER_SMALL)
+
+
+func _on_large_wager_pressed() -> void:
+	if _large_wager_button.disabled:
+		return
+	_small_wager_button.disabled = true
+	_large_wager_button.disabled = true
+	_emit_intent(EventResolver.DICE_WAGER_60, EventResolver.EventIntent.DICE_WAGER_LARGE)
+
+
+func _on_fight_pressed() -> void:
+	_fight_button.disabled = true
+	_escape_button.disabled = true
+	_emit_intent(EventResolver.CROSSROADS_FIGHT, EventResolver.EventIntent.CROSSROADS_FIGHT)
+
+
+func _on_escape_pressed() -> void:
+	_fight_button.disabled = true
+	_escape_button.disabled = true
+	_emit_intent(EventResolver.CROSSROADS_ESCAPE, EventResolver.EventIntent.CROSSROADS_ESCAPE)
+
+
+func _on_continue_pressed() -> void:
+	_continue_button.disabled = true
+	if _active_presentation == null:
+		return
+	if _active_presentation.phase == EventPresentation.Phase.RESULT:
+		_emit_intent(EventResolver.RESULT_CONTINUE, EventResolver.EventIntent.ACKNOWLEDGE_RESULT)
+	else:
+		_emit_intent(EventResolver.DICE_LEAVE, EventResolver.EventIntent.DICE_LEAVE)
 
 
 func _connect_buttons() -> void:
-	_small_wager_button.pressed.connect(_on_small_wager_pressed)
-	_large_wager_button.pressed.connect(_on_large_wager_pressed)
-	_fight_button.pressed.connect(_on_fight_pressed)
-	_escape_button.pressed.connect(_on_escape_pressed)
-	_continue_button.pressed.connect(_on_continue_pressed)
-	_animation_player.animation_finished.connect(_on_animation_finished)
+	if not _small_wager_button.pressed.is_connected(_on_small_wager_pressed):
+		_small_wager_button.pressed.connect(_on_small_wager_pressed)
+	if not _large_wager_button.pressed.is_connected(_on_large_wager_pressed):
+		_large_wager_button.pressed.connect(_on_large_wager_pressed)
+	if not _fight_button.pressed.is_connected(_on_fight_pressed):
+		_fight_button.pressed.connect(_on_fight_pressed)
+	if not _escape_button.pressed.is_connected(_on_escape_pressed):
+		_escape_button.pressed.connect(_on_escape_pressed)
+	if not _continue_button.pressed.is_connected(_on_continue_pressed):
+		_continue_button.pressed.connect(_on_continue_pressed)
+	if not _animation_player.animation_finished.is_connected(_on_animation_finished):
+		_animation_player.animation_finished.connect(_on_animation_finished)
 
 
 func _connect_localization() -> void:
 	var localization: Node = _get_autoload_node(&"Localization")
 	if localization == null or not localization.has_signal(&"locale_changed"):
 		return
-	var callback := Callable(self, "_on_locale_changed")
+	var callback: Callable = Callable(self, "_on_locale_changed")
 	if not localization.is_connected(&"locale_changed", callback):
 		localization.connect(&"locale_changed", callback)
 
@@ -146,39 +251,6 @@ func _focus_first_affordable_wager() -> void:
 		_continue_button.grab_focus()
 
 
-func _on_small_wager_pressed() -> void:
-	if _small_wager_button.disabled:
-		return
-	_small_wager_button.disabled = true
-	_large_wager_button.disabled = true
-	wager_requested.emit(SMALL_WAGER_COST, SMALL_WAGER_REWARD)
-
-
-func _on_large_wager_pressed() -> void:
-	if _large_wager_button.disabled:
-		return
-	_small_wager_button.disabled = true
-	_large_wager_button.disabled = true
-	wager_requested.emit(LARGE_WAGER_COST, LARGE_WAGER_REWARD)
-
-
-func _on_fight_pressed() -> void:
-	_fight_button.disabled = true
-	_escape_button.disabled = true
-	fight_requested.emit()
-
-
-func _on_escape_pressed() -> void:
-	_fight_button.disabled = true
-	_escape_button.disabled = true
-	escape_requested.emit()
-
-
-func _on_continue_pressed() -> void:
-	_continue_button.disabled = true
-	continued.emit()
-
-
 func _on_animation_finished(animation_name: StringName) -> void:
 	if animation_name != &"dice_roll":
 		return
@@ -201,6 +273,10 @@ func _on_locale_changed(_locale_code: String) -> void:
 		_description_label.text = tr("EVENT_CROSSROADS_DESC")
 		_fight_button.text = tr("EVENT_CROSSROADS_FIGHT_OPTION")
 		_escape_button.text = tr("EVENT_CROSSROADS_ESCAPE_OPTION")
+
+
+func _wallet_balance() -> int:
+	return int(_wallet.call("balance")) if _wallet != null and is_instance_valid(_wallet) else 0
 
 
 func _get_autoload_node(node_name: StringName) -> Node:

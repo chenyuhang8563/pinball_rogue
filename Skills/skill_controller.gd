@@ -26,6 +26,10 @@ var _executor: Node = null
 var _dash_damage_timer: Timer = null
 var _loadout: RefCounted = null
 var _progression: RefCounted = null
+var _lifecycle_source: RunFlowController = null
+var _battle_started_callable: Callable = Callable()
+var _battle_completed_callable: Callable = Callable()
+var _run_completed_callable: Callable = Callable()
 
 const DASH_BUFF_SOURCE: String = "dash_skill_damage_buff"
 const STAT_ENTITY_MARBLE_CHAIN: String = "marble_chain"
@@ -52,7 +56,6 @@ func _ready() -> void:
 	_dash_damage_timer.timeout.connect(_clear_dash_damage_bonus)
 	add_child(_dash_damage_timer)
 	_connect_port_signals()
-	_connect_battle_lifecycle()
 	_sync_from_loadout()
 
 
@@ -86,6 +89,7 @@ func _notification(what: int) -> void:
 
 
 func _exit_tree() -> void:
+	disconnect_lifecycle()
 	_disconnect_port_signals()
 	cancel_active_skill("exit_tree")
 	clear_projectiles()
@@ -315,27 +319,60 @@ func _on_skill_slot_changed(item: Item) -> void:
 		equip_skill(item)
 
 
-func _connect_battle_lifecycle() -> void:
-	var event_bus := _get_autoload_node(&"Event")
-	if event_bus == null:
-		return
-	if event_bus.has_signal(&"battle_completed"):
-		var battle_callback := Callable(self, "_on_battle_completed")
-		if not event_bus.is_connected(&"battle_completed", battle_callback):
-			event_bus.connect(&"battle_completed", battle_callback)
-	if event_bus.has_signal(&"run_completed"):
-		var run_callback := Callable(self, "_on_run_completed")
-		if not event_bus.is_connected(&"run_completed", run_callback):
-			event_bus.connect(&"run_completed", run_callback)
+## Attaches lifecycle cleanup to the one typed run-flow owner. Reconfiguring
+## always drops the previous source before accepting the replacement.
+func configure_lifecycle(source: RunFlowController) -> bool:
+	disconnect_lifecycle()
+	if source == null:
+		return true
+	if not is_instance_valid(source):
+		return false
+	_lifecycle_source = source
+	_battle_started_callable = Callable(self, "_on_battle_started")
+	_battle_completed_callable = Callable(self, "_on_battle_completed")
+	_run_completed_callable = Callable(self, "_on_run_completed")
+	if _lifecycle_source.connect(&"battle_started", _battle_started_callable) != OK \
+			or _lifecycle_source.connect(&"battle_completed", _battle_completed_callable) != OK \
+			or _lifecycle_source.connect(&"run_completed", _run_completed_callable) != OK:
+		disconnect_lifecycle()
+		return false
+	return true
 
 
-func _on_battle_completed(_group_id: String) -> void:
+func disconnect_lifecycle() -> void:
+	if _lifecycle_source != null and is_instance_valid(_lifecycle_source):
+		if _battle_started_callable.is_valid() \
+				and _lifecycle_source.is_connected(&"battle_started", _battle_started_callable):
+			_lifecycle_source.disconnect(&"battle_started", _battle_started_callable)
+		if _battle_completed_callable.is_valid() \
+				and _lifecycle_source.is_connected(&"battle_completed", _battle_completed_callable):
+			_lifecycle_source.disconnect(&"battle_completed", _battle_completed_callable)
+		if _run_completed_callable.is_valid() \
+				and _lifecycle_source.is_connected(&"run_completed", _run_completed_callable):
+			_lifecycle_source.disconnect(&"run_completed", _run_completed_callable)
+	_lifecycle_source = null
+	_battle_started_callable = Callable()
+	_battle_completed_callable = Callable()
+	_run_completed_callable = Callable()
+
+
+func _on_battle_started(_token: RunFlowToken, _plan: BattlePlan) -> void:
+	cancel_active_skill("battle_started")
+	clear_projectiles()
+	_clear_dash_damage_bonus()
+
+
+func _on_battle_completed(
+	_token: RunFlowToken,
+	_battle_id: StringName,
+	_plan: BattlePlan
+) -> void:
 	cancel_active_skill("battle_completed")
 	clear_projectiles()
 	_clear_dash_damage_bonus()
 
 
-func _on_run_completed() -> void:
+func _on_run_completed(_token: RunFlowToken) -> void:
 	cancel_active_skill("run_completed")
 	clear_projectiles()
 	_clear_dash_damage_bonus()

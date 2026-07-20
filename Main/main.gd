@@ -1,7 +1,11 @@
 extends Node2D
 
-const RunControllerScript: GDScript = preload("res://Run/run_controller.gd")
 const RunScopeScript: GDScript = preload("res://Game/Bootstrap/run_scope.gd")
+const RunFlowUIAdapterScript: GDScript = preload("res://UI/run_flow_ui_adapter.gd")
+const DefaultBattleRewardConfig: BattleRewardConfig = preload(
+	"res://Run/default_battle_reward_config.tres"
+)
+const DefaultRunFloorConfig: RunFloorConfig = preload("res://Run/default_run_floor_config.tres")
 const ShopScene: PackedScene = preload("res://Shop/shop.tscn")
 const NodeChoicePanelScene: PackedScene = preload("res://UI/node_choice_panel.tscn")
 const DraftRewardPanelScene: PackedScene = preload("res://UI/draft_reward_panel.tscn")
@@ -27,22 +31,39 @@ const DevilShopScene: PackedScene = preload("res://DevilShop/devil_shop.tscn")
 ## 当前活跃的弹珠链。由 _spawn_chain() 创建，整条链只有一个 RigidBody2D（Head）。
 var marble_chain: MarbleChain = null
 var run_scope: RunScope = null
-var run_controller: RunController = null
+## P3-B production composition. RunFlowController is the sole orchestrator.
+var battle_spawner: BattleSpawner = null
+var base_enemies: Node2D = null
+var battle_gateway: BattleGateway = null
+var reward_service: RewardService = null
+var event_resolver: EventResolver = null
+var battle_plan_factory: BattlePlanFactory = null
+var run_flow_controller: RunFlowController = null
+var run_random_source: RunRandomSource = null
+var battle_reward_config: BattleRewardConfig = null
+var run_floor_config: RunFloorConfig = null
+var run_ui_adapter: RunFlowUIAdapter = null
+var reset_battle_callable: Callable = Callable()
+var release_floating_texts_callable: Callable = Callable()
+var read_stat_callable: Callable = Callable()
+var node_choice_panel: NodeChoicePanel = null
+var draft_reward_panel: DraftRewardPanel = null
+var run_event_panel: RunEventPanel = null
+var devil_shop: DevilShop = null
 var normal_shop: Control = null
-var battle_health_hud: Node = null
-var floor_hud: Node = null
-var inventory_panel: Control = null
-var run_failure_panel: Node = null
+var battle_health_hud: BattleHealthHud = null
+var floor_hud: FloorHud = null
+var inventory_panel: InventoryPanel = null
+var run_failure_panel: RunFailurePanel = null
 var _active_skill_blocking_panels: Array[Node] = []
-var _restart_in_progress: bool = false
+var _owned_run_ui_nodes: Array[Node] = []
+var _gateway_marble_fell_callable: Callable = Callable()
+var _run_flow_composition_configured: bool = false
 
 
 func _ready() -> void:
 	if not _setup_run_scope():
 		return
-	var event_bus: Node = _get_autoload_node(&"Event")
-	if event_bus != null and event_bus.has_signal(&"marble_fell"):
-		_connect_once(event_bus, &"marble_fell", Callable(self, "_on_marble_fell"))
 	_connect_loadout_change()
 	_spawn_chain()
 	if not _setup_skill_system():
@@ -51,11 +72,15 @@ func _ready() -> void:
 		return
 
 
+func _exit_tree() -> void:
+	_dispose_run_flow_composition()
+
+
 # ---- 链生成 ----
 
 ## 用当前 RunScope 的 MarbleLoadout 顺序构建 MarbleChain。
 func _spawn_chain() -> void:
-	if run_controller != null and run_controller.run_is_failed:
+	if run_flow_controller != null and run_flow_controller.current_state().phase == RunState.Phase.FAILED:
 		return
 	if marbles == null:
 		return
@@ -64,6 +89,7 @@ func _spawn_chain() -> void:
 	if marble_chain != null and is_instance_valid(marble_chain):
 		marble_chain.queue_free()
 	marble_chain = null
+	_reconfigure_buff_manager()
 
 	var chain_items: Array[Item] = _get_chain_items()
 	if chain_items.is_empty():
@@ -73,6 +99,7 @@ func _spawn_chain() -> void:
 	marble_chain.name = "MarbleChain"
 	marbles.add_child(marble_chain)
 	marble_chain.build_chain(chain_items, starting_marble_spawn_positions)
+	_reconfigure_buff_manager()
 
 
 ## 用当前 RunScope 的 MarbleLoadout 顺序构建弹珠链。
@@ -86,7 +113,7 @@ func _get_chain_items() -> Array[Item]:
 
 ## 弹珠掉入 KillZone。Head 仍是 RigidBody2D 且在 "marbles" group，检测逻辑不变。
 ## 整条链重建而非单独重建一个弹珠。
-func _on_marble_fell(body: RigidBody2D) -> void:
+func _on_accepted_marble_fell(_token: RunFlowToken, body: RigidBody2D) -> void:
 	if marble_chain == null or not is_instance_valid(marble_chain):
 		return
 	# 确认掉落的确实是 Head
@@ -95,6 +122,7 @@ func _on_marble_fell(body: RigidBody2D) -> void:
 			skill_controller.cancel_active_skill("head_fell")
 		marble_chain.queue_free()
 		marble_chain = null
+		_reconfigure_buff_manager()
 		call_deferred(&"_spawn_chain")
 
 
@@ -204,6 +232,219 @@ func _discard_run_scope() -> void:
 	run_scope = null
 
 
+## Builds the Phase 3 modular composition without starting it. P3-A focused
+## tests call this boundary directly; P3-B production adds UI/bridge wiring in
+## `_setup_run_flow()` and starts the same controller only after every wire is valid.
+func _setup_run_flow_composition(
+	stat_system_override: Object = null,
+	effect_manager_override: Node = null,
+	component_overrides: Dictionary = {}
+) -> bool:
+	if _run_flow_composition_configured:
+		if _has_valid_run_flow_composition():
+			return true
+	_dispose_run_flow_composition()
+
+	var created_run_scope: bool = run_scope == null
+	if not _setup_run_scope(stat_system_override, effect_manager_override):
+		return false
+
+	var stat_system: Node = _get_autoload_node(&"StatSystem")
+	if stat_system == null or not stat_system.has_method("get_stat"):
+		if created_run_scope:
+			_discard_run_scope()
+		return false
+
+	# Creation order is kept explicit so the composition has one clear owner
+	# and one shared random stream. Overrides exist only for focused failure
+	# injection and become Main-owned once accepted here.
+	battle_spawner = component_overrides.get(&"battle_spawner") as BattleSpawner
+	if battle_spawner == null:
+		battle_spawner = BattleSpawner.new()
+	base_enemies = component_overrides.get(&"base_enemies") as Node2D
+	if base_enemies == null:
+		base_enemies = Node2D.new()
+	battle_gateway = component_overrides.get(&"battle_gateway") as BattleGateway
+	if battle_gateway == null:
+		battle_gateway = BattleGateway.new()
+	reward_service = component_overrides.get(&"reward_service") as RewardService
+	if reward_service == null:
+		reward_service = RewardService.new()
+	event_resolver = component_overrides.get(&"event_resolver") as EventResolver
+	if event_resolver == null:
+		event_resolver = EventResolver.new()
+	battle_plan_factory = component_overrides.get(&"battle_plan_factory") as BattlePlanFactory
+	if battle_plan_factory == null:
+		battle_plan_factory = BattlePlanFactory.new()
+	run_flow_controller = component_overrides.get(&"run_flow_controller") as RunFlowController
+	if run_flow_controller == null:
+		run_flow_controller = RunFlowController.new()
+	run_random_source = RunRandomSource.new()
+	reset_battle_callable = Callable(self, "reset_battle_state")
+	release_floating_texts_callable = Callable(self, "_release_all_floating_texts")
+	read_stat_callable = Callable(self, "_read_stat")
+	battle_reward_config = DefaultBattleRewardConfig
+	run_floor_config = DefaultRunFloorConfig
+
+	battle_spawner.name = "BattleSpawner"
+	base_enemies.name = "Enemies"
+	battle_gateway.name = "BattleGateway"
+	run_flow_controller.name = "RunFlowController"
+	battle_spawner.enemy_container = base_enemies
+	add_child(battle_spawner)
+	add_child(base_enemies)
+	add_child(battle_gateway)
+	add_child(run_flow_controller)
+
+	# phase4-plan.md locks this configure order. Stop at the first failure and
+	# route every failure through the same reverse-order cleanup path.
+	if not reward_service.configure(
+		run_scope.loadout,
+		run_scope.progression,
+		run_scope.wallet,
+		battle_reward_config,
+		run_random_source
+	):
+		_dispose_failed_run_flow_composition(created_run_scope)
+		return false
+	if not event_resolver.configure(run_scope.wallet, run_random_source):
+		_dispose_failed_run_flow_composition(created_run_scope)
+		return false
+	if not battle_gateway.configure(
+		battle_spawner,
+		base_enemies,
+		self,
+		reset_battle_callable,
+		release_floating_texts_callable,
+		read_stat_callable
+	):
+		_dispose_failed_run_flow_composition(created_run_scope)
+		return false
+	if not _connect_gateway_marble_fell() or not _reconfigure_buff_manager():
+		_dispose_failed_run_flow_composition(created_run_scope)
+		return false
+	if not run_flow_controller.configure(
+		run_scope,
+		battle_plan_factory,
+		reward_service,
+		event_resolver,
+		run_floor_config,
+		run_random_source,
+		battle_gateway
+	):
+		_dispose_failed_run_flow_composition(created_run_scope)
+		return false
+
+	_run_flow_composition_configured = true
+	return true
+
+
+## Idempotent reverse-order teardown for configure/start rollback and normal
+## ownership release.
+func _dispose_run_flow_composition() -> void:
+	_run_flow_composition_configured = false
+	if run_ui_adapter != null:
+		run_ui_adapter.dispose()
+	run_ui_adapter = null
+	if skill_controller != null:
+		skill_controller.disconnect_lifecycle()
+	_disconnect_gateway_marble_fell()
+	_clear_buff_manager_sources()
+	_disconnect_active_skill_panel_blockers()
+	_disconnect_wallet_changed()
+	for index: int in range(_owned_run_ui_nodes.size() - 1, -1, -1):
+		_free_owned_run_flow_node(_owned_run_ui_nodes[index])
+	_owned_run_ui_nodes.clear()
+	node_choice_panel = null
+	draft_reward_panel = null
+	run_event_panel = null
+	devil_shop = null
+	normal_shop = null
+	battle_health_hud = null
+	floor_hud = null
+	inventory_panel = null
+	run_failure_panel = null
+
+	if run_flow_controller != null and is_instance_valid(run_flow_controller):
+		if run_flow_controller.is_inside_tree():
+			if run_flow_controller.get_parent() != null:
+				run_flow_controller.get_parent().remove_child(run_flow_controller)
+		else:
+			run_flow_controller.call("_exit_tree")
+		if is_instance_valid(run_flow_controller):
+			run_flow_controller.free()
+	run_flow_controller = null
+
+	if reward_service != null:
+		reward_service.clear_active()
+	if event_resolver != null:
+		event_resolver.clear_active()
+
+	if battle_gateway != null and is_instance_valid(battle_gateway):
+		battle_gateway.dispose()
+		_free_owned_run_flow_node(battle_gateway)
+	battle_gateway = null
+
+	if battle_spawner != null and is_instance_valid(battle_spawner):
+		battle_spawner.clear_enemies()
+		_free_owned_run_flow_node(battle_spawner)
+	battle_spawner = null
+	if base_enemies != null and is_instance_valid(base_enemies):
+		_free_owned_run_flow_node(base_enemies)
+	base_enemies = null
+
+	reward_service = null
+	event_resolver = null
+	battle_plan_factory = null
+	battle_reward_config = null
+	run_floor_config = null
+	run_random_source = null
+	reset_battle_callable = Callable()
+	release_floating_texts_callable = Callable()
+	read_stat_callable = Callable()
+
+
+func _dispose_failed_run_flow_composition(discard_created_scope: bool) -> void:
+	_dispose_run_flow_composition()
+	if discard_created_scope:
+		_discard_run_scope()
+
+
+func _free_owned_run_flow_node(node: Node) -> void:
+	if node == null or not is_instance_valid(node):
+		return
+	if node.get_parent() != null:
+		node.get_parent().remove_child(node)
+	node.free()
+
+
+func _has_valid_run_flow_composition() -> bool:
+	return run_scope != null and is_instance_valid(run_scope) and run_scope.is_initialized() \
+		and battle_spawner != null and is_instance_valid(battle_spawner) \
+		and base_enemies != null and is_instance_valid(base_enemies) \
+		and battle_gateway != null and is_instance_valid(battle_gateway) \
+		and reward_service != null and event_resolver != null \
+		and battle_plan_factory != null \
+		and run_flow_controller != null and is_instance_valid(run_flow_controller) \
+		and run_random_source != null \
+		and reset_battle_callable.is_valid() \
+		and release_floating_texts_callable.is_valid() \
+		and read_stat_callable.is_valid()
+
+
+func _release_all_floating_texts() -> void:
+	var pool: Node = _get_autoload_node(&"FloatDamageTextPool")
+	if pool != null and pool.has_method("release_all_active"):
+		pool.call("release_all_active")
+
+
+func _read_stat(stat_id: StringName, entity_id: StringName) -> Variant:
+	var stat_system: Node = _get_autoload_node(&"StatSystem")
+	if stat_system == null or not stat_system.has_method("get_stat"):
+		return null
+	return stat_system.call("get_stat", String(stat_id), String(entity_id))
+
+
 func _get_autoload_node(node_name: StringName) -> Node:
 	var tree: SceneTree = Engine.get_main_loop() as SceneTree
 	if tree == null:
@@ -226,80 +467,109 @@ func _connect_loadout_change() -> void:
 	)
 
 
-func _setup_run_flow() -> bool:
-	var ui_layer: Node = get_node_or_null("CanvasLayer")
-	if ui_layer == null:
+func _setup_run_flow(
+	stat_system_override: Object = null,
+	effect_manager_override: Node = null,
+	component_overrides: Dictionary = {}
+) -> bool:
+	if not _setup_run_flow_composition(
+		stat_system_override,
+		effect_manager_override,
+		component_overrides
+	):
+		_discard_run_scope()
 		return false
+	var ui_layer: Node = get_node_or_null("CanvasLayer")
+	if ui_layer == null or run_flow_controller == null:
+		return _rollback_run_flow_startup()
 
-	var node_choice_panel: NodeChoicePanel = NodeChoicePanelScene.instantiate() as NodeChoicePanel
+	node_choice_panel = NodeChoicePanelScene.instantiate() as NodeChoicePanel
+	if node_choice_panel == null:
+		return _rollback_run_flow_startup()
 	node_choice_panel.name = "NodeChoicePanel"
 	ui_layer.add_child(node_choice_panel)
+	_owned_run_ui_nodes.append(node_choice_panel)
 
-	var draft_reward_panel: DraftRewardPanel = DraftRewardPanelScene.instantiate() as DraftRewardPanel
+	draft_reward_panel = DraftRewardPanelScene.instantiate() as DraftRewardPanel
+	if draft_reward_panel == null:
+		return _rollback_run_flow_startup()
 	draft_reward_panel.name = "DraftRewardPanel"
 	ui_layer.add_child(draft_reward_panel)
+	_owned_run_ui_nodes.append(draft_reward_panel)
 
-	var event_panel: RunEventPanel = RunEventPanelScene.instantiate() as RunEventPanel
-	event_panel.name = "RunEventPanel"
-	ui_layer.add_child(event_panel)
+	run_event_panel = RunEventPanelScene.instantiate() as RunEventPanel
+	if run_event_panel == null:
+		return _rollback_run_flow_startup()
+	run_event_panel.name = "RunEventPanel"
+	ui_layer.add_child(run_event_panel)
+	_owned_run_ui_nodes.append(run_event_panel)
 
-	var devil_shop: DevilShop = DevilShopScene.instantiate() as DevilShop
+	devil_shop = DevilShopScene.instantiate() as DevilShop
+	if devil_shop == null:
+		return _rollback_run_flow_startup()
 	devil_shop.name = "DevilShop"
 	ui_layer.add_child(devil_shop)
+	_owned_run_ui_nodes.append(devil_shop)
 
 	normal_shop = ShopScene.instantiate() as Control
+	if normal_shop == null:
+		return _rollback_run_flow_startup()
 	normal_shop.name = "Shop"
 	add_child(normal_shop)
+	_owned_run_ui_nodes.append(normal_shop)
 
 	if not bool(normal_shop.call("configure", run_scope.loadout, run_scope.progression, run_scope.wallet)) \
 			or not devil_shop.configure(run_scope.loadout, run_scope.progression, run_scope.wallet, run_scope.health) \
-			or not draft_reward_panel.configure(run_scope.loadout, run_scope.progression, run_scope.wallet):
-		return false
+			or not draft_reward_panel.configure(run_scope.loadout) \
+			or not run_event_panel.configure(run_scope.wallet):
+		return _rollback_run_flow_startup()
 
 	_setup_battle_health_hud(ui_layer)
 	_setup_floor_hud(ui_layer)
 	_setup_pause_panel(ui_layer)
 	_setup_run_failure_panel(ui_layer)
 	_setup_inventory_panel()
-	if inventory_panel == null or not bool(inventory_panel.call(
-		"configure", run_scope.loadout, run_scope.progression
-	)):
-		return false
+	if inventory_panel == null or battle_health_hud == null or floor_hud == null \
+			or run_failure_panel == null or active_skill_slot == null \
+			or not inventory_panel.configure(run_scope.loadout, run_scope.progression):
+		return _rollback_run_flow_startup()
 
-	run_controller = RunControllerScript.new()
-	run_controller.name = "RunController"
-	run_controller.level_parent = self
-	run_controller.node_choice_panel = node_choice_panel
-	run_controller.draft_reward_panel = draft_reward_panel
-	run_controller.upgrade_inventory_panel = inventory_panel
-	run_controller.devil_shop = devil_shop
-	run_controller.event_panel = event_panel
-	run_controller.reset_battle_state_callable = Callable(self, "reset_battle_state")
-	if not run_controller.configure(run_scope, normal_shop):
-		return false
-	run_controller.run_health_changed.connect(_on_run_health_changed)
-	run_controller.run_failed.connect(_on_run_failed)
-	run_controller.floor_changed.connect(_on_floor_changed)
-	add_child(run_controller)
-	_connect_active_skill_slot_to_battle_flow()
-
-	var event_bus: Node = _get_autoload_node(&"Event")
-	if event_bus != null:
-		_connect_run_signal(run_controller, event_bus, &"run_node_completed")
-		_connect_run_signal(run_controller, event_bus, &"battle_started")
-		_connect_run_signal(run_controller, event_bus, &"battle_completed")
-		_connect_run_signal(run_controller, event_bus, &"run_completed")
-
-	run_controller.start_run()
+	run_ui_adapter = RunFlowUIAdapterScript.new() as RunFlowUIAdapter
+	if run_ui_adapter == null or not run_ui_adapter.configure(
+		run_flow_controller,
+		node_choice_panel,
+		draft_reward_panel,
+		run_event_panel,
+		inventory_panel,
+		normal_shop,
+		devil_shop,
+		run_failure_panel,
+		battle_health_hud,
+		floor_hud,
+		active_skill_slot
+	):
+		return _rollback_run_flow_startup()
+	if skill_controller == null or not skill_controller.configure_lifecycle(run_flow_controller):
+		return _rollback_run_flow_startup()
+	_connect_active_skill_panel_blockers()
+	_sync_battle_hud_gold()
+	_connect_wallet_changed()
+	_connect_once(run_flow_controller, &"run_failed", Callable(self, "_on_run_failed"))
+	if not run_flow_controller.start_run():
+		return _rollback_run_flow_startup()
 	return true
 
 
-func _connect_active_skill_slot_to_battle_flow() -> void:
-	if run_controller == null or active_skill_slot == null:
-		return
-	_connect_once(run_controller, &"battle_started", Callable(active_skill_slot, "on_battle_started"))
-	_connect_once(run_controller, &"battle_completed", Callable(active_skill_slot, "on_battle_completed"))
+func _rollback_run_flow_startup() -> bool:
+	_dispose_run_flow_composition()
+	_discard_run_scope()
+	return false
 
+
+func _connect_active_skill_panel_blockers() -> void:
+	if active_skill_slot == null:
+		return
+	_disconnect_active_skill_panel_blockers()
 	_active_skill_blocking_panels.clear()
 	for panel_path: NodePath in [
 		^"CanvasLayer/PausePanel",
@@ -317,6 +587,16 @@ func _connect_active_skill_slot_to_battle_flow() -> void:
 	_sync_active_skill_panel_blocker()
 
 
+func _disconnect_active_skill_panel_blockers() -> void:
+	var callable: Callable = Callable(self, "_sync_active_skill_panel_blocker")
+	for panel: Node in _active_skill_blocking_panels:
+		if panel != null and is_instance_valid(panel) \
+				and panel.has_signal(&"visibility_changed") \
+				and panel.is_connected(&"visibility_changed", callable):
+			panel.disconnect(&"visibility_changed", callable)
+	_active_skill_blocking_panels.clear()
+
+
 func _register_active_skill_blocking_panel(panel: Node) -> void:
 	if panel == null or not panel.has_signal(&"visibility_changed"):
 		return
@@ -325,6 +605,8 @@ func _register_active_skill_blocking_panel(panel: Node) -> void:
 
 
 func _sync_active_skill_panel_blocker() -> void:
+	if active_skill_slot == null:
+		return
 	var blocked: bool = false
 	for panel: Node in _active_skill_blocking_panels:
 		if is_instance_valid(panel) and bool(panel.get("visible")):
@@ -334,21 +616,25 @@ func _sync_active_skill_panel_blocker() -> void:
 
 
 func _setup_battle_health_hud(ui_layer: Node) -> void:
-	battle_health_hud = ui_layer.get_node_or_null("BattleHealthHud")
+	battle_health_hud = ui_layer.get_node_or_null("BattleHealthHud") as BattleHealthHud
 	if battle_health_hud == null:
-		battle_health_hud = BattleHealthHudScene.instantiate()
+		battle_health_hud = BattleHealthHudScene.instantiate() as BattleHealthHud
+		if battle_health_hud == null:
+			return
 		battle_health_hud.name = "BattleHealthHud"
 		ui_layer.add_child(battle_health_hud)
-	_sync_battle_hud_gold()
-	_connect_wallet_changed()
+		_owned_run_ui_nodes.append(battle_health_hud)
 
 
 func _setup_floor_hud(ui_layer: Node) -> void:
-	floor_hud = ui_layer.get_node_or_null("FloorHud")
+	floor_hud = ui_layer.get_node_or_null("FloorHud") as FloorHud
 	if floor_hud == null:
-		floor_hud = FloorHudScene.instantiate()
+		floor_hud = FloorHudScene.instantiate() as FloorHud
+		if floor_hud == null:
+			return
 		floor_hud.name = "FloorHud"
 		ui_layer.add_child(floor_hud)
+		_owned_run_ui_nodes.append(floor_hud)
 
 
 func _setup_pause_panel(ui_layer: Node) -> void:
@@ -357,8 +643,11 @@ func _setup_pause_panel(ui_layer: Node) -> void:
 		pause_panel = get_node_or_null("PausePanel")
 	if pause_panel == null:
 		pause_panel = PausePanelScene.instantiate()
+		if pause_panel == null:
+			return
 		pause_panel.name = "PausePanel"
 		ui_layer.add_child(pause_panel)
+		_owned_run_ui_nodes.append(pause_panel)
 		return
 	if pause_panel.get_parent() != ui_layer:
 		pause_panel.get_parent().remove_child(pause_panel)
@@ -366,53 +655,32 @@ func _setup_pause_panel(ui_layer: Node) -> void:
 
 
 func _setup_run_failure_panel(ui_layer: Node) -> void:
-	run_failure_panel = ui_layer.get_node_or_null("RunFailurePanel")
-	if run_failure_panel == null or not run_failure_panel.has_signal(&"restart_requested"):
-		return
-	var restart_callable: Callable = Callable(self, "_on_failure_restart_requested")
-	if not run_failure_panel.is_connected(&"restart_requested", restart_callable):
-		run_failure_panel.connect(&"restart_requested", restart_callable)
+	run_failure_panel = ui_layer.get_node_or_null("RunFailurePanel") as RunFailurePanel
+	if active_skill_slot == null:
+		active_skill_slot = ui_layer.get_node_or_null("SkillSlot") as ActiveSkillSlot
 
 
 func _setup_inventory_panel() -> void:
-	inventory_panel = get_node_or_null("InventoryPanel") as Control
+	inventory_panel = get_node_or_null("InventoryPanel") as InventoryPanel
 	if inventory_panel != null:
 		return
 
-	inventory_panel = InventoryPanelScene.instantiate() as Control
+	inventory_panel = InventoryPanelScene.instantiate() as InventoryPanel
+	if inventory_panel == null:
+		return
 	inventory_panel.name = "InventoryPanel"
 	add_child(inventory_panel)
+	_owned_run_ui_nodes.append(inventory_panel)
 
 
-func _on_run_health_changed(health: int) -> void:
-	if battle_health_hud != null and battle_health_hud.has_method("set_health"):
-		battle_health_hud.call("set_health", health)
-
-
-func _on_run_failed() -> void:
+func _on_run_failed(_token: RunFlowToken, _reason: StringName) -> void:
 	if skill_controller != null:
 		skill_controller.cancel_active_skill("run_failed")
 		skill_controller.clear_projectiles()
 	if marble_chain != null and is_instance_valid(marble_chain):
 		marble_chain.queue_free()
 	marble_chain = null
-	if run_failure_panel != null and run_failure_panel.has_method("open_failure"):
-		run_failure_panel.call("open_failure")
-
-
-func _on_failure_restart_requested() -> void:
-	if _restart_in_progress or run_controller == null or not run_controller.run_is_failed:
-		return
-	_restart_in_progress = true
-	run_controller.start_run()
-	if run_failure_panel != null and run_failure_panel.has_method("close_failure"):
-		run_failure_panel.call("close_failure")
-	_restart_in_progress = false
-
-
-func _on_floor_changed(floor_number: int) -> void:
-	if floor_hud != null and floor_hud.has_method("set_floor"):
-		floor_hud.call("set_floor", floor_number)
+	_reconfigure_buff_manager()
 
 
 func _sync_battle_hud_gold() -> void:
@@ -426,25 +694,49 @@ func _connect_wallet_changed() -> void:
 	_connect_once(run_scope.wallet, &"changed", Callable(self, "_on_wallet_changed"))
 
 
+func _disconnect_wallet_changed() -> void:
+	if run_scope == null or run_scope.wallet == null or not is_instance_valid(run_scope.wallet):
+		return
+	var callable: Callable = Callable(self, "_on_wallet_changed")
+	if run_scope.wallet.is_connected(&"changed", callable):
+		run_scope.wallet.disconnect(&"changed", callable)
+
+
 func _on_wallet_changed(value: int) -> void:
-	if battle_health_hud != null and battle_health_hud.has_method("set_gold"):
-		battle_health_hud.call("set_gold", value)
+	if battle_health_hud != null:
+		battle_health_hud.set_gold(value)
 
 
-func _connect_run_signal(source: Object, event_bus: Node, signal_name: StringName) -> void:
-	if source == null or event_bus == null:
-		return
-	if not source.has_signal(signal_name) or not event_bus.has_signal(signal_name):
-		return
+func _connect_gateway_marble_fell() -> bool:
+	_disconnect_gateway_marble_fell()
+	if battle_gateway == null or not is_instance_valid(battle_gateway):
+		return false
+	_gateway_marble_fell_callable = Callable(self, "_on_accepted_marble_fell")
+	if battle_gateway.connect(&"marble_fell", _gateway_marble_fell_callable) != OK:
+		_gateway_marble_fell_callable = Callable()
+		return false
+	return true
 
-	if signal_name == &"run_completed":
-		var no_arg_callable: Callable = func() -> void:
-			event_bus.emit_signal(signal_name)
-		if not source.is_connected(signal_name, no_arg_callable):
-			source.connect(signal_name, no_arg_callable)
-		return
 
-	var one_arg_callable: Callable = func(value: String) -> void:
-		event_bus.emit_signal(signal_name, value)
-	if not source.is_connected(signal_name, one_arg_callable):
-		source.connect(signal_name, one_arg_callable)
+func _disconnect_gateway_marble_fell() -> void:
+	if battle_gateway != null and is_instance_valid(battle_gateway) \
+			and _gateway_marble_fell_callable.is_valid() \
+			and battle_gateway.is_connected(&"marble_fell", _gateway_marble_fell_callable):
+		battle_gateway.disconnect(&"marble_fell", _gateway_marble_fell_callable)
+	_gateway_marble_fell_callable = Callable()
+
+
+func _reconfigure_buff_manager() -> bool:
+	var manager: Node = _get_autoload_node(&"BuffManager")
+	if manager == null or not manager.has_method(&"reconfigure"):
+		return false
+	var session: BattleSession = null
+	if battle_gateway != null and is_instance_valid(battle_gateway):
+		session = battle_gateway.get_node_or_null(^"BattleSession") as BattleSession
+	return bool(manager.call("reconfigure", session, marble_chain))
+
+
+func _clear_buff_manager_sources() -> void:
+	var manager: Node = _get_autoload_node(&"BuffManager")
+	if manager != null and manager.has_method(&"reconfigure"):
+		manager.call("reconfigure", null, null)

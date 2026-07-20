@@ -33,12 +33,21 @@ func bind_controller(controller: Node) -> void:
 	)
 
 
-func on_battle_started(_group_id: String) -> void:
+func present_battle_started(_token: RunFlowToken, _plan: BattlePlan) -> void:
 	_battle_active = true
 	_refresh_visibility()
 
 
-func on_battle_completed(_group_id: String) -> void:
+func present_battle_completed(
+	_token: RunFlowToken,
+	_battle_id: StringName,
+	_plan: BattlePlan
+) -> void:
+	_battle_active = false
+	_refresh_visibility()
+
+
+func present_run_terminal(_token: RunFlowToken) -> void:
 	_battle_active = false
 	_refresh_visibility()
 

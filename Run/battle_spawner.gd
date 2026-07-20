@@ -1,91 +1,141 @@
-extends Node
 class_name BattleSpawner
+extends Node
 
-signal battle_started(group_id: String)
-signal battle_completed(group_id: String)
+signal enemy_spawned(batch_id: int, entry_index: int, enemy: Enemy)
+signal spawn_batch_sealed(batch_id: int, enemy_count: int)
+signal spawn_batch_failed(batch_id: int, entry_index: int, reason: StringName)
+
+enum BatchTerminal {
+	SEALED,
+	FAILED,
+}
 
 @export var enemy_container: Node2D
 
-var _current_group: BattleGroupDef
-var _live_enemies: Array[Node] = []
-var _completion_emitted: bool = false
+var _live_enemies: Array[Enemy] = []
+var _last_batch_id: int = -1
+var _last_batch_terminal: BatchTerminal = BatchTerminal.FAILED
+var _disposed: bool = false
 
 
-func _ready() -> void:
-	var event_bus: Node = _get_event_bus()
-	if event_bus != null and event_bus.has_signal(&"enemy_killed"):
-		var callable: Callable = Callable(self, "_on_enemy_killed")
-		if not event_bus.is_connected(&"enemy_killed", callable):
-			event_bus.connect(&"enemy_killed", callable)
 
+## Atomic typed batch path. Every Enemy remains outside the SceneTree until the
+## whole batch has been prepared and synchronously accepted by register_enemy.
+func start_batch(
+	group: BattleGroupDef,
+	batch_id: int,
+	register_enemy: Callable
+) -> bool:
+	if batch_id <= _last_batch_id:
+		return batch_id == _last_batch_id \
+			and _last_batch_terminal == BatchTerminal.SEALED
+	if _disposed:
+		return _fail_batch(batch_id, -1, &"disposed", [])
+	if group == null:
+		return _fail_batch(batch_id, -1, &"invalid_group", [])
+	if not _has_valid_container():
+		return _fail_batch(batch_id, -1, &"invalid_container", [])
+	if not register_enemy.is_valid():
+		return _fail_batch(batch_id, -1, &"invalid_register_callable", [])
+	if not _live_enemies.is_empty():
+		return _fail_batch(batch_id, -1, &"batch_already_active", [])
 
-func start_battle(group: BattleGroupDef) -> void:
-	if enemy_container == null or group == null:
-		return
+	var prepared: Array[Enemy] = []
+	if group.enemy_entries.is_empty():
+		_record_batch_terminal(batch_id, BatchTerminal.SEALED)
+		spawn_batch_sealed.emit(batch_id, 0)
+		return true
 
-	clear_enemies()
-	_current_group = group
-	_completion_emitted = false
+	# Phase one: instantiate, type-check, and configure every entry.
+	for entry_index: int in range(group.enemy_entries.size()):
+		var entry: BattleGroupDef.EnemyEntry = group.enemy_entries[entry_index]
+		if entry == null:
+			return _fail_batch(batch_id, entry_index, &"null_entry", prepared)
+		if entry.scene == null:
+			return _fail_batch(batch_id, entry_index, &"null_scene", prepared)
+		if entry.scene.get_state().get_node_count() == 0:
+			return _fail_batch(batch_id, entry_index, &"instantiate_failed", prepared)
+		var instance: Node = entry.scene.instantiate()
+		if instance == null:
+			return _fail_batch(batch_id, entry_index, &"instantiate_failed", prepared)
+		if not instance is Enemy:
+			instance.free()
+			return _fail_batch(batch_id, entry_index, &"root_not_enemy", prepared)
+		var enemy: Enemy = instance as Enemy
+		_configure_enemy(enemy, entry, entry_index)
+		prepared.append(enemy)
 
-	for entry: BattleGroupDef.EnemyEntry in group.enemy_entries:
-		var enemy: Node = _spawn_enemy(entry)
-		if enemy != null:
-			_live_enemies.append(enemy)
+	# Phase two: Session must connect defeated and record every live identity.
+	for entry_index: int in range(prepared.size()):
+		var registration_result: Variant = register_enemy.call(
+			batch_id, entry_index, prepared[entry_index]
+		)
+		if registration_result != true:
+			return _fail_batch(batch_id, entry_index, &"registration_rejected", prepared)
 
-	battle_started.emit(group.id)
-	if _live_enemies.is_empty():
-		_complete_battle()
+	# Commit only after all registrations succeed.
+	if not _has_valid_container():
+		return _fail_batch(batch_id, -1, &"container_invalidated", prepared)
+	for entry_index: int in range(prepared.size()):
+		var enemy: Enemy = prepared[entry_index]
+		var entry: BattleGroupDef.EnemyEntry = group.enemy_entries[entry_index]
+		_live_enemies.append(enemy)
+		enemy_container.add_child(enemy)
+		enemy.global_position = entry.position
+		enemy_spawned.emit(batch_id, entry_index, enemy)
+
+	_record_batch_terminal(batch_id, BatchTerminal.SEALED)
+	spawn_batch_sealed.emit(batch_id, prepared.size())
+	return true
 
 
 func clear_enemies() -> void:
 	_live_enemies.clear()
-	_completion_emitted = false
-	if enemy_container == null:
+	if not _has_valid_container():
 		return
-
 	for child: Node in enemy_container.get_children():
 		child.free()
 
 
-func _spawn_enemy(entry: BattleGroupDef.EnemyEntry) -> Node:
-	if entry == null or entry.scene == null:
-		return null
-
-	var enemy: Node = entry.scene.instantiate()
-
-	if enemy is Node2D:
-		(enemy as Node2D).position = entry.position
-	if enemy.has_method("set"):
-		enemy.set("health", entry.health)
-	enemy_container.add_child(enemy)
-	if enemy is Node2D:
-		(enemy as Node2D).global_position = entry.position
-	enemy.name = "Enemy_%d" % _live_enemies.size()
-
-	return enemy
-
-
-func _on_enemy_killed(enemy: Node2D) -> void:
-	if enemy == null:
+func dispose() -> void:
+	if _disposed:
 		return
-
-	var index: int = _live_enemies.find(enemy)
-	if index != -1:
-		_live_enemies.remove_at(index)
-
-	if _live_enemies.is_empty():
-		_complete_battle()
+	_disposed = true
+	clear_enemies()
+	_last_batch_id = -1
+	_last_batch_terminal = BatchTerminal.FAILED
 
 
-func _complete_battle() -> void:
-	if _completion_emitted or _current_group == null:
-		return
-	_completion_emitted = true
-	battle_completed.emit(_current_group.id)
+func _configure_enemy(
+	enemy: Enemy,
+	entry: BattleGroupDef.EnemyEntry,
+	entry_index: int
+) -> void:
+	enemy.position = entry.position
+	enemy.health = entry.health
+	enemy.name = "Enemy_%d" % entry_index
 
 
-func _get_event_bus() -> Node:
-	var tree: SceneTree = Engine.get_main_loop() as SceneTree
-	if tree == null:
-		return null
-	return tree.root.get_node_or_null("Event")
+func _fail_batch(
+	batch_id: int,
+	entry_index: int,
+	reason: StringName,
+	prepared: Array[Enemy]
+) -> bool:
+	_record_batch_terminal(batch_id, BatchTerminal.FAILED)
+	spawn_batch_failed.emit(batch_id, entry_index, reason)
+	for enemy: Enemy in prepared:
+		_live_enemies.erase(enemy)
+		if is_instance_valid(enemy):
+			enemy.free()
+	return false
+
+
+func _record_batch_terminal(batch_id: int, terminal: BatchTerminal) -> void:
+	_last_batch_id = batch_id
+	_last_batch_terminal = terminal
+
+
+func _has_valid_container() -> bool:
+	return enemy_container != null and is_instance_valid(enemy_container) \
+		and not enemy_container.is_queued_for_deletion()

@@ -1,4 +1,7 @@
+class_name Enemy
 extends RigidBody2D
+
+signal defeated(enemy: Enemy, cause: StringName)
 
 const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
 const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
@@ -81,10 +84,18 @@ func take_damage(amount: int, flash_color: Color = Color.WHITE, floating_style: 
 	_show_float_damage_text(final_damage, floating_style)
 
 	if health <= 0:
-		if buff_host != null:
-			buff_host.notify_host_death()
-		_emit_enemy_killed()
-		queue_free()
+		defeat(&"health_depleted")
+
+
+func defeat(cause: StringName) -> bool:
+	if _death_emitted or is_queued_for_deletion():
+		return false
+	_death_emitted = true
+	if buff_host != null:
+		buff_host.notify_host_death()
+	defeated.emit(self, cause)
+	queue_free()
+	return true
 
 
 func add_buff(buff: BuffDef, stacks: int = 1) -> void:
@@ -295,19 +306,6 @@ func _show_float_damage_text(damage_amount: int, style: StringName = &"default")
 		var spawn_pos: Vector2 = global_position + Vector2.UP * 8.0
 		spawn_pos.x += randf_range(-FLOAT_DAMAGE_X_SPREAD_HALF, FLOAT_DAMAGE_X_SPREAD_HALF)
 		pool.call("show_damage", damage_amount, spawn_pos, style)
-
-
-func _emit_enemy_killed() -> void:
-	if _death_emitted:
-		return
-	_death_emitted = true
-
-	var tree: SceneTree = Engine.get_main_loop() as SceneTree
-	if tree == null:
-		return
-	var event_bus: Node = tree.root.get_node_or_null("Event")
-	if event_bus != null and event_bus.has_signal(&"enemy_killed"):
-		event_bus.emit_signal(&"enemy_killed", self)
 
 
 func _apply_label_font() -> void:

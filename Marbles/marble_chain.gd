@@ -23,6 +23,8 @@
 extends Node2D
 class_name MarbleChain
 
+signal chain_collision(collider: Node, collision_type: String)
+
 const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
 const FireMarbleScript: GDScript = preload("res://Marbles/fire_marble.gd")
 
@@ -69,6 +71,10 @@ var _head_scene: PackedScene = preload("res://Marbles/marble.tscn")
 
 ## ChainSegment 场景预加载。
 var _segment_scene: PackedScene = preload("res://Marbles/chain_segment.tscn")
+
+
+func _exit_tree() -> void:
+	_head_disconnect_signals()
 
 
 # ---- 链构建 ----
@@ -301,17 +307,13 @@ func _get_stat_float(stat_id: String, fallback: float) -> float:
 
 
 func _emit_chain_collision(collided_body: Node) -> void:
-	var event_bus: Node = get_node_or_null("/root/Event")
-	if event_bus == null or not event_bus.has_signal(&"chain_collision"):
-		return
-
 	var collision_type: String = "wall"
 	if collided_body.is_in_group("enemies"):
 		collision_type = "enemy"
 	elif collided_body.is_in_group("flipper"):
 		collision_type = "flipper"
 
-	event_bus.emit_signal(&"chain_collision", collided_body, collision_type)
+	chain_collision.emit(collided_body, collision_type)
 
 
 # ---- 轨迹 & 跟随 ----

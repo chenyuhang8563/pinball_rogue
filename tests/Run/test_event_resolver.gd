@@ -288,12 +288,15 @@ func test_wallet_changed_synchronous_reentry_cannot_double_settle() -> void:
 	var resolver := _resolver(wallet, ControlledRandom.new([6]))
 	var presentation := resolver.present_event(_token, ResolverScript.EVENT_DICE)
 	var reentrant: Array[EventResolution] = []
-	wallet.changed.connect(func(_value: int) -> void:
+	# RefCounted signals retain their Callable. Keep and disconnect this closure:
+	# it captures resolver, while resolver retains wallet, so leaving it connected
+	# would create a reference-counting cycle that survives the test.
+	var reentry_callable := func(_value: int) -> void:
 		reentrant.append(resolver.resolve(
 			presentation.token, presentation.event_id,
 			ResolverScript.DICE_WAGER_20, ResolverScript.EventIntent.DICE_WAGER_SMALL
 		))
-	)
+	wallet.changed.connect(reentry_callable)
 
 	var result: EventResolution = resolver.resolve(
 		presentation.token, presentation.event_id,
@@ -305,6 +308,9 @@ func test_wallet_changed_synchronous_reentry_cannot_double_settle() -> void:
 	assert_eq(reentrant.size(), 2)
 	for blocked: EventResolution in reentrant:
 		assert_eq(blocked.code, EventResolution.Code.REENTRANT)
+
+	wallet.changed.disconnect(reentry_callable)
+	assert_false(wallet.changed.is_connected(reentry_callable))
 
 
 func _resolver(wallet: TestWallet, random: ControlledRandom) -> EventResolver:

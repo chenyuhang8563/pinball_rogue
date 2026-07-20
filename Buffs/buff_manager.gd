@@ -43,15 +43,44 @@ class BuffInstance:
 var active_buffs: Dictionary = {}
 
 var _registry: Node
+var _battle_session: BattleSession = null
+var _marble_chain: MarbleChain = null
+var _enemy_defeated_callable: Callable = Callable()
+var _chain_collision_callable: Callable = Callable()
 
 
 func _ready() -> void:
 	_registry = _get_registry()
 	set_process(true)
 
-	var event_bus: Node = get_node_or_null("/root/Event")
-	if event_bus != null:
-		_connect_event_bus(event_bus)
+
+func _exit_tree() -> void:
+	reconfigure(null, null)
+
+
+## Replaces the active typed battle sources. Both sources are optional during
+## composition, but every non-null source must be live and expose its contract.
+func configure(session: BattleSession, chain: MarbleChain) -> bool:
+	return reconfigure(session, chain)
+
+
+func reconfigure(session: BattleSession, chain: MarbleChain) -> bool:
+	_disconnect_typed_sources()
+	if session != null and not is_instance_valid(session):
+		return false
+	if chain != null and not is_instance_valid(chain):
+		return false
+	_battle_session = session
+	_marble_chain = chain
+	_enemy_defeated_callable = Callable(self, "_on_enemy_defeated")
+	_chain_collision_callable = Callable(self, "_on_chain_collision")
+	if _battle_session != null:
+		if not _battle_session.enemy_defeated.is_connected(_enemy_defeated_callable):
+			_battle_session.enemy_defeated.connect(_enemy_defeated_callable)
+	if _marble_chain != null:
+		if not _marble_chain.chain_collision.is_connected(_chain_collision_callable):
+			_marble_chain.chain_collision.connect(_chain_collision_callable)
+	return true
 
 
 func _process(delta: float) -> void:
@@ -204,26 +233,27 @@ func _get_registry() -> Node:
 	return BuffRegistryScript.new()
 
 
-func _connect_event_bus(event_bus: Node) -> void:
-	var enemy_killed_callable := Callable(self, "_on_enemy_killed")
-	if event_bus.has_signal(&"enemy_killed") and not event_bus.is_connected(&"enemy_killed", enemy_killed_callable):
-		event_bus.connect(&"enemy_killed", enemy_killed_callable)
+func _disconnect_typed_sources() -> void:
+	if _battle_session != null and is_instance_valid(_battle_session) \
+			and _enemy_defeated_callable.is_valid() \
+			and _battle_session.enemy_defeated.is_connected(_enemy_defeated_callable):
+		_battle_session.enemy_defeated.disconnect(_enemy_defeated_callable)
+	if _marble_chain != null and is_instance_valid(_marble_chain) \
+			and _chain_collision_callable.is_valid() \
+			and _marble_chain.chain_collision.is_connected(_chain_collision_callable):
+		_marble_chain.chain_collision.disconnect(_chain_collision_callable)
+	_battle_session = null
+	_marble_chain = null
+	_enemy_defeated_callable = Callable()
+	_chain_collision_callable = Callable()
 
-	var wave_completed_callable := Callable(self, "_on_wave_completed")
-	if event_bus.has_signal(&"wave_completed") and not event_bus.is_connected(&"wave_completed", wave_completed_callable):
-		event_bus.connect(&"wave_completed", wave_completed_callable)
 
-	var chain_collision_callable := Callable(self, "_on_chain_collision")
-	if event_bus.has_signal(&"chain_collision") and not event_bus.is_connected(&"chain_collision", chain_collision_callable):
-		event_bus.connect(&"chain_collision", chain_collision_callable)
-
-
-func _on_enemy_killed(enemy: Node2D) -> void:
+func _on_enemy_defeated(
+	_token: RunFlowToken,
+	enemy: Enemy,
+	_cause: StringName
+) -> void:
 	dispatch(&"on_enemy_killed", [enemy])
-
-
-func _on_wave_completed(wave: int) -> void:
-	dispatch(&"on_wave_completed", [wave])
 
 
 func _on_chain_collision(collider: Node, collision_type: String) -> void:

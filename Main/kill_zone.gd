@@ -1,33 +1,40 @@
 extends Area2D
 
+signal marble_fell(marble: RigidBody2D)
+
+var _handled_body_ids: Dictionary[int, bool] = {}
+
 
 func _ready() -> void:
-	body_entered.connect(_on_body_entered)
+	if not body_entered.is_connected(_on_body_entered):
+		body_entered.connect(_on_body_entered)
+
+
+func _exit_tree() -> void:
+	if body_entered.is_connected(_on_body_entered):
+		body_entered.disconnect(_on_body_entered)
+	_handled_body_ids.clear()
 
 
 func _on_body_entered(body: Node) -> void:
-	if body.is_in_group("marbles"):
-		_handle_marble_fell(body)
-	elif body.is_in_group("enemies"):
-		_handle_enemy_fell(body)
+	if body == null or not is_instance_valid(body):
+		return
+	var instance_id: int = body.get_instance_id()
+	if _handled_body_ids.has(instance_id):
+		return
+
+	if body is RigidBody2D and body.is_in_group("marbles"):
+		_handled_body_ids[instance_id] = true
+		_handle_marble_fell(body as RigidBody2D)
+	elif body is Enemy and body.is_in_group("enemies"):
+		_handled_body_ids[instance_id] = true
+		_handle_enemy_fell(body as Enemy)
 
 
-func _handle_marble_fell(body: Node) -> void:
-	var event_bus: Node = _get_event_bus()
-	if event_bus != null and event_bus.has_signal(&"marble_fell"):
-		event_bus.emit_signal(&"marble_fell", body)
-	body.queue_free()
+func _handle_marble_fell(marble: RigidBody2D) -> void:
+	marble_fell.emit(marble)
+	marble.queue_free()
 
 
-func _handle_enemy_fell(body: Node) -> void:
-	var event_bus: Node = _get_event_bus()
-	if event_bus != null and event_bus.has_signal(&"enemy_killed"):
-		event_bus.emit_signal(&"enemy_killed", body)
-	body.queue_free()
-
-
-func _get_event_bus() -> Node:
-	var tree: SceneTree = Engine.get_main_loop() as SceneTree
-	if tree == null:
-		return null
-	return tree.root.get_node_or_null("Event")
+func _handle_enemy_fell(enemy: Enemy) -> void:
+	enemy.defeat(&"kill_zone")

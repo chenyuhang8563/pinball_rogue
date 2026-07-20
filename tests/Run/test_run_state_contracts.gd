@@ -19,14 +19,23 @@ func test_begin_run_is_only_run_identity_increment_and_node_advance_is_atomic() 
 	assert_eq(state.node_id, 0)
 	assert_eq(state.phase_id, 0)
 
-	assert_true(state.advance_to_node(&"battle"))
+	assert_true(state.begin_first_battle(_run_start_plan()))
 	assert_eq(state.run_id, 1)
 	assert_eq(state.floor_number, 1)
 	assert_eq(state.node_id, 1)
-	assert_eq(state.phase, RunState.Phase.CHOOSING_NODE)
+	assert_eq(state.node_kind, &"battle")
+	assert_eq(state.phase, RunState.Phase.BATTLE_ACTIVE)
 	assert_eq(state.phase_id, 1)
 	assert_true(state.token().is_valid())
 	assert_false(state.begin_run(), "活跃 run 不得重置 identity")
+
+	assert_true(state.present_reward())
+	assert_true(state.advance_to_node())
+	assert_eq(state.run_id, 1)
+	assert_eq(state.floor_number, 2)
+	assert_eq(state.node_id, 2)
+	assert_eq(state.node_kind, &"")
+	assert_eq(state.phase, RunState.Phase.CHOOSING_NODE)
 
 
 func test_each_presentation_changes_phase_identity_and_rejects_stale_token() -> void:
@@ -47,27 +56,36 @@ func test_each_presentation_changes_phase_identity_and_rejects_stale_token() -> 
 
 func test_battle_plan_origin_and_reward_policy_survive_into_reward_phase() -> void:
 	var state: RunState = _state_at_choice(&"event_battle")
+	assert_true(state.present_event())
+	assert_eq(state.phase, RunState.Phase.EVENT_ACTIVE)
 	var group := BattleGroupDef.new()
 	group.id = "event_strong"
 	var plan: BattlePlan = BattlePlanScript.new(
 		&"event_strong",
 		group,
 		BattlePlan.Origin.EVENT,
-		BattlePlan.RewardPolicy.NONE
+		BattlePlan.RewardPolicy.ELITE
 	)
 
 	assert_true(state.begin_battle(plan))
 	assert_eq(state.battle_origin, BattlePlan.Origin.EVENT)
-	assert_eq(state.reward_policy, BattlePlan.RewardPolicy.NONE)
+	assert_eq(state.reward_policy, BattlePlan.RewardPolicy.ELITE)
 	assert_eq(state.battle_plan, plan)
 	assert_true(state.present_reward())
 	assert_eq(state.battle_origin, BattlePlan.Origin.EVENT)
-	assert_eq(state.reward_policy, BattlePlan.RewardPolicy.NONE)
+	assert_eq(state.reward_policy, BattlePlan.RewardPolicy.ELITE)
 	assert_eq(state.battle_plan, plan)
 
 
 func test_terminal_phase_blocks_every_transition_until_a_new_run_begins() -> void:
-	var state: RunState = _state_at_choice(&"boss")
+	var state: RunState = _state_at_reward()
+	var boss_group := BattleGroupDef.new()
+	boss_group.id = "boss"
+	var boss_plan: BattlePlan = BattlePlanScript.new(
+		&"boss", boss_group, BattlePlan.Origin.BOSS, BattlePlan.RewardPolicy.NONE
+	)
+	assert_true(state.advance_to_battle(&"boss", boss_plan))
+	assert_eq(state.phase, RunState.Phase.BATTLE_ACTIVE)
 	assert_true(state.complete())
 	var terminal_token: RunFlowToken = state.token()
 	assert_true(state.is_terminal())
@@ -120,8 +138,29 @@ func test_seeded_random_source_is_repeatable_and_weighted_index_handles_empty_we
 	assert_eq(first.weighted_index(PackedInt32Array([0, -2, 0])), -1)
 
 
-func _state_at_choice(kind: StringName) -> RunState:
+func _run_start_plan() -> BattlePlan:
+	var group := BattleGroupDef.new()
+	group.id = "run_start"
+	return BattlePlanScript.new(
+		&"run_start", group, BattlePlan.Origin.RUN_START, BattlePlan.RewardPolicy.NORMAL
+	)
+
+
+## Legal path to REWARD_ACTIVE: begin_run -> first normal-reward battle -> reward.
+func _state_at_reward() -> RunState:
 	var state: RunState = RunStateScript.new()
 	assert_true(state.begin_run())
-	assert_true(state.advance_to_node(kind))
+	assert_true(state.begin_first_battle(_run_start_plan()))
+	assert_true(state.present_reward())
+	assert_eq(state.phase, RunState.Phase.REWARD_ACTIVE)
+	return state
+
+
+## Legal path to CHOOSING_NODE: first battle -> reward -> advance. The kind
+## argument is a Phase 2 compatibility shim; the current state machine commits
+## node kind only through select_node()/advance_to_battle().
+func _state_at_choice(_kind: StringName = &"") -> RunState:
+	var state: RunState = _state_at_reward()
+	assert_true(state.advance_to_node())
+	assert_eq(state.phase, RunState.Phase.CHOOSING_NODE)
 	return state

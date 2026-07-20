@@ -1,7 +1,12 @@
 extends Control
 class_name InventoryPanel
 
-signal upgrade_item_selected(item: Item)
+signal upgrade_intent(
+	token: RunFlowToken,
+	offer_id: StringName,
+	candidate_id: StringName
+)
+signal upgrade_unavailable_intent(token: RunFlowToken, offer_id: StringName)
 
 const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const UI_FONT_SIZE: int = 12
@@ -25,6 +30,8 @@ var mode: MODE = MODE.OFF:
 		_apply_mode()
 
 var _upgrade_selection_active: bool = false
+var _upgrade_intent_sent: bool = false
+var _active_upgrade_offer: UpgradeOffer = null
 var _upgrade_dialog: SkillReplaceDialog = null
 var _loadout: RefCounted = null
 var _progression: RefCounted = null
@@ -32,7 +39,7 @@ var _progression: RefCounted = null
 
 func configure(loadout: RefCounted, progression: RefCounted) -> bool:
 	if not _has_port_api(loadout, [&"marbles", &"relics", &"skills"]) \
-			or not _has_port_api(progression, [&"level_of", &"can_upgrade"]):
+			or not _has_port_api(progression, [&"level_of"]):
 		return false
 	_disconnect_port_signals()
 	_loadout = loadout
@@ -77,17 +84,31 @@ func is_open() -> bool:
 
 func close_inventory() -> void:
 	if _upgrade_selection_active:
+		if _active_upgrade_offer != null and _active_upgrade_offer.unavailable \
+				and not _upgrade_intent_sent:
+			_upgrade_intent_sent = true
+			upgrade_unavailable_intent.emit(
+				_active_upgrade_offer.token,
+				_active_upgrade_offer.offer_id
+			)
 		return
 	mode = MODE.OFF
 
 
-func show_upgrade_selection() -> void:
+func present_upgrade_offer(offer: UpgradeOffer) -> bool:
+	if offer == null or not offer.is_valid() or offer.consumed:
+		return false
+	_active_upgrade_offer = offer
+	_upgrade_intent_sent = false
 	_upgrade_selection_active = true
 	mode = MODE.ON
 	_set_upgrade_title()
+	return true
 
 
 func finish_upgrade_selection() -> void:
+	_active_upgrade_offer = null
+	_upgrade_intent_sent = false
 	_upgrade_selection_active = false
 	mode = MODE.OFF
 
@@ -114,10 +135,12 @@ func _apply_mode() -> void:
 	if mode == MODE.ON:
 		refresh_inventory()
 		ui_layer.show()
-		get_tree().paused = true
+		if is_inside_tree():
+			get_tree().paused = true
 	else:
 		ui_layer.hide()
-		get_tree().paused = false
+		if is_inside_tree():
+			get_tree().paused = false
 	if _upgrade_selection_active:
 		_set_upgrade_title()
 	else:
@@ -242,12 +265,9 @@ func _on_slot_gui_input(event: InputEvent, slot: Node) -> void:
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed or not slot.has_meta("item"):
 		return
-	var item := slot.get_meta("item") as Item
-	if item == null or _progression == null or not is_instance_valid(_progression):
-		return
-	if not bool(_progression.call("can_upgrade", item)):
-		if _upgrade_dialog != null:
-			_upgrade_dialog.request_upgrade_unavailable(item)
+	var item: Item = slot.get_meta("item") as Item
+	var candidate: UpgradeCandidate = _candidate_for_item(item)
+	if item == null or candidate == null or _upgrade_intent_sent:
 		return
 	get_viewport().set_input_as_handled()
 	if _upgrade_dialog != null:
@@ -266,7 +286,25 @@ func _setup_upgrade_dialog() -> void:
 
 
 func _on_upgrade_confirmed(item: Item) -> void:
-	upgrade_item_selected.emit(item)
+	var candidate: UpgradeCandidate = _candidate_for_item(item)
+	if candidate == null or _active_upgrade_offer == null or _upgrade_intent_sent:
+		return
+	_upgrade_intent_sent = true
+	upgrade_intent.emit(
+		_active_upgrade_offer.token,
+		_active_upgrade_offer.offer_id,
+		candidate.candidate_id
+	)
+
+
+func _candidate_for_item(item: Item) -> UpgradeCandidate:
+	if item == null or _active_upgrade_offer == null or _active_upgrade_offer.consumed:
+		return null
+	var instance_id: int = item.get_instance_id()
+	for candidate: UpgradeCandidate in _active_upgrade_offer.candidates():
+		if candidate != null and candidate.owned_instance_id == instance_id:
+			return candidate
+	return null
 
 
 func _set_upgrade_title() -> void:
