@@ -260,10 +260,7 @@ func settle(token: RunFlowToken, draft_id: StringName, offer_id: StringName) -> 
 	return claim(token, draft_id, offer_id)
 
 
-func confirm_replacement(first: Variant, second: Variant = null) -> RewardResult:
-	var parsed := _parse_replacement_intent(first, second)
-	var token: RunFlowToken = parsed.get(&"flow_token") as RunFlowToken
-	var replacement_token := StringName(parsed.get(&"replacement_token", &""))
+func confirm_replacement(token: RunFlowToken, replacement_token: StringName) -> RewardResult:
 	var validation := _validate_replacement(token, replacement_token)
 	if validation != null:
 		return validation
@@ -287,14 +284,11 @@ func confirm_replacement(first: Variant, second: Variant = null) -> RewardResult
 	return _finalize_success(option, 0)
 
 
-func confirm_skill_replacement(first: Variant, second: Variant = null) -> RewardResult:
-	return confirm_replacement(first, second)
+func confirm_skill_replacement(token: RunFlowToken, replacement_token: StringName) -> RewardResult:
+	return confirm_replacement(token, replacement_token)
 
 
-func cancel_replacement(first: Variant, second: Variant = null) -> RewardResult:
-	var parsed := _parse_replacement_intent(first, second)
-	var token: RunFlowToken = parsed.get(&"flow_token") as RunFlowToken
-	var replacement_token := StringName(parsed.get(&"replacement_token", &""))
+func cancel_replacement(token: RunFlowToken, replacement_token: StringName) -> RewardResult:
 	var validation := _validate_replacement(token, replacement_token)
 	if validation != null:
 		return validation
@@ -306,8 +300,8 @@ func cancel_replacement(first: Variant, second: Variant = null) -> RewardResult:
 	)
 
 
-func cancel_skill_replacement(first: Variant, second: Variant = null) -> RewardResult:
-	return cancel_replacement(first, second)
+func cancel_skill_replacement(token: RunFlowToken, replacement_token: StringName) -> RewardResult:
+	return cancel_replacement(token, replacement_token)
 
 
 func clear_pending_replacement() -> bool:
@@ -337,7 +331,9 @@ func clear_active_session() -> bool:
 
 
 func _can_draft(token: RunFlowToken, source_id: StringName) -> bool:
-	return _configured and token != null and token.is_valid() and not source_id.is_empty() and not _settling
+	var active_is_open := _active_draft != null and not _active_draft.consumed
+	return _configured and token != null and token.is_valid() and not source_id.is_empty() \
+		and not _settling and not active_is_open and _pending_replacement.is_empty()
 
 
 func _install_draft(
@@ -540,21 +536,6 @@ func _validate_replacement(token: RunFlowToken, replacement_token: StringName) -
 	if option == null or option.consumed:
 		return _failure(RewardResult.Code.OFFER_CONSUMED, option, "replacement offer is consumed", token)
 	return null
-
-
-func _parse_replacement_intent(first: Variant, second: Variant) -> Dictionary:
-	if first is RunFlowToken:
-		return {&"flow_token": first, &"replacement_token": _as_string_name(second)}
-	return {
-		&"flow_token": _active_draft.token if _active_draft != null else null,
-		&"replacement_token": _as_string_name(first),
-	}
-
-
-func _as_string_name(value: Variant) -> StringName:
-	if value is StringName or value is String:
-		return StringName(value)
-	return &""
 
 
 func _commit_option(option: RewardOption) -> RewardResult:
