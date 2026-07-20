@@ -37,3 +37,6 @@ prompts
 
 # temp files
 .temp
+
+# GUT-generated script UID sidecars stay local.
+/addons/gut/**/*.gd.uid
