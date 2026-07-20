@@ -1,6 +1,6 @@
-# Phase 1 未提交测试资产
+# Phase 1 历史测试 checkpoint/hash manifest
 
-以下文件属于 Commerce 垂直切片的验证资产。按用户要求，所有 `tests/**` 变更保持在工作树中，不进入任何 checkpoint。哈希由 Phase 1 最终完整 GUT 后的 `git hash-object` 记录。
+以下路径与哈希记录 Phase 1 最终完整 GUT 后的历史工作树内容，算法为 `git hash-object`。它们用于审计当时 Commerce 垂直切片的验证资产，**不是当前 HEAD 的 hash 声明，也不再命令当前阶段把 tests 保持为未提交**。后续 `7366094` 已提交 Phase 0–2 测试，部分文件又在 Phase 2 演进或删除；需要当前 hash 时必须重新计算，不能沿用本表。
 
 ```text
 2052ea107d6b25cc31e955340dd17be4081354fb  tests/Commerce/fake_health_adapter.gd
@@ -29,4 +29,10 @@ d67bcd4f71d0a260e011415436882c410ee0fa7a  tests/Integration/test_scene_contracts
 c7ce8a47641760d36ad403cd75fa6bc9012e3c78  tests/test_shop_upgrade_offers.gd.uid
 ```
 
-每个后续 Phase 在修改这些测试后必须更新对应哈希；新增测试及其 `.gd.uid` 侧车也必须追加登记。提交前仍以 `git diff --cached -- tests` 为空作为硬性检查。
+以下三项降低为**历史交接 digest**：对应 blob 未归档，当前仓库不可恢复/重算；保留原 digest 和路径只用于追踪交接记录，不可据此证明内容或测试结果：
+
+- `fc453fc458e49cad05141ca352b7c151dc1c9141  tests/Commerce/test_current_adapters.gd`；
+- `00d26a9063bd2139f7e64cb8658e14803a29c92b  tests/Commerce/test_current_adapters.gd.uid`；
+- `6810ae956c00c9df4b0f4dacbc8d858b72cc17d8  tests/Commerce/test_presentation_delegation.gd`。
+
+本表内容应保持为历史 checkpoint，不随当前文件变化改写。当前阶段若新增测试证据，应在对应阶段台账/日志中记录新的 commit 或 blob hash；测试是否提交由该阶段的明确 checkpoint 范围决定，并须逐路径审阅。

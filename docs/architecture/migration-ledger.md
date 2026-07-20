@@ -1,75 +1,87 @@
 # 架构迁移台账（Phase 0–9）
 
-## 使用规则
+## 证据规则
 
-每阶段结束前记录实际变更、GUT/运行证据、临时 adapter/bridge 和已知风险。所有 `tests/**` 变更都是用户要求保留在工作树中的验证资产，**不得暂存或提交**；这不授权跳过 GUT。状态“待最终 review / checkpoint”只表示证据已收集，不表示 review 或 checkpoint 已完成。
+本台账区分三类事实：已提交实现、仓库内可审计验证证据、仅存在于交接报告的运行结果。只有带原始日志并可对应到明确代码版本的 GUT 结果，才能写成可复验的 `PASS`；启动检查、静态检查和交接数字都不能替代 GUT。
 
-| Phase | 状态 | 目标 | 关键验收 |
+早期约定“所有 `tests/**` 永不提交”已经被仓库历史否定：`7366094` 提交了 Phase 0–2 测试，`42adaba` 又提交了 Phase 3 focused 测试。因此当前政策是：测试可以作为对应实现的版本化验收资产提交；暂存和提交时仍需逐路径审阅，禁止用宽泛暂存误带无关文件。`docs/testing/phase1-test-assets.md` 与 `docs/testing/phase2-test-assets.md` 保留的是当时 checkpoint 的路径/hash manifest，用于审计历史内容，不再代表当前工作树必须保持未提交。
+
+## 阶段状态
+
+| Phase | 当前状态 | 已完成事实 | 尚未完成的关键验收 |
 | --- | --- | --- | --- |
-| 0 | **完成；本提交为 Phase 0 checkpoint** | 冻结运行图、依赖、Autoload、场景、UID 与测试基线。 | 初始 GUT 3/22/160；契约套件及 UID 修复后完整 GUT 4/24/196；图形主场景启动 smoke；未移动资源、未改变节点属性或业务行为。 |
-| 1 | **完成；本提交为 Phase 1 checkpoint** | 建立 Content 逻辑边界与 Commerce 首个垂直切片；普通店/恶魔店委托 scoped Session。 | 完整 GUT 9 scripts / 54 tests / 494 asserts；覆盖交易原子性、报价过期、容量、技能替换、出售、重复结算及真实 presentation delegation；旧迁移入口与第二套报价/结算规则清零；Commerce domain/application 无 `Control`、`get_tree()`、`/root`、`NodePath`。 |
-| 2 | **完成；本提交为 Phase 2 checkpoint** | 将持有物品、弹珠排列、容量、技能槽与成长迁入 Loadout 和 run-scoped 状态。 | 唯一 RunScope 同时持有 Loadout/ItemProgression/RunWallet/RunHealth；Main 不再从 Shop UI 读取领域顺序；旧 Inventory、MarbleUpgradeSystem、四个 current adapter 与 Shop/Inventory Autoload 已删除。 |
-| 3 | 未开始 | 拆分 RunState、RunFlowController、BattlePlanFactory、RewardService、EventResolver。 | RunController 只编排；所有节点类型路径只推进一次；验收前删除旧奖励、事件和流程实现。 |
-| 4 | 未开始 | 建立 BattleSession，并将敌人死亡、弹珠跌落/碰撞、战斗生命周期迁为局部 typed signals；退役 Event。 | 业务目录无 `/root/Event`；正常死亡/跌出、多敌人、重复信号均只完成一次战斗；Event bridge 归零。 |
-| 5 | 未开始 | 合并 Effect/Buff registry，建立 RelicEffectService、PlayerBuffService、BuffCatalog，保留 BuffHost 单位组件。 | registry 唯一、无 root 服务查找、modifier 可按稳定 source 清理，遗物与毒/冰/火状态有 GUT。 |
-| 6 | 未开始 | 通过 Godot 编辑器/Hastur 创建 `Game/Bootstrap/game_main.tscn` 与 `run_scope.tscn`，Main 成为可视化组合根。 | composition 只用 typed 引用/configure/direct signals；切换 main_scene 后删除旧动态装配；run restart 无 scoped 状态泄漏。 |
-| 7 | 未开始 | 迁移领域 presentation，治理 UI 构建、运行时属性写入和字体。 | UI 结构来自 `.tscn`；普通字体仅 10/12px 复合字体，漂浮伤害 Quaver 16px；各 UI 场景独立运行并按规定截图。 |
-| 8 | 未开始 | 经 Godot 编辑器/Hastur 逐领域移动资源、保持 UID、清理旧目录和命名。 | 每组移动后无旧路径、Missing Script/Resource，相关及完整 GUT 通过；最终目录符合锁定目标。 |
-| 9 | 未开始 | 完成 ADR/README/CONTEXT、测试镜像与去兼容审计。 | tests 迁至模块目录但仍未提交；adapter/bridge/旧实现/无消费者 Autoload 清零；完整 GUT 与开始到 Boss/失败重开流程通过。 |
+| 0 | **历史 checkpoint 完成** | 冻结运行图、依赖、Autoload、场景、UID 与测试基线。 | 无；历史证据见下文。 |
+| 1 | **历史 checkpoint 完成** | Content 边界与 Commerce 垂直切片；普通店/恶魔店委托 scoped Session。 | 运行时交互当时明确记为 `DEFERRED`。 |
+| 2 | **core 与 scope 迁移完成** | 唯一 `RunScope` 持有 Loadout、ItemProgression、RunWallet、RunHealth；Shop/Inventory Autoload、旧 Inventory 与 MarbleUpgradeSystem 已删除。 | 当时没有全量 GUT 或完整跑图证据。 |
+| 3 | **modular core implementation committed；production acceptance 未完成** | `42adaba` 提交 typed Run state/offer/result、`RunFlowController` 及 5 个拆分模块。 | Main 未组装新 flow；UI 未切成 pure adapters；旧 `RunController` 仍是 production orchestrator；旧流程业务实现尚未删除。 |
+| 4 | **未开始；先满足 Phase 3 production cutover 门槛** | 方案见 [phase4-plan.md](phase4-plan.md)。 | P4-A 不可拆地建立真实 `class_name Enemy` typed surface、唯一 Enemy→Event bridge、`BattleSession` 与原子 sealed/failed spawn batch；随后迁其余局部 signals，删除 wave 幽灵契约并在消费者清零后退役 Event Autoload。 |
+| 5 | 未开始 | Effect/Buff 收敛。 | registry/service 唯一化及状态效果验证。 |
+| 6 | 未开始 | 正式可视化 Bootstrap composition。 | `game_main.tscn` / `run_scope.tscn` 与 scoped 生命周期验收。 |
+| 7 | 未开始 | UI presentation、构建与字体治理。 | UI 场景、字体、交互与截图验收。 |
+| 8 | 未开始 | 编辑器/Hastur 资源与目录迁移。 | UID、引用、相关及完整 GUT 验收。 |
+| 9 | 未开始 | 最终 ADR/README/CONTEXT、测试镜像与去兼容审计。 | adapter/bridge/旧实现清零及完整运行流程。 |
 
-## Phase 0 实际证据
+Phase 3 的两层状态不得合并表述。`Run/run_flow_controller.gd` 已存在并提交，不等于它已进入生产路径；`Main/main.gd:3`、`:269-293` 仍 preload、实例化并启动 `Run/run_controller.gd`，且仓库中没有 Main/UI 对 `RunFlowController` 的调用。按原 Phase 3 spec，“Main 生产切换、UI adapter 化、删除旧流程业务实现”仍是 Phase 3 acceptance，不得作为 Phase 4 成果冒领。可执行 cutover 分为 [phase4-plan.md](phase4-plan.md) 的 P3-A 组合准备与 P3-B 原子生产切换；P3-B 完成前 Phase 4 保持未开始。
 
-- 初始基线：3 scripts / 22 tests / 160 asserts，exit 0（[原始日志](../testing/evidence/phase0-gut-baseline.log)）。
-- 加入未提交场景契约后：4 scripts / 24 tests / 196 asserts，exit 0（[原始日志](../testing/evidence/phase0-gut-contracts.log)）。
-- 首次图形 smoke 暴露 18 处第一方 `invalid UID`；用户重新导入后，经目标工作树 Godot editor executor 用 ResourceSaver 重存 13 个受影响资源：替换 18 个既有脚本引用 UID，为 2 个 path-only 外部引用补写 UID，并规范化移除 `Enemies/enemy.tscn` 的冗余 `load_steps`。未改变节点属性、资源字段、脚本正文或场景结构。修复后的完整 GUT 仍为 4/24/196、exit 0，第一方 UID warning 归零（[原始日志](../testing/evidence/phase0-gut-uid-fixed.log)）。
-- 修复后的图形主场景运行 3 帧后 exit 0，日志无 `invalid UID`、`ERROR`、Parse、Missing Script/Resource（[原始日志](../testing/evidence/phase0-main-smoke-uid-fixed.log)）。这只证明启动 contract，不证明交互或完整流程。
-- headless 变体出现 shader compiler 条件 `ERROR`，不作为干净证据（[原始日志](../testing/evidence/phase0-main-smoke-headless.log)）。
+## 提交事实
 
-## Phase 1 实际证据
+### `7366094` — `phase0-2`
 
-- 新增 `Commerce/domain` 的身份、报价、定价和结果模型，以及 `Commerce/application` 的 Normal/Devil Session、PurchasePlan、出售服务和四个 current-state adapters；`Content/README.md` 仅锁定逻辑所有权，未移动 `Items/item.gd` 或既有资源。
-- `Shop` 与 `DevilShop` 只保留 presentation、依赖配置、意图转发和结果刷新；Slot 只发出稳定 `offer_id` 意图。Phase 1 使用过的 `purchase_*_with_dependencies`、`generate_upgrade_offers`、`grant_levelled_item`、`grant_offer_for_compat` 等迁移入口已在本 Phase 删除，生产与 tests 中调用者均为 0。
-- PurchasePlan 对 Inventory、Progression、Wallet、Health 快照后执行奖励/支付；任一步失败逆序恢复并区分 `COMMIT_FAILED` 与 `ROLLBACK_FAILED`。普通出售同样原子覆盖移除、成长重置和入账。
-- 完整 GUT：9 scripts / 54 tests / 494 asserts，exit 0；日志不含 ObjectDB、RID、orphan 或 resources-in-use 泄漏（[原始日志](../testing/evidence/phase1-gut.log)）。覆盖纯 Session、current adapters、真实 Shop Slot signal、真实 Shop 出售和 DevilShop confirm delegation。
-- 用户明确当前游戏流程无需随时可运行，优先完成重构和测试。因此 verify 记录为 **DEFERRED**：本 Phase 不声明 runtime PASS，真实游戏交互验证推迟到后续收敛阶段。
-- Phase 1 曾将 `Shop._grant_starting_marbles()` 登记为待迁移调用者；Phase 2 已删除该入口，改由 Main 在唯一 RunScope 首次初始化时播种 Dark marble 与 Dash。
+- 提交 Phase 0–2 的 Run domain/application、Commerce/Loadout/Integration/Run 测试与 UID 侧车；这也是测试已进入版本控制的直接证据。
+- 新增 `BattlePlanFactory`、`BattleGateway`、`RewardService`、`EventResolver`、typed domain 模型及对应 GUT。
+- 删除 `tests/test_skill_upgrade_system.gd` 及 UID；当前文档不得继续把它列为现有测试。
 
-## Phase 2 实际证据
+### `42adaba` — `feat(run): implement modular phase 3 flow controller`
 
-- 新增唯一 `RunScope`，持有 `Loadout`、`MarbleLoadout`、`ItemProgression`、`RunWallet` 与 `RunHealth`。Main 首次初始化只播种 Dark marble 与 Dash；`reset_for_run()` 保留持有物和弹珠链顺序，仅重置成长、金币和生命。RunHealth 默认 10，Commerce `debit()` 至少保留 1，战斗 `damage()` 可降到 0。
-- Main 通过预制场景装配普通 Shop 与 DevilShop，并向 InventoryPanel、DraftRewardPanel、SkillController、EffectManager、RunController 注入同一组 scoped ports。弹珠链只读取 `Loadout.get_chain_items()`；金币 HUD 监听 RunWallet；RunController 的奖励、事件、升级和生命访问已切换到 scoped 状态。
-- 删除 `Inventory/inventory.gd`、`Run/marble_upgrade_system.gd`、四个 `Commerce/application/adapters/current_*` 及 UID 侧车，并删除 `project.godot` 的 Shop/Inventory Autoload。保留 `Inventory/inventory.tscn`、`Shop/shop.tscn`、StatSystem 与 EffectManager Autoload。
-- 静态验收清零：生产代码中不存在 `/root/Inventory`、`/root/Shop`、`MarbleUpgradeSystem`、旧升级脚本路径、current adapter 路径、`RunController/MarbleUpgradeSystem`、Main 的 Shop MarbleBox 顺序回读或 Shop/Inventory Autoload 条目。`git diff --check` 通过。
-- 关键 GUT：Loadout 5 scripts / 18 tests / 220 asserts；Commerce 4 / 25 / 204；普通/恶魔商店升级报价 2 / 18 / 177；Phase 2 装配契约 1 / 1 / 21，均全部通过。Commerce 测试退出时仍报告既有 RID/Texture/ObjectDB 资源泄漏信息；测试断言本身全部通过。本阶段未运行全量 GUT、完整游戏流程或截图。
-- 首次 Loadout GUT 暴露 `Loadout.restore()` 的 Variant 推断解析错误；修复后又暴露 Dark marble 觉醒主属性 override 仍为 3.0。两项均修复并由上述 18/18 Loadout GUT 覆盖。
-- Phase 3 的 RunFlow/Reward/Event 深拆分、Phase 5 的 Effect/Buff 收敛、Phase 6 的正式可视化 composition root、Phase 7/8 的 UI/字体与目录/资源迁移均明确延后。
+- 新增 582 行 `Run/run_flow_controller.gd`。
+- 新增 5 个职责模块：`run_battle_flow.gd` 89 行、`run_event_flow.gd` 83 行、`run_node_offer_policy.gd` 160 行、`run_reward_flow.gd` 117 行、`run_upgrade_service.gd` 191 行。
+- 新增 typed node/upgrade domain 模型，修改 `Run/domain/run_state.gd`，并收紧 `RewardService`：活动且未消费的 draft 存在时不允许创建并覆盖另一 draft。
+- 新增 `tests/Run/test_run_flow_controller_phase3.gd` 及 UID；脚本当前有 8 个 `test_*`，blob hash 为 `0b68debd1490840411335d1af7e45e7701519921`。
+- 该提交没有修改 `Main/main.gd`、`Main/main.tscn`、任何 UI 脚本/场景，也没有删除 `Run/run_controller.gd`，所以只证明 modular core 被提交。
 
-## 工作树内长期未提交测试资产
+### `fb56caf` — `chore(git): ignore generated GUT UID sidecars`
 
-当前工作树包含 36 个已修改或新增且继续保留的测试脚本/UID 侧车；完整路径与 `git hash-object` 见 [Phase 2 未提交测试资产](../testing/phase2-test-assets.md)。其中包括 scoped Commerce、Loadout/Progression/Run 资源、presentation delegation、升级报价回归和 Phase 2 装配契约。Phase 2 另删除了 2 份只验证旧 adapter/升级所有者的测试及 UID 侧车，有效断言已迁入保留资产。
+- 仅修改 `.gitignore`，加入 `/addons/gut/**/*.gd.uid` 忽略规则；没有修改生产、测试或文档行为。
 
-上述文件及后续新增/更新/迁移的所有 `tests/**` 文件均保持可见且未提交，并在阶段台账更新路径与哈希。
+### `592c7db` — `chore: track GUT UID files`
 
-每阶段开始和结束必须：
+- 撤销 `fb56caf` 的 GUT UID 忽略规则，并提交 82 个 `addons/gut/**/*.gd.uid` 侧车。
+- 当前 HEAD 为 `592c7db`；该提交没有改变 Phase 3 flow、Main 或 UI 装配。
 
-1. 执行 `git status --short`，区分生产改动与预期未提交测试资产。
-2. 对未提交测试执行 `git hash-object <path>`；内容变化必须更新台账，不得悄然覆盖。
-3. 执行 `git diff --check`，并分别审阅生产 diff 与 `tests/**` diff。
-4. checkpoint 只使用逐路径 allowlist 暂存，禁止 `git add -A`、`git add .` 等宽泛命令。
-5. 提交前确认 `git diff --cached --name-only -- tests` 与 `git diff --cached -- tests` 均为空，并审阅完整 staged 文件清单；`.gitignore` 只保证测试/侧车可见，不是提交保护机制。
-6. 运行相关 GUT、完整 GUT；有运行时表面的阶段再执行对应完整流程。
-7. Phase 0 的第一方 UID allowlist 与 `.gitignore` 一致：`Buffs`、`DevilShop`、`Effects`、`Enemies`、`Fliper`、`Inventory`、`Items`、`Levels`、`Localization`、`Main`、`Marbles`、`Run`、`Shop`、`Skills`、`Stats`、`UI`，并预留目标目录 `Commerce`、`Loadout`、`Combat`、`Content`、`Core`、`Game`。本阶段应新增并暂存 82 个生产 `.gd.uid`；暂存后上述当前目录不得仍有未跟踪 `.gd.uid`，同时 `tests/**` 必须继续未暂存。
+## Phase 0–2 历史证据
+
+- Phase 0 初始 GUT：3 scripts / 22 tests / 160 asserts，exit 0（[原始日志](../testing/evidence/phase0-gut-baseline.log)）。契约加入后与 UID 修复后分别为 4/24/196、exit 0（[契约日志](../testing/evidence/phase0-gut-contracts.log)、[UID 修复日志](../testing/evidence/phase0-gut-uid-fixed.log)）。
+- Phase 0 图形主场景 3 帧 smoke 的干净记录见 [phase0-main-smoke-uid-fixed.log](../testing/evidence/phase0-main-smoke-uid-fixed.log)；它只证明启动 contract，不证明交互或完整流程。headless 记录包含 shader compiler `ERROR`，不作为干净证据。
+- Phase 1 归档 GUT：9 scripts / 54 tests / 494 asserts，exit 0（[原始日志](../testing/evidence/phase1-gut.log)）。运行时交互当时明确为 `DEFERRED`。
+- Phase 2 交接记录曾给出多组 focused GUT 数字，但 `docs/testing/evidence/` 没有对应 Phase 2 原始日志，因此本台账不把这些数字提升为当前可复验 `PASS`。`7366094` 证明相关测试内容已经提交，不证明该 HEAD 的全量运行结果。
+
+## Phase 3 验证状态与已知冲突
+
+- 交接报告结果：Phase 3 focused GUT 为 **8 tests / 167 assertions**；原始成功日志未入库，当前 `docs/testing/evidence/` 也没有 Phase 3 日志。因此只能记录为“交接报告结果（原始成功日志未入库）”，不能写成当前可复验 `PASS`。
+- 交接还称一次卡住的 Godot/GUT 进程以记录到的 PID `7668` 精确终止，并提到 `warning-as-error` / signal 11 风险。仓库没有该次 stdout/stderr、命令、exit code 或时间戳，故这些只作为交接事实和复跑风险，不作为已复现根因。
+- 当前旧测试 `tests/Run/test_reward_service.gd:206-235` 在 stale draft 未消费、未 `clear_active()` 时创建第二份 draft；新契约 `Run/reward_service.gd:333-336` 会拒绝覆盖 active draft并返回 `null`，随后 helper 在 `tests/Run/test_reward_service.gd:337` 调用 `draft.options()`。这是旧测试流程与新契约的真实冲突；修订测试或契约前不得声称 full GUT 通过。
+- 当前没有 full GUT 的入库成功日志，也没有 Phase 3 production runtime cutover 证据。
+
+## Phase 3 未完成清单（Phase 4 开工前门槛）
+
+1. `Main` 创建/提供 BattleSpawner、base `Enemies`、level parent、reset/release/read-stat Callables，并组装 `RunFlowController`、`BattlePlanFactory`、`RewardService`、`EventResolver`、单一共享 `RunRandomSource`、默认 `BattleRewardConfig`/`RunFloorConfig` 与 `BattleGateway`；全部 configure 失败必须反向清理且不得 start。
+2. NodeChoice、Reward、Event、Upgrade、Shop、Failure 等 UI 只把 typed presentation 显示为状态并发出 typed intent，不持有或复制流程规则。
+3. 迁移 SkillSlot、HUD、失败重开和 MarbleChain 的接线到新 flow；SkillController 在 Phase 4 正式 typed 迁移前只允许经已登记的专用 typed flow→Event lifecycle bridge 兼容，不能复用旧单参数 helper。
+4. 调用者清零后删除 `Run/run_controller.gd` 及 UID；不得保留同名兼容壳或可运行的双 orchestrator。
+5. 修复上述旧 RewardService 测试冲突，增加真实 Main composition GUT，运行 focused 与 full GUT 并归档原始日志；随后执行首战、奖励/节点/事件/商店/升级、Boss、失败重开。P3-B checkpoint 必须只有 `Event → BattleSpawner → BattleGateway → RunBattleFlow` 一条活动完成路径。
 
 ## 临时 facade / bridge
 
-| 名称 | 创建 Phase | 调用者 | 删除条件 | 状态 |
+| 名称 | 创建阶段 | 当前调用者 | 删除条件 | 状态 |
 | --- | --- | --- | --- | --- |
-| Commerce current Inventory adapter | 1 | 无 | Phase 2 切换 scoped Loadout 后删除 | **Phase 2 已删除** |
-| Commerce current Progression adapter | 1 | 无 | Phase 2 切换 ItemProgression 后删除 | **Phase 2 已删除** |
-| Commerce current Wallet adapter | 1 | 无 | Phase 2 切换 RunWallet 后删除 | **Phase 2 已删除** |
-| Commerce current Health adapter | 1 | 无 | Phase 2 切换 RunHealth 后删除 | **Phase 2 已删除** |
-| Phase 1 旧购买/发放 seam | 1 | 无 | Phase 1 验收前删除 | **已删除，调用者为 0** |
+| Commerce current adapters | 1 | 无 | scoped Loadout/Progression/Wallet/Health 切换 | **Phase 2 已删除** |
+| Phase 1 旧购买/发放 seam | 1 | 无 | Commerce delegation 验收 | **已删除** |
+| `BattleGateway.legacy_event_source` | 2 | 已提交 capability；Main 未装配，当前 production-unreachable | Phase 4 P4-C 的 BattleSession accepted marble 接入 Gateway | **代码存在，非活动 consumer，待删** |
+| Main 的旧 `RunController → Event` 转发 | 现有 legacy | `SkillController` 等 Event 消费者 | Phase 3 P3-B 删除并由下行专用 typed bridge 临时替代 | **当前生产存在，待 P3-B 删除** |
+| `RunFlowController typed lifecycle → Event` | Phase 3 P3-B（计划） | cutover 后的 `SkillController` compatibility | Phase 4 P4-D SkillController typed configure | **尚未创建；创建时须专用签名 adapter，Phase 4 内删除** |
+| `Enemy.defeated → Event.enemy_killed` | Phase 4 P4-A（计划） | 旧 Spawner/BuffManager | P4-C Spawner 切 Session、P4-D BuffManager typed configure 后删除 | **尚未创建；须与 `class_name Enemy`/guarded command/删除 Enemy direct emit/Session registration 原子落地，唯一 owner 为 BattleSpawner** |
+| KillZone/MarbleChain typed source → Event | Phase 4 P4-B（计划） | 迁移期间的 Main/BuffManager；KillZone enemy 复用 P4-A Enemy bridge | P4-C/P4-D 各消费者切到 Session/typed source | **尚未创建；不得新增第二条 Enemy bridge** |
 
 ## 停止条件
 
-测试无法发现、Godot UID 无法解析、Missing Script/Resource、旧/新逻辑双结算或 run reset 状态泄漏时，立即停在当前 Phase 修复，不进入后续阶段。
+出现测试无法发现/解析、Godot UID 或资源无法解析、`class_name Enemy` 缺失/冲突、真实 `Enemies/enemy.tscn` 不能解析为 Enemy、Missing Script/Resource、P4-A 被拆分保留、Enemy direct Event emit 与 typed bridge 同时存在或同时缺失、同一 Enemy bridge 不等于一条、旧/新 orchestrator 双运行、checkpoint 没有或有两条活动 battle completion path、同一 spawn batch 同时 sealed/failed、失败后遗留 Enemy/Session/bridge 连接/completion、Gateway start 失败后未恢复 level/base container、同一 Enemy 的 `notify_host_death`/Buff/defeated/Event/战斗双结算、同一 marble health `-2` 或链重建两次、迟到信号推进新 session、dispose 后回调、P4-D 后 `wave_completed`/`on_wave_completed` 仍存在于生产脚本、run reset 状态泄漏，或 focused/full GUT 卡住且无可审计输出时，立即停在当前 checkpoint，保留日志并先消除风险，不进入下一阶段。

@@ -1,6 +1,6 @@
-# Phase 2 未提交测试资产
+# Phase 2 历史测试 checkpoint/hash manifest
 
-Phase 2 checkpoint 刻意不暂存 `tests/**`。以下 36 个保留资产的哈希记录于 2026-07-19；哈希算法为 `git hash-object`。
+以下 36 个路径/hash 是 2026-07-19 Phase 2 checkpoint 时刻的历史 manifest，算法为 `git hash-object`。当时工作流刻意未暂存 `tests/**`，但后续 `7366094` 已提交这些 Phase 0–2 测试资产，`42adaba` 又提交 Phase 3 focused 测试。因此本表只证明历史 checkpoint 内容，**不代表当前 hash，也不再规定当前 tests 必须未提交**。
 
 ```text
 2052ea107d6b25cc31e955340dd17be4081354fb  tests/Commerce/fake_health_adapter.gd
@@ -42,3 +42,5 @@ c7ce8a47641760d36ad403cd75fa6bc9012e3c78  tests/test_shop_upgrade_offers.gd.uid
 ```
 
 Phase 2 删除了只验证旧实现的 `tests/test_skill_upgrade_system.gd` 与 `tests/Commerce/test_current_adapters.gd`（含 UID 侧车）；有效成长、候选、技能数值和 scoped Commerce 断言已迁入上述 Loadout/Commerce 测试。
+
+不要为匹配当前文件而改写以上历史 hash。当前内容需要用 `git hash-object` 重新计算，并与实际 commit/验证日志一起记录；测试提交必须按阶段 checkpoint 逐路径审阅。

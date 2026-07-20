@@ -1,54 +1,74 @@
-# 场景与面板契约（Phase 0）
+# 场景与面板契约（HEAD `592c7db`）
 
-## 稳定契约
+## Main 场景事实
 
-### Main 场景
-
-`Main/main.tscn` 是启动场景（`project.godot:14`）。稳定的结构契约如下：
+`Main/main.tscn` 是启动场景。当前可审计的预置结构为：
 
 | 路径 | 类型/作用 | 证据 |
 | --- | --- | --- |
 | `Main` | 根 `Node2D`，挂载 `main.gd` | `Main/main.tscn:22-24` |
-| `Main/Marbles` | 弹珠链的父节点 | `Main/main.tscn:26`；`Main/main.gd — 成员字段:13` |
-| `Main/CanvasLayer` | 预置 HUD 与流程面板的展示层 | `Main/main.tscn:28-70` |
-| `Main/CanvasLayer/BattleHealthHud` | `set_health` / `set_gold` 的 HUD 接收者 | `Main/main.tscn:30-37`；`Main/main.gd — _on_run_health_changed():380-382`、`_on_shop_gold_changed():425-427` |
-| `Main/CanvasLayer/PausePanel` | 暂停 UI，负责暂停/恢复树 | `Main/main.tscn:39-48`；`UI/pause_panel.gd — open_pause():45-50`、`close_pause():53-55` |
-| `Main/CanvasLayer/SkillSlot` | 与 SkillController 的按压/释放信号接线 | `Main/main.tscn:54-61`；`Main/main.gd — _setup_skill_system():155-166` |
-| `Main/CanvasLayer/RunFailurePanel` | 发射 `restart_requested`，由 Main 连接并在重开时关闭 | `Main/main.tscn:63-70`；`UI/run_failure_panel.gd — _on_confirm_pressed():36-37`；`Main/main.gd — _setup_run_failure_panel():361-367`、`_on_failure_restart_requested():396-403` |
+| `Main/Marbles` | MarbleChain 的父节点 | `Main/main.tscn:26`、`Main/main.gd:15` |
+| `Main/CanvasLayer` | 唯一预置 UI 展示层 | `Main/main.tscn:28`；`Main/main.gd:229-232` 找不到即装配失败 |
+| `Main/CanvasLayer/BattleHealthHud` | 当前接收 `set_health`/`set_gold` 的现有 HUD | `Main/main.tscn:30-37`、`Main/main.gd:336-343`、`:387-389`、`:418-431` |
+| `Main/CanvasLayer/PausePanel` | 暂停/恢复 UI | `Main/main.tscn:39-48`、`Main/main.gd:354-365` |
+| `Main/CanvasLayer/SkillSlot` | Active skill 输入 adapter | `Main/main.tscn:54-61`、`Main/main.gd:297-318` |
+| `Main/CanvasLayer/RunFailurePanel` | 发射 `restart_requested` | `Main/main.tscn:63-70`、`Main/main.gd:368-374`、`:403-410` |
 | `Main/SkillController` | 技能运行时节点 | `Main/main.tscn:72-73` |
 
-运行流面板的稳定接口是各自场景脚本的公开信号，而非其内部节点路径：
+当前不存在 `CanvsLayer` 或 `RunFlowLayer` fallback。`Main._setup_run_flow()` 只查询 `CanvasLayer`，缺失就返回 `false`（`Main/main.gd:229-232`）。
 
-| 面板 | RunController 消费的信号 | 证据 |
+以下是运行时从已有 `.tscn` 预制实例化的节点，不是 Main 场景预置子节点：`NodeChoicePanel`、`DraftRewardPanel`、`RunEventPanel`、`DevilShop`、普通 `Shop`、`InventoryPanel`；`FloorHud` 与部分现有面板在缺失时也会从预制实例化（`Main/main.gd:234-263`、`:336-384`）。这描述当前装配事实，不授权用 GDScript 新建 UI 结构。
+
+Phase 3 P3-B cutover 后的计划 runtime composition 另要求 Main 创建/提供 `BattleSpawner`、base `Enemies: Node2D`、`level_parent = Main`、reset/release/read-stat Callables，以及完整的新 RunFlow 依赖；这些是 [phase4-plan.md](phase4-plan.md) 的待执行契约，不是 HEAD `592c7db` 的当前场景节点。真实 Main composition GUT 必须证明唯一新 orchestrator 和失败反向清理。
+
+## 当前 legacy 面板接口
+
+旧 `RunController` 当前消费以下公开信号；Phase 3 cutover 应把它们适配为 `RunFlowController` 的 typed presentation/intent，不让面板复制领域规则。
+
+| 面板 | 当前公开意图 | 当前消费者 |
 | --- | --- | --- |
-| NodeChoicePanel | `option_selected(option)`、`message_dismissed` | `UI/node_choice_panel.gd:4-5`；`Run/run_controller.gd — _connect_panels():1110-1119` |
-| DraftRewardPanel | `draft_closed` | `UI/draft_reward_panel.gd:4-5`；`Run/run_controller.gd — _connect_panels():1116-1119` |
-| InventoryPanel（升级选择） | `upgrade_item_selected` | `Run/run_controller.gd — _connect_panels():1121-1124` |
-| RunEventPanel | `wager_requested`、`fight_requested`、`escape_requested`、`continued` | `UI/run_event_panel.gd:4-7`；`Run/run_controller.gd — _connect_panels():1126-1136` |
-| DevilShop | `closed`、`health_changed` | `DevilShop/devil_shop.gd:10-13`；当前接线见风险项 |
-| RunFailurePanel | `restart_requested` | `UI/run_failure_panel.gd:4`；`Main/main.gd — _setup_run_failure_panel():361-367` |
+| `NodeChoicePanel` | `option_selected(option)`、`message_dismissed` | `Run/run_controller.gd:1102-1111` |
+| `DraftRewardPanel` | `draft_closed` | `Run/run_controller.gd:1108-1112` |
+| `InventoryPanel` | `upgrade_item_selected` | `Run/run_controller.gd:1113-1117` |
+| `RunEventPanel` | `wager_requested`、`fight_requested`、`escape_requested`、`continued` | `Run/run_controller.gd:1118-1122` |
+| `DevilShop` | `closed` | `Run/run_controller.gd:1124-1127` |
+| `RunFailurePanel` | `restart_requested` | `Main/main.gd:368-374` |
 
-### 关卡场景
+## LevelDef / BattlePlanFactory 契约
 
-每个可由 `LevelDef.level_scene` 载入的关卡根下必须有：
+`Levels/level_def.gd` 的 `LevelDef.level_scene` 是关卡 PackedScene 来源；`BattlePlanFactory` 接受 `LevelDef`、资源路径或它们的数组（`Run/battle_plan_factory.gd:31-41`、`:115-129`）。当一个有效 `LevelDef.level_scene` 被用于构造实际战斗组时：
 
-- `EnemySpawns`：子节点必须是 `LevelEnemySpawn`/`Marker2D`，其位置、`enemy_scene`、角色和生命覆盖用于生成 `BattleGroupDef.EnemyEntry`。RunController 明确查询根级路径并遍历子节点（`Run/run_controller.gd:698-717`）；`LevelEnemySpawn` 的导出数据在 `Levels/level_enemy_spawn.gd:1-19`。
-- `Enemies`：`Node2D`，作为激活关卡后 BattleSpawner 的运行时敌人容器。RunController 查询根级路径、替换 `enemy_container` 并重新注入 BattleSpawner（`Run/run_controller.gd:845-870`）。
+1. Factory 临时实例化场景，查找根级 `EnemySpawns`（`Run/battle_plan_factory.gd:132-155`）。
+2. 只消费 `EnemySpawns` 的 `LevelEnemySpawn` 子节点；其他子节点跳过（`:156-159`）。
+3. 每个 spawn 的 `global_position`、`enemy_scene`、`role`、`pool_override`、`health_override` 生成 `BattleGroupDef.EnemyEntry`（`:160-185`；字段见 `Levels/level_enemy_spawn.gd:16-19`）。spawn 未提供 `enemy_scene` 时使用 Factory 配置的 `enemy_scene` fallback；两者都没有则跳过该条目。
+4. 条目为空时该 LevelDef 构建失败，Factory 会尝试自己的 formation fallback（`:67-71`、`:138-144`）。因此 fallback 是 plan 构造的兼容行为，不应掩盖生产关卡缺少 `EnemySpawns` 的场景契约错误。
 
-现有弱、强、精英、Boss 关卡均有这两个根级节点，例如 `Levels/level_001_weak.tscn:11-38`、`Levels/level_strong_normal.tscn:11-56`、`Levels/level_elite.tscn:11-39`、`Levels/level_boss.tscn:11-40`。
+当前弱、强、精英、Boss 场景都应保留根级 `EnemySpawns` 与 `Enemies`，对应契约 GUT 为 `tests/Integration/test_scene_contracts.gd:36-49`。
 
-### MarbleUpgradeSystem 查找
+## BattleGateway / Enemies 契约
 
-RunController 的局内升级系统稳定行为是：若已有有效实例则复用；否则先找自己子节点 `MarbleUpgradeSystem`，再创建并添加为子节点（`Run/run_controller.gd:1156-1163`）。调用方必须通过注入的实例或此局内节点获取升级能力，不能把它提升为 Autoload。该系统的升级信号和等级常量定义在 `Run/marble_upgrade_system.gd:1-12`。
+`BattleGateway` 激活 `BattlePlan.group.level_def.level_scene` 时：
 
-## 已知偶然风险（不得固化为契约）
+- 将实例命名为 `ActiveLevel` 并挂到显式注入的 `level_parent`（`Run/battle_gateway.gd:126-142`）；
+- 必须从场景根级取得 `Enemies` 且类型为 `Node2D`（`:144-152`）；缺失时清理 active scene、恢复 base enemy container 并返回失败；
+- 把 `BattleSpawner.enemy_container` 切到该 `Enemies`，清理/隐藏上一容器；clear/dispose 后恢复 base container（`:155-193`）；
+- `dispose()` 必须断开 spawner/legacy 信号、清敌、清 active level、恢复容器并清空注入引用（`:103-123`）。
 
-- `CanvsLayer` 是 `CanvasLayer` 缺失时的拼写回退（`Main/main.gd:233-239`），不是允许的新场景使用的节点名；最终契约只有 `CanvasLayer`。
-- Main 现在会动态实例化 `NodeChoicePanel`、`DraftRewardPanel`、`RunEventPanel`、`DevilShop`，并在缺失时创建 `RunFlowLayer`（`Main/main.gd:233-255`）。这是现状兼容行为，不能作为“面板可任意缺失”的契约。
-- DevilShop 的连接代码意外嵌套在 `_connect_event_panel_signal()` 内（`Run/run_controller.gd:1133-1144`）。因此“恶魔商店必须由事件面板信号触发才会接线”不是合法依赖，后续应移至独立装配点。
-- `PausePanel` 会发射 `exit_requested`（`UI/pause_panel.gd:4`、`77-80`），但当前 Main 不消费它（`Main/main.gd — _setup_pause_panel():347-358`）。在有明确用例和消费者前，该信号不构成应用退出或返回菜单契约。
-- 面板内部 Control 路径、动画名、预览敌人和 `BattleHealthHud` 被恶魔商店通过内部路径查找（`DevilShop/devil_shop.gd:33-46`）都是实现细节；对外只承诺上表的公开信号与明确注入接口。
+当前关卡继承的 `Levels/table_base.tscn:30-36` 还提供根级 `KillZone`（脚本 `Main/kill_zone.gd`）。现有 Gateway 尚未消费它；Phase 4 P4-C 将把“从当次 ActiveLevel 解析 KillZone 并传给 BattleSession”加入运行时契约，且不得跨关卡缓存旧实例。KillZone 的 enemy 路径只能调用 Enemy guarded `defeat(cause)`，不得先 `queue_free()`；marble 路径由 Session 按 `(token, instance_id)` 接受一次后，Main 和 RunFlow 才能消费，详见 [phase4-plan.md](phase4-plan.md)。
 
-## 目标规则
+`BattleGateway` 不读取 `EnemySpawns`；它消费的是 Factory 已构造的 `BattleGroupDef`，并要求运行关卡提供 `Enemies`。反过来，Factory 不使用运行时 `Enemies`；它只从 `EnemySpawns` 生成计划。两份根级命名分别服务 plan construction 与 runtime activation，不能互相替代。
 
-场景根级命名与公开面板信号是可由 smoke contract 覆盖的稳定边界；动态回退、隐式 `get_node_or_null` 链和嵌套接线必须在迁移期登记，并在对应阶段删除。新增 UI 应由编辑器场景表达结构，脚本只处理数据、状态刷新和信号绑定。
+HEAD `592c7db` 的 `Enemies/enemy.gd` 尚无 `class_name`。Phase 4 P4-A 首先增加且只增加一个全局 `class_name Enemy`，本文所有 Enemy 类型注解和 `is Enemy` 断言都以此为唯一身份，不使用 preload 脚本类型或 duck typing。完成 Godot import/全局类刷新后，P4-A 才建立 BattleSpawner typed batch：每个 `BattleGroupDef.enemy_entries` 数组槽都必须提供可实例化且根节点 `is Enemy` 的 scene，并在加入活动 `Enemies` 前同时完成 BattleSession `defeated` registration 和唯一 typed→Event bridge 连接；无/失效 container、空 scene、非 Enemy 或任一部分生成失败都必须断开两类连接、整批清理，不能伪装成“零敌人完成”。只有数组本身为空才是合法零-entry，可在 sealed 后同步完成。P4-C 中 Gateway 遇到同步 batch failure 必须清 active level 并恢复 base container，详见 [phase4-plan.md](phase4-plan.md)。
+
+当前 `Enemies/enemy.tscn:45-46` 提供脚本所需的 `BuffHost` 子节点。P4-A 必须实例化这份真实场景验证全局类型、typed signal/command、Session/bridge 预连接和 guarded `Enemy.defeat()`：首次 guard 后恰好一次调用该 host 的 `notify_host_death()`，再发 `defeated`、最后 `queue_free()`。正常 health 在 P4-A 先统一到该入口；KillZone 在 P4-B 改调同一 command。该要求保留既有 death-hook 行为，不修改 Buff 定义或 registry。
+
+## 已删除的旧契约
+
+`Run/marble_upgrade_system.gd` 已在 `7366094` 前后的 Phase 2 迁移中删除；当前升级能力由 `RunUpgradeService`、Loadout 和 ItemProgression 承担。任何“RunController 查找/创建 `MarbleUpgradeSystem` 子节点”的文档都是陈旧事实，不得恢复为场景契约。
+
+## 稳定规则与验收
+
+- 场景根级 `CanvasLayer`、`EnemySpawns`、`Enemies` 及面板公开 typed signals 是可测试边界；面板内部 Control 路径、动画名和预览节点不是跨模块 API。
+- UI 结构和属性必须来自 `.tscn`/`.tres`；脚本只处理数据、状态刷新、信号绑定和分发。未来新增或修改 UI 场景须经 Godot 编辑器/Hastur 完成。
+- 新增或移动 `.gd`/`.tscn`/`.tres` 后，必须先由目标 Godot 4.6.1 项目完成 import/UID 生成和引用解析，再运行 GUT；startup/static inspection 只能辅助定位，不能声称 GUT 通过。
+- Phase 4 的 BattleSession 场景/节点契约和运行场景验收见 [phase4-plan.md](phase4-plan.md)。

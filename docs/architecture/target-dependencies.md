@@ -1,8 +1,10 @@
-# 目标依赖与模块边界（Phase 0）
+# 目标依赖与模块边界（锁定终态）
 
 ## 当前事实
 
-当前源码虽按玩法概念分布在 `Run/`、`Shop/`、`Skills/` 等顶层目录，但跨模块依赖大量经 Autoload、`get_node_or_null()` 和硬编码场景路径完成。`Main._setup_run_flow()` 同时创建 UI、控制器并转发 Event（`Main/main.gd:232-286`）；`RunController` 同时编排流程、奖励、事件、关卡与状态服务（`Run/run_controller.gd:1-1163`）。因此现有目录不能证明稳定依赖方向。
+当前源码虽按玩法概念分布在 `Run/`、`Shop/`、`Skills/` 等顶层目录，但跨模块依赖仍大量经 Autoload、`get_node_or_null()` 和硬编码场景路径完成。`Main._setup_run_flow()` 同时实例化 UI、创建旧控制器并转发 Event（`Main/main.gd:229-293`）；1137 行的 `RunController` 仍是 production orchestrator。`42adaba` 已提交 582 行 `RunFlowController` 与 5 个拆分模块，但 Main/UI 没有装配它，故当前目录和新类的存在都不能证明生产依赖方向已经满足终态。
+
+当前偏差与开工门槛：必须先完成 [Phase 4 方案](phase4-plan.md)中的 P3-A 组合准备与 P3-B 原子 production cutover，包括 Main 完整 configure/失败清理、UI pure adapters、真实 composition GUT、旧 RunController 删除和运行门槛；这仍属于 Phase 3 acceptance，不得计为 Phase 4 交付。随后 Phase 4 才建立 BattleSession、迁移 typed local signals 并退役 Event。
 
 ## 目标目录
 
@@ -48,14 +50,16 @@ Game/Bootstrap → 唯一跨模块装配点
 
 ## 迁移期 facade / bridge 规则
 
-1. facade/adapter 只能存在于正在执行的单个 Phase；只做接口适配，不保存第二份业务状态、不复制规则。
+1. facade/adapter 原则上只能存在于正在执行的单个 Phase；只做接口适配，不保存第二份业务状态、不复制规则。
 2. 新实现通过 characterization tests 后，必须在同一 Phase 迁移全部调用者并删除旧业务入口；不得让两个状态所有者跨阶段并存。
-3. 唯一例外是 Event 的单向 `新 signal → 旧 Event` bridge，可按消费者批次短暂存在，并须在该批次验收前删除。
+3. 唯一例外是已登记的单向 `typed signal → 旧 Event` bridge：Phase 3 P3-B 的 lifecycle bridge 可跨 cutover 暂存到 Phase 4 P4-D；Phase 4 P4-A 的唯一 `Enemy.defeated → Event.enemy_killed` bridge 必须与真实 Enemy typed surface、删除 Enemy direct emit及 Session/Spawner registration 原子建立，并在 P4-C/P4-D 的 Spawner/BuffManager 消费者切换后删除；P4-B 只新增 KillZone marble 与 MarbleChain source bridge。每条必须有明确 typed 签名 adapter、调用者、删除 checkpoint 和 disconnect；禁止复用丢失参数语义的通用 helper。
 4. 禁止引入全局 Service Locator，禁止让新模块反向依赖旧 facade。
 5. 每个临时入口必须在 [migration-ledger.md](migration-ledger.md) 登记创建阶段、调用者、删除条件和实际删除状态。
+6. 每个可保留 checkpoint 必须有一条且只有一条活动 production battle completion path，并以 Main composition GUT/运行证据证明；旁路新实现不得连接第二个 completion consumer。
 
 ## 已知风险
 
 - 该目标树是已锁定的迁移终态，不授权 Phase 0 移动文件；物理路径统一在 Phase 8 经 Godot 编辑器/Hastur 迁移。
 - 当前 `Main`、`RunController`、Shop/DevilShop 与各 Autoload 仍跨越上述边界；迁移必须按 Commerce → Loadout → Run → Combat → Bootstrap → UI 的顺序稳定接口。
 - 目录变短或脚本变短不是验收条件；真正标准是状态唯一所有者、显式依赖、小而稳定的接口与同一 seam 驱动真实行为。
+- Phase 4 不修改本文件锁定的目标目录，也不提前移动资源；Effect/Buff registry、visual composition、UI 视觉治理和目录迁移分别保留给 Phase 5–8。
