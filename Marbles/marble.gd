@@ -55,6 +55,18 @@ func get_hit_damage(_target: Node) -> int:
 	return damage
 
 
+## 从唯一定义源 BuffRegistry 构造指定 buff。各弹珠的静态施加函数共用此入口，
+## 不再各自 preload buff 脚本。
+static func make_buff(buff_id: String) -> BuffDef:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	var registry: Node = tree.root.get_node_or_null("BuffRegistry")
+	if registry == null or not registry.has_method("get_buff_def"):
+		return null
+	return registry.call("get_buff_def", buff_id) as BuffDef
+
+
 func dash_toward(direction: Vector2) -> void:
 	if _dash_active:
 		return

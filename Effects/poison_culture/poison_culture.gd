@@ -1,7 +1,7 @@
 extends RefCounted
 class_name PoisonCultureEffect
 
-const PoisonDebuffScript: GDScript = preload("res://Buffs/buffs/poison_debuff.gd")
+const POISON_DEBUFF_ID: String = "poison_debuff"
 const DEFAULT_CONFIG: RelicLevelConfig = preload("res://Resources/relic_configs/poison_culture.tres")
 
 var _config: RelicLevelConfig = DEFAULT_CONFIG
@@ -64,7 +64,9 @@ func _spread_poison(source: Node2D) -> void:
 	for index: int in range(mini(_config.get_value(_level), candidates.size())):
 		var target: Node2D = candidates[index]
 		if target.has_method("add_buff"):
-			target.call("add_buff", PoisonDebuffScript.new())
+			var poison: BuffDef = _make_buff(POISON_DEBUFF_ID)
+			if poison != null:
+				target.call("add_buff", poison)
 
 
 func _prune_tick_counts() -> void:
@@ -73,3 +75,13 @@ func _prune_tick_counts() -> void:
 		var enemy_ref: WeakRef = entry.get("enemy") as WeakRef
 		if enemy_ref == null or enemy_ref.get_ref() == null:
 			_tick_counts.erase(enemy_id)
+
+
+func _make_buff(buff_id: String) -> BuffDef:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	var registry: Node = tree.root.get_node_or_null("BuffRegistry")
+	if registry == null or not registry.has_method("get_buff_def"):
+		return null
+	return registry.call("get_buff_def", buff_id) as BuffDef

@@ -42,7 +42,8 @@ func on_process(host: Node, state: Dictionary, delta: float) -> void:
 		tick_accumulator -= tick_seconds
 		if host.has_method("take_damage"):
 			host.call("take_damage", _get_poison_damage_per_tick(), _get_flash_color())
-		_notify_poison_tick(host)
+		if host.has_method("notify_buff_ticked"):
+			host.call("notify_buff_ticked", id)
 
 	state["tick_accumulator"] = tick_accumulator
 
@@ -76,14 +77,3 @@ func _get_stat_system() -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null("StatSystem")
-
-
-func _notify_poison_tick(host: Node) -> void:
-	if not host is Node2D:
-		return
-	var tree: SceneTree = Engine.get_main_loop() as SceneTree
-	if tree == null:
-		return
-	var effect_manager: Node = tree.root.get_node_or_null("EffectManager")
-	if effect_manager != null and effect_manager.has_method("on_poison_tick"):
-		effect_manager.call("on_poison_tick", host as Node2D)

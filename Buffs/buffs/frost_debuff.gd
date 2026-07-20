@@ -1,7 +1,7 @@
 extends BuffDef
 class_name FrostDebuff
 
-const FROZEN_DEBUFF_SCRIPT: GDScript = preload("res://Buffs/buffs/frozen_debuff.gd")
+const FROZEN_DEBUFF_ID: String = "frozen_debuff"
 const FROST_COLOR: Color = Color(0.55, 0.85, 1.0, 1.0)
 const DEFAULT_DURATION: float = 5.0
 const MAX_FROST_STACKS: int = 6
@@ -54,7 +54,9 @@ func _convert_to_frozen(host: Node) -> void:
 		host.call("remove_buff", id)
 		host.set_meta(META_FROST_TO_FROZEN_TRANSITION, false)
 	if host.has_method("add_buff"):
-		host.call("add_buff", FROZEN_DEBUFF_SCRIPT.new())
+		var frozen: BuffDef = make_buff(FROZEN_DEBUFF_ID)
+		if frozen != null:
+			host.call("add_buff", frozen)
 
 
 func _get_frost_duration() -> float:

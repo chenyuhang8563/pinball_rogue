@@ -1,7 +1,7 @@
 extends RefCounted
 class_name IceHammerEffect
 
-const FrostDebuffScript: GDScript = preload("res://Buffs/buffs/frost_debuff.gd")
+const FROST_DEBUFF_ID: String = "frost_debuff"
 const DEFAULT_CONFIG: RelicLevelConfig = preload("res://Resources/relic_configs/ice_hammer.tres")
 
 var _config: RelicLevelConfig = DEFAULT_CONFIG
@@ -54,4 +54,16 @@ func _shatter(center_enemy: Node2D) -> void:
 		if target.has_method("is_alive") and not bool(target.call("is_alive")):
 			continue
 		if target.has_method("add_buff"):
-			target.call("add_buff", FrostDebuffScript.new(), frost_stacks)
+			var frost: BuffDef = _make_buff(FROST_DEBUFF_ID)
+			if frost != null:
+				target.call("add_buff", frost, frost_stacks)
+
+
+func _make_buff(buff_id: String) -> BuffDef:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	var registry: Node = tree.root.get_node_or_null("BuffRegistry")
+	if registry == null or not registry.has_method("get_buff_def"):
+		return null
+	return registry.call("get_buff_def", buff_id) as BuffDef

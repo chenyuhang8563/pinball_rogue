@@ -1,12 +1,5 @@
 extends Node
 
-const EFFECT_SCRIPTS: Dictionary = {
-	Item.EffectType.LIGHTNING_CHAIN: preload("res://Effects/lightning_effect/lightning.gd"),
-	Item.EffectType.FIRE_BELLOWS: preload("res://Effects/fire_bellows/fire_bellows.gd"),
-	Item.EffectType.POISON_CULTURE: preload("res://Effects/poison_culture/poison_culture.gd"),
-	Item.EffectType.ICE_HAMMER: preload("res://Effects/ice_hammer/ice_hammer.gd"),
-}
-
 var _active_effects: Dictionary = {}
 var _loadout: RefCounted = null
 var _progression: RefCounted = null
@@ -46,12 +39,18 @@ func on_poison_tick(enemy: Node2D) -> void:
 
 
 func _sync_active_effects() -> void:
-	var owned_effect_levels := _get_owned_effect_levels()
+	var registry: Node = _get_relic_registry()
+	var owned_effect_levels := _get_owned_effect_levels(registry)
 	var owned_effects: Array = owned_effect_levels.keys()
 
 	for effect_type in owned_effects:
 		if not _active_effects.has(effect_type):
-			_active_effects[effect_type] = EFFECT_SCRIPTS[effect_type].new()
+			var script: GDScript = null
+			if registry != null and registry.has_method("get_relic_script"):
+				script = registry.call("get_relic_script", int(effect_type)) as GDScript
+			if script == null:
+				continue
+			_active_effects[effect_type] = script.new()
 		var effect: Variant = _active_effects[effect_type]
 		if effect != null and effect.has_method("set_level"):
 			var effect_state: Dictionary = owned_effect_levels[effect_type]
@@ -64,14 +63,7 @@ func _sync_active_effects() -> void:
 			_active_effects.erase(effect_type)
 
 
-func _get_owned_effect_types() -> Array[int]:
-	var owned_effects: Array[int] = []
-	for effect_type: int in _get_owned_effect_levels().keys():
-		owned_effects.append(effect_type)
-	return owned_effects
-
-
-func _get_owned_effect_levels() -> Dictionary:
+func _get_owned_effect_levels(registry: Node) -> Dictionary:
 	var owned_effects: Dictionary = {}
 	if _loadout == null or not is_instance_valid(_loadout) \
 			or _progression == null or not is_instance_valid(_progression):
@@ -82,7 +74,8 @@ func _get_owned_effect_levels() -> Dictionary:
 			continue
 		if item.effect_type == Item.EffectType.NONE:
 			continue
-		if not EFFECT_SCRIPTS.has(item.effect_type):
+		if registry == null or not registry.has_method("has_relic_script") \
+				or not bool(registry.call("has_relic_script", int(item.effect_type))):
 			continue
 		var level: int = maxi(1, int(_progression.call("level_of", item)))
 		var awakened: bool = level >= 4
@@ -127,6 +120,13 @@ func _disconnect_port_signals() -> void:
 
 func _on_item_progressed(_item: Item, _level: int, _awakened: bool) -> void:
 	_sync_active_effects()
+
+
+func _get_relic_registry() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("EffectRegistry")
 
 
 func _has_port_api(port: RefCounted, methods: Array[StringName]) -> bool:

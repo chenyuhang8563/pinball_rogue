@@ -83,7 +83,9 @@ func on_host_death(host: Node, state: Dictionary) -> void:
 			target.call("append_buff_duration", BURN_ID, float(pending_ticks), float(MAX_PENDING_TICKS))
 		return
 	if target.has_method("add_buff"):
-		var spread_burn: BuffDef = get_script().new() as BuffDef
+		var spread_burn: BuffDef = make_buff(BURN_ID)
+		if spread_burn == null:
+			return
 		spread_burn.params["pending_ticks"] = pending_ticks
 		target.call("add_buff", spread_burn)
 

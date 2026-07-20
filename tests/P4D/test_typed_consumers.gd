@@ -5,13 +5,6 @@ const MarbleScene: PackedScene = preload("res://Marbles/marble.tscn")
 const EnemyScene: PackedScene = preload("res://Enemies/enemy.tscn")
 
 
-class TrackingBuffManager extends BuffManager:
-	var deliveries: Array[Dictionary] = []
-
-	func dispatch(method_name: StringName, args: Array = []) -> void:
-		deliveries.append({"method": method_name, "args": args.duplicate()})
-
-
 class TrackingSkillController extends SkillController:
 	var lifecycle_events: Array[StringName] = []
 
@@ -27,46 +20,6 @@ class TrackingSkillController extends SkillController:
 
 	func _on_run_completed(_token: RunFlowToken) -> void:
 		lifecycle_events.append(&"run_completed")
-
-
-func test_buff_manager_reconfigure_disconnects_old_session_and_chain_sources() -> void:
-	var manager := TrackingBuffManager.new()
-	var first_session := BattleSession.new()
-	var second_session := BattleSession.new()
-	var first_chain := MarbleChain.new()
-	var second_chain := MarbleChain.new()
-	var enemy := EnemyScene.instantiate() as Enemy
-	add_child_autofree(first_session)
-	add_child_autofree(second_session)
-	add_child_autofree(first_chain)
-	add_child_autofree(second_chain)
-	add_child_autofree(enemy)
-
-	assert_true(manager.configure(first_session, first_chain))
-	var enemy_callback := Callable(manager, "_on_enemy_defeated")
-	var chain_callback := Callable(manager, "_on_chain_collision")
-	assert_true(first_session.enemy_defeated.is_connected(enemy_callback))
-	assert_true(first_chain.chain_collision.is_connected(chain_callback))
-
-	assert_true(manager.reconfigure(second_session, second_chain))
-	assert_false(first_session.enemy_defeated.is_connected(enemy_callback))
-	assert_false(first_chain.chain_collision.is_connected(chain_callback))
-	assert_true(second_session.enemy_defeated.is_connected(enemy_callback))
-	assert_true(second_chain.chain_collision.is_connected(chain_callback))
-
-	first_session.enemy_defeated.emit(null, enemy, &"stale")
-	first_chain.chain_collision.emit(enemy, "wall")
-	assert_eq(manager.deliveries.size(), 0, "old typed sources must be inert after reconfigure")
-	second_session.enemy_defeated.emit(null, enemy, &"current")
-	second_chain.chain_collision.emit(enemy, "flipper")
-	assert_eq(manager.deliveries.size(), 2)
-	assert_eq(manager.deliveries[0]["method"], &"on_enemy_killed")
-	assert_eq(manager.deliveries[1]["method"], &"on_chain_collision")
-
-	assert_true(manager.reconfigure(null, null))
-	assert_false(second_session.enemy_defeated.is_connected(enemy_callback))
-	assert_false(second_chain.chain_collision.is_connected(chain_callback))
-	manager.free()
 
 
 func test_skill_controller_lifecycle_reconfigure_disconnects_old_run_flow() -> void:

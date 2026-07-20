@@ -1,7 +1,6 @@
 extends Marble
 class_name BlueMarble
 
-const FROST_DEBUFF_SCRIPT: GDScript = preload("res://Buffs/buffs/frost_debuff.gd")
 const STAT_ENTITY_MARBLE_CHAIN: String = "marble_chain"
 const STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED: String = "blue_frost_bonus_damage_enabled"
 const STAT_BLUE_FROST_STACKS_PER_HIT: String = "blue_frost_stacks_per_hit"
@@ -19,8 +18,9 @@ static func apply_frost_to_enemy(enemy: Node) -> int:
 	var stack_gain: int = _get_frost_stacks_per_hit()
 	var current_stacks: int = _get_enemy_frost_stacks(enemy)
 	var stacks_after_hit: int = mini(current_stacks + stack_gain, FrostDebuff.MAX_FROST_STACKS)
-	var frost_debuff: BuffDef = FROST_DEBUFF_SCRIPT.new() as BuffDef
-	enemy.call("add_buff", frost_debuff, stack_gain)
+	var frost_debuff: BuffDef = Marble.make_buff(FROST_DEBUFF_ID)
+	if frost_debuff != null:
+		enemy.call("add_buff", frost_debuff, stack_gain)
 	return stacks_after_hit
 
 

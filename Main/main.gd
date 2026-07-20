@@ -89,7 +89,6 @@ func _spawn_chain() -> void:
 	if marble_chain != null and is_instance_valid(marble_chain):
 		marble_chain.queue_free()
 	marble_chain = null
-	_reconfigure_buff_manager()
 
 	var chain_items: Array[Item] = _get_chain_items()
 	if chain_items.is_empty():
@@ -99,7 +98,6 @@ func _spawn_chain() -> void:
 	marble_chain.name = "MarbleChain"
 	marbles.add_child(marble_chain)
 	marble_chain.build_chain(chain_items, starting_marble_spawn_positions)
-	_reconfigure_buff_manager()
 
 
 ## 用当前 RunScope 的 MarbleLoadout 顺序构建弹珠链。
@@ -122,7 +120,6 @@ func _on_accepted_marble_fell(_token: RunFlowToken, body: RigidBody2D) -> void:
 			skill_controller.cancel_active_skill("head_fell")
 		marble_chain.queue_free()
 		marble_chain = null
-		_reconfigure_buff_manager()
 		call_deferred(&"_spawn_chain")
 
 
@@ -320,7 +317,7 @@ func _setup_run_flow_composition(
 	):
 		_dispose_failed_run_flow_composition(created_run_scope)
 		return false
-	if not _connect_gateway_marble_fell() or not _reconfigure_buff_manager():
+	if not _connect_gateway_marble_fell():
 		_dispose_failed_run_flow_composition(created_run_scope)
 		return false
 	if not run_flow_controller.configure(
@@ -349,7 +346,6 @@ func _dispose_run_flow_composition() -> void:
 	if skill_controller != null:
 		skill_controller.disconnect_lifecycle()
 	_disconnect_gateway_marble_fell()
-	_clear_buff_manager_sources()
 	_disconnect_active_skill_panel_blockers()
 	_disconnect_wallet_changed()
 	for index: int in range(_owned_run_ui_nodes.size() - 1, -1, -1):
@@ -680,7 +676,6 @@ func _on_run_failed(_token: RunFlowToken, _reason: StringName) -> void:
 	if marble_chain != null and is_instance_valid(marble_chain):
 		marble_chain.queue_free()
 	marble_chain = null
-	_reconfigure_buff_manager()
 
 
 func _sync_battle_hud_gold() -> void:
@@ -724,19 +719,3 @@ func _disconnect_gateway_marble_fell() -> void:
 			and battle_gateway.is_connected(&"marble_fell", _gateway_marble_fell_callable):
 		battle_gateway.disconnect(&"marble_fell", _gateway_marble_fell_callable)
 	_gateway_marble_fell_callable = Callable()
-
-
-func _reconfigure_buff_manager() -> bool:
-	var manager: Node = _get_autoload_node(&"BuffManager")
-	if manager == null or not manager.has_method(&"reconfigure"):
-		return false
-	var session: BattleSession = null
-	if battle_gateway != null and is_instance_valid(battle_gateway):
-		session = battle_gateway.get_node_or_null(^"BattleSession") as BattleSession
-	return bool(manager.call("reconfigure", session, marble_chain))
-
-
-func _clear_buff_manager_sources() -> void:
-	var manager: Node = _get_autoload_node(&"BuffManager")
-	if manager != null and manager.has_method(&"reconfigure"):
-		manager.call("reconfigure", null, null)

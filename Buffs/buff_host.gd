@@ -6,6 +6,11 @@ class_name BuffHost
 ## Buff definitions own their effect logic. The host node only needs to expose
 ## the methods those buffs call, such as `take_damage()` or `flash_hit_mask()`.
 
+## Emitted when a buff reports a discrete tick (e.g. one poison tick). Buffs
+## never reach out to the Effect domain themselves; interested parties (such as
+## relic effects, via the host facade) subscribe to this typed event instead.
+signal buff_ticked(buff_id: String, host: Node)
+
 class ActiveBuff:
 	var definition: BuffDef
 	var remaining_time: float
@@ -111,6 +116,12 @@ func notify_host_death() -> void:
 		var active_buff: ActiveBuff = value as ActiveBuff
 		if active_buff != null:
 			active_buff.definition.on_host_death(_host, active_buff.state)
+
+
+## Buffs report a discrete tick through the host facade; BuffHost owns the typed
+## event emission so buff scripts stay free of any Effect-domain dependency.
+func notify_ticked(buff_id: String) -> void:
+	buff_ticked.emit(buff_id, _host)
 
 
 func get_active_flash_color() -> Color:

@@ -1,33 +1,26 @@
 extends Node
 
-## Registry for buff definitions.
-##
-## The registry mirrors the relic EffectRegistry pattern: stable buff ids map
-## to scripts that construct BuffDef resources for BuffManager.
+## Registry for buff definitions — the single source for constructing BuffDef
+## resources. Stable buff ids map to scripts that extend BuffDef. Enemy status
+## debuffs (poison/frost/frozen/burn) are all obtained here; marbles and relic
+## effects never preload buff scripts directly.
 
 const BUFF_DEFS: Dictionary = {
-	"damage_up": preload("res://Buffs/buffs/damage_up.gd"),
-	"speed_up": preload("res://Buffs/buffs/speed_up.gd"),
-	"shield": preload("res://Buffs/buffs/shield.gd"),
 	"poison_debuff": preload("res://Buffs/buffs/poison_debuff.gd"),
 	"frost_debuff": preload("res://Buffs/buffs/frost_debuff.gd"),
 	"frozen_debuff": preload("res://Buffs/buffs/frozen_debuff.gd"),
+	"fire_burn_debuff": preload("res://Buffs/buffs/fire_burn_debuff.gd"),
 }
 
 
 func get_buff_def(buff_id: String) -> BuffDef:
 	if not BUFF_DEFS.has(buff_id):
 		return null
-
-	var script: GDScript = BUFF_DEFS[buff_id]
-	var provider: Variant = script.new()
-	if provider is BuffDef:
-		return provider as BuffDef
-	if provider == null or not provider.has_method("get_definition"):
-		push_error("BuffRegistry.get_buff_def: provider for '%s' has no get_definition()" % buff_id)
-		return null
-
-	return provider.call("get_definition") as BuffDef
+	var definition: Variant = BUFF_DEFS[buff_id].new()
+	if definition is BuffDef:
+		return definition as BuffDef
+	push_error("BuffRegistry.get_buff_def: '%s' does not extend BuffDef" % buff_id)
+	return null
 
 
 func has_buff(buff_id: String) -> bool:

@@ -41,9 +41,13 @@ func _ready() -> void:
 	_register_stat_entity()
 	_apply_label_font()
 	_update_health_label()
+	if buff_host != null and not buff_host.buff_ticked.is_connected(_on_buff_ticked):
+		buff_host.buff_ticked.connect(_on_buff_ticked)
 
 
 func _exit_tree() -> void:
+	if buff_host != null and buff_host.buff_ticked.is_connected(_on_buff_ticked):
+		buff_host.buff_ticked.disconnect(_on_buff_ticked)
 	var stat_system: Node = _get_stat_system()
 	if stat_system != null and stat_system.has_method("unregister_entity") and _entity_id != "":
 		stat_system.call("unregister_entity", _entity_id)
@@ -124,6 +128,22 @@ func append_buff_duration(buff_id: String, duration_to_append: float, max_durati
 
 func trigger_fire_relic_hit(hit_threshold: int, preserve_ticks: bool) -> bool:
 	return buff_host != null and buff_host.trigger_fire_relic_hit(hit_threshold, preserve_ticks)
+
+
+## Buff 通过宿主门面报告离散 tick；BuffHost 负责 typed 事件发射，使 buff 脚本
+## 完全不依赖 Effect 域。
+func notify_buff_ticked(buff_id: String) -> void:
+	if buff_host != null:
+		buff_host.notify_ticked(buff_id)
+
+
+## 单向桥：Buff 只发事件，由宿主把 poison tick 转给 Effect 域（毒循环反转）。
+func _on_buff_ticked(buff_id: String, host: Node) -> void:
+	if buff_id != "poison_debuff" or not host is Node2D:
+		return
+	var effect_manager: Node = _get_effect_manager()
+	if effect_manager != null and effect_manager.has_method("on_poison_tick"):
+		effect_manager.call("on_poison_tick", host as Node2D)
 
 
 func is_alive() -> bool:
