@@ -13,6 +13,10 @@ func show_damage(damage_amount: int, spawn_position: Vector2, style: StringName 
 		return null
 	if text.get_parent() == null:
 		add_child(text)
+	# release_all_active() hides in-flight texts during battle transitions;
+	# restore visibility whenever a pooled instance is (re)used, otherwise
+	# recycled texts stay invisible forever.
+	text.visible = true
 	text.global_position = spawn_position
 	text.set_meta("floating_text_style", style)
 	_active.append(text)
