@@ -1,0 +1,9 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/Integration/presentation/devil_shop_discount/preview_discount_b.gd" id="1_b"]
+[ext_resource type="PackedScene" uid="uid://d14mlptotnpp8" path="res://Commerce/presentation/devil_shop/devil_shop.tscn" id="2_shop"]
+
+[node name="PreviewDiscountB" type="Node"]
+script = ExtResource("1_b")
+
+[node name="DevilShop" parent="." instance=ExtResource("2_shop")]
