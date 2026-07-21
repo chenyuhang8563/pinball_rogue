@@ -20,10 +20,6 @@ var battle_id: StringName:
 var group: BattleGroupDef:
 	get:
 		return _battle_group
-## Compatibility alias for callers that still use the Phase 2 name.
-var battle_group: BattleGroupDef:
-	get:
-		return group
 var origin: Origin:
 	get:
 		return _origin

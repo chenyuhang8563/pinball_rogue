@@ -6,7 +6,7 @@
 
 - 引擎：Godot **4.6.1**；项目特性声明 `4.6`（`project.godot`）。
 - 测试框架：GUT **9.6.0**（`addons/gut/plugin.cfg`）。
-- 当前 Autoload：**9 个**，见 `project.godot:18-28`；Shop/Inventory 已退役，不再计数。
+- 当前 Autoload：**7 个**，见 `project.godot:18-26`；Shop、Inventory、Event 与 BuffManager 均已退役，不再计数。
 - 测试 `PASS` 必须来自 GUT 原始输出和 exit code。startup smoke、import、静态扫描、test function 计数、交接报告都不能替代 GUT。
 
 可靠命令必须把 `--path` 指向正在验证的 checkout。机器上的基准调用（当目标分支位于主项目目录时）为：

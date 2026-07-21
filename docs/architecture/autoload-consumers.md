@@ -1,4 +1,6 @@
-# Autoload 消费者与退出策略（HEAD `592c7db`）
+# Autoload 消费者与退出策略（Phase 0 历史基线）
+
+> 本文记录 Phase 0–4 的迁移输入与中间消费者。当前 7 项 Autoload 及其运行时边界以 [current-runtime.md](current-runtime.md) 为准；下文的旧路径、Event、RunController 和数量不构成当前实现。
 
 ## 当前 9 个 Autoload
 

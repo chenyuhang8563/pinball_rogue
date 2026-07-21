@@ -1,6 +1,8 @@
 # Godot UID / 路径迁移规则（Phase 0）
 
-## 当前事实
+## 历史基线
+
+> 本节记录 Phase 0 的路径与 UID 风险模型。Phase 8 后的实际目录和入口以 [current-runtime.md](current-runtime.md) 为准；文中的 `Main/`、`RunController` 与旧路径不再是当前事实。
 
 项目同时使用路径和 UID：启动场景由 UID 指向（`project.godot:14`），Autoload 既有 UID 也有路径（`project.godot:20-30`），而 Main 场景的外部资源同时保留 `uid` 与 `path`（`Main/main.tscn:3-12`）。代码中还大量存在字符串 `preload("res://...")`，例如 `Run/run_controller.gd:12-25` 与 `Main/main.gd:3-11`。因此一次移动需要覆盖序列化引用和脚本文本引用两条路径。
 

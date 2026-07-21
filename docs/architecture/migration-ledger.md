@@ -19,9 +19,9 @@
 | 6 | **完成** | Bootstrap 组合可视化：`BattleSpawner`/`Enemies`/`BattleGateway`/`RunFlowController` 预置于 `main.tscn`（等价 `game_main.tscn`，保留主场景 UID）；`RunScope` 改为从新场景 `Game/Bootstrap/run_scope.tscn` 实例化（创建/激活/销毁均为场景树明确节点）；`_resolve_composition_node` 事务式 slot 解析（override 优先、错误类型/外部 parent 拒绝且不触碰预置节点）。 | 无；递归 full GUT 153/153 入库、headless smoke exit 0；UI 面板预置/字体治理移交 Phase 7。 |
 | 7 | **完成** | UI presentation、构建与字体治理。 | UI 场景、字体、交互与截图验收。 |
 | 8 | **完成，待限定提交** | 经 Godot/Hastur 将资源、场景、脚本、测试与数据迁至领域目录；统一 `Fliper` 为 `flipper`，更新 UID 侧车与所有有效路径引用，并新增项目结构规范。 | 递归完整 GUT 161/161、1779 asserts、exit 0，日志见 [phase8-full-gut.log](../testing/evidence/phase8-full-gut.log)；主场景及 Commerce、Loadout、Run、Combat 预览场景已通过 game executor 运行与截图验收。 |
-| 9 | 未开始 | 最终 ADR/README/CONTEXT、测试镜像与去兼容审计。 | adapter/bridge/旧实现清零及完整运行流程。 |
+| 9 | **完成** | 锁定 ADR、README 与 CONTEXT；`tests/Game/debug` 镜像 `Game/Debug`；删除 `BattlePlan.battle_group`、`RewardOption.option_id`、`RunState.advance_to_node` 的 Phase 2 兼容契约；完成目录、Autoload、bridge 与旧实现审计。 | 递归 GUT：28 scripts / 161 tests / 1775 asserts，exit 0；当前提交已在 game executor 上完成主场景启动、真实 Enemy→Session→Gateway→Controller 战斗结算、奖励领取→节点、节点→事件→节点、节点→普通商店→节点；事件与商店退出均经真实 UI 按钮信号及 UI adapter，另有独立 Node/Event/Shop 预览截图验证，详见 [Phase 9 验证](../testing/evidence/phase9-verification.md)。 |
 
-Phase 3 的两层状态不得合并表述。`Run/run_flow_controller.gd` 已存在并提交，不等于它已进入生产路径；`Main/main.gd:3`、`:269-293` 仍 preload、实例化并启动 `Run/run_controller.gd`，且仓库中没有 Main/UI 对 `RunFlowController` 的调用。按原 Phase 3 spec，“Main 生产切换、UI adapter 化、删除旧流程业务实现”仍是 Phase 3 acceptance，不得作为 Phase 4 成果冒领。可执行 cutover 分为 [phase4-plan.md](phase4-plan.md) 的 P3-A 组合准备与 P3-B 原子生产切换；P3-B 完成前 Phase 4 保持未开始。
+以下 Phase 3 的两层状态说明是历史审计记录：当时 modular core 已提交不等于 production cutover 已完成。该 cutover 后续已由 `38b64df` 落地；当前入口以 [current-runtime.md](current-runtime.md) 为准。
 
 ## 提交事实
 

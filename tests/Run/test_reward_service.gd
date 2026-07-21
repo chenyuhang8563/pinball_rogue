@@ -82,7 +82,6 @@ func test_node_draft_is_three_stable_identity_offers_and_filters_owned_or_full_i
 	var identities: Array[String] = []
 	for option: RewardOption in draft.options():
 		assert_ne(option.offer_id, &"")
-		assert_eq(option.option_id, option.offer_id)
 		assert_false(identities.has(option.item_identity))
 		identities.append(option.item_identity)
 	assert_false(identities.any(func(value: String) -> bool: return value.contains("marble:0")))

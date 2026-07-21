@@ -28,7 +28,7 @@ Combat/
 UI/shared/                   # 真正跨领域复用的展示预制
 Assets/                      # 美术、音频等源资产
 Themes/                      # Theme、字体及其派生资源
-tests/{Commerce,Loadout,Run,Combat,Integration}/
+tests/{Game,Commerce,Loadout,Run,Combat,Integration}/
 docs/{agents,architecture,handoffs,testing}/
 ```
 

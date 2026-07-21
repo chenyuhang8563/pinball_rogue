@@ -84,8 +84,7 @@ func begin_first_battle(plan: BattlePlan) -> bool:
 
 ## Advances floor and node together. The selected kind is deliberately empty
 ## until select_node() commits kind + target phase in one operation.
-## The optional argument is retained only as a source-compatible Phase 2 shim.
-func advance_to_node(_legacy_node_kind: StringName = &"") -> bool:
+func advance_to_node() -> bool:
 	if not _can_advance_node():
 		return false
 	_floor_number += 1

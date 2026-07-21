@@ -262,9 +262,9 @@ func _on_debug_grant_requested(item_id: StringName) -> void:
 	debug_grant_panel.present_result("%s：%s" % [detail, item_id])
 
 
-## Builds the Phase 3 modular composition without starting it. P3-A focused
-## tests call this boundary directly; P3-B production adds UI/bridge wiring in
-## `_setup_run_flow()` and starts the same controller only after every wire is valid.
+## Builds the modular composition without starting it. Focused tests call this
+## boundary directly; `_setup_run_flow()` starts the same controller only after
+## every presentation and runtime dependency is wired successfully.
 func _setup_run_flow_composition(
 	stat_system_override: Object = null,
 	effect_manager_override: Node = null,

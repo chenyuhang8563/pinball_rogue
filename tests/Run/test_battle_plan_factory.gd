@@ -22,7 +22,6 @@ func test_first_floor_is_weak_run_start_with_normal_reward() -> void:
 	assert_eq(result.plan.group.kind, BattleGroupDef.Kind.WEAK_NORMAL)
 	assert_eq(result.plan.group.enemy_entries.size(), 3)
 	assert_eq(result.plan.group.enemy_entries[0].health, 15)
-	assert_eq(result.plan.battle_group, result.plan.group, "compatibility getter keeps the same envelope group")
 	assert_eq(result.plan.battle_id, &"run_start:normal:1")
 
 

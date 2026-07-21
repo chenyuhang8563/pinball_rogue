@@ -12,7 +12,7 @@ const RandomSourceScript: GDScript = preload("res://Run/application/run_random_s
 func test_begin_run_is_only_run_identity_increment_and_node_advance_is_atomic() -> void:
 	var state: RunState = RunStateScript.new()
 	assert_eq(state.phase, RunState.Phase.IDLE)
-	assert_false(state.advance_to_node(&"battle"))
+	assert_false(state.advance_to_node())
 	assert_true(state.begin_run())
 	assert_eq(state.run_id, 1)
 	assert_eq(state.floor_number, 0)
@@ -39,7 +39,7 @@ func test_begin_run_is_only_run_identity_increment_and_node_advance_is_atomic() 
 
 
 func test_each_presentation_changes_phase_identity_and_rejects_stale_token() -> void:
-	var state: RunState = _state_at_choice(&"event")
+	var state: RunState = _state_at_choice()
 	var choice_token: RunFlowToken = state.token()
 	assert_true(state.accepts(choice_token))
 
@@ -55,7 +55,7 @@ func test_each_presentation_changes_phase_identity_and_rejects_stale_token() -> 
 
 
 func test_battle_plan_origin_and_reward_policy_survive_into_reward_phase() -> void:
-	var state: RunState = _state_at_choice(&"event_battle")
+	var state: RunState = _state_at_choice()
 	assert_true(state.present_event())
 	assert_eq(state.phase, RunState.Phase.EVENT_ACTIVE)
 	var group := BattleGroupDef.new()
@@ -91,7 +91,7 @@ func test_terminal_phase_blocks_every_transition_until_a_new_run_begins() -> voi
 	assert_true(state.is_terminal())
 	assert_false(state.present_reward())
 	assert_false(state.present_event())
-	assert_false(state.advance_to_node(&"battle"))
+	assert_false(state.advance_to_node())
 	assert_false(state.fail())
 	assert_eq(state.token().phase_id, terminal_token.phase_id)
 
@@ -103,7 +103,7 @@ func test_terminal_phase_blocks_every_transition_until_a_new_run_begins() -> voi
 
 
 func test_reward_and_event_offers_defensively_copy_typed_options() -> void:
-	var state: RunState = _state_at_choice(&"reward")
+	var state: RunState = _state_at_choice()
 	var reward_options: Array[RewardOption] = [RewardOptionScript.gold(&"gold", 20)]
 	var reward_offer: RewardOffer = RewardOfferScript.new(
 		state.token(), BattlePlan.RewardPolicy.NORMAL, &"normal_battle", reward_options
@@ -156,10 +156,9 @@ func _state_at_reward() -> RunState:
 	return state
 
 
-## Legal path to CHOOSING_NODE: first battle -> reward -> advance. The kind
-## argument is a Phase 2 compatibility shim; the current state machine commits
-## node kind only through select_node()/advance_to_battle().
-func _state_at_choice(_kind: StringName = &"") -> RunState:
+## Legal path to CHOOSING_NODE: first battle -> reward -> advance. The state
+## machine commits node kind only through select_node()/advance_to_battle().
+func _state_at_choice() -> RunState:
 	var state: RunState = _state_at_reward()
 	assert_true(state.advance_to_node())
 	assert_eq(state.phase, RunState.Phase.CHOOSING_NODE)

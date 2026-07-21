@@ -2,9 +2,7 @@
 
 ## 当前事实
 
-当前源码虽按玩法概念分布在 `Run/`、`Shop/`、`Skills/` 等顶层目录，但跨模块依赖仍大量经 Autoload、`get_node_or_null()` 和硬编码场景路径完成。`Main._setup_run_flow()` 同时实例化 UI、创建旧控制器并转发 Event（`Main/main.gd:229-293`）；1137 行的 `RunController` 仍是 production orchestrator。`42adaba` 已提交 582 行 `RunFlowController` 与 5 个拆分模块，但 Main/UI 没有装配它，故当前目录和新类的存在都不能证明生产依赖方向已经满足终态。
-
-当前偏差与开工门槛：必须先完成 [Phase 4 方案](phase4-plan.md)中的 P3-A 组合准备与 P3-B 原子 production cutover，包括 Main 完整 configure/失败清理、UI pure adapters、真实 composition GUT、旧 RunController 删除和运行门槛；这仍属于 Phase 3 acceptance，不得计为 Phase 4 交付。随后 Phase 4 才建立 BattleSession、迁移 typed local signals 并退役 Event。
+Phase 8 后，目标目录已是当前实现：`Game/Bootstrap` 只组合预置节点与显式依赖，`RunFlowController` 是唯一流程编排器，`BattleSession`/`BattleGateway` 拥有战斗生命周期边界，旧 `RunController`、Event 与迁移期 bridge 均已删除。当前运行时入口与 Autoload 清单以 [current-runtime.md](current-runtime.md) 为准；下文保留的阶段性例外只用于解释已完成的迁移约束。
 
 ## 目标目录
 

@@ -14,10 +14,6 @@ enum Resolution {
 	REPLACE_SKILL,
 }
 
-var option_id: StringName:
-	get:
-		return _offer_id
-## Stable intent identity. `option_id` remains as a Phase 2 compatibility alias.
 var offer_id: StringName:
 	get:
 		return _offer_id

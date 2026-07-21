@@ -1,4 +1,6 @@
-# 场景与面板契约（HEAD `592c7db`）
+# 场景与面板契约（Phase 3 历史基线）
+
+> 本文记录 Phase 3 规划时的场景契约。Phase 8 已完成目录迁移；当前启动场景和 Bootstrap 结构以 [current-runtime.md](current-runtime.md) 及 `Game/Bootstrap/main.tscn` 为准。
 
 ## Main 场景事实
 
