@@ -1,0 +1,11 @@
+[gd_scene format=3 uid="uid://d3p5w677ywuqx"]
+
+[ext_resource type="PackedScene" uid="uid://bc1a5ngike1g8" path="res://Combat/marbles/marble.tscn" id="1_1gdwu"]
+[ext_resource type="Script" uid="uid://8frnw8akea2v" path="res://Combat/marbles/green_marble.gd" id="2_1btdp"]
+[ext_resource type="Texture2D" uid="uid://duwkeoorfjr8f" path="res://Assets/Marbles/green_marble.png" id="2_nfgj4"]
+
+[node name="GreenMarble" unique_id=2021599556 instance=ExtResource("1_1gdwu")]
+script = ExtResource("2_1btdp")
+
+[node name="Sprite2D" parent="." index="0" unique_id=1959844409]
+texture = ExtResource("2_nfgj4")

@@ -1,4 +1,6 @@
-# 测试证据基线（HEAD `592c7db`）
+# 测试证据基线（历史快照与现行规则）
+
+> 本文中的 HEAD `592c7db`、9 个 Autoload 与旧 `res://Enemies/...` 路径属于 Phase 8 前的历史归档证据；当前路径和运行时状态以 `docs/architecture/current-runtime.md` 与 `docs/agents/project-structure.md` 为准。
 
 ## 环境与证据等级
 

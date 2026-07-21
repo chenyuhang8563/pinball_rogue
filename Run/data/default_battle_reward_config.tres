@@ -1,0 +1,6 @@
+[gd_resource type="Resource" script_class="BattleRewardConfig" format=3 uid="uid://dwi4iu2m4fqj0"]
+
+[ext_resource type="Script" uid="uid://bjlv6kks5rlyt" path="res://Run/domain/battle_reward_config.gd" id="1"]
+
+[resource]
+script = ExtResource("1")

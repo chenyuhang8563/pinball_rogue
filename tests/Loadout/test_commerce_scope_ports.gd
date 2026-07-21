@@ -6,7 +6,7 @@ const NormalSessionScript: GDScript = preload("res://Commerce/application/normal
 const DevilSessionScript: GDScript = preload("res://Commerce/application/devil_shop_session.gd")
 const CommerceOfferScript: GDScript = preload("res://Commerce/domain/commerce_offer.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
-const DevilShopConfigScript: GDScript = preload("res://DevilShop/devil_shop_config.gd")
+const DevilShopConfigScript: GDScript = preload("res://Commerce/domain/devil_shop_config.gd")
 
 
 func test_normal_purchase_uses_scope_ports_directly() -> void:

@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="Item" format=3 uid="uid://bo4qentxbit4m"]
+
+[ext_resource type="Texture2D" uid="uid://sw2juyqxag4a" path="res://Assets/Items/relic_ice_hammer.png" id="1_70bul"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "ice_hammer"
+title = "ITEM_ICE_HAMMER_TITLE"
+icon = ExtResource("1_70bul")
+price = 20
+description = "ITEM_ICE_HAMMER_DESC"
+effect_type = 9
+type = 2

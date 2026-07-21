@@ -1,0 +1,115 @@
+[gd_scene format=3 uid="uid://dgob675lfpkcv"]
+
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_cead4"]
+[ext_resource type="Script" uid="uid://bjfai71a1nsp2" path="res://Loadout/presentation/inventory_panel.gd" id="1_inventory_panel"]
+[ext_resource type="PackedScene" uid="uid://bx6h7a1u1u7xb" path="res://Loadout/presentation/inventory_scene/inventory.tscn" id="2_collection_rows"]
+[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="3_jc538"]
+[ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="4_cead4"]
+[ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/shared/item_icon_view.tscn" id="4_item_icon_view"]
+[ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://Loadout/presentation/skill_replace_dialog.tscn" id="7_cead4"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
+bg_color = Color(0.08, 0.08, 0.1, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.53, 0.47, 1)
+
+[node name="InventoryPanel" type="Control" unique_id=600384015 node_paths=PackedStringArray("marble_box_container", "relic_bar_container", "skill_bar_container")]
+process_mode = 3
+layout_direction = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_cead4")
+script = ExtResource("1_inventory_panel")
+marble_box_container = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/MarbleBox")
+relic_bar_container = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/RelicBar")
+skill_bar_container = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillBar")
+
+[node name="UI" type="CanvasLayer" parent="." unique_id=157354016]
+layer = 10
+visible = false
+
+[node name="Panel" type="Panel" parent="UI" unique_id=895316239]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="UI/Panel" unique_id=713302134]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 8.0
+offset_top = 8.0
+offset_right = -8.0
+offset_bottom = -8.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/margin_left = 0
+theme_override_constants/margin_top = 0
+theme_override_constants/margin_right = 0
+theme_override_constants/margin_bottom = 0
+
+[node name="Layout" type="VBoxContainer" parent="UI/Panel/MarginContainer" unique_id=240991621]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="Header" type="HBoxContainer" parent="UI/Panel/MarginContainer/Layout" unique_id=1953878108]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Header" unique_id=760109987]
+layout_mode = 2
+size_flags_horizontal = 3
+text = "UI_INVENTORY_TITLE"
+label_settings = ExtResource("3_jc538")
+horizontal_alignment = 1
+
+[node name="ExitButton" type="Button" parent="UI/Panel/MarginContainer/Layout/Header" unique_id=1745584153]
+custom_minimum_size = Vector2(48, 24)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_cead4")
+theme_override_font_sizes/font_size = 12
+text = "UI_EXIT"
+
+[node name="Content" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout" unique_id=980932436]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/separation = 8
+
+[node name="CollectionRows" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=1594412291 instance=ExtResource("2_collection_rows")]
+layout_mode = 2
+
+[node name="SkillLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=324016682]
+layout_mode = 2
+text = "UI_SKILLS_TITLE"
+label_settings = ExtResource("3_jc538")
+
+[node name="SkillBar" type="HBoxContainer" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=1031896319]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="SkillSlot1" type="Panel" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar" unique_id=1421158285]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+
+[node name="Icon" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot1" unique_id=1818088685 instance=ExtResource("4_item_icon_view")]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="SkillReplaceDialog" parent="UI" unique_id=1955345262 instance=ExtResource("7_cead4")]

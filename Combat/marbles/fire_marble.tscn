@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://bucto524dr1m0"]
+
+[ext_resource type="Script" uid="uid://bj0neshq4wlne" path="res://Combat/marbles/fire_marble.gd" id="2_script"]
+[ext_resource type="Shader" uid="uid://c3s0ad0qb2dyp" path="res://Combat/marbles/marble_outline.gdshader" id="2_tj7vl"]
+[ext_resource type="Texture2D" uid="uid://c0e1q40h6u35a" path="res://Assets/Marbles/fire_marble.png" id="3_0d452"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_1lr24"]
+friction = 0.0
+bounce = 1.0
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_xc5n2"]
+shader = ExtResource("2_tj7vl")
+shader_parameter/clr = Color(1, 1, 1, 1)
+shader_parameter/type = 2
+shader_parameter/thickness = 1.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_mmk86"]
+radius = 8.0
+
+[node name="FireMarble" type="RigidBody2D" unique_id=1725563029 groups=["marbles"]]
+collision_layer = 2
+collision_mask = 13
+mass = 0.2
+physics_material_override = SubResource("PhysicsMaterial_1lr24")
+gravity_scale = 0.3
+continuous_cd = 2
+contact_monitor = true
+max_contacts_reported = 8
+script = ExtResource("2_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1959844409]
+texture_filter = 1
+material = SubResource("ShaderMaterial_xc5n2")
+texture = ExtResource("3_0d452")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=1384073075]
+shape = SubResource("CircleShape2D_mmk86")

@@ -1,9 +1,9 @@
 extends GutTest
 
 const FakeStatSystemScript: GDScript = preload("res://tests/Loadout/fake_stat_system.gd")
-const EffectManagerScript: GDScript = preload("res://Effects/effect_manager.gd")
-const MainScene: PackedScene = preload("res://Main/main.tscn")
-const RewardPanelScene: PackedScene = preload("res://UI/draft_reward_panel.tscn")
+const EffectManagerScript: GDScript = preload("res://Combat/effects/effect_manager.gd")
+const MainScene: PackedScene = preload("res://Game/Bootstrap/main.tscn")
+const RewardPanelScene: PackedScene = preload("res://Run/presentation/draft_reward_panel.tscn")
 
 
 class ReadOnlyLoadout extends RefCounted:
@@ -103,11 +103,11 @@ func test_p3a_composition_shares_scope_random_configs_and_main_runtime_ports_wit
 	assert_eq(controller.get("_event_flow").get("_factory"), factory)
 	assert_eq(
 		(main.get("battle_reward_config") as Resource).resource_path,
-		"res://Run/default_battle_reward_config.tres"
+		"res://Run/data/default_battle_reward_config.tres"
 	)
 	assert_eq(
 		(main.get("run_floor_config") as Resource).resource_path,
-		"res://Run/default_run_floor_config.tres"
+		"res://Run/data/default_run_floor_config.tres"
 	)
 
 	assert_true((main.get("reset_battle_callable") as Callable).is_valid())

@@ -1,8 +1,8 @@
 extends GutTest
 
-const ControllerScript: GDScript = preload("res://Run/run_flow_controller.gd")
-const RewardServiceScript: GDScript = preload("res://Run/reward_service.gd")
-const EventResolverScript: GDScript = preload("res://Run/event_resolver.gd")
+const ControllerScript: GDScript = preload("res://Run/application/run_flow_controller.gd")
+const RewardServiceScript: GDScript = preload("res://Run/application/reward_service.gd")
+const EventResolverScript: GDScript = preload("res://Run/application/event_resolver.gd")
 
 
 class ControlledRandom extends RunRandomSource:

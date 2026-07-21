@@ -1,0 +1,73 @@
+[gd_scene format=3 uid="uid://djxdqfcs7wnw"]
+
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_mgsoj"]
+[ext_resource type="Script" uid="uid://dvnec8m37oyye" path="res://UI/shared/icon_option_button.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/shared/item_icon_view.tscn" id="3_item_icon_view"]
+[ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="4_mgsoj"]
+
+[node name="IconOptionButton" type="Button" unique_id=569716031]
+custom_minimum_size = Vector2(68, 98)
+theme = ExtResource("1_mgsoj")
+clip_text = true
+script = ExtResource("1_script")
+
+[node name="OptionContent" type="MarginContainer" parent="." unique_id=1361912741]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 5
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 5
+
+[node name="OptionLayout" type="VBoxContainer" parent="OptionContent" unique_id=910383879]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 5
+
+[node name="OptionIconArea" type="Control" parent="OptionContent/OptionLayout" unique_id=2088922988]
+custom_minimum_size = Vector2(30, 28)
+layout_mode = 2
+size_flags_horizontal = 3
+mouse_filter = 2
+
+[node name="Icon" parent="OptionContent/OptionLayout/OptionIconArea" unique_id=203796059 instance=ExtResource("3_item_icon_view")]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -16.0
+offset_top = -16.0
+offset_right = 16.0
+offset_bottom = 16.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="OptionTitle" type="Label" parent="OptionContent/OptionLayout" unique_id=437249271]
+custom_minimum_size = Vector2(74, 14)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+label_settings = ExtResource("4_mgsoj")
+horizontal_alignment = 1
+autowrap_mode = 3
+clip_text = true
+text_overrun_behavior = 3
+
+[node name="OptionDescription" type="Label" parent="OptionContent/OptionLayout" unique_id=1074841555]
+custom_minimum_size = Vector2(60, 32)
+layout_mode = 2
+size_flags_horizontal = 3
+size_flags_vertical = 3
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+label_settings = ExtResource("4_mgsoj")
+horizontal_alignment = 1
+autowrap_mode = 3
+clip_text = true
+text_overrun_behavior = 3

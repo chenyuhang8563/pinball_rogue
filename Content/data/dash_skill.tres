@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Item" format=3 uid="uid://c6m3amt3etbk4"]
+
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://chs0wiustfyyr" path="res://Assets/Items/fb667.png" id="1_akhwl"]
+[ext_resource type="Resource" uid="uid://dnx8807bstnqw" path="res://Combat/skills/Dash/dash_skill_definition.tres" id="3"]
+
+[resource]
+script = ExtResource("1")
+id = "dash"
+title = "SKILL_DASH_NAME"
+icon = ExtResource("1_akhwl")
+price = 0
+description = "SKILL_DASH_DESC"
+type = 3
+skill_definition = ExtResource("3")

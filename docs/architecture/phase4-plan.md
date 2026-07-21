@@ -1,5 +1,7 @@
 # Phase 4 执行方案：BattleSession、局部 typed signals 与 Event 退役
 
+> 历史规划文档。文中的旧目录路径用于描述当时的 checkpoint；当前项目路径以 `docs/agents/project-structure.md` 和 `docs/architecture/current-runtime.md` 为准。
+
 ## 结论与范围
 
 Phase 4 的交付物是：一个拥有战斗生命周期的 `BattleSession`，一条从 Enemy/KillZone/MarbleChain 到 BattleSpawner/BattleGateway/RunFlow 的局部 typed signal 链，以及生产代码中 Event 消费者归零后删除 `Event` Autoload。

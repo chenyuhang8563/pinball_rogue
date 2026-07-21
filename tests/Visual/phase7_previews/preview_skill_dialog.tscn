@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://h28acycehgg8"]
-
-[ext_resource type="Script" path="res://tests/Visual/phase7_previews/preview_skill_dialog.gd" id="1_wmavw"]
-[ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://UI/skill_replace_dialog.tscn" id="2_7cwoa"]
-
-[node name="Phase7Preview" type="Node" unique_id=162014317]
-script = ExtResource("1_wmavw")
-
-[node name="SkillReplaceDialog" parent="." unique_id=1955345262 instance=ExtResource("2_7cwoa")]

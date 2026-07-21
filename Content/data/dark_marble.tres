@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="Item" format=3 uid="uid://csra7c3t7abu2"]
+
+[ext_resource type="Texture2D" uid="uid://r6cdcfuxmayl" path="res://Assets/Marbles/dark_marble.png" id="1_dark"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "dark_marble"
+title = "ITEM_DARK_MARBLE_TITLE"
+icon = ExtResource("1_dark")
+price = 0
+description = "ITEM_DARK_MARBLE_DESC"
+effect_type = 4
+type = 1
+metadata/_custom_type_script = "uid://cbxvjrptlxvsm"

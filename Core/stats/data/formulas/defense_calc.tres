@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="StatFormula" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Core/stats/stat_formula.gd" id="1_formula"]
+[ext_resource type="Script" path="res://Core/stats/formulas/defense_formula.gd" id="2_strategy"]
+
+[resource]
+script = ExtResource("1_formula")
+formula_id = "defense_calc"
+strategy_name = "defense"
+strategy_script = ExtResource("2_strategy")
+params = {}

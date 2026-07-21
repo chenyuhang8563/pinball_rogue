@@ -6,7 +6,7 @@ const RewardOptionScript: GDScript = preload("res://Run/domain/reward_option.gd"
 const RewardOfferScript: GDScript = preload("res://Run/domain/reward_offer.gd")
 const EventChoiceScript: GDScript = preload("res://Run/domain/event_choice.gd")
 const EventOfferScript: GDScript = preload("res://Run/domain/event_offer.gd")
-const RandomSourceScript: GDScript = preload("res://Run/run_random_source.gd")
+const RandomSourceScript: GDScript = preload("res://Run/application/run_random_source.gd")
 
 
 func test_begin_run_is_only_run_identity_increment_and_node_advance_is_atomic() -> void:

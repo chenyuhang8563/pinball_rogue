@@ -1,9 +1,9 @@
 extends GutTest
 
-const FactoryScript: GDScript = preload("res://Run/battle_plan_factory.gd")
+const FactoryScript: GDScript = preload("res://Run/application/battle_plan_factory.gd")
 const OriginScript: GDScript = preload("res://Run/domain/battle_plan_origin.gd")
-const RandomSourceScript: GDScript = preload("res://Run/run_random_source.gd")
-const EnemyScene: PackedScene = preload("res://Enemies/enemy.tscn")
+const RandomSourceScript: GDScript = preload("res://Run/application/run_random_source.gd")
+const EnemyScene: PackedScene = preload("res://Combat/battle/enemies/enemy.tscn")
 
 var _floor_config: RunFloorConfig
 

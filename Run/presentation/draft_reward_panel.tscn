@@ -1,0 +1,283 @@
+[gd_scene format=3 uid="uid://dry577g502x3m"]
+
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_cj858"]
+[ext_resource type="Script" uid="uid://py1m8dh3ltnk" path="res://Run/presentation/draft_reward_panel.gd" id="1_script"]
+[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="3_cj858"]
+[ext_resource type="Script" uid="uid://chd50r6caxc7i" path="res://Run/presentation/reward_tooltip_button.gd" id="3_rm7wo"]
+[ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="4_s5edj"]
+[ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://Loadout/presentation/skill_replace_dialog.tscn" id="5_s5edj"]
+
+[sub_resource type="Animation" id="Animation_cj858"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_s5edj"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_v0yo2"]
+_data = {
+&"hide": SubResource("Animation_cj858"),
+&"show": SubResource("Animation_s5edj")
+}
+
+[sub_resource type="Animation" id="Animation_2tcpg"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_s5u47"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_mc3cr"]
+_data = {
+&"hide": SubResource("Animation_2tcpg"),
+&"show": SubResource("Animation_s5u47")
+}
+
+[sub_resource type="Animation" id="Animation_y2gvp"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_wcv15"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_otcn3"]
+_data = {
+&"hide": SubResource("Animation_y2gvp"),
+&"show": SubResource("Animation_wcv15")
+}
+
+[sub_resource type="Animation" id="Animation_5clmg"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_2spb8"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_g5rau"]
+_data = {
+&"hide": SubResource("Animation_5clmg"),
+&"show": SubResource("Animation_2spb8")
+}
+
+[node name="DraftRewardPanel" type="Control" unique_id=1712510819]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_cj858")
+script = ExtResource("1_script")
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=1022379337]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0, 0, 0, 0.55)
+
+[node name="Center" type="CenterContainer" parent="." unique_id=1475400197]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="Center" unique_id=1208718852]
+custom_minimum_size = Vector2(150, 98)
+layout_mode = 2
+
+[node name="MarginContainer" type="MarginContainer" parent="Center/Panel" unique_id=2116562550]
+layout_mode = 2
+theme_override_constants/margin_left = 8
+theme_override_constants/margin_top = 8
+theme_override_constants/margin_right = 8
+theme_override_constants/margin_bottom = 8
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel/MarginContainer" unique_id=450261744]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout" unique_id=285227628]
+layout_mode = 2
+label_settings = ExtResource("3_cj858")
+horizontal_alignment = 1
+
+[node name="ButtonRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout" unique_id=53161417]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="RewardButton1" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=690716721]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = " "
+theme_override_fonts/font = ExtResource("4_s5edj")
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 3
+script = ExtResource("3_rm7wo")
+
+[node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton1" unique_id=1255265588]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VisibilityPlayer" type="AnimationPlayer" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton1" unique_id=1928681146]
+libraries/ = SubResource("AnimationLibrary_v0yo2")
+
+[node name="RewardButton2" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1279436893]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = " "
+theme_override_fonts/font = ExtResource("4_s5edj")
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 3
+script = ExtResource("3_rm7wo")
+
+[node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton2" unique_id=1276198212]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VisibilityPlayer" type="AnimationPlayer" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton2" unique_id=307983574]
+libraries/ = SubResource("AnimationLibrary_mc3cr")
+
+[node name="RewardButton3" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1556859133]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+tooltip_text = " "
+theme_override_fonts/font = ExtResource("4_s5edj")
+theme_override_font_sizes/font_size = 12
+autowrap_mode = 3
+script = ExtResource("3_rm7wo")
+
+[node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton3" unique_id=128082564]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VisibilityPlayer" type="AnimationPlayer" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton3" unique_id=1820413166]
+libraries/ = SubResource("AnimationLibrary_otcn3")
+
+[node name="SkillReplaceDialog" parent="." unique_id=1955345262 instance=ExtResource("5_s5edj")]
+layout_mode = 1
+
+[node name="VisibilityPlayer" type="AnimationPlayer" parent="." unique_id=2035463672]
+libraries/ = SubResource("AnimationLibrary_g5rau")

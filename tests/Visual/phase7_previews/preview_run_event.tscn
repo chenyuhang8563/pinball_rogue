@@ -1,9 +1,0 @@
-[gd_scene format=3 uid="uid://c1b4kuhsipxgo"]
-
-[ext_resource type="Script" path="res://tests/Visual/phase7_previews/preview_run_event.gd" id="1_tmh08"]
-[ext_resource type="PackedScene" uid="uid://8sb7obwvywf4" path="res://UI/run_event_panel.tscn" id="2_yolr2"]
-
-[node name="Phase7Preview" type="Node" unique_id=1988055122]
-script = ExtResource("1_tmh08")
-
-[node name="RunEventPanel" parent="." unique_id=1407412393 instance=ExtResource("2_yolr2")]

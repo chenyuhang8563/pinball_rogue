@@ -1,6 +1,6 @@
 extends RefCounted
 
-const StatModifierScript: GDScript = preload("res://Stats/stat_modifier.gd")
+const StatModifierScript: GDScript = preload("res://Core/stats/stat_modifier.gd")
 
 signal item_progressed(item: Item, level: int, awakened: bool)
 signal skill_progressed(skill_id: String, level: int)

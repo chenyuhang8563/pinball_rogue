@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://dvlxgub2ytc1i"]
+
+[ext_resource type="Script" path="res://tests/Integration/presentation/phase7_previews/preview_node_choice.gd" id="1_k6pt7"]
+[ext_resource type="PackedScene" uid="uid://dswyin2csgpeb" path="res://Run/presentation/node_choice_panel.tscn" id="2_itcnr"]
+
+[node name="Phase7Preview" type="Node" unique_id=564825745]
+script = ExtResource("1_k6pt7")
+
+[node name="NodeChoicePanel" parent="." unique_id=1365636953 instance=ExtResource("2_itcnr")]

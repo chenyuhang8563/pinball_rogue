@@ -1,0 +1,38 @@
+[gd_scene format=3 uid="uid://die2xng7v687k"]
+
+[ext_resource type="Texture2D" uid="uid://dxyoaq8ier8ws" path="res://Combat/battle/enemies/red_marble.png" id="1_8hjb8"]
+[ext_resource type="Script" path="res://Combat/battle/enemies/enemy_1.gd" id="1_pp8s2"]
+[ext_resource type="Shader" uid="uid://xwfud13h1mq4" path="res://Combat/battle/enemies/enemy.gdshader" id="2_lawal"]
+[ext_resource type="Script" uid="uid://jos4pct5bhu0" path="res://Combat/battle/enemies/hit_flash.gd" id="4_fy0xy"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_l2g5i"]
+shader = ExtResource("2_lawal")
+shader_parameter/percent = 0.0
+shader_parameter/frost_amount = 0.0
+shader_parameter/frost_color = Color(0.72, 0.92, 1, 1)
+shader_parameter/snow_color = Color(1, 1, 1, 1)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_8hjb8"]
+radius = 8.0
+
+[node name="Enemy" type="RigidBody2D" unique_id=666898646]
+collision_layer = 8
+collision_mask = 3
+gravity_scale = 0.0
+freeze = true
+freeze_mode = 1
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_pp8s2")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1055102396]
+material = SubResource("ShaderMaterial_l2g5i")
+texture = ExtResource("1_8hjb8")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=184974671]
+shape = SubResource("CircleShape2D_8hjb8")
+
+[node name="HitFlash" type="Node" parent="." unique_id=1580385932]
+script = ExtResource("4_fy0xy")
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

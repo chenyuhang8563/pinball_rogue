@@ -2,7 +2,7 @@ extends GutTest
 
 const RunScopeScript: GDScript = preload("res://Game/Bootstrap/run_scope.gd")
 const FakeStatSystemScript: GDScript = preload("res://tests/Loadout/fake_stat_system.gd")
-const DevilShopConfigScript: GDScript = preload("res://DevilShop/devil_shop_config.gd")
+const DevilShopConfigScript: GDScript = preload("res://Commerce/domain/devil_shop_config.gd")
 const FakeInventoryScript: GDScript = preload("res://tests/Commerce/fake_inventory_adapter.gd")
 const FakeProgressionScript: GDScript = preload("res://tests/Commerce/fake_progression_adapter.gd")
 const FakeWalletScript: GDScript = preload("res://tests/Commerce/fake_wallet_adapter.gd")
@@ -14,13 +14,13 @@ func test_shop_slot_signal_delegates_stable_offer_once_and_sale_resyncs_presenta
 	var loadout: RefCounted = scope.get("loadout") as RefCounted
 	var progression: RefCounted = scope.get("progression") as RefCounted
 	var wallet: RefCounted = scope.get("wallet") as RefCounted
-	var dark_marble: Item = (load("res://Resources/dark_marble.tres") as Item).duplicate(true) as Item
-	var bomb_marble: Item = (load("res://Resources/bomb_marble.tres") as Item).duplicate(true) as Item
+	var dark_marble: Item = (load("res://Content/data/dark_marble.tres") as Item).duplicate(true) as Item
+	var bomb_marble: Item = (load("res://Content/data/bomb_marble.tres") as Item).duplicate(true) as Item
 	assert_true(loadout.call("add", dark_marble))
 	assert_true(loadout.call("add", bomb_marble))
 	assert_true(progression.call("upgrade_one", bomb_marble))
 
-	var shop_scene: PackedScene = load("res://Shop/shop.tscn") as PackedScene
+	var shop_scene: PackedScene = load("res://Commerce/presentation/normal_shop/shop.tscn") as PackedScene
 	var shop: Control = autofree(shop_scene.instantiate()) as Control
 	shop_scene = null
 	assert_true(shop.call("configure", loadout, progression, wallet))
@@ -68,7 +68,7 @@ func test_shop_slot_signal_delegates_stable_offer_once_and_sale_resyncs_presenta
 
 
 func test_devil_confirm_purchase_delegates_selection_commit_and_advances_presentation() -> void:
-	var devil_shop_scene: PackedScene = load("res://DevilShop/devil_shop.tscn") as PackedScene
+	var devil_shop_scene: PackedScene = load("res://Commerce/presentation/devil_shop/devil_shop.tscn") as PackedScene
 	var devil_shop: Control = devil_shop_scene.instantiate() as Control
 	devil_shop_scene = null
 	add_child_autofree(devil_shop)
@@ -110,7 +110,7 @@ func test_devil_confirm_purchase_delegates_selection_commit_and_advances_present
 func test_devil_confirm_button_replaces_claim_text_when_last_reward_is_sold_out() -> void:
 	# 问题来源：最后一件商品购买后，“已售罄”曾显示在独立状态标签并挤占确认按钮文案。
 	# 修复边界：售罄与重新刷新状态都复用同一确认按钮，保留其场景定义的字体主题与字号。
-	var devil_shop_scene: PackedScene = load("res://DevilShop/devil_shop.tscn") as PackedScene
+	var devil_shop_scene: PackedScene = load("res://Commerce/presentation/devil_shop/devil_shop.tscn") as PackedScene
 	var devil_shop: Control = devil_shop_scene.instantiate() as Control
 	devil_shop_scene = null
 	add_child_autofree(devil_shop)

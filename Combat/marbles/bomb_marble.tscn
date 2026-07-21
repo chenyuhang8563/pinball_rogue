@@ -1,0 +1,23 @@
+[gd_scene format=3 uid="uid://fw3pu4ke7cno"]
+
+[ext_resource type="PackedScene" uid="uid://bc1a5ngike1g8" path="res://Combat/marbles/marble.tscn" id="1_84eq8"]
+[ext_resource type="Script" uid="uid://bpayifsucsipn" path="res://Combat/marbles/bomb_marble.gd" id="2_psmfl"]
+[ext_resource type="Texture2D" uid="uid://gsjeaoplfocu" path="res://Assets/Marbles/bomb_marble.png" id="2_yweuo"]
+
+[node name="BombMarble" unique_id=2021599556 instance=ExtResource("1_84eq8")]
+script = ExtResource("2_psmfl")
+explosion_radius = 100.0
+explosion_damage = 5
+
+[node name="Sprite2D" parent="." index="0" unique_id=1959844409]
+texture = ExtResource("2_yweuo")
+
+[node name="GPUParticles2D" type="CPUParticles2D" parent="." index="2" unique_id=1664174278]
+position = Vector2(10, -10)
+lifetime = 0.2
+emission_shape = 1
+emission_sphere_radius = 4.5
+gravity = Vector2(0, 0)
+linear_accel_min = 10.0
+linear_accel_max = 10.0
+color = Color(1, 1, 0, 1)

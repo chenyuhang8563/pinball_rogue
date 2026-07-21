@@ -1,12 +1,12 @@
 extends GutTest
 
 
-const MAIN_SCENE: PackedScene = preload("res://Main/main.tscn")
+const MAIN_SCENE: PackedScene = preload("res://Game/Bootstrap/main.tscn")
 const LEVEL_SCENES: Array[PackedScene] = [
-	preload("res://Levels/level_001_weak.tscn"),
-	preload("res://Levels/level_strong_normal.tscn"),
-	preload("res://Levels/level_elite.tscn"),
-	preload("res://Levels/level_boss.tscn"),
+	preload("res://Combat/levels/level_001_weak.tscn"),
+	preload("res://Combat/levels/level_strong_normal.tscn"),
+	preload("res://Combat/levels/level_elite.tscn"),
+	preload("res://Combat/levels/level_boss.tscn"),
 ]
 
 
@@ -16,7 +16,7 @@ func test_main_scene_uid_resolves() -> void:
 
 	assert_not_null(main_by_uid)
 	if main_by_uid != null:
-		assert_eq(main_by_uid.resource_path, "res://Main/main.tscn")
+		assert_eq(main_by_uid.resource_path, "res://Game/Bootstrap/main.tscn")
 
 
 # 固化迁移期间 Main 入口所依赖的静态场景节点。
@@ -27,7 +27,7 @@ func test_main_scene_exposes_required_composition_nodes() -> void:
 	assert_not_null(main.get_node_or_null("Marbles"))
 	assert_not_null(main.get_node_or_null("SkillController"))
 	assert_not_null(main.get_node_or_null("CanvasLayer/SkillSlot"))
-	assert_not_null(main.get_node_or_null("CanvasLayer/BattleHealthHud"))
+	assert_true(main.get_node_or_null("CanvasLayer/BattleHud") is BattleHud)
 	assert_not_null(main.get_node_or_null("CanvasLayer/PausePanel"))
 	assert_not_null(main.get_node_or_null("CanvasLayer/RunFailurePanel"))
 	# Phase 7：固定运行 UI 由主场景预置，初始仅存在、不呈现。
@@ -35,7 +35,6 @@ func test_main_scene_exposes_required_composition_nodes() -> void:
 	assert_true(main.get_node_or_null("CanvasLayer/DraftRewardPanel") is DraftRewardPanel)
 	assert_true(main.get_node_or_null("CanvasLayer/RunEventPanel") is RunEventPanel)
 	assert_true(main.get_node_or_null("CanvasLayer/DevilShop") is DevilShop)
-	assert_true(main.get_node_or_null("CanvasLayer/FloorHud") is FloorHud)
 	assert_true(main.get_node_or_null("InventoryPanel") is InventoryPanel)
 	assert_not_null(main.get_node_or_null("Shop"))
 	for path: NodePath in [

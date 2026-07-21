@@ -1,10 +1,10 @@
 extends GutTest
 
 const FakeStatSystemScript: GDScript = preload("res://tests/Loadout/fake_stat_system.gd")
-const MainScene: PackedScene = preload("res://Main/main.tscn")
-const ShopScene: PackedScene = preload("res://Shop/shop.tscn")
-const DevilShopScene: PackedScene = preload("res://DevilShop/devil_shop.tscn")
-const EffectManagerScript: GDScript = preload("res://Effects/effect_manager.gd")
+const MainScene: PackedScene = preload("res://Game/Bootstrap/main.tscn")
+const ShopScene: PackedScene = preload("res://Commerce/presentation/normal_shop/shop.tscn")
+const DevilShopScene: PackedScene = preload("res://Commerce/presentation/devil_shop/devil_shop.tscn")
+const EffectManagerScript: GDScript = preload("res://Combat/effects/effect_manager.gd")
 
 
 func test_initial_loadout_and_consumers_share_one_scope_ports_without_starting_run() -> void:
@@ -26,8 +26,8 @@ func test_initial_loadout_and_consumers_share_one_scope_ports_without_starting_r
 	var progression: RefCounted = scope.get("progression") as RefCounted
 	var wallet: RefCounted = scope.get("wallet") as RefCounted
 	var health: RefCounted = scope.get("health") as RefCounted
-	var dark: Item = load("res://Resources/dark_marble.tres") as Item
-	var dash: Item = load("res://Resources/dash_skill.tres") as Item
+	var dark: Item = load("res://Content/data/dark_marble.tres") as Item
+	var dash: Item = load("res://Content/data/dash_skill.tres") as Item
 
 	assert_eq(loadout.call("owned_items"), [dark, dash])
 	assert_eq(loadout.call("get_chain_items"), [dark])

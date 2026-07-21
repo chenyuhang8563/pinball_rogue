@@ -1,6 +1,6 @@
 extends GutTest
 
-const RewardServiceScript: GDScript = preload("res://Run/reward_service.gd")
+const RewardServiceScript: GDScript = preload("res://Run/application/reward_service.gd")
 const LoadoutScript: GDScript = preload("res://Loadout/domain/loadout.gd")
 const ProgressionScript: GDScript = preload("res://Loadout/application/item_progression.gd")
 const WalletScript: GDScript = preload("res://Commerce/application/run_wallet.gd")

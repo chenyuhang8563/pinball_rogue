@@ -1,0 +1,84 @@
+[gd_scene format=3 uid="uid://bbpoxb65e2l6d"]
+
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_fhvtm"]
+[ext_resource type="Script" uid="uid://chim3ilwxgpw0" path="res://Combat/presentation/battle_hud.gd" id="1_hud"]
+[ext_resource type="PackedScene" uid="uid://c4sf4r73fwjvw" path="res://Combat/presentation/heart.tscn" id="3_heart"]
+[ext_resource type="Texture2D" uid="uid://du2jk7gtqvcd1" path="res://Assets/Items/Coin.png" id="4_coin"]
+[ext_resource type="Texture2D" uid="uid://b0vr161vd7xsi" path="res://Assets/Items/fb24.png" id="6_euvrq"]
+
+[node name="BattleHud" type="Control" unique_id=1027706886]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 0
+offset_right = 54.0
+offset_bottom = 46.0
+mouse_filter = 2
+theme = ExtResource("1_fhvtm")
+script = ExtResource("1_hud")
+
+[node name="ResourceRows" type="VBoxContainer" parent="." unique_id=2089716243]
+layout_mode = 0
+offset_top = 1.0
+offset_right = 54.0
+offset_bottom = 45.0
+mouse_filter = 2
+theme_override_constants/separation = 1
+
+[node name="HealthRow" type="HBoxContainer" parent="ResourceRows" unique_id=307670159]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="IconSlot" type="Control" parent="ResourceRows/HealthRow" unique_id=1773506788]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Heart" parent="ResourceRows/HealthRow/IconSlot" unique_id=1248334842 instance=ExtResource("3_heart")]
+position = Vector2(0, 2)
+scale = Vector2(0.75, 0.75)
+centered = false
+
+[node name="ValueLabel" type="Label" parent="ResourceRows/HealthRow" unique_id=615217931]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "0"
+
+[node name="GoldRow" type="HBoxContainer" parent="ResourceRows" unique_id=1070103492]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="CoinIcon" type="TextureRect" parent="ResourceRows/GoldRow" unique_id=1171494697]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("4_coin")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ValueLabel" type="Label" parent="ResourceRows/GoldRow" unique_id=1725235929]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "0"
+
+[node name="FloorRow" type="HBoxContainer" parent="ResourceRows" unique_id=1293250836]
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="FloorIcon" type="TextureRect" parent="ResourceRows/FloorRow" unique_id=1303484830]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("6_euvrq")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ValueLabel" type="Label" parent="ResourceRows/FloorRow" unique_id=603319278]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "0"

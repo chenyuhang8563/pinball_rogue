@@ -18,7 +18,7 @@
 | 5 | **完成** | Effect/Buff 边界收敛：删除生产零调用的 `BuffManager` 与 `damage_up/speed_up/shield`、`BuffDef.effect_script`；debuff 构造统一走 `BuffRegistry`（含 `fire_burn_debuff` 登记）；毒循环反转为 `BuffHost.buff_ticked` typed 事件 + 宿主门面单向转发；遗物脚本表合并到 `EffectRegistry`（删除 `EffectManager.EFFECT_SCRIPTS` 重复与死的 `get_relic_effect_types`）。 | 无；递归 full GUT 148/148 入库、headless smoke exit 0；`Buffs/**` 对 EffectManager 引用静态归零。 |
 | 6 | **完成** | Bootstrap 组合可视化：`BattleSpawner`/`Enemies`/`BattleGateway`/`RunFlowController` 预置于 `main.tscn`（等价 `game_main.tscn`，保留主场景 UID）；`RunScope` 改为从新场景 `Game/Bootstrap/run_scope.tscn` 实例化（创建/激活/销毁均为场景树明确节点）；`_resolve_composition_node` 事务式 slot 解析（override 优先、错误类型/外部 parent 拒绝且不触碰预置节点）。 | 无；递归 full GUT 153/153 入库、headless smoke exit 0；UI 面板预置/字体治理移交 Phase 7。 |
 | 7 | **完成** | UI presentation、构建与字体治理。 | UI 场景、字体、交互与截图验收。 |
-| 8 | 未开始 | 编辑器/Hastur 资源与目录迁移。 | UID、引用、相关及完整 GUT 验收。 |
+| 8 | **完成，待限定提交** | 经 Godot/Hastur 将资源、场景、脚本、测试与数据迁至领域目录；统一 `Fliper` 为 `flipper`，更新 UID 侧车与所有有效路径引用，并新增项目结构规范。 | 递归完整 GUT 161/161、1779 asserts、exit 0，日志见 [phase8-full-gut.log](../testing/evidence/phase8-full-gut.log)；主场景及 Commerce、Loadout、Run、Combat 预览场景已通过 game executor 运行与截图验收。 |
 | 9 | 未开始 | 最终 ADR/README/CONTEXT、测试镜像与去兼容审计。 | adapter/bridge/旧实现清零及完整运行流程。 |
 
 Phase 3 的两层状态不得合并表述。`Run/run_flow_controller.gd` 已存在并提交，不等于它已进入生产路径；`Main/main.gd:3`、`:269-293` 仍 preload、实例化并启动 `Run/run_controller.gd`，且仓库中没有 Main/UI 对 `RunFlowController` 的调用。按原 Phase 3 spec，“Main 生产切换、UI adapter 化、删除旧流程业务实现”仍是 Phase 3 acceptance，不得作为 Phase 4 成果冒领。可执行 cutover 分为 [phase4-plan.md](phase4-plan.md) 的 P3-A 组合准备与 P3-B 原子生产切换；P3-B 完成前 Phase 4 保持未开始。

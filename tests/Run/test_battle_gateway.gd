@@ -1,7 +1,7 @@
 extends GutTest
 
-const EnemyScene: PackedScene = preload("res://Enemies/enemy.tscn")
-const RealLevel: LevelDef = preload("res://Levels/level_001_weak.tres")
+const EnemyScene: PackedScene = preload("res://Combat/battle/enemies/enemy.tscn")
+const RealLevel: LevelDef = preload("res://Combat/levels/level_001_weak.tres")
 
 var _gateway: BattleGateway
 var _spawner: BattleSpawner

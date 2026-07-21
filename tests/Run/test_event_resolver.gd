@@ -1,6 +1,6 @@
 extends GutTest
 
-const ResolverScript: GDScript = preload("res://Run/event_resolver.gd")
+const ResolverScript: GDScript = preload("res://Run/application/event_resolver.gd")
 const TokenScript: GDScript = preload("res://Run/domain/run_flow_token.gd")
 
 

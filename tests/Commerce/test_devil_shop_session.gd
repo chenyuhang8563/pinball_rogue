@@ -7,7 +7,7 @@ const FakeHealthScript: GDScript = preload("res://tests/Commerce/fake_health_ada
 const DevilShopSessionScript: GDScript = preload("res://Commerce/application/devil_shop_session.gd")
 const CommerceOfferScript: GDScript = preload("res://Commerce/domain/commerce_offer.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
-const DevilShopConfigScript: GDScript = preload("res://DevilShop/devil_shop_config.gd")
+const DevilShopConfigScript: GDScript = preload("res://Commerce/domain/devil_shop_config.gd")
 
 
 func test_overpay_debits_full_selected_gold_and_health_at_minimum_boundary() -> void:
