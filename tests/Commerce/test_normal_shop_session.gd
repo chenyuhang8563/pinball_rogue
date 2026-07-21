@@ -175,6 +175,57 @@ func test_restore_failure_reports_rollback_failed() -> void:
 	assert_false(session.call("get_offers")[0].consumed)
 
 
+func test_acknowledge_external_change_keeps_offers_purchasable() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(50)
+	var session: RefCounted = _normal_session(inventory, progression, wallet)
+	var relic := _make_item("ack_relic", Item.ItemType.RELIC, 20)
+	var offer: RefCounted = _install_offer(session, relic, 1, 20, false)
+
+	# Simulate an external state change (e.g. a sale through the sale service)
+	inventory.bump_revision()
+	progression.bump_revision()
+	wallet.credit(10)
+
+	session.call("acknowledge_external_change")
+
+	var result: RefCounted = session.call("purchase", offer.offer_id)
+	assert_eq(result.code, PurchaseResultScript.Code.SUCCESS)
+	assert_true(result.committed)
+	assert_eq(wallet.amount, 40)
+	assert_eq(inventory.find_owned(relic), relic)
+
+
+func test_acknowledge_external_change_preserves_offer_set() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(80)
+	var session: RefCounted = _normal_session(inventory, progression, wallet)
+	var relic_a := _make_item("preserve_a", Item.ItemType.RELIC, 20)
+	var relic_b := _make_item("preserve_b", Item.ItemType.RELIC, 15)
+	var source_a: RefCounted = CommerceOfferScript.new(&"ext_a", 0, relic_a, "", 1, 20, 20, false)
+	var source_b: RefCounted = CommerceOfferScript.new(&"ext_b", 0, relic_b, "", 1, 15, 15, false)
+	var offers_before: Array = session.call("replace_offers", [source_a, source_b])
+	assert_eq(offers_before.size(), 2)
+	var ids_before: Array[StringName] = []
+	for o: Variant in offers_before:
+		ids_before.append(StringName(o.offer_id))
+
+	inventory.bump_revision()
+	progression.bump_revision()
+	wallet.credit(5)
+
+	session.call("acknowledge_external_change")
+
+	var offers_after: Array = session.call("get_offers")
+	assert_eq(offers_after.size(), 2)
+	for i: int in range(offers_after.size()):
+		assert_eq(StringName(offers_after[i].offer_id), ids_before[i])
+		assert_eq(offers_after[i].item, offers_before[i].item)
+		assert_eq(int(offers_after[i].price), int(offers_before[i].price))
+
+
 func _assert_revision_change_is_stale(adapter_name: StringName) -> void:
 	var inventory: RefCounted = FakeInventoryScript.new()
 	var progression: RefCounted = FakeProgressionScript.new()

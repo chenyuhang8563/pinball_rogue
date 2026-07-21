@@ -62,8 +62,48 @@ func test_shop_slot_signal_delegates_stable_offer_once_and_sale_resyncs_presenta
 	assert_null(loadout.call("find_owned", bomb_marble))
 	assert_eq(progression.call("level_of", bomb_marble), 1)
 	assert_eq(shop.get("gold"), 85)
-	assert_eq((shop.get("shop_offers") as Array).size(), 1)
-	assert_false(bool((shop.get("shop_offers") as Array)[0].get("is_upgrade")))
+	assert_eq((shop.get("shop_offers") as Array).size(), 0,
+		"consumed offers should stay consumed; selling must not regenerate the shop")
+	assert_eq(shop_container.get_child_count(), 0)
+
+
+func test_selling_item_does_not_refresh_shop_offers() -> void:
+	var scope := _scope(100, 20)
+	var loadout: RefCounted = scope.get("loadout") as RefCounted
+	var progression: RefCounted = scope.get("progression") as RefCounted
+	var wallet: RefCounted = scope.get("wallet") as RefCounted
+	var dark_marble: Item = (load("res://Content/data/dark_marble.tres") as Item).duplicate(true) as Item
+	var bomb_marble: Item = (load("res://Content/data/bomb_marble.tres") as Item).duplicate(true) as Item
+	assert_true(loadout.call("add", dark_marble))
+
+	var shop_scene: PackedScene = load("res://Commerce/presentation/normal_shop/shop.tscn") as PackedScene
+	var shop: Control = autofree(shop_scene.instantiate()) as Control
+	shop_scene = null
+	assert_true(shop.call("configure", loadout, progression, wallet))
+	var item_pool: Array[Item] = [bomb_marble]
+	shop.set("shop_item_pool", item_pool)
+	add_child(shop)
+	shop.call("refresh_shop_inventory")
+	await get_tree().process_frame
+
+	var offers_before: Array = (shop.get("shop_offers") as Array).duplicate()
+	assert_eq(offers_before.size(), 1)
+	var offer_id_before := StringName(offers_before[0].get("offer_id"))
+	var offer_item_before: Item = offers_before[0].get("item") as Item
+
+	assert_true(shop.call("sell_item", dark_marble))
+	await get_tree().process_frame
+
+	var offers_after: Array = shop.get("shop_offers") as Array
+	assert_eq(offers_after.size(), 1, "selling should not change the number of shop offers")
+	assert_eq(StringName(offers_after[0].get("offer_id")), offer_id_before,
+		"selling should not regenerate offer ids")
+	assert_eq(offers_after[0].get("item") as Item, offer_item_before,
+		"selling should not replace the offered item")
+	assert_null(loadout.call("find_owned", dark_marble))
+	assert_eq(int(shop.get("gold")), 100)
+
+	var shop_container := shop.get("shop_container") as GridContainer
 	assert_eq(shop_container.get_child_count(), 1)
 
 

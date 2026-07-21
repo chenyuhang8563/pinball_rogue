@@ -143,6 +143,23 @@ func invalidate_snapshot() -> void:
 	_skill_replacement_authorizations.clear()
 
 
+## Re-stamps all unconsumed offers after an external state change (e.g. a sale)
+## so they remain valid without regenerating the offer set.
+func acknowledge_external_change() -> void:
+	if not _configured:
+		return
+	_version += 1
+	_skill_replacement_authorizations.clear()
+	for offer_id: StringName in _offer_order:
+		var offer: Variant = _offers.get(offer_id)
+		if offer == null or offer.consumed:
+			continue
+		offer.snapshot_version = _version
+		offer.inventory_revision = int(_inventory.call("revision"))
+		offer.progression_revision = int(_progression.call("revision"))
+		offer.wallet_revision = int(_wallet.call("revision"))
+
+
 func _make_uninstalled_offer(item: Item, target_level: int, is_upgrade: bool) -> RefCounted:
 	var price := int(_wallet.call("quote_price", item))
 	return CommerceOfferScript.new(&"", 0, item, ItemIdentityScript.key(item), target_level, price, price, is_upgrade)

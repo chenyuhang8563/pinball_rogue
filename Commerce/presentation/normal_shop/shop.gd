@@ -146,8 +146,8 @@ func _sell_item(item: Item) -> bool:
 			or not bool(result.get("committed")):
 		_handle_failed_result(result)
 		return false
-	normal_shop_session.call("invalidate_snapshot")
-	_regenerate_from_pool(true)
+	normal_shop_session.call("acknowledge_external_change")
+	_sync_presentation_from_session()
 	refresh_collection_rows()
 	return true
 
