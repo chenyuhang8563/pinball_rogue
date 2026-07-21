@@ -17,17 +17,13 @@ config/icon="res://icon.svg"
 
 [autoload]
 
-Event="*uid://drugq0ej64rno"
-Localization="*res://Localization/localization.gd"
-Shop="*uid://fjioorpo70mx"
-Inventory="*uid://dt1roo6rgl6kg"
-EffectManager="*res://Effects/effect_manager.gd"
-EffectRegistry="*res://Items/effect_registry.gd"
+Localization="*res://Core/localization/localization.gd"
+EffectManager="*res://Combat/effects/effect_manager.gd"
+EffectRegistry="*res://Combat/effects/effect_registry.gd"
 GameExecutor="*uid://7yjc3ixh2laf"
-StatSystem="*res://Stats/stat_system.gd"
-BuffManager="*res://Buffs/buff_manager.gd"
-BuffRegistry="*res://Buffs/buff_registry.gd"
-FloatDamageTextPool="*res://UI/float_damage_text_pool.gd"
+StatSystem="*res://Core/stats/stat_system.gd"
+BuffRegistry="*res://Combat/status/buff_registry.gd"
+FloatDamageTextPool="*res://Combat/presentation/float_damage_text_pool.gd"
 
 [display]
 
@@ -65,6 +61,11 @@ left_paddle_flip={
 active_skill={
 "deadzone": 0.2,
 "events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":0,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":81,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
+]
+}
+toggle_debug_cheats={
+"deadzone": 0.5,
+"events": [Object(InputEventKey,"resource_local_to_scene":false,"resource_name":"","device":-1,"window_id":0,"alt_pressed":false,"shift_pressed":false,"ctrl_pressed":false,"meta_pressed":false,"pressed":false,"keycode":0,"physical_keycode":47,"key_label":0,"unicode":0,"location":0,"echo":false,"script":null)
 ]
 }
 

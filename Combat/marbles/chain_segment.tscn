@@ -1,0 +1,18 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Combat/marbles/chain_segment.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Marbles/dark_marble.png" id="2_tex"]
+[ext_resource type="Shader" path="res://Combat/marbles/marble_outline.gdshader" id="3_shader"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_seg"]
+shader = ExtResource("3_shader")
+shader_parameter/clr = Color(1, 1, 1, 1)
+shader_parameter/type = 2
+shader_parameter/thickness = 1.0
+
+[node name="ChainSegment" type="Node2D"]
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+material = SubResource("ShaderMaterial_seg")
+texture = ExtResource("2_tex")

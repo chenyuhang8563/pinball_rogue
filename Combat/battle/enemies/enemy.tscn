@@ -1,0 +1,70 @@
+[gd_scene format=3 uid="uid://cw0103st1p7ap"]
+
+[ext_resource type="Texture2D" uid="uid://dxyoaq8ier8ws" path="res://Combat/battle/enemies/red_marble.png" id="1_8hjb8"]
+[ext_resource type="Script" uid="uid://1kywgp3v2xwl" path="res://Combat/battle/enemies/enemy.gd" id="1_572h1"]
+[ext_resource type="Shader" uid="uid://xwfud13h1mq4" path="res://Combat/battle/enemies/enemy.gdshader" id="2_lawal"]
+[ext_resource type="Script" uid="uid://jos4pct5bhu0" path="res://Combat/battle/enemies/hit_flash.gd" id="4_fy0xy"]
+[ext_resource type="Script" uid="uid://dtm100r3y7utl" path="res://Combat/status/buff_host.gd" id="5_buff_host"]
+[ext_resource type="Script" uid="uid://bukjyv5a1hx1x" path="res://Combat/battle/enemies/physics_states/physics_state_machine.gd" id="6_state_machine"]
+[ext_resource type="Script" uid="uid://bvlrskmccxcv3" path="res://Combat/battle/enemies/physics_states/normal_physics_state.gd" id="7_normal_state"]
+[ext_resource type="Script" uid="uid://c8erywcanalhd" path="res://Combat/battle/enemies/physics_states/frozen_physics_state.gd" id="8_frozen_state"]
+[ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="9_label"]
+
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_l2g5i"]
+resource_local_to_scene = true
+shader = ExtResource("2_lawal")
+shader_parameter/percent = 0.0
+shader_parameter/flash_color = Color(1, 1, 1, 1)
+shader_parameter/frost_amount = 0.0
+shader_parameter/frost_color = Color(0.72, 0.92, 1, 1)
+shader_parameter/snow_color = Color(1, 1, 1, 1)
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_8hjb8"]
+radius = 8.0
+
+[node name="Enemy" type="RigidBody2D" unique_id=666898646 groups=["enemies"]]
+collision_layer = 8
+collision_mask = 11
+gravity_scale = 0.0
+freeze = true
+freeze_mode = 1
+contact_monitor = true
+max_contacts_reported = 4
+script = ExtResource("1_572h1")
+
+[node name="Sprite2D" type="Sprite2D" parent="." unique_id=1055102396]
+material = SubResource("ShaderMaterial_l2g5i")
+texture = ExtResource("1_8hjb8")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="." unique_id=184974671]
+shape = SubResource("CircleShape2D_8hjb8")
+
+[node name="HitFlash" type="Node" parent="." unique_id=1580385932]
+script = ExtResource("4_fy0xy")
+
+[node name="BuffHost" type="Node" parent="." unique_id=1303878670]
+script = ExtResource("5_buff_host")
+
+[node name="PhysicsStateMachine" type="Node" parent="." unique_id=867678448]
+script = ExtResource("6_state_machine")
+
+[node name="Normal" type="Node" parent="PhysicsStateMachine" unique_id=1478683355]
+script = ExtResource("7_normal_state")
+
+[node name="Frozen" type="Node" parent="PhysicsStateMachine" unique_id=1156453153]
+script = ExtResource("8_frozen_state")
+
+[node name="HealthLabel" type="Label" parent="." unique_id=238119258]
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_right = 20.0
+offset_bottom = 12.0
+grow_horizontal = 2
+grow_vertical = 2
+label_settings = ExtResource("9_label")
+text = "100"
+
+[connection signal="body_entered" from="." to="." method="_on_body_entered"]

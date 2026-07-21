@@ -1,0 +1,21 @@
+[gd_resource type="Resource" script_class="DevilShopConfig" load_steps=10 format=3]
+
+[ext_resource type="Script" path="res://Commerce/domain/devil_shop_config.gd" id="1"]
+[ext_resource type="Resource" path="res://Content/data/lightning.tres" id="2"]
+[ext_resource type="Resource" path="res://Content/data/bomb_marble.tres" id="3"]
+[ext_resource type="Resource" path="res://Content/data/brown_marble.tres" id="4"]
+[ext_resource type="Resource" path="res://Content/data/green_marble.tres" id="5"]
+[ext_resource type="Resource" path="res://Content/data/blue_marble.tres" id="6"]
+[ext_resource type="Resource" path="res://Content/data/fire_marble.tres" id="7"]
+[ext_resource type="Resource" path="res://Content/data/magic_missile_skill.tres" id="8"]
+
+[resource]
+script = ExtResource("1")
+item_pool = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8")])
+stock_count = 3
+health_to_gold = 5
+minimum_remaining_health = 1
+level_weights = {2: 3, 3: 4, 4: 3}
+level_price_multipliers = {2: 1.5, 3: 2.0, 4: 3.0}
+long_press_delay = 0.35
+long_press_interval = 0.08

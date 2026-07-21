@@ -1,0 +1,75 @@
+[gd_scene format=3 uid="uid://cbbk5l2e1na0y"]
+
+[ext_resource type="Script" uid="uid://bsino3h1ad0fx" path="res://Game/Bootstrap/main.gd" id="1_eunhr"]
+[ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="4_0gq1e"]
+[ext_resource type="PackedScene" uid="uid://d3qrynyba4t0p" path="res://Combat/presentation/active_skill_slot.tscn" id="6_qac2q"]
+[ext_resource type="PackedScene" uid="uid://dswyin2csgpeb" path="res://Run/presentation/node_choice_panel.tscn" id="7_0gq1e"]
+[ext_resource type="Script" uid="uid://5h58at066d5s" path="res://Combat/skills/skill_controller.gd" id="8_f3gf5"]
+[ext_resource type="PackedScene" uid="uid://dic0ihi3nvfwv" path="res://Run/presentation/run_failure_panel.tscn" id="8_rix8b"]
+[ext_resource type="PackedScene" uid="uid://dry577g502x3m" path="res://Run/presentation/draft_reward_panel.tscn" id="8_wbdht"]
+[ext_resource type="PackedScene" uid="uid://8sb7obwvywf4" path="res://Run/presentation/run_event_panel.tscn" id="9_puekb"]
+[ext_resource type="PackedScene" uid="uid://d14mlptotnpp8" path="res://Commerce/presentation/devil_shop/devil_shop.tscn" id="10_xi84t"]
+[ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://Combat/presentation/battle_hud.tscn" id="11_health"]
+[ext_resource type="PackedScene" uid="uid://bfiq2ule5s2x8" path="res://Run/presentation/pause_panel.tscn" id="12_pause"]
+[ext_resource type="PackedScene" uid="uid://btv3xval8rmxu" path="res://Game/Debug/debug_grant_panel.tscn" id="14_uhr2j"]
+[ext_resource type="PackedScene" uid="uid://fjioorpo70mx" path="res://Commerce/presentation/normal_shop/shop.tscn" id="16_j4inf"]
+[ext_resource type="PackedScene" uid="uid://dgob675lfpkcv" path="res://Loadout/presentation/inventory_panel.tscn" id="17_nf7xu"]
+[ext_resource type="Script" uid="uid://bf7et742rbw7a" path="res://Combat/battle/battle_spawner.gd" id="20_spawner"]
+[ext_resource type="Script" uid="uid://c50047c5576eg" path="res://Combat/battle/battle_gateway.gd" id="21_gateway"]
+[ext_resource type="Script" uid="uid://d3dwc01dyf7e7" path="res://Run/application/run_flow_controller.gd" id="22_controller"]
+
+[node name="Main" type="Node2D" unique_id=1204434413]
+script = ExtResource("1_eunhr")
+metadata/_edit_horizontal_guides_ = [208.0]
+
+[node name="Marbles" type="Node2D" parent="." unique_id=2013848348]
+
+[node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1475341812]
+
+[node name="BattleHud" parent="CanvasLayer" unique_id=1820331821 instance=ExtResource("11_health")]
+
+[node name="PausePanel" parent="CanvasLayer" unique_id=1639927173 instance=ExtResource("12_pause")]
+
+[node name="Label" type="Label" parent="CanvasLayer" unique_id=1125416496]
+offset_right = 40.0
+offset_bottom = 23.0
+label_settings = ExtResource("4_0gq1e")
+
+[node name="SkillSlot" parent="CanvasLayer" unique_id=1931073303 instance=ExtResource("6_qac2q")]
+offset_left = 200.0
+offset_top = 272.0
+offset_right = 232.0
+offset_bottom = 304.0
+
+[node name="RunFailurePanel" parent="CanvasLayer" unique_id=564021983 instance=ExtResource("8_rix8b")]
+
+[node name="NodeChoicePanel" parent="CanvasLayer" unique_id=1365636953 instance=ExtResource("7_0gq1e")]
+
+[node name="DraftRewardPanel" parent="CanvasLayer" unique_id=1712510819 instance=ExtResource("8_wbdht")]
+
+[node name="RunEventPanel" parent="CanvasLayer" unique_id=1407412393 instance=ExtResource("9_puekb")]
+
+[node name="DevilShop" parent="CanvasLayer" unique_id=1521257330 instance=ExtResource("10_xi84t")]
+
+[node name="SkillController" type="Node" parent="." unique_id=1382697519]
+script = ExtResource("8_f3gf5")
+
+[node name="BattleSpawner" type="Node" parent="." unique_id=1603146276]
+script = ExtResource("20_spawner")
+
+[node name="Enemies" type="Node2D" parent="." unique_id=805996790]
+
+[node name="BattleGateway" type="Node" parent="." unique_id=991377658]
+script = ExtResource("21_gateway")
+
+[node name="RunFlowController" type="Node" parent="." unique_id=303479558]
+script = ExtResource("22_controller")
+
+[node name="DebugCanvasLayer" type="CanvasLayer" parent="." unique_id=423046981]
+layer = 20
+
+[node name="DebugGrantPanel" parent="DebugCanvasLayer" unique_id=719130094 instance=ExtResource("14_uhr2j")]
+
+[node name="Shop" parent="." unique_id=395620655 instance=ExtResource("16_j4inf")]
+
+[node name="InventoryPanel" parent="." unique_id=600384015 instance=ExtResource("17_nf7xu")]

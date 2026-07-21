@@ -61,3 +61,34 @@ Issues and PRDs are tracked in this repository's GitHub Issues. See `docs/agents
 
 This repository uses a single-context domain documentation layout. See `docs/agents/domain.md`.
 
+## Phase 自动化流水线协议
+
+本仓库配置了 Stop Hook（`.claude/hooks/phase-gate.mjs`），实现 Phase 5→9 的自动流转。
+
+### 工作原理
+
+1. Claude 完成一个 Phase 的所有验收后，写入 marker 文件：
+   ```json
+   // .claude/phase-marker.json
+   {"phase": N, "status": "complete", "summary": "一句话总结"}
+   ```
+2. Claude 正常停止 → Stop Hook 触发
+3. Hook 自动执行：git add + commit → gh issue create → 注入下一 Phase prompt
+4. **每个 Phase 完成并给出下一阶段 spec 后，必须 `/clear` 清空上下文再进入下一 Phase**（每个 Phase 以干净上下文开始；下一阶段从交接文档 `docs/handoffs/phaseN-handoff.md`、`docs/architecture/migration-ledger.md` 与 GitHub Issue 恢复，不依赖上一 Phase 的对话上下文）
+5. 循环直到 Phase 9 完成
+
+### Phase 完成前的必做事项
+
+在写入 marker 之前，必须：
+- 撰写 `docs/handoffs/phaseN-handoff.md` 交接文档
+- 更新 `docs/architecture/migration-ledger.md` 中对应 Phase 状态
+- 确保 GUT 全部通过（递归 full GUT）
+- 确保无遗留的 dirty 文件（hook 会 git add -A）
+
+### 自动化控制
+
+- 状态文件: `.claude/automation-state.json`
+- 停止自动化: 删除状态文件或设 `automation_active: false`
+- 手动跳过: 写入对应 phase 的 marker 文件
+- 恢复: 检查 `current_phase`，从该 phase 继续
+

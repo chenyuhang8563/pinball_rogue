@@ -1,0 +1,15 @@
+[gd_resource type="Resource" script_class="LevelDef" load_steps=3 format=3]
+
+[ext_resource type="Script" path="res://Combat/levels/level_def.gd" id="1_def"]
+[ext_resource type="PackedScene" path="res://Combat/levels/level_elite.tscn" id="2_scene"]
+
+[resource]
+script = ExtResource("1_def")
+id = "elite"
+title = "Elite Fight"
+level_index = 3
+kind = 2
+enemy_pool = 1
+level_scene = ExtResource("2_scene")
+gold_min = 35
+gold_max = 40

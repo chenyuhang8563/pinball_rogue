@@ -1,0 +1,10 @@
+[gd_resource type="LabelSettings" format=3 uid="uid://lh0stpthpths"]
+
+[ext_resource type="FontVariation" uid="uid://bi65xp2y217fg" path="res://Themes/Fonts/quaver_fusion_10.tres" id="1_np1fi"]
+
+[resource]
+font = ExtResource("1_np1fi")
+font_size = 10
+font_color = Color(1, 0.95, 0.65, 1)
+outline_size = 3
+outline_color = Color(0.05, 0.04, 0.02, 1)

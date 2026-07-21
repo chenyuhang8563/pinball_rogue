@@ -3,8 +3,6 @@
 /android/
 # Godot 4.2+ specific ignores
 ~*.dll
-*.gd.uid
-*.gdshader.uid
 
 # Godot 4+ specific ignores
 .nomedia
@@ -23,10 +21,9 @@ export_credentials.cfg
 data_*/
 mono_crash.*.json
 
-# test ignores
-/tests/*
-!/tests/test_shop_upgrade_offers.gd
-!/tests/test_devil_shop_upgrade_offers.gd
+# Tests stay visible so architecture migration assets cannot be hidden.
+# Checkpoint commits must still exclude every tests/** change.
+!/tests/**
 
 # generated image sources; final runtime assets live under Assets/ and Effects/
 /output/imagegen/

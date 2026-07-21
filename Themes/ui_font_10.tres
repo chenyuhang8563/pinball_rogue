@@ -1,0 +1,7 @@
+[gd_resource type="Theme" format=3 uid="uid://c5yfpu05x03g3"]
+
+[ext_resource type="FontVariation" uid="uid://bi65xp2y217fg" path="res://Themes/Fonts/quaver_fusion_10.tres" id="1_4a7lj"]
+
+[resource]
+default_font = ExtResource("1_4a7lj")
+default_font_size = 10

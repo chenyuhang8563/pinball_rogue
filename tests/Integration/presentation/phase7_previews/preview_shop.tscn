@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://ba7pn1tuvrx1e"]
+
+[ext_resource type="Script" path="res://tests/Integration/presentation/phase7_previews/preview_shop.gd" id="1_chel2"]
+[ext_resource type="PackedScene" uid="uid://fjioorpo70mx" path="res://Commerce/presentation/normal_shop/shop.tscn" id="2_ldqkj"]
+
+[node name="Phase7Preview" type="Node" unique_id=1861804287]
+script = ExtResource("1_chel2")
+
+[node name="Shop" parent="." unique_id=395620655 instance=ExtResource("2_ldqkj")]

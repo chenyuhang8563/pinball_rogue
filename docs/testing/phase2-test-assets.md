@@ -1,0 +1,46 @@
+# Phase 2 历史测试 checkpoint/hash manifest
+
+以下 36 个路径/hash 是 2026-07-19 Phase 2 checkpoint 时刻的历史 manifest，算法为 `git hash-object`。当时工作流刻意未暂存 `tests/**`，但后续 `7366094` 已提交这些 Phase 0–2 测试资产，`42adaba` 又提交 Phase 3 focused 测试。因此本表只证明历史 checkpoint 内容，**不代表当前 hash，也不再规定当前 tests 必须未提交**。
+
+```text
+2052ea107d6b25cc31e955340dd17be4081354fb  tests/Commerce/fake_health_adapter.gd
+99901c3806c88c7c737ae35062bd83e799973e4f  tests/Commerce/fake_health_adapter.gd.uid
+41f0c655e9a39c145fc730e2ea2f30911ea239f0  tests/Commerce/fake_inventory_adapter.gd
+69c28530faf5246dd913aea160c4cda9c52c332e  tests/Commerce/fake_inventory_adapter.gd.uid
+647d6e02254f079225725adbd3605b37244b6f44  tests/Commerce/fake_progression_adapter.gd
+ea53030f4aef9b0bf346356ce9d18bafc85717f0  tests/Commerce/fake_progression_adapter.gd.uid
+1ec0960ce4d3fbb81b3c2ac689ab7ab4ea3d6a20  tests/Commerce/fake_wallet_adapter.gd
+3892f6fec657743da7ad1302516905e648c7bee2  tests/Commerce/fake_wallet_adapter.gd.uid
+b784fb210e703ad5a43165ebf9d955e3b7e88b3f  tests/Commerce/test_devil_shop_session.gd
+029705f502e5783b76307c81c4cb66eb30f190a4  tests/Commerce/test_devil_shop_session.gd.uid
+6f47f488636635ace29131a3e3e8ab0113865497  tests/Commerce/test_normal_shop_sale_service.gd
+d0c44ab0dc225bcbd99ce4e3badf8452d36bd120  tests/Commerce/test_normal_shop_sale_service.gd.uid
+6bf6044c650c92005783fabb37456684d1f1ef43  tests/Commerce/test_normal_shop_session.gd
+782012bb66a27c7fbaeef5a5619eb2de32893b1a  tests/Commerce/test_normal_shop_session.gd.uid
+60a66f63d2948c589377a27a823d98705a344a85  tests/Commerce/test_presentation_delegation.gd
+be47d2883477a39d4d9a5c6777821a9730ac993d  tests/Commerce/test_presentation_delegation.gd.uid
+f11d76c00e29e2e6ab1a8e14af6f7ddf038fbc40  tests/Integration/test_phase2_scope_composition.gd
+1ff1bdc998f2f1c8941ecab03184c5e00a7b6ce2  tests/Integration/test_phase2_scope_composition.gd.uid
+dec481276c623a7bb58558ceca57bfaef8a9fa45  tests/Integration/test_scene_contracts.gd
+d67bcd4f71d0a260e011415436882c410ee0fa7a  tests/Integration/test_scene_contracts.gd.uid
+8ac6d05084579586abc641ac9024fb68e5f71bbe  tests/Loadout/fake_stat_system.gd
+fbc09e188633528b7d0bb313524f3acbc02e5085  tests/Loadout/fake_stat_system.gd.uid
+0fb634eb92fa742cae39f0e316d079b945396b59  tests/Loadout/test_commerce_scope_ports.gd
+8e154a9d2d81af7a5cf3befd5c1167eed2f1c7c5  tests/Loadout/test_commerce_scope_ports.gd.uid
+afc4552251f2e4c1524678f0314369cbe59bca4e  tests/Loadout/test_item_progression.gd
+e5d8d9284b75d3cc7eee23fca4558eb1ed73e9ea  tests/Loadout/test_item_progression.gd.uid
+2c2d8fd301b2e5434ae22a6c422c79fa1f91e069  tests/Loadout/test_loadout.gd
+067b93f6f5d27b465538f607ca75bb8b18af7ecb  tests/Loadout/test_loadout.gd.uid
+bfe855575d2756cdee78f5e0e98e80c6e10540a1  tests/Loadout/test_run_resources.gd
+9f327e3711240dffc62e7a0c57e7396972be9078  tests/Loadout/test_run_resources.gd.uid
+b7d1de1ab9933aa4b9ee7a77fc0f032a1bebe753  tests/Loadout/test_run_scope.gd
+e8775bd2d491ba9bbddc6a053d9d1f2414167089  tests/Loadout/test_run_scope.gd.uid
+572ff960ba326082dd77677fe82ec09a7d43751a  tests/test_devil_shop_upgrade_offers.gd
+001f8d7cd1a6fdecb5aa2cb380493753bfe323be  tests/test_devil_shop_upgrade_offers.gd.uid
+197b2366de2519783286b71271a283b127c94f69  tests/test_shop_upgrade_offers.gd
+c7ce8a47641760d36ad403cd75fa6bc9012e3c78  tests/test_shop_upgrade_offers.gd.uid
+```
+
+Phase 2 删除了只验证旧实现的 `tests/test_skill_upgrade_system.gd` 与 `tests/Commerce/test_current_adapters.gd`（含 UID 侧车）；有效成长、候选、技能数值和 scoped Commerce 断言已迁入上述 Loadout/Commerce 测试。
+
+不要为匹配当前文件而改写以上历史 hash。当前内容需要用 `git hash-object` 重新计算，并与实际 commit/验证日志一起记录；测试提交必须按阶段 checkpoint 逐路径审阅。

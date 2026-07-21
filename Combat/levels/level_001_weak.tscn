@@ -1,0 +1,40 @@
+[gd_scene format=3 uid="uid://bmuy0bi1mcgt2"]
+
+[ext_resource type="PackedScene" path="res://Combat/levels/table_base.tscn" id="1_table"]
+[ext_resource type="Script" uid="uid://cnjn4cawhqwe2" path="res://Combat/levels/level_enemy_spawn.gd" id="2_spawn"]
+[ext_resource type="PackedScene" uid="uid://cw0103st1p7ap" path="res://Combat/battle/enemies/enemy.tscn" id="3_enemy"]
+
+[node name="Level001Weak" type="Node2D" unique_id=397272818]
+
+[node name="TableBase" parent="." unique_id=228601334 instance=ExtResource("1_table")]
+
+[node name="EnemySpawns" type="Node2D" parent="." unique_id=1222942804]
+
+[node name="Spawn01" type="Marker2D" parent="EnemySpawns" unique_id=965020784]
+position = Vector2(72, 48)
+script = ExtResource("2_spawn")
+enemy_scene = ExtResource("3_enemy")
+
+[node name="Spawn02" type="Marker2D" parent="EnemySpawns" unique_id=3539860]
+position = Vector2(120, 72)
+script = ExtResource("2_spawn")
+enemy_scene = ExtResource("3_enemy")
+
+[node name="Spawn03" type="Marker2D" parent="EnemySpawns" unique_id=1755591370]
+position = Vector2(168, 48)
+script = ExtResource("2_spawn")
+enemy_scene = ExtResource("3_enemy")
+
+[node name="Enemies" type="Node2D" parent="." unique_id=2122843490]
+
+[node name="PreviewEnemy01" parent="Enemies" unique_id=765046606 instance=ExtResource("3_enemy")]
+position = Vector2(72, 48)
+health = 15
+
+[node name="PreviewEnemy02" parent="Enemies" unique_id=1705653711 instance=ExtResource("3_enemy")]
+position = Vector2(120, 72)
+health = 15
+
+[node name="PreviewEnemy03" parent="Enemies" unique_id=576758890 instance=ExtResource("3_enemy")]
+position = Vector2(168, 48)
+health = 15

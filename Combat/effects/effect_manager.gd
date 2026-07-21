@@ -1,0 +1,138 @@
+extends Node
+
+var _active_effects: Dictionary = {}
+var _loadout: RefCounted = null
+var _progression: RefCounted = null
+
+
+func configure(loadout: RefCounted, progression: RefCounted) -> bool:
+	if not _has_port_api(loadout, [&"relics"]) \
+			or not _has_port_api(progression, [&"level_of"]):
+		return false
+	_disconnect_port_signals()
+	_loadout = loadout
+	_progression = progression
+	_connect_port_signals()
+	_sync_active_effects()
+	return true
+
+
+func _ready() -> void:
+	_connect_port_signals()
+	_sync_active_effects()
+
+
+func _exit_tree() -> void:
+	_disconnect_port_signals()
+
+
+func on_enemy_hit_by_marble(enemy: Node2D) -> void:
+	_dispatch("on_enemy_hit_by_marble", [enemy])
+
+
+func on_enemy_hit_resolved(enemy: Node2D, was_burning: bool, was_frozen: bool) -> void:
+	_dispatch("on_enemy_hit_resolved", [enemy, was_burning, was_frozen])
+
+
+func on_poison_tick(enemy: Node2D) -> void:
+	_dispatch("on_poison_tick", [enemy])
+
+
+func _sync_active_effects() -> void:
+	var registry: Node = _get_relic_registry()
+	var owned_effect_levels := _get_owned_effect_levels(registry)
+	var owned_effects: Array = owned_effect_levels.keys()
+
+	for effect_type in owned_effects:
+		if not _active_effects.has(effect_type):
+			var script: GDScript = null
+			if registry != null and registry.has_method("get_relic_script"):
+				script = registry.call("get_relic_script", int(effect_type)) as GDScript
+			if script == null:
+				continue
+			_active_effects[effect_type] = script.new()
+		var effect: Variant = _active_effects[effect_type]
+		if effect != null and effect.has_method("set_level"):
+			var effect_state: Dictionary = owned_effect_levels[effect_type]
+			effect.call("set_level", int(effect_state.get("level", 1)))
+			if effect.has_method("set_awakened"):
+				effect.call("set_awakened", bool(effect_state.get("awakened", false)))
+
+	for effect_type in _active_effects.keys():
+		if not owned_effects.has(effect_type):
+			_active_effects.erase(effect_type)
+
+
+func _get_owned_effect_levels(registry: Node) -> Dictionary:
+	var owned_effects: Dictionary = {}
+	if _loadout == null or not is_instance_valid(_loadout) \
+			or _progression == null or not is_instance_valid(_progression):
+		return owned_effects
+
+	for item: Item in _loadout.call("relics") as Array:
+		if item == null:
+			continue
+		if item.effect_type == Item.EffectType.NONE:
+			continue
+		if registry == null or not registry.has_method("has_relic_script") \
+				or not bool(registry.call("has_relic_script", int(item.effect_type))):
+			continue
+		var level: int = maxi(1, int(_progression.call("level_of", item)))
+		var awakened: bool = level >= 4
+		var effect_key: int = int(item.effect_type)
+		var previous: Dictionary = owned_effects.get(effect_key, {"level": 0, "awakened": false})
+		owned_effects[effect_key] = {
+			"level": maxi(int(previous.get("level", 0)), level),
+			"awakened": bool(previous.get("awakened", false)) or awakened,
+		}
+	return owned_effects
+
+
+func _dispatch(method_name: StringName, args: Array) -> void:
+	for effect in _active_effects.values():
+		if effect.has_method(method_name):
+			effect.callv(method_name, args)
+
+
+func _connect_port_signals() -> void:
+	var loadout_callback := Callable(self, "_sync_active_effects")
+	if _loadout != null and is_instance_valid(_loadout) and _loadout.has_signal(&"changed") \
+			and not _loadout.is_connected(&"changed", loadout_callback):
+		_loadout.connect(&"changed", loadout_callback)
+	var progression_callback := Callable(self, "_on_item_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"item_progressed") \
+			and not _progression.is_connected(&"item_progressed", progression_callback):
+		_progression.connect(&"item_progressed", progression_callback)
+
+
+func _disconnect_port_signals() -> void:
+	var loadout_callback := Callable(self, "_sync_active_effects")
+	if _loadout != null and is_instance_valid(_loadout) and _loadout.has_signal(&"changed") \
+			and _loadout.is_connected(&"changed", loadout_callback):
+		_loadout.disconnect(&"changed", loadout_callback)
+	var progression_callback := Callable(self, "_on_item_progressed")
+	if _progression != null and is_instance_valid(_progression) \
+			and _progression.has_signal(&"item_progressed") \
+			and _progression.is_connected(&"item_progressed", progression_callback):
+		_progression.disconnect(&"item_progressed", progression_callback)
+
+
+func _on_item_progressed(_item: Item, _level: int, _awakened: bool) -> void:
+	_sync_active_effects()
+
+
+func _get_relic_registry() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("EffectRegistry")
+
+
+func _has_port_api(port: RefCounted, methods: Array[StringName]) -> bool:
+	if port == null or not is_instance_valid(port):
+		return false
+	for method: StringName in methods:
+		if not port.has_method(method):
+			return false
+	return true

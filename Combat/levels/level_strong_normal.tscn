@@ -1,0 +1,58 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://Combat/levels/table_base.tscn" id="1_table"]
+[ext_resource type="Script" path="res://Combat/levels/level_enemy_spawn.gd" id="2_spawn"]
+[ext_resource type="PackedScene" path="res://Combat/battle/enemies/enemy.tscn" id="3_enemy"]
+
+[node name="LevelStrongNormal" type="Node2D"]
+
+[node name="TableBase" parent="." instance=ExtResource("1_table")]
+
+[node name="EnemySpawns" type="Node2D" parent="."]
+
+[node name="Spawn01" type="Marker2D" parent="EnemySpawns"]
+position = Vector2(64, 48)
+script = ExtResource("2_spawn")
+enemy_scene = ExtResource("3_enemy")
+
+[node name="Spawn02" type="Marker2D" parent="EnemySpawns"]
+position = Vector2(104, 88)
+script = ExtResource("2_spawn")
+enemy_scene = ExtResource("3_enemy")
+
+[node name="Spawn03" type="Marker2D" parent="EnemySpawns"]
+position = Vector2(144, 48)
+script = ExtResource("2_spawn")
+enemy_scene = ExtResource("3_enemy")
+
+[node name="Spawn04" type="Marker2D" parent="EnemySpawns"]
+position = Vector2(184, 88)
+script = ExtResource("2_spawn")
+enemy_scene = ExtResource("3_enemy")
+
+[node name="Spawn05" type="Marker2D" parent="EnemySpawns"]
+position = Vector2(120, 132)
+script = ExtResource("2_spawn")
+enemy_scene = ExtResource("3_enemy")
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="PreviewEnemy01" parent="Enemies" instance=ExtResource("3_enemy")]
+position = Vector2(64, 48)
+health = 45
+
+[node name="PreviewEnemy02" parent="Enemies" instance=ExtResource("3_enemy")]
+position = Vector2(104, 88)
+health = 45
+
+[node name="PreviewEnemy03" parent="Enemies" instance=ExtResource("3_enemy")]
+position = Vector2(144, 48)
+health = 45
+
+[node name="PreviewEnemy04" parent="Enemies" instance=ExtResource("3_enemy")]
+position = Vector2(184, 88)
+health = 45
+
+[node name="PreviewEnemy05" parent="Enemies" instance=ExtResource("3_enemy")]
+position = Vector2(120, 132)
+health = 45

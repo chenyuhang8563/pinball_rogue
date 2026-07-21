@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="Item" format=3 uid="uid://bncjg26lqnokw"]
+
+[ext_resource type="Texture2D" uid="uid://gsjeaoplfocu" path="res://Assets/Marbles/bomb_marble.png" id="1_bomb"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "bomb_marble"
+title = "ITEM_BOMB_MARBLE_TITLE"
+icon = ExtResource("1_bomb")
+price = 30
+description = "ITEM_BOMB_MARBLE_DESC"
+effect_type = 2
+type = 1
+marble_type = 2
+marble_segment_damage = 0
+metadata/_custom_type_script = "uid://cbxvjrptlxvsm"

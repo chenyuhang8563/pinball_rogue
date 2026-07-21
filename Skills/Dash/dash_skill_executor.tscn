@@ -1,7 +1,0 @@
-[gd_scene load_steps=2 format=3]
-
-[ext_resource type="Script" path="res://Skills/Dash/dash_skill_executor.gd" id="1"]
-
-[node name="DashSkillExecutor" type="Node"]
-script = ExtResource("1")
-

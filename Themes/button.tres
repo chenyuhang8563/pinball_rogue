@@ -1,7 +1,6 @@
 [gd_resource type="Theme" format=3 uid="uid://dyyi8m07c16qi"]
 
-[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="1_quaver"]
-[ext_resource type="FontFile" uid="uid://doiwc4lh6s2he" path="res://Assets/Fonts/fusion-pixel-8px-proportional-zh_hans.ttf" id="2_fusion8"]
+[ext_resource type="FontVariation" uid="uid://bi65xp2y217fg" path="res://Themes/Fonts/quaver_fusion_10.tres" id="1_gv6e5"]
 [ext_resource type="Texture2D" uid="uid://l0otlcy2iwe6" path="res://Assets/Button/Button_01A_Selected.png" id="3_hover"]
 [ext_resource type="Texture2D" uid="uid://crp0a6axprd0x" path="res://Assets/Button/Button_01A_Normal.png" id="4_normal"]
 [ext_resource type="Texture2D" uid="uid://hqaxexrud6gl" path="res://Assets/Button/Button_01A_Pressed.png" id="5_pressed"]
@@ -29,8 +28,8 @@ content_margin_bottom = 0.0
 texture = ExtResource("5_pressed")
 
 [resource]
-Button/font_sizes/font_size = 8
-Button/fonts/font = ExtResource("2_fusion8")
+Button/font_sizes/font_size = 10
+Button/fonts/font = ExtResource("1_gv6e5")
 Button/styles/hover = SubResource("StyleBoxTexture_vxja4")
 Button/styles/normal = SubResource("StyleBoxTexture_lt4la")
 Button/styles/pressed = SubResource("StyleBoxTexture_4amfo")

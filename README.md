@@ -1,128 +1,42 @@
 # RoguePinball
 
-一个使用 Godot 4.6.1 制作的 2D 弹珠肉鸽原型。当前版本把传统弹珠台的挡板、反弹、掉球补球，与商店、库存、弹珠类型、遗物效果组合在一起，作为后续扩展关卡、构筑和战斗效果的基础。
+基于 Godot 4.6.1 的 2D 弹珠 Roguelike 原型。玩家在一局流程中选择节点、进入战斗、结算奖励或事件，并通过商店、遗物、弹珠和技能逐步构筑。
 
-## 项目状态
+## 运行
 
-当前仓库包含一个可运行的主场景：
+- Godot：**4.6.1**（GL Compatibility）。
+- 启动场景：`res://Game/Bootstrap/main.tscn`，由 `project.godot` 的 UID 入口引用。
+- 使用 Godot 编辑器打开项目并运行主场景；左右方向键控制挡板。
 
-- 主场景：`res://Main/main.tscn`
-- 游戏名：`RoguePinball`
-- 渲染方式：Godot GL Compatibility
-- 画布尺寸：`240x320`，窗口覆盖尺寸为 `720x960`
+## 当前架构
 
-已实现的核心内容：
-
-- 左右挡板控制弹珠运动
-- 弹珠击中敌人造成伤害
-- 敌人生命值显示与受击闪烁
-- 掉球检测与按弹珠类型补球
-- 商店开关、购买、出售、金币扣除与返还
-- 库存分为弹珠栏和遗物栏
-- 闪电链遗物效果
-- 普通弹珠、棕色弹珠、炸弹弹珠的脚本与场景资源
-- CRT 后处理显示效果
-
-## 运行环境
-
-本项目使用 Godot 4.6.1。
-
-
-## 操作方式
-
-- 左挡板：左方向键
-- 右挡板：右方向键
-- 打开/关闭商店：`U`
-- 购买商店物品：商店打开时左键点击商品
-- 出售库存物品：商店打开时右键点击库存栏中的物品
-
-## 玩法系统
-
-### 弹珠
-
-基础弹珠逻辑在 `Marbles/marble.gd`：
-
-- 使用 `RigidBody2D`
-- 限制最大速度
-- 提供 `get_hit_damage()` 给敌人读取伤害
-- 使用 `MARBLE_TYPE` 区分普通、棕色和炸弹弹珠
-
-当前弹珠类型：
-
-- 普通弹珠：基础伤害
-- 棕色弹珠：非敌人碰撞会积累回声层数，层数满后下一次命中获得额外伤害
-- 炸弹弹珠：击中敌人时爆炸，对范围内敌人造成伤害，并对附近友方弹珠施加冲击
-
-### 敌人
-
-敌人逻辑在 `Enemies/enemy.gd`：
-
-- 敌人属于 `enemies` 组
-- 被 `marbles` 组内物体撞击时触发受击
-- 通过弹珠的 `get_hit_damage()` 读取实际伤害
-- 生命值归零后销毁
-
-### 掉球与补球
-
-掉球区域在 `Main/kill_zone.gd`。弹珠进入 KillZone 后会发出 `Event.marble_fell` 信号并释放原弹珠。
-
-`Main/main.gd` 监听该信号，并根据掉落弹珠的 `marble_type` 生成同类型的新弹珠。
-
-### 商店与库存
-
-商店逻辑在 `Shop/shop.gd`，库存逻辑在 `Inventory/inventory.gd`。
-
-库存容量：
-
-- 弹珠栏：2
-- 遗物栏：3
-
-商店当前商品资源：
-
-- `Resources/lightning.tres`
-- `Resources/bomb_marble.tres`
-
-购买路径为：
+`Game/Bootstrap` 是唯一跨领域组合根。它从场景预置节点和显式依赖建立一次运行流程；领域模块不通过旧 Autoload、场景树搜索或兼容入口取得业务状态。
 
 ```text
-Shop -> Slot -> Inventory.add_item()
+Game/Bootstrap/        组合根、RunScope、主场景
+Content/               不可变物品定义与内容资源
+Commerce/              商店报价、交易与展示
+Loadout/               持有物、弹珠链、成长
+Run/                   节点、战斗计划、奖励、事件与流程
+Combat/                战斗生命周期、弹珠、技能、效果与状态
+Core/                  跨领域数值与本地化
+UI/shared/             无领域状态的复用展示组件
+tests/                 按 Game/领域归档；组合与场景契约在 Integration/
 ```
 
-后续接入新弹珠或遗物时，应尽量沿用这条路径，避免在主场景里直接放置临时测试弹珠。
+- `RunScope` 是一局状态的唯一所有者：`Loadout`、`ItemProgression`、`RunWallet`、`RunHealth` 与 scoped `StatSystem`。
+- `RunFlowController` 只编排流程状态；节点、战斗计划、奖励和事件规则分别由其应用服务拥有。
+- 战斗完成路径唯一：`Enemy.defeated → BattleSession → BattleGateway → RunBattleFlow → RunFlowController`。
+- `EffectManager` 管理遗物 proc；`BuffHost` 管理宿主状态；只允许 Effect 经宿主门面施加 Buff，Buff 以 typed 事件对外通知。
 
-### 遗物效果
+详细运行时事实见 [当前运行时结构](docs/architecture/current-runtime.md)，边界与依赖方向见 [目标依赖](docs/architecture/target-dependencies.md)，设计决策见 [ADR](docs/adr/0001-final-architecture-cutover.md)。
 
-遗物效果由 `Effects/effect_manager.gd` 管理。当前实现会根据库存中的遗物同步激活效果。
+## 验证
 
-已实现效果：
+测试使用 GUT。请让 `--path` 指向当前 checkout：
 
-- 闪电链：弹珠击中敌人时，对最近的其他敌人造成额外伤害并生成闪电动画
-
-## 目录结构
-
-```text
-Assets/
-  Fonts/                    quaver.ttf（英文/数字） + fusion 像素中文字体（8px/10px/12px）
-  ...                      美术、按钮、弹珠和特效贴图
-Effects/                 战斗效果和视觉效果
-Enemies/                 敌人场景、脚本和 shader
-Fliper/                  挡板场景与控制脚本
-Inventory/               库存 UI 场景
-Items/                   物品 Resource 定义与商店槽位
-Main/                    主场景、事件总线、掉球区和 CRT shader
-Marbles/                 弹珠场景、脚本和弹珠 shader
-Platform/                场内平台
-Resources/               可购买物品资源
-Shop/                    商店 UI 和购买/出售逻辑
-Themes/                  UI 主题资源（中文 fusion 字体，数字 quaver）
-UI/                      字体管理（fonts.gd）和 UI 面板脚本
-addons/hasturoperationgd 远程执行/调试插件
+```powershell
+cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gut_cmdln.gd --path <当前工作树绝对路径> -gdir=res://tests -ginclude_subdirs -gexit -glog=1 -gconfig="
 ```
-## 后续计划
 
-- 关卡设计：增加不同布局、敌人组合和特殊机制的关卡
-- 构筑系统：引入更多弹珠类型、遗物效果和商店
-- 战斗效果：增加更多弹珠特效、敌人受击反馈和环境互动
-- UI 优化：完善商店界面、库存显示和游戏反馈
-- 性能优化：针对大量弹珠和敌人时的性能问题进行优化
-
+历史与当前的可审计证据、运行时验证边界写在 [测试证据基线](docs/testing/baseline.md)。

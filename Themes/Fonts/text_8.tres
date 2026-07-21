@@ -1,7 +1,0 @@
-[gd_resource type="LabelSettings" format=3 uid="uid://bgx23o8d7b5eo"]
-
-[ext_resource type="FontVariation" uid="uid://dbovjnm6ygpdy" path="res://Themes/Fonts/quaver_fusion_8.tres" id="1_ivnqn"]
-
-[resource]
-font = ExtResource("1_ivnqn")
-font_size = 8
