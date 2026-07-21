@@ -4,8 +4,6 @@ extends RigidBody2D
 signal defeated(enemy: Enemy, cause: StringName)
 
 const StatContextScript: GDScript = preload("res://Stats/stat_context.gd")
-const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
-const ENEMY_LABEL_FONT_SIZE: int = 12
 const FrostStatusVisualScene: PackedScene = preload("res://Effects/frost_status_visual/frost_status_visual.tscn")
 const FireStatusVisualScene: PackedScene = preload("res://Effects/fire_status_visual/fire_status_visual.tscn")
 const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition"
@@ -39,7 +37,6 @@ func _ready() -> void:
 	add_to_group("enemies")
 	_entity_id = "enemy_%d" % get_instance_id()
 	_register_stat_entity()
-	_apply_label_font()
 	_update_health_label()
 	if buff_host != null and not buff_host.buff_ticked.is_connected(_on_buff_ticked):
 		buff_host.buff_ticked.connect(_on_buff_ticked)
@@ -326,8 +323,3 @@ func _show_float_damage_text(damage_amount: int, style: StringName = &"default")
 		var spawn_pos: Vector2 = global_position + Vector2.UP * 8.0
 		spawn_pos.x += randf_range(-FLOAT_DAMAGE_X_SPREAD_HALF, FLOAT_DAMAGE_X_SPREAD_HALF)
 		pool.call("show_damage", damage_amount, spawn_pos, style)
-
-
-func _apply_label_font() -> void:
-	if health_label != null:
-		UIFontsScript.apply_number_label(health_label, ENEMY_LABEL_FONT_SIZE)

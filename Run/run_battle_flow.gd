@@ -53,6 +53,12 @@ func active_token() -> RunFlowToken:
 	return _active_token
 
 
+func force_complete_current_battle() -> bool:
+	if _gateway == null or not is_instance_valid(_gateway) or _active_plan == null or _active_token == null:
+		return false
+	return _gateway.force_complete_current_battle()
+
+
 func dispose() -> void:
 	if _gateway != null and is_instance_valid(_gateway):
 		if _gateway.battle_completed.is_connected(_on_gateway_completed):

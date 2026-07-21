@@ -17,7 +17,7 @@
 | 4 | **完成** | `38b64df`：P4-A 真实 `class_name Enemy` guarded `defeat`、`BattleSpawner` 原子 batch、`BattleSession`；P4-B KillZone/MarbleChain 局部 typed source；P4-C Gateway 持有 Session 并唯一解析固定 `TableBase/KillZone`；P4-D 消费者迁移（Main/BuffManager/SkillController）；P4-E 退役 Event Autoload 与 `Main/event.gd`。 | 无；递归 full GUT 140/140 入库、headless 生产 smoke exit 0；交互式截图不可用（Hastur broker 未运行）已如实记录。 |
 | 5 | **完成** | Effect/Buff 边界收敛：删除生产零调用的 `BuffManager` 与 `damage_up/speed_up/shield`、`BuffDef.effect_script`；debuff 构造统一走 `BuffRegistry`（含 `fire_burn_debuff` 登记）；毒循环反转为 `BuffHost.buff_ticked` typed 事件 + 宿主门面单向转发；遗物脚本表合并到 `EffectRegistry`（删除 `EffectManager.EFFECT_SCRIPTS` 重复与死的 `get_relic_effect_types`）。 | 无；递归 full GUT 148/148 入库、headless smoke exit 0；`Buffs/**` 对 EffectManager 引用静态归零。 |
 | 6 | **完成** | Bootstrap 组合可视化：`BattleSpawner`/`Enemies`/`BattleGateway`/`RunFlowController` 预置于 `main.tscn`（等价 `game_main.tscn`，保留主场景 UID）；`RunScope` 改为从新场景 `Game/Bootstrap/run_scope.tscn` 实例化（创建/激活/销毁均为场景树明确节点）；`_resolve_composition_node` 事务式 slot 解析（override 优先、错误类型/外部 parent 拒绝且不触碰预置节点）。 | 无；递归 full GUT 153/153 入库、headless smoke exit 0；UI 面板预置/字体治理移交 Phase 7。 |
-| 7 | 未开始 | UI presentation、构建与字体治理。 | UI 场景、字体、交互与截图验收。 |
+| 7 | **完成** | UI presentation、构建与字体治理。 | UI 场景、字体、交互与截图验收。 |
 | 8 | 未开始 | 编辑器/Hastur 资源与目录迁移。 | UID、引用、相关及完整 GUT 验收。 |
 | 9 | 未开始 | 最终 ADR/README/CONTEXT、测试镜像与去兼容审计。 | adapter/bridge/旧实现清零及完整运行流程。 |
 

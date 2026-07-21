@@ -35,14 +35,24 @@ var _showing_dice_event: bool = false
 
 
 func configure(wallet: RefCounted) -> bool:
+	unconfigure()
 	if wallet == null or not is_instance_valid(wallet) or not wallet.has_method(&"balance"):
 		return false
 	_wallet = wallet
 	return true
 
 
+func unconfigure() -> void:
+	clear_presentation()
+	_wallet = null
+	_current_gold = 0
+	_pending_roll = 0
+	_pending_gold_delta = 0
+	_pending_reward = 0
+	_showing_dice_event = false
+
+
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	_connect_buttons()
 	_connect_localization()
 	_animation_player.play(&"hide")

@@ -107,6 +107,39 @@ func test_devil_confirm_purchase_delegates_selection_commit_and_advances_present
 	assert_eq(devil_shop.get("health_chips"), 0)
 
 
+func test_devil_confirm_button_replaces_claim_text_when_last_reward_is_sold_out() -> void:
+	# 问题来源：最后一件商品购买后，“已售罄”曾显示在独立状态标签并挤占确认按钮文案。
+	# 修复边界：售罄与重新刷新状态都复用同一确认按钮，保留其场景定义的字体主题与字号。
+	var devil_shop_scene: PackedScene = load("res://DevilShop/devil_shop.tscn") as PackedScene
+	var devil_shop: Control = devil_shop_scene.instantiate() as Control
+	devil_shop_scene = null
+	add_child_autofree(devil_shop)
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(100)
+	var health: RefCounted = FakeHealthScript.new(20)
+	var config: Resource = _devil_config()
+	config.set("stock_count", 1)
+	var reward := _make_relic("presentation_last_reward", 20)
+	devil_shop.set("config", config)
+	assert_true(devil_shop.call("configure", inventory, progression, wallet, health))
+	var session: RefCounted = devil_shop.get("devil_shop_session") as RefCounted
+	var opened: Array = session.call("open", config, [reward])
+	devil_shop.call("_set_offer_views", opened)
+	devil_shop.call("_refresh_ui")
+	var confirm := devil_shop.get_node("BottomHUD/ConfirmButton") as Button
+	var status := devil_shop.get_node("BottomHUD/Status") as Label
+	assert_eq(confirm.text, tr("DEVIL_SHOP_CONFIRM"))
+
+	devil_shop.call("adjust_gold_chips", 5)
+	devil_shop.call("adjust_health_chips", 5)
+	assert_true(devil_shop.call("confirm_purchase"))
+
+	assert_true(confirm.disabled)
+	assert_eq(confirm.text, tr("DEVIL_SHOP_SOLD_OUT"))
+	assert_eq(status.text, "")
+
+
 func _devil_config() -> Resource:
 	var config: Resource = DevilShopConfigScript.new()
 	config.set("stock_count", 2)

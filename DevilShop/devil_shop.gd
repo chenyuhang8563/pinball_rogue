@@ -3,7 +3,6 @@ class_name DevilShop
 
 const DevilShopSessionScript: GDScript = preload("res://Commerce/application/devil_shop_session.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
-const PAYMENT_PAN_ANIMATION_REFERENCE_Y: float = 189.0
 
 signal shop_close_intent(token: RunFlowToken, shop_kind: StringName)
 signal health_changed(value: int)
@@ -38,7 +37,6 @@ var _run_flow_token: RunFlowToken = null
 var _run_flow_shop_kind: StringName = &""
 
 @onready var _offer_slot: Node = get_node_or_null("OfferPan/OfferSlot")
-@onready var _payment_pan: Control = get_node_or_null("PaymentPan") as Control
 @onready var _gold_value: Label = get_node_or_null("PaymentPan/GoldValue") as Label
 @onready var _health_value: Label = get_node_or_null("PaymentPan/HealthValue") as Label
 @onready var _gold_amount: Label = get_node_or_null("BottomHUD/GoldControls/Amount") as Label
@@ -54,8 +52,6 @@ var _run_flow_shop_kind: StringName = &""
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
-	_rebase_payment_pan_animations()
 	_connect_buttons()
 	_apply_text()
 	if _scale_sprite != null and not _scale_sprite.frame_changed.is_connected(_on_scale_frame_changed):
@@ -73,6 +69,7 @@ func configure(
 	wallet: RefCounted,
 	health: RefCounted
 ) -> bool:
+	unconfigure()
 	if loadout == null or progression == null or wallet == null or health == null \
 			or not is_instance_valid(loadout) or not is_instance_valid(progression) \
 			or not is_instance_valid(wallet) or not is_instance_valid(health):
@@ -80,7 +77,6 @@ func configure(
 	var session: RefCounted = DevilShopSessionScript.new()
 	if not bool(session.call("configure", loadout, progression, wallet, health)):
 		return false
-	_disconnect_port_signals()
 	_loadout = loadout
 	_progression = progression
 	_wallet = wallet
@@ -93,6 +89,25 @@ func configure(
 	_reset_chips()
 	_refresh_battle_health_hud()
 	return true
+
+
+func unconfigure() -> void:
+	clear_run_presentation()
+	_disconnect_port_signals()
+	_loadout = null
+	_progression = null
+	_wallet = null
+	_health = null
+	devil_shop_session = null
+	_configured = false
+	_pending_skill_offer_id = &""
+	_purchases_disabled = false
+	_held_delta = 0
+	_scale_state = -1
+	_pending_scale_frame = -1
+	_set_offer_views([])
+	_reset_chips()
+	_refresh_battle_health_hud()
 
 
 func present_shop(token: RunFlowToken, shop_kind: StringName) -> bool:
@@ -316,8 +331,6 @@ func _handle_purchase_result(result: RefCounted, completed_offer: DevilShopOffer
 	purchase_completed.emit(completed_offer)
 	offer_changed.emit(get_current_offer())
 	_refresh_battle_health_hud()
-	if get_current_offer() == null:
-		_status_text("DEVIL_SHOP_SOLD_OUT")
 	_refresh_ui()
 	return true
 
@@ -376,36 +389,6 @@ func _minimum_remaining_health() -> int:
 	if _health != null and _health.has_method("minimum_remaining"):
 		return maxi(configured_minimum, int(_health.call("minimum_remaining")))
 	return configured_minimum
-
-
-func _rebase_payment_pan_animations() -> void:
-	if _payment_pan == null or _pan_animation_player == null:
-		return
-	var source_library := _pan_animation_player.get_animation_library(&"")
-	if source_library == null:
-		return
-	var instance_library := source_library.duplicate(true) as AnimationLibrary
-	if instance_library == null:
-		return
-	for animation_name: StringName in instance_library.get_animation_list():
-		var source_animation := instance_library.get_animation(animation_name)
-		instance_library.remove_animation(animation_name)
-		instance_library.add_animation(animation_name, source_animation.duplicate(true) as Animation)
-	_pan_animation_player.remove_animation_library(&"")
-	_pan_animation_player.add_animation_library(&"", instance_library)
-	var initial_y := _payment_pan.position.y
-	for animation_name: StringName in instance_library.get_animation_list():
-		var animation := instance_library.get_animation(animation_name)
-		for track_index in animation.get_track_count():
-			if animation.track_get_path(track_index) != NodePath("PaymentPan:position:y"):
-				continue
-			for key_index in animation.track_get_key_count(track_index):
-				var key_y: float = float(animation.track_get_key_value(track_index, key_index))
-				animation.track_set_key_value(
-					track_index,
-					key_index,
-					initial_y + key_y - PAYMENT_PAN_ANIMATION_REFERENCE_Y
-				)
 
 
 func _connect_port_signals() -> void:
@@ -542,6 +525,7 @@ func _apply_text() -> void:
 
 func _refresh_ui(animate_scale: bool = false) -> void:
 	var offer := get_current_offer()
+	var is_sold_out := offer == null and not offers.is_empty()
 	if _gold_value != null:
 		_gold_value.text = str(gold_chips)
 	if _health_value != null:
@@ -554,7 +538,10 @@ func _refresh_ui(animate_scale: bool = false) -> void:
 		_total_value.text = tr("DEVIL_SHOP_PAYMENT_VALUE") % get_payment_value()
 	if _confirm_button != null:
 		_confirm_button.disabled = not can_confirm_purchase()
+		_confirm_button.text = tr("DEVIL_SHOP_SOLD_OUT") if is_sold_out else tr("DEVIL_SHOP_CONFIRM")
 	if offer == null:
+		if is_sold_out and _status_label != null:
+			_status_label.text = ""
 		if _offer_slot != null:
 			if _offer_slot.has_method("set_offer"):
 				_offer_slot.call("set_offer", null)

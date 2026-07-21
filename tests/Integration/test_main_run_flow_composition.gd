@@ -115,7 +115,8 @@ func test_p3a_composition_shares_scope_random_configs_and_main_runtime_ports_wit
 	assert_true((main.get("read_stat_callable") as Callable).is_valid())
 	assert_eq(controller.current_state().phase, RunState.Phase.IDLE)
 	assert_eq(controller.current_state().run_id, 0, "P3-A must not call start_run")
-	assert_null(main.get_node_or_null("CanvasLayer/NodeChoicePanel"))
+	assert_true(main.get_node_or_null("CanvasLayer/NodeChoicePanel") is NodeChoicePanel)
+	assert_null(main.get("node_choice_panel"), "P3-A 不配置预置 UI")
 	var original_random_id: int = random.get_instance_id()
 	assert_true(main.call("_setup_run_flow_composition", stats, effect_manager))
 	assert_eq(
@@ -137,6 +138,12 @@ func test_p3b_production_wires_all_typed_adapters_and_starts_only_new_flow() -> 
 	var stats: Node = autofree(_stats())
 	var effect_manager: Node = autofree(EffectManagerScript.new())
 	var controller := TrackingRunFlowController.new()
+	var pre_node_panel := main.get_node("CanvasLayer/NodeChoicePanel")
+	var pre_reward_panel := main.get_node("CanvasLayer/DraftRewardPanel")
+	var pre_event_panel := main.get_node("CanvasLayer/RunEventPanel")
+	var pre_devil_shop := main.get_node("CanvasLayer/DevilShop")
+	var pre_inventory := main.get_node("InventoryPanel")
+	var pre_shop := main.get_node("Shop")
 
 	assert_true(main.call(
 		"_setup_run_flow",
@@ -159,6 +166,12 @@ func test_p3b_production_wires_all_typed_adapters_and_starts_only_new_flow() -> 
 	var devil_shop: DevilShop = main.get("devil_shop") as DevilShop
 	assert_not_null(adapter)
 	assert_true(adapter.is_configured())
+	assert_eq(node_panel, pre_node_panel)
+	assert_eq(reward_panel, pre_reward_panel)
+	assert_eq(event_panel, pre_event_panel)
+	assert_eq(devil_shop, pre_devil_shop)
+	assert_eq(inventory, pre_inventory)
+	assert_eq(normal_shop, pre_shop)
 	assert_eq(reward_panel.get("_loadout"), scope.loadout)
 	assert_eq(event_panel.get("_wallet"), scope.wallet)
 	assert_eq(inventory.get("_loadout"), scope.loadout)
@@ -204,11 +217,68 @@ func test_p3b_production_wires_all_typed_adapters_and_starts_only_new_flow() -> 
 
 	main.call("_dispose_run_flow_composition")
 	_assert_composition_cleared(main)
-	assert_null(main.get_node_or_null("CanvasLayer/NodeChoicePanel"))
-	assert_null(main.get_node_or_null("CanvasLayer/DraftRewardPanel"))
-	assert_null(main.get_node_or_null("CanvasLayer/RunEventPanel"))
-	assert_null(main.get_node_or_null("CanvasLayer/DevilShop"))
-	assert_null(main.get_node_or_null("InventoryPanel"))
+	assert_eq(main.get_node_or_null("CanvasLayer/NodeChoicePanel"), pre_node_panel)
+	assert_eq(main.get_node_or_null("CanvasLayer/DraftRewardPanel"), pre_reward_panel)
+	assert_eq(main.get_node_or_null("CanvasLayer/RunEventPanel"), pre_event_panel)
+	assert_eq(main.get_node_or_null("CanvasLayer/DevilShop"), pre_devil_shop)
+	assert_eq(main.get_node_or_null("InventoryPanel"), pre_inventory)
+	assert_eq(main.get_node_or_null("Shop"), pre_shop)
+	assert_null(reward_panel.get("_loadout"))
+	assert_null(event_panel.get("_wallet"))
+	assert_null(inventory.get("_loadout"))
+	assert_null(normal_shop.get("_wallet"))
+	assert_null(devil_shop.get("_health"))
+
+
+func test_dispose_then_second_run_reuses_preplaced_ui_without_old_bindings() -> void:
+	var main: Node = autofree(MainScene.instantiate())
+	main.set("skill_controller", main.get_node("SkillController") as SkillController)
+	main.set("active_skill_slot", main.get_node("CanvasLayer/SkillSlot") as ActiveSkillSlot)
+	var stats: Node = autofree(_stats())
+	var effect_manager: Node = autofree(EffectManagerScript.new())
+	var ui_paths: Array[NodePath] = [
+		^"CanvasLayer/NodeChoicePanel", ^"CanvasLayer/DraftRewardPanel",
+		^"CanvasLayer/RunEventPanel", ^"CanvasLayer/DevilShop",
+		^"Shop", ^"InventoryPanel",
+	]
+	var original_ids: Array[int] = []
+	for path: NodePath in ui_paths:
+		original_ids.append(main.get_node(path).get_instance_id())
+
+	assert_true(main.call(
+		"_setup_run_flow", stats, effect_manager,
+		{&"run_flow_controller": TrackingRunFlowController.new()}
+	))
+	var inventory := main.get("inventory_panel") as InventoryPanel
+	var upgrade_dialog := main.get_node(
+		"InventoryPanel/UI/SkillReplaceDialog"
+	) as SkillReplaceDialog
+	assert_eq(inventory.get("_upgrade_dialog"), upgrade_dialog)
+	var stale_item := Item.new()
+	watch_signals(upgrade_dialog)
+	upgrade_dialog.set("_pending_skill", stale_item)
+	upgrade_dialog.set("_pending_upgrade", stale_item)
+	upgrade_dialog.set("_upgrade_notice_active", true)
+	upgrade_dialog.show()
+	main.call("_dispose_run_flow_composition")
+	assert_null(upgrade_dialog.get("_pending_skill"))
+	assert_null(upgrade_dialog.get("_pending_upgrade"))
+	assert_false(bool(upgrade_dialog.get("_upgrade_notice_active")))
+	assert_false(upgrade_dialog.visible)
+	upgrade_dialog.call("_on_confirm_pressed")
+	assert_signal_not_emitted(upgrade_dialog, &"confirmed")
+	assert_signal_not_emitted(upgrade_dialog, &"upgrade_confirmed")
+	assert_signal_not_emitted(upgrade_dialog, &"upgrade_notice_dismissed")
+	assert_true(main.call(
+		"_setup_run_flow", stats, effect_manager,
+		{&"run_flow_controller": TrackingRunFlowController.new()}
+	))
+	for index: int in range(ui_paths.size()):
+		assert_eq(main.get_node(ui_paths[index]).get_instance_id(), original_ids[index])
+	var scope: RunScope = main.get("run_scope") as RunScope
+	assert_eq((main.get("draft_reward_panel") as DraftRewardPanel).get("_loadout"), scope.loadout)
+	assert_eq((main.get("run_event_panel") as RunEventPanel).get("_wallet"), scope.wallet)
+	assert_eq((main.get("inventory_panel") as InventoryPanel).get("_progression"), scope.progression)
 
 
 func test_controller_configure_failure_rolls_back_every_owned_component_and_created_scope() -> void:
@@ -378,4 +448,3 @@ func _stats() -> Node:
 		"sell_price_multiplier": 0.5,
 	})
 	return stats
-

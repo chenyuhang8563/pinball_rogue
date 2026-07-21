@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://bx6h7a1u1u7xb"]
 
 [ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/item_icon_view.tscn" id="1_item_icon_view"]
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_xqyry"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1jgv4"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -51,7 +52,6 @@ border_width_bottom = 1
 border_color = Color(0.55, 0.53, 0.47, 1)
 
 [node name="Inventory" type="VBoxContainer" unique_id=933844377]
-anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -61,6 +61,7 @@ offset_right = -8.0
 offset_bottom = -8.0
 grow_horizontal = 2
 grow_vertical = 0
+theme = ExtResource("1_xqyry")
 theme_override_constants/separation = 4
 
 [node name="MarbleBox" type="HBoxContainer" parent="." unique_id=1545657071]

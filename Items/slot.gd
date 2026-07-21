@@ -35,7 +35,7 @@ func get_offer_presentation_state() -> StringName:
 
 
 func _clear_offer_content() -> void:
-	for node_name: String in ["Price", "OriginalPrice", "Title", "Type"]:
+	for node_name: String in ["Price", "OriginalCurrency", "OriginalPrice", "Title", "Type"]:
 		var label := get_node_or_null(node_name) as Label
 		if label != null:
 			label.text = ""
@@ -52,7 +52,7 @@ func _refresh_offer_presentation() -> void:
 	var original_price_label := get_node_or_null("OriginalPrice") as Label
 	var is_discounted: bool = is_upgrade and int(offer.original_price) > int(offer.price)
 	if original_price_label != null:
-		original_price_label.text = "$ " + str(offer.original_price) if is_discounted else ""
+		original_price_label.text = str(offer.original_price) if is_discounted else ""
 	var presentation := get_node_or_null("OfferPresentationAnimation") as AnimationPlayer
 	if presentation != null:
 		var animation_name: StringName = &"discounted" if is_discounted else &"regular"

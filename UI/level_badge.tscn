@@ -1,8 +1,10 @@
-[gd_scene format=3]
+[gd_scene format=3 uid="uid://c52df068xmdlv"]
 
-[node name="LevelBadge" type="Label"]
-layout_mode = 0
-anchors_preset = 12
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_ci71y"]
+[ext_resource type="LabelSettings" uid="uid://lh0stpthpths" path="res://Themes/Fonts/level_badge_10.tres" id="2_ci71y"]
+
+[node name="LevelBadge" type="Label" unique_id=307571500]
+z_index = 10
 anchor_left = 1.0
 anchor_top = 1.0
 anchor_right = 1.0
@@ -13,8 +15,7 @@ offset_right = -1.0
 offset_bottom = -1.0
 grow_horizontal = 0
 grow_vertical = 0
-mouse_filter = 2
-z_index = 10
+theme = ExtResource("1_ci71y")
+label_settings = ExtResource("2_ci71y")
 horizontal_alignment = 2
 vertical_alignment = 2
-

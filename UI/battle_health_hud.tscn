@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://bbpoxb65e2l6d"]
 
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_fhvtm"]
 [ext_resource type="Script" uid="uid://chim3ilwxgpw0" path="res://UI/battle_health_hud.gd" id="1_hud"]
 [ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="2_label"]
 [ext_resource type="PackedScene" uid="uid://c4sf4r73fwjvw" path="res://Items/heart.tscn" id="3_heart"]
@@ -12,6 +13,7 @@ anchors_preset = 0
 offset_right = 92.0
 offset_bottom = 52.0
 mouse_filter = 2
+theme = ExtResource("1_fhvtm")
 script = ExtResource("1_hud")
 
 [node name="ResourceRows" type="VBoxContainer" parent="." unique_id=2089716243]
@@ -33,7 +35,7 @@ custom_minimum_size = Vector2(18, 18)
 layout_mode = 2
 mouse_filter = 2
 
-[node name="Heart" type="AnimatedSprite2D" parent="ResourceRows/HealthRow/IconSlot" unique_id=1248334842 instance=ExtResource("3_heart")]
+[node name="Heart" parent="ResourceRows/HealthRow/IconSlot" unique_id=1248334842 instance=ExtResource("3_heart")]
 position = Vector2(0, 2)
 centered = false
 

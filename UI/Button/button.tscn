@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cw8fwpo32tf10"]
 
 [ext_resource type="Theme" uid="uid://dyyi8m07c16qi" path="res://Themes/button.tres" id="1_n4tde"]
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_q4jru"]
 [ext_resource type="Script" uid="uid://dfq68uip3ksb4" path="res://UI/Button/button.gd" id="5_4amfo"]
 
 [node name="Control" type="Control" unique_id=1307538423]
@@ -8,6 +9,7 @@ layout_mode = 3
 anchors_preset = 0
 offset_right = 40.0
 offset_bottom = 40.0
+theme = ExtResource("1_q4jru")
 
 [node name="Button" type="Button" parent="." unique_id=1684730684]
 layout_mode = 0

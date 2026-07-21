@@ -8,9 +8,6 @@ signal node_choice_intent(
 )
 signal terminal_acknowledge_intent(token: RunFlowToken)
 
-const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
-const UI_FONT_SIZE: int = 12
-
 var _active_offer: RunNodeOffer = null
 var _terminal_token: RunFlowToken = null
 var _choices: Array[RunNodeChoice] = []
@@ -21,7 +18,6 @@ var _button_row: HBoxContainer = null
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	_bind_nodes()
 	_connect_localization()
 	_connect_buttons()
@@ -116,7 +112,6 @@ func _render_offer() -> void:
 func _bind_nodes() -> void:
 	if _button_row != null:
 		return
-	mouse_filter = Control.MOUSE_FILTER_STOP
 	_title_label = get_node_or_null("Center/Panel/MarginContainer/Layout/TitleLabel") as Label
 	_desc_label = get_node_or_null("Center/Panel/MarginContainer/Layout/DescriptionLabel") as Label
 	_button_row = get_node_or_null("Center/Panel/MarginContainer/Layout/ButtonRow") as HBoxContainer
@@ -126,7 +121,6 @@ func _bind_nodes() -> void:
 	for child: Node in _button_row.get_children():
 		if child is Button:
 			var button: Button = child as Button
-			_apply_button_font(button)
 			_buttons.append(button)
 
 
@@ -139,10 +133,6 @@ func _connect_buttons() -> void:
 
 func _has_required_nodes() -> bool:
 	return _title_label != null and _button_row != null and not _buttons.is_empty()
-
-
-func _apply_button_font(button: Button) -> void:
-	UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
 
 
 func _set_tree_paused(paused: bool) -> void:

@@ -46,7 +46,9 @@ Bootstrap 组合已可视化：四个运行时 Bootstrap 节点（BattleSpawner/
 
 ## Phase 7 注意事项
 
-- Phase 7 = UI presentation、构建与字体治理：所有 UI 场景用 `quaver_fusion_10.tres`/`quaver_fusion_12.tres` 复合字体；禁止 8/9/11px 与 Fusion Pixel 8px 派生资源；UI 结构 100% 由 .tscn 定义、代码不设置 UI 属性；**需通过 Hastur MCP 在编辑器搭建/验证 UI**——请先确保 Godot 编辑器（含 Hastur 插件）已连接（当前无 executor）。
+- Phase 7 = UI presentation、构建与字体治理：普通 UI 只允许 10px/12px；除 Devil Shop 底部 reward button 外，禁止 8/9/11px 与 Fusion Pixel 8px 派生资源。英文与数字使用 `quaver.ttf`，中文使用对应字号的 Fusion Pixel；中英混排统一通过 `quaver_fusion_10.tres`/`quaver_fusion_12.tres` 复合字体实现（Quaver 为主字体、Fusion Pixel 为中文 fallback）。UI 结构 100% 由 `.tscn` 定义；代码不得设置位置、大小、颜色、字体、间距等 UI 属性，仅允许根据运行时状态控制 UI 显隐。**需通过 Hastur MCP 在编辑器搭建/验证 UI**——请先确保 Godot 编辑器（含 Hastur 插件）已连接。
+- 全量审计 title 类型文本的字体主线，不限于当前已知遗漏：节点选择标题“选择下个节点”、升级标题“选择一个物品升级”和“技能”等。所有普通 UI 的 Label、RichTextLabel、Button 及主题覆盖均需接入对应的 10px/12px 复合字体资源。例外仅有两类：漂浮伤害数字继续使用 `quaver.ttf` 16px；Devil Shop 底部 reward button 可保留例外字号，但仍使用 Quaver 主字体、Fusion Pixel 中文 fallback 的复合字体。
+- 将蓝色边框的 UI 窗口统一改为黑色基调，参考节点选择框的普通搭配；不增加额外装饰色。Devil Shop 的 UI 框保持原样，仅处理其他蓝色窗口。
 - 将 `_setup_run_flow` 中动态 instantiate 的 UI（NodeChoice/DraftReward/RunEvent/DevilShop/Shop/Inventory/FloorHud）迁移为主场景预置节点；届时更新 `test_main_run_flow_composition` 中「尚不存在 NodeChoicePanel」「dispose 后 UI 路径为空」等断言为「存在但未配置/未呈现」。
 - 保持 Bootstrap 不变式：UI 预置不得改变 configure 顺序与单向依赖（Effect→Buff）；`_resolve_composition_node` 仅用于 Bootstrap 四节点，UI 预置另行处理。
 - 停止条件（沿用台账）：UI 属性出现在代码、字号违规、Missing Script/Resource、focused/full GUT 卡住或失败时，停在当前 checkpoint 先消除风险。

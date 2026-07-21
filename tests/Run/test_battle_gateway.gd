@@ -70,6 +70,20 @@ func test_real_level_uses_fixed_zone_and_session_as_only_completion_source() -> 
 	)
 
 
+func test_force_complete_uses_the_normal_session_completion_signal() -> void:
+	watch_signals(_gateway)
+	var plan: BattlePlan = _real_level_plan(&"battle:debug_skip", 1)
+	var token := RunFlowToken.new(11, 2, 3)
+
+	assert_true(_gateway.start(plan, token))
+	assert_true(_gateway.force_complete_current_battle())
+	assert_signal_emitted_with_parameters(
+		_gateway, "battle_completed", [token, plan.battle_id, plan]
+	)
+	assert_null(_gateway._active_plan)
+	assert_null(_gateway._active_token)
+
+
 func test_real_level_zero_entry_completes_synchronously_and_start_returns_true() -> void:
 	watch_signals(_gateway)
 	var plan: BattlePlan = _real_level_plan(&"battle:zero", 0)

@@ -1,15 +1,20 @@
 [gd_scene format=3 uid="uid://dswyin2csgpeb"]
 
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_absai"]
 [ext_resource type="Script" uid="uid://ccdngv3yeudy5" path="res://UI/node_choice_panel.gd" id="1_script"]
-[ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="2_label_settings"]
+[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="3_absai"]
+[ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="4_80hrq"]
 
 [node name="NodeChoicePanel" type="Control" unique_id=1365636953]
+process_mode = 3
+visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_absai")
 script = ExtResource("1_script")
 
 [node name="Backdrop" type="ColorRect" parent="." unique_id=1578587288]
@@ -48,7 +53,7 @@ theme_override_constants/separation = 4
 custom_minimum_size = Vector2(0, 32)
 layout_mode = 2
 size_flags_vertical = 6
-label_settings = ExtResource("2_label_settings")
+label_settings = ExtResource("3_absai")
 horizontal_alignment = 1
 
 [node name="ButtonRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout" unique_id=376217603]
@@ -59,14 +64,20 @@ theme_override_constants/separation = 4
 [node name="ChoiceButton1" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1931518382]
 custom_minimum_size = Vector2(66, 64)
 layout_mode = 2
+theme_override_fonts/font = ExtResource("4_80hrq")
+theme_override_font_sizes/font_size = 12
 autowrap_mode = 3
 
 [node name="ChoiceButton2" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=484789334]
 custom_minimum_size = Vector2(66, 64)
 layout_mode = 2
+theme_override_fonts/font = ExtResource("4_80hrq")
+theme_override_font_sizes/font_size = 12
 autowrap_mode = 3
 
 [node name="ChoiceButton3" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1427743890]
 custom_minimum_size = Vector2(66, 64)
 layout_mode = 2
+theme_override_fonts/font = ExtResource("4_80hrq")
+theme_override_font_sizes/font_size = 12
 autowrap_mode = 3

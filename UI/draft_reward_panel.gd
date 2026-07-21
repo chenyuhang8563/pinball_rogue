@@ -12,9 +12,7 @@ signal reward_replacement_intent(
 	confirmed: bool
 )
 
-const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
 const RewardTooltipButtonScript: Script = preload("res://UI/reward_tooltip_button.gd")
-const UI_FONT_SIZE: int = 12
 const CoinTexture: Texture2D = preload("res://Assets/Items/Coin.png")
 
 var _active_offer: RewardOffer = null
@@ -37,6 +35,7 @@ func configure(
 	_progression: RefCounted = null,
 	_wallet: RefCounted = null
 ) -> bool:
+	unconfigure()
 	if loadout == null or not is_instance_valid(loadout) \
 			or not loadout.has_method(&"current_skill"):
 		return false
@@ -44,8 +43,12 @@ func configure(
 	return true
 
 
+func unconfigure() -> void:
+	clear_presentation()
+	_loadout = null
+
+
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	_bind_nodes()
 	_connect_localization()
 	_connect_buttons()
@@ -236,7 +239,6 @@ func _play_button_visibility(button: Button, should_show: bool) -> void:
 func _bind_nodes() -> void:
 	if _button_row != null:
 		return
-	mouse_filter = Control.MOUSE_FILTER_STOP
 	_title_label = get_node_or_null("Center/Panel/MarginContainer/Layout/TitleLabel") as Label
 	_button_row = get_node_or_null("Center/Panel/MarginContainer/Layout/ButtonRow") as HBoxContainer
 	_skill_replace_dialog = get_node_or_null("SkillReplaceDialog") as SkillReplaceDialog
@@ -248,7 +250,6 @@ func _bind_nodes() -> void:
 		if not child is Button:
 			continue
 		var button: Button = child as Button
-		UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
 		_buttons.append(button)
 		_button_icons.append(button.get_node_or_null("ItemIcon") as TextureRect)
 

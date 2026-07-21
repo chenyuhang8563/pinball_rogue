@@ -17,7 +17,6 @@ var _upgrade_notice_active: bool = false
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	_confirm_button.pressed.connect(_on_confirm_pressed)
 	_cancel_button.pressed.connect(_on_cancel_pressed)
 
@@ -35,6 +34,17 @@ func request_replace(current_skill: Item, new_skill: Item) -> void:
 
 func is_request_pending() -> bool:
 	return _pending_skill != null
+
+
+func reset_pending() -> void:
+	_pending_skill = null
+	_pending_upgrade = null
+	_upgrade_notice_active = false
+	if _animation_player != null:
+		_animation_player.play(&"hide_dialog")
+		_animation_player.advance(0.0)
+	else:
+		hide()
 
 
 func cancel_replace_request() -> void:

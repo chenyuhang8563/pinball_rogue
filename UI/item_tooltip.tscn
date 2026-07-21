@@ -1,10 +1,12 @@
 [gd_scene format=3 uid="uid://bo3st3gtuqltq"]
 
 [ext_resource type="Script" uid="uid://cbmpx36u44gqt" path="res://UI/item_tooltip.gd" id="1_fy46f"]
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_l8xvt"]
 [ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="2_lk4ki"]
 
 [node name="ItemTooltip" type="PanelContainer" unique_id=361600324]
 mouse_filter = 2
+theme = ExtResource("1_l8xvt")
 script = ExtResource("1_fy46f")
 
 [node name="TooltipMargin" type="MarginContainer" parent="." unique_id=242335024]

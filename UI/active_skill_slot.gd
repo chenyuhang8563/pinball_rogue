@@ -13,10 +13,6 @@ var _battle_active: bool = false
 var _blocked_by_panel: bool = false
 
 
-func _ready() -> void:
-	mouse_filter = Control.MOUSE_FILTER_STOP
-
-
 func bind_controller(controller: Node) -> void:
 	_controller = controller
 	if _controller == null:

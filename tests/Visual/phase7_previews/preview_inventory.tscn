@@ -1,0 +1,9 @@
+[gd_scene format=3 uid="uid://b53j48tlggiqs"]
+
+[ext_resource type="Script" path="res://tests/Visual/phase7_previews/preview_inventory.gd" id="1_mcggg"]
+[ext_resource type="PackedScene" uid="uid://dgob675lfpkcv" path="res://UI/inventory_panel.tscn" id="2_vhn2i"]
+
+[node name="Phase7Preview" type="Node" unique_id=39635520]
+script = ExtResource("1_mcggg")
+
+[node name="InventoryPanel" parent="." unique_id=600384015 instance=ExtResource("2_vhn2i")]

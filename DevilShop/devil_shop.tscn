@@ -1,5 +1,6 @@
 [gd_scene format=3 uid="uid://d14mlptotnpp8"]
 
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_4s7j1"]
 [ext_resource type="Script" uid="uid://crtevcl2xn060" path="res://DevilShop/devil_shop.gd" id="1_c404g"]
 [ext_resource type="Resource" path="res://DevilShop/default_devil_shop_config.tres" id="2_4s7j1"]
 [ext_resource type="Texture2D" uid="uid://c2suvth5gut5n" path="res://Assets/DevilShop/devil_scale_right_heavy.png" id="3_80nln"]
@@ -10,7 +11,6 @@
 [ext_resource type="PackedScene" uid="uid://c4sf4r73fwjvw" path="res://Items/heart.tscn" id="7_8vsq8"]
 [ext_resource type="Texture2D" uid="uid://xf2y06gxijb1" path="res://Assets/Items/Big Heart Idle (18x14).png" id="8_6q3ay"]
 [ext_resource type="PackedScene" uid="uid://vbkihvbi1c5" path="res://Items/slot.tscn" id="9_c404g"]
-[ext_resource type="FontFile" uid="uid://pvelmkt4bth" path="res://Assets/Fonts/fusion-pixel-10px-proportional-zh_hans.ttf" id="11_c404g"]
 [ext_resource type="FontVariation" uid="uid://bi65xp2y217fg" path="res://Themes/Fonts/quaver_fusion_10.tres" id="12_gwky3"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://UI/skill_replace_dialog.tscn" id="13_ugyp2"]
 [ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://UI/battle_health_hud.tscn" id="14_c404g"]
@@ -137,7 +137,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [181.0]
+"values": [169.0]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -164,7 +164,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.125),
 "transitions": PackedFloat32Array(1, 1),
 "update": 0,
-"values": [181.0, 197.0]
+"values": [169.0, 185.0]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -191,7 +191,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.125),
 "transitions": PackedFloat32Array(1, 1),
 "update": 0,
-"values": [181.0, 165.0]
+"values": [169.0, 153.0]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -218,7 +218,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [197.0]
+"values": [185.0]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -245,7 +245,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.125),
 "transitions": PackedFloat32Array(1, 1),
 "update": 0,
-"values": [197.0, 181.0]
+"values": [185.0, 169.0]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -272,7 +272,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.125, 0.25),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 0,
-"values": [197.0, 181.0, 165.0]
+"values": [185.0, 169.0, 153.0]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -299,7 +299,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0),
 "transitions": PackedFloat32Array(1),
 "update": 0,
-"values": [165.0]
+"values": [153.0]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -326,7 +326,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.125),
 "transitions": PackedFloat32Array(1, 1),
 "update": 0,
-"values": [165.0, 181.0]
+"values": [153.0, 169.0]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -353,7 +353,7 @@ tracks/0/keys = {
 "times": PackedFloat32Array(0, 0.125, 0.25),
 "transitions": PackedFloat32Array(1, 1, 1),
 "update": 0,
-"values": [165.0, 181.0, 197.0]
+"values": [153.0, 169.0, 185.0]
 }
 tracks/1/type = "value"
 tracks/1/imported = false
@@ -383,6 +383,7 @@ _data = {
 
 [node name="DevilShop" type="Control" unique_id=1521257330]
 process_mode = 3
+visible = false
 z_index = 100
 layout_mode = 3
 anchors_preset = 15
@@ -390,6 +391,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_4s7j1")
 script = ExtResource("1_c404g")
 config = ExtResource("2_4s7j1")
 
@@ -447,6 +449,7 @@ theme_override_styles/panel = SubResource("StyleBoxFlat_4iuho")
 
 [node name="OfferSlot" parent="OfferPan" unique_id=89857366 instance=ExtResource("9_c404g")]
 layout_mode = 1
+anchors_preset = 0
 anchor_right = 0.0
 anchor_bottom = 0.0
 offset_left = 0.0
@@ -498,6 +501,7 @@ offset_left = 1.0
 offset_top = 16.0
 offset_right = 19.0
 offset_bottom = 30.0
+theme_override_fonts/font = ExtResource("12_gwky3")
 theme_override_font_sizes/font_size = 10
 theme_override_styles/normal = SubResource("StyleBoxFlat_bfup0")
 text = "-"
@@ -508,6 +512,7 @@ offset_left = 54.0
 offset_top = 16.0
 offset_right = 72.0
 offset_bottom = 30.0
+theme_override_fonts/font = ExtResource("12_gwky3")
 theme_override_font_sizes/font_size = 10
 theme_override_styles/normal = SubResource("StyleBoxFlat_bfup0")
 text = "+"
@@ -544,6 +549,7 @@ offset_left = 1.0
 offset_top = 16.0
 offset_right = 19.0
 offset_bottom = 30.0
+theme_override_fonts/font = ExtResource("12_gwky3")
 theme_override_font_sizes/font_size = 10
 theme_override_styles/normal = SubResource("StyleBoxFlat_bfup0")
 text = "-"
@@ -554,6 +560,7 @@ offset_left = 54.0
 offset_top = 16.0
 offset_right = 72.0
 offset_bottom = 30.0
+theme_override_fonts/font = ExtResource("12_gwky3")
 theme_override_font_sizes/font_size = 10
 theme_override_styles/normal = SubResource("StyleBoxFlat_bfup0")
 text = "+"
@@ -589,7 +596,7 @@ offset_left = 84.0
 offset_top = 22.0
 offset_right = 144.0
 offset_bottom = 46.0
-theme_override_fonts/font = ExtResource("11_c404g")
+theme_override_fonts/font = ExtResource("12_gwky3")
 theme_override_font_sizes/font_size = 8
 theme_override_styles/normal = SubResource("StyleBoxFlat_bfup0")
 
@@ -618,9 +625,6 @@ one_shot = true
 
 [node name="SkillReplaceDialog" parent="." unique_id=1955345262 instance=ExtResource("13_ugyp2")]
 layout_mode = 1
-anchors_preset = 15
-grow_horizontal = 2
-grow_vertical = 2
 
 [node name="PanAnimationPlayer" type="AnimationPlayer" parent="." unique_id=2002699841]
 process_mode = 3

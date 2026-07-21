@@ -105,6 +105,13 @@ func clear(restart: bool = false) -> void:
 		_reset_battle.call()
 
 
+func force_complete_current_battle() -> bool:
+	if not _configured or _session == null or not is_instance_valid(_session) \
+			or _active_plan == null or _active_token == null:
+		return false
+	return _session.force_complete()
+
+
 func dispose() -> void:
 	_clear_runtime(false)
 	_destroy_session()

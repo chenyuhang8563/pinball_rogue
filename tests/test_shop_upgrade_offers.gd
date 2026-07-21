@@ -173,7 +173,11 @@ func test_slot_reports_regular_upgrade_and_discounted_states() -> void:
 	assert_true(level_up.visible)
 	assert_true(original_price.visible)
 	assert_true(discount_slash.visible)
-	assert_eq(original_price.text, "$ 60")
+	assert_eq((slot.get_node("OriginalCurrency") as Label).text, "$")
+	assert_eq(original_price.text, "60")
+	assert_eq(discount_slash.points[0], Vector2(15, 63))
+	assert_eq(discount_slash.points[1], Vector2(32, 75))
+	assert_eq(discount_slash.width, 2.0)
 	assert_eq((slot.get_node("Price") as Label).text, "$ 40")
 
 

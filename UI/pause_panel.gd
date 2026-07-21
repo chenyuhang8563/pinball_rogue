@@ -3,8 +3,6 @@ class_name PausePanel
 
 signal exit_requested
 
-const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
-const UI_FONT_SIZE: int = 12
 const PAUSE_ACTION: StringName = &"pause_game"
 
 @export var quit_on_exit: bool = true
@@ -17,14 +15,11 @@ var _locales: Array[Dictionary] = [
 
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
-	layout_direction = Control.LAYOUT_DIRECTION_LOCALE
 	_ensure_pause_action()
 	_ensure_supported_locale()
 	_connect_localization()
 	_bind_signals()
 	_setup_language_button()
-	_setup_volume_sliders()
 	_apply_text()
 	close_pause()
 
@@ -92,7 +87,6 @@ func _setup_language_button() -> void:
 	if not language_button.item_selected.is_connected(callback):
 		language_button.item_selected.connect(callback)
 	_sync_language_button()
-	_apply_option_button_font(language_button)
 
 
 func _on_language_selected(index: int) -> void:
@@ -108,23 +102,6 @@ func _on_language_selected(index: int) -> void:
 	_sync_language_button()
 
 
-func _setup_volume_sliders() -> void:
-	_configure_volume_placeholder("Center/Panel/MarginContainer/Layout/SettingsPanel/MasterVolumeRow/MasterVolumeSlider")
-	_configure_volume_placeholder("Center/Panel/MarginContainer/Layout/SettingsPanel/MusicVolumeRow/MusicVolumeSlider")
-	_configure_volume_placeholder("Center/Panel/MarginContainer/Layout/SettingsPanel/SfxVolumeRow/SfxVolumeSlider")
-
-
-func _configure_volume_placeholder(path: String) -> void:
-	var slider: HSlider = _node(path) as HSlider
-	if slider == null:
-		return
-	slider.min_value = 0.0
-	slider.max_value = 1.0
-	slider.step = 0.05
-	slider.value = 1.0
-	slider.editable = false
-
-
 func _apply_text() -> void:
 	_set_label_text("Center/Panel/MarginContainer/Layout/TitleLabel", "UI_PAUSE_TITLE")
 	_set_button_text("Center/Panel/MarginContainer/Layout/ButtonRow/ContinueButton", "UI_CONTINUE")
@@ -134,9 +111,6 @@ func _apply_text() -> void:
 	_set_label_text("Center/Panel/MarginContainer/Layout/SettingsPanel/MasterVolumeRow/MasterVolumeLabel", "UI_MASTER_VOLUME")
 	_set_label_text("Center/Panel/MarginContainer/Layout/SettingsPanel/MusicVolumeRow/MusicVolumeLabel", "UI_MUSIC_VOLUME_PLACEHOLDER")
 	_set_label_text("Center/Panel/MarginContainer/Layout/SettingsPanel/SfxVolumeRow/SfxVolumeLabel", "UI_SFX_VOLUME")
-	var language_button: OptionButton = _node("Center/Panel/MarginContainer/Layout/SettingsPanel/LanguageRow/LanguageButton") as OptionButton
-	if language_button != null:
-		_apply_option_button_font(language_button)
 
 
 func _set_label_text(path: String, key: String) -> void:
@@ -144,7 +118,6 @@ func _set_label_text(path: String, key: String) -> void:
 	if label == null:
 		return
 	label.text = tr(key)
-	label.label_settings = _label_settings_for_locale()
 
 
 func _set_button_text(path: String, key: String) -> void:
@@ -152,8 +125,6 @@ func _set_button_text(path: String, key: String) -> void:
 	if button == null:
 		return
 	button.text = tr(key)
-	button.focus_mode = Control.FOCUS_ALL
-	_apply_button_font(button)
 
 
 func _set_settings_visible(should_show: bool) -> void:
@@ -217,18 +188,6 @@ func _current_locale() -> String:
 	if localization != null and localization.has_method("get_locale"):
 		return String(localization.call("get_locale"))
 	return "en" if TranslationServer.get_locale() == "en" else "zh_CN"
-
-
-func _label_settings_for_locale() -> LabelSettings:
-		return UIFontsScript.make_label_settings(UI_FONT_SIZE)
-
-
-func _apply_button_font(button: Button) -> void:
-		UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
-
-
-func _apply_option_button_font(button: OptionButton) -> void:
-		UIFontsScript.apply_option_button_font(button, UI_FONT_SIZE)
 
 
 func _connect_localization() -> void:

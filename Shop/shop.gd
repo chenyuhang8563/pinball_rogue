@@ -1,7 +1,5 @@
 extends Control
 
-const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
-const UI_FONT_SIZE: int = 12
 const NormalShopSessionScript: GDScript = preload("res://Commerce/application/normal_shop_session.gd")
 const NormalShopSaleServiceScript: GDScript = preload("res://Commerce/application/normal_shop_sale_service.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
@@ -62,14 +60,12 @@ var mode: MODE = MODE.OFF:
 				get_tree().paused = false
 
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
 	_bind_optional_nodes()
 	$UI.hide()
 	_connect_localization()
 	_apply_text()
 	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
 	if exit_button != null and not exit_button.pressed.is_connected(close_shop):
-		_apply_button_label_settings(exit_button)
 		exit_button.pressed.connect(close_shop)
 	_connect_collection_slot_inputs()
 	_connect_skill_replace_dialog()
@@ -130,10 +126,6 @@ func clear_run_presentation() -> void:
 	mode = MODE.OFF
 
 
-func _apply_button_label_settings(button: Button) -> void:
-	UIFontsScript.apply_button_font(button, UI_FONT_SIZE)
-
-
 func _apply_text() -> void:
 	var title_label: Label = get_node_or_null("UI/Panel/Label") as Label
 	if title_label != null:
@@ -141,7 +133,6 @@ func _apply_text() -> void:
 	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
 	if exit_button != null:
 		exit_button.text = tr("UI_EXIT")
-		_apply_button_label_settings(exit_button)
 
 func sell_item(item: Item) -> bool:
 	return _sell_item(item)
@@ -221,6 +212,7 @@ func _on_skill_progressed(_skill_id: String, _level: int) -> void:
 
 
 func configure(loadout: RefCounted, progression: RefCounted, wallet: RefCounted) -> bool:
+	unconfigure()
 	if not _has_port_api(loadout, [
 		&"find_owned", &"can_add", &"add", &"remove", &"replace_skill", &"current_skill",
 		&"revision", &"marbles", &"relics", &"skills",
@@ -231,19 +223,11 @@ func configure(loadout: RefCounted, progression: RefCounted, wallet: RefCounted)
 		&"debit", &"credit", &"revision",
 	]):
 		return false
-	if loadout == _loadout and progression == _progression and wallet == _wallet \
-			and normal_shop_session != null and normal_shop_sale_service != null:
-		_connect_port_signals()
-		_on_wallet_changed(gold)
-		refresh_collection_rows()
-		return true
 	var session: RefCounted = NormalShopSessionScript.new()
 	var sale_service: RefCounted = NormalShopSaleServiceScript.new()
 	if not bool(session.call("configure", loadout, progression, wallet)) \
 			or not bool(sale_service.call("configure", loadout, progression, wallet)):
 		return false
-	cancel_pending_skill_purchase()
-	_disconnect_port_signals()
 	_loadout = loadout
 	_progression = progression
 	_wallet = wallet
@@ -253,6 +237,18 @@ func configure(loadout: RefCounted, progression: RefCounted, wallet: RefCounted)
 	_on_wallet_changed(gold)
 	refresh_collection_rows()
 	return true
+
+
+func unconfigure() -> void:
+	clear_run_presentation()
+	_disconnect_port_signals()
+	_loadout = null
+	_progression = null
+	_wallet = null
+	normal_shop_session = null
+	normal_shop_sale_service = null
+	_set_presentation_offers([])
+	refresh_collection_rows()
 
 
 ## Purchases an upgrade quote using the runtime dependencies resolved from the active run.

@@ -46,4 +46,3 @@ func _apply_orbit_radius() -> void:
 	var arrow: Sprite2D = get_node_or_null("Arrow") as Sprite2D
 	if arrow != null:
 		arrow.position = Vector2(orbit_radius, 0.0)
-

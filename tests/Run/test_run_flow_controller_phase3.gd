@@ -55,6 +55,12 @@ class FakeGateway extends BattleGateway:
 		active_plan = null
 		active_token = null
 
+	func force_complete_current_battle() -> bool:
+		if active_plan == null or active_token == null:
+			return false
+		complete_active()
+		return true
+
 	func complete_active() -> void:
 		if active_plan == null or active_token == null:
 			return
@@ -120,6 +126,25 @@ func test_normal_and_elite_battles_route_by_plan_reward_policy() -> void:
 	assert_true(_claim_all_rewards(controller))
 	assert_eq(controller.current_state().phase, RunState.Phase.CHOOSING_NODE)
 	assert_eq(controller.current_state().floor_number, 3)
+
+
+func test_skip_current_battle_routes_through_normal_reward_once() -> void:
+	var fixture := _fixture()
+	var controller := fixture.controller as RunFlowController
+	var gateway := fixture.gateway as FakeGateway
+	var completed_ids: Array[StringName] = []
+	controller.battle_completed.connect(func(_token: RunFlowToken, _id: StringName, _plan: BattlePlan) -> void:
+		completed_ids.append(_id)
+	)
+
+	assert_true(controller.start_run())
+	assert_true(controller.skip_current_battle())
+	assert_eq(completed_ids.size(), 1)
+	assert_eq(controller.current_state().phase, RunState.Phase.REWARD_ACTIVE)
+	assert_not_null(controller.current_reward_offer())
+	assert_false(controller.skip_current_battle())
+	assert_eq(completed_ids.size(), 1)
+	assert_null(gateway.active_plan)
 
 
 func test_event_escape_fight_and_result_routes_are_table_driven() -> void:

@@ -1,10 +1,12 @@
 [gd_scene format=3 uid="uid://dgob675lfpkcv"]
 
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_cead4"]
 [ext_resource type="Script" uid="uid://bjfai71a1nsp2" path="res://UI/inventory_panel.gd" id="1_inventory_panel"]
 [ext_resource type="PackedScene" uid="uid://bx6h7a1u1u7xb" path="res://Inventory/inventory.tscn" id="2_collection_rows"]
-[ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="3_label_settings"]
+[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="3_jc538"]
+[ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="4_cead4"]
 [ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/item_icon_view.tscn" id="4_item_icon_view"]
-[ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/item_icon_view.gd" id="5_3ouoh"]
+[ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://UI/skill_replace_dialog.tscn" id="7_cead4"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -15,14 +17,16 @@ border_width_bottom = 1
 border_color = Color(0.55, 0.53, 0.47, 1)
 
 [node name="InventoryPanel" type="Control" unique_id=600384015 node_paths=PackedStringArray("marble_box_container", "relic_bar_container", "skill_bar_container")]
+process_mode = 3
+layout_direction = 1
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_cead4")
 script = ExtResource("1_inventory_panel")
-skill_slot_count = 1
 marble_box_container = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/MarbleBox")
 relic_bar_container = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/RelicBar")
 skill_bar_container = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillBar")
@@ -66,12 +70,14 @@ theme_override_constants/separation = 8
 layout_mode = 2
 size_flags_horizontal = 3
 text = "UI_INVENTORY_TITLE"
-label_settings = ExtResource("3_label_settings")
+label_settings = ExtResource("3_jc538")
 horizontal_alignment = 1
 
 [node name="ExitButton" type="Button" parent="UI/Panel/MarginContainer/Layout/Header" unique_id=1745584153]
 custom_minimum_size = Vector2(48, 24)
 layout_mode = 2
+theme_override_fonts/font = ExtResource("4_cead4")
+theme_override_font_sizes/font_size = 12
 text = "UI_EXIT"
 
 [node name="Content" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout" unique_id=980932436]
@@ -79,14 +85,13 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="CollectionRows" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=1594412291 instance=ExtResource("2_collection_rows")]
+[node name="CollectionRows" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=1594412291 instance=ExtResource("2_collection_rows")]
 layout_mode = 2
-theme_override_constants/separation = 4
 
 [node name="SkillLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=324016682]
 layout_mode = 2
 text = "UI_SKILLS_TITLE"
-label_settings = ExtResource("3_label_settings")
+label_settings = ExtResource("3_jc538")
 
 [node name="SkillBar" type="HBoxContainer" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=1031896319]
 layout_mode = 2
@@ -99,13 +104,12 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
 
-[node name="Icon" type="Control" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot1" unique_id=1818088685 instance=ExtResource("4_item_icon_view")]
-custom_minimum_size = Vector2(32, 32)
+[node name="Icon" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot1" unique_id=1818088685 instance=ExtResource("4_item_icon_view")]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
-mouse_filter = 2
-script = ExtResource("5_3ouoh")
+
+[node name="SkillReplaceDialog" parent="UI" unique_id=1955345262 instance=ExtResource("7_cead4")]

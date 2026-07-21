@@ -1,26 +1,23 @@
 [gd_scene format=3 uid="uid://cbbk5l2e1na0y"]
 
 [ext_resource type="Script" uid="uid://bsino3h1ad0fx" path="res://Main/main.gd" id="1_eunhr"]
-[ext_resource type="Script" uid="uid://chim3ilwxgpw0" path="res://UI/battle_health_hud.gd" id="3_qac2q"]
-[ext_resource type="Script" uid="uid://dttqxe5m3lg7o" path="res://UI/pause_panel.gd" id="5_o60nc"]
+[ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="4_0gq1e"]
+[ext_resource type="PackedScene" uid="uid://cuipdvkqf8lx4" path="res://UI/floor_hud.tscn" id="6_guo5i"]
 [ext_resource type="PackedScene" uid="uid://d3qrynyba4t0p" path="res://UI/active_skill_slot.tscn" id="6_qac2q"]
-[ext_resource type="Script" uid="uid://bdw7uutgq4qwi" path="res://UI/active_skill_slot.gd" id="7_f3gf5"]
+[ext_resource type="PackedScene" uid="uid://dswyin2csgpeb" path="res://UI/node_choice_panel.tscn" id="7_0gq1e"]
 [ext_resource type="Script" uid="uid://5h58at066d5s" path="res://Skills/skill_controller.gd" id="8_f3gf5"]
 [ext_resource type="PackedScene" uid="uid://dic0ihi3nvfwv" path="res://UI/run_failure_panel.tscn" id="8_rix8b"]
-[ext_resource type="Script" uid="uid://w70j7g05bq8a" path="res://UI/run_failure_panel.gd" id="9_0jx5h"]
+[ext_resource type="PackedScene" uid="uid://dry577g502x3m" path="res://UI/draft_reward_panel.tscn" id="8_wbdht"]
+[ext_resource type="PackedScene" uid="uid://8sb7obwvywf4" path="res://UI/run_event_panel.tscn" id="9_puekb"]
+[ext_resource type="PackedScene" uid="uid://d14mlptotnpp8" path="res://DevilShop/devil_shop.tscn" id="10_xi84t"]
 [ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://UI/battle_health_hud.tscn" id="11_health"]
 [ext_resource type="PackedScene" uid="uid://bfiq2ule5s2x8" path="res://UI/pause_panel.tscn" id="12_pause"]
+[ext_resource type="PackedScene" uid="uid://btv3xval8rmxu" path="res://UI/debug_grant_panel.tscn" id="14_uhr2j"]
+[ext_resource type="PackedScene" uid="uid://fjioorpo70mx" path="res://Shop/shop.tscn" id="16_j4inf"]
+[ext_resource type="PackedScene" uid="uid://dgob675lfpkcv" path="res://UI/inventory_panel.tscn" id="17_nf7xu"]
 [ext_resource type="Script" uid="uid://bf7et742rbw7a" path="res://Run/battle_spawner.gd" id="20_spawner"]
 [ext_resource type="Script" uid="uid://c50047c5576eg" path="res://Run/battle_gateway.gd" id="21_gateway"]
 [ext_resource type="Script" uid="uid://d3dwc01dyf7e7" path="res://Run/run_flow_controller.gd" id="22_controller"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jcs3y"]
-bg_color = Color(0.08, 0.08, 0.1, 0.92)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.42, 0.5, 0.78, 1)
 
 [node name="Main" type="Node2D" unique_id=1204434413]
 script = ExtResource("1_eunhr")
@@ -30,58 +27,52 @@ metadata/_edit_horizontal_guides_ = [208.0]
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1475341812]
 
-[node name="BattleHealthHud" type="Control" parent="CanvasLayer" unique_id=1820331821 instance=ExtResource("11_health")]
-process_mode = 3
-layout_mode = 3
-anchors_preset = 0
-offset_right = 92.0
-offset_bottom = 52.0
-mouse_filter = 2
-script = ExtResource("3_qac2q")
+[node name="BattleHealthHud" parent="CanvasLayer" unique_id=1820331821 instance=ExtResource("11_health")]
 
-[node name="PausePanel" type="Control" parent="CanvasLayer" unique_id=1639927173 instance=ExtResource("12_pause")]
-process_mode = 3
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 1
-script = ExtResource("5_o60nc")
+[node name="PausePanel" parent="CanvasLayer" unique_id=1639927173 instance=ExtResource("12_pause")]
 
 [node name="Label" type="Label" parent="CanvasLayer" unique_id=1125416496]
 offset_right = 40.0
 offset_bottom = 23.0
+label_settings = ExtResource("4_0gq1e")
 
-[node name="SkillSlot" type="Panel" parent="CanvasLayer" unique_id=1931073303 instance=ExtResource("6_qac2q")]
-custom_minimum_size = Vector2(32, 32)
+[node name="SkillSlot" parent="CanvasLayer" unique_id=1931073303 instance=ExtResource("6_qac2q")]
 offset_left = 200.0
 offset_top = 272.0
 offset_right = 232.0
 offset_bottom = 304.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_jcs3y")
-script = ExtResource("7_f3gf5")
 
-[node name="RunFailurePanel" type="Control" parent="CanvasLayer" unique_id=564021983 instance=ExtResource("8_rix8b")]
-process_mode = 3
-visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-script = ExtResource("9_0jx5h")
+[node name="RunFailurePanel" parent="CanvasLayer" unique_id=564021983 instance=ExtResource("8_rix8b")]
+
+[node name="FloorHud" parent="CanvasLayer" unique_id=1993045688 instance=ExtResource("6_guo5i")]
+
+[node name="NodeChoicePanel" parent="CanvasLayer" unique_id=1365636953 instance=ExtResource("7_0gq1e")]
+
+[node name="DraftRewardPanel" parent="CanvasLayer" unique_id=1712510819 instance=ExtResource("8_wbdht")]
+
+[node name="RunEventPanel" parent="CanvasLayer" unique_id=1407412393 instance=ExtResource("9_puekb")]
+
+[node name="DevilShop" parent="CanvasLayer" unique_id=1521257330 instance=ExtResource("10_xi84t")]
 
 [node name="SkillController" type="Node" parent="." unique_id=1382697519]
 script = ExtResource("8_f3gf5")
 
-[node name="BattleSpawner" type="Node" parent="."]
+[node name="BattleSpawner" type="Node" parent="." unique_id=1603146276]
 script = ExtResource("20_spawner")
 
-[node name="Enemies" type="Node2D" parent="."]
+[node name="Enemies" type="Node2D" parent="." unique_id=805996790]
 
-[node name="BattleGateway" type="Node" parent="."]
+[node name="BattleGateway" type="Node" parent="." unique_id=991377658]
 script = ExtResource("21_gateway")
 
-[node name="RunFlowController" type="Node" parent="."]
+[node name="RunFlowController" type="Node" parent="." unique_id=303479558]
 script = ExtResource("22_controller")
+
+[node name="DebugCanvasLayer" type="CanvasLayer" parent="." unique_id=423046981]
+layer = 20
+
+[node name="DebugGrantPanel" parent="DebugCanvasLayer" unique_id=719130094 instance=ExtResource("14_uhr2j")]
+
+[node name="Shop" parent="." unique_id=395620655 instance=ExtResource("16_j4inf")]
+
+[node name="InventoryPanel" parent="." unique_id=600384015 instance=ExtResource("17_nf7xu")]

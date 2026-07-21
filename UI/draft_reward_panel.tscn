@@ -1,10 +1,11 @@
 [gd_scene format=3 uid="uid://dry577g502x3m"]
 
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_cj858"]
 [ext_resource type="Script" uid="uid://py1m8dh3ltnk" path="res://UI/draft_reward_panel.gd" id="1_script"]
-[ext_resource type="LabelSettings" uid="uid://dumbh8ohpl4wt" path="res://Themes/new_label_settings.tres" id="2_label_settings"]
+[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="3_cj858"]
 [ext_resource type="Script" uid="uid://chd50r6caxc7i" path="res://UI/reward_tooltip_button.gd" id="3_rm7wo"]
+[ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="4_s5edj"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://UI/skill_replace_dialog.tscn" id="5_s5edj"]
-[ext_resource type="Script" uid="uid://dyflbtf0gphq1" path="res://UI/skill_replace_dialog.gd" id="6_v0yo2"]
 
 [sub_resource type="Animation" id="Animation_cj858"]
 length = 0.01
@@ -151,6 +152,7 @@ _data = {
 }
 
 [node name="DraftRewardPanel" type="Control" unique_id=1712510819]
+process_mode = 3
 visible = false
 layout_mode = 3
 anchors_preset = 15
@@ -158,6 +160,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+theme = ExtResource("1_cj858")
 script = ExtResource("1_script")
 
 [node name="Backdrop" type="ColorRect" parent="." unique_id=1022379337]
@@ -194,7 +197,7 @@ theme_override_constants/separation = 8
 
 [node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout" unique_id=285227628]
 layout_mode = 2
-label_settings = ExtResource("2_label_settings")
+label_settings = ExtResource("3_cj858")
 horizontal_alignment = 1
 
 [node name="ButtonRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout" unique_id=53161417]
@@ -205,6 +208,8 @@ theme_override_constants/separation = 4
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = " "
+theme_override_fonts/font = ExtResource("4_s5edj")
+theme_override_font_sizes/font_size = 12
 autowrap_mode = 3
 script = ExtResource("3_rm7wo")
 
@@ -227,6 +232,8 @@ libraries/ = SubResource("AnimationLibrary_v0yo2")
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = " "
+theme_override_fonts/font = ExtResource("4_s5edj")
+theme_override_font_sizes/font_size = 12
 autowrap_mode = 3
 script = ExtResource("3_rm7wo")
 
@@ -249,6 +256,8 @@ libraries/ = SubResource("AnimationLibrary_mc3cr")
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 tooltip_text = " "
+theme_override_fonts/font = ExtResource("4_s5edj")
+theme_override_font_sizes/font_size = 12
 autowrap_mode = 3
 script = ExtResource("3_rm7wo")
 
@@ -267,16 +276,8 @@ stretch_mode = 5
 [node name="VisibilityPlayer" type="AnimationPlayer" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton3" unique_id=1820413166]
 libraries/ = SubResource("AnimationLibrary_otcn3")
 
-[node name="SkillReplaceDialog" type="Control" parent="." unique_id=1955345262 instance=ExtResource("5_s5edj")]
-process_mode = 3
-visible = false
+[node name="SkillReplaceDialog" parent="." unique_id=1955345262 instance=ExtResource("5_s5edj")]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-script = ExtResource("6_v0yo2")
 
 [node name="VisibilityPlayer" type="AnimationPlayer" parent="." unique_id=2035463672]
 libraries/ = SubResource("AnimationLibrary_g5rau")

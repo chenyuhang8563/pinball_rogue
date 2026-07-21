@@ -6,19 +6,12 @@ const DefaultBattleRewardConfig: BattleRewardConfig = preload(
 	"res://Run/default_battle_reward_config.tres"
 )
 const DefaultRunFloorConfig: RunFloorConfig = preload("res://Run/default_run_floor_config.tres")
-const ShopScene: PackedScene = preload("res://Shop/shop.tscn")
-const NodeChoicePanelScene: PackedScene = preload("res://UI/node_choice_panel.tscn")
-const DraftRewardPanelScene: PackedScene = preload("res://UI/draft_reward_panel.tscn")
-const RunEventPanelScene: PackedScene = preload("res://UI/run_event_panel.tscn")
-const BattleHealthHudScene: PackedScene = preload("res://UI/battle_health_hud.tscn")
-const FloorHudScene: PackedScene = preload("res://UI/floor_hud.tscn")
-const InventoryPanelScene: PackedScene = preload("res://UI/inventory_panel.tscn")
-const PausePanelScene: PackedScene = preload("res://UI/pause_panel.tscn")
-const DevilShopScene: PackedScene = preload("res://DevilShop/devil_shop.tscn")
+const DebugGrantServiceScript: GDScript = preload("res://Debug/debug_grant_service.gd")
 
 @onready var marbles: Node2D = $Marbles
 @onready var skill_controller: SkillController = $SkillController
 @onready var active_skill_slot: ActiveSkillSlot = $CanvasLayer/SkillSlot
+@onready var debug_grant_panel: Control = $DebugCanvasLayer/DebugGrantPanel
 @export var starting_marble_spawn_positions: Array[Vector2] = [
 	Vector2(56, 96),
 	Vector2(56, 72),
@@ -55,8 +48,8 @@ var battle_health_hud: BattleHealthHud = null
 var floor_hud: FloorHud = null
 var inventory_panel: InventoryPanel = null
 var run_failure_panel: RunFailurePanel = null
+var debug_grant_service: RefCounted = null
 var _active_skill_blocking_panels: Array[Node] = []
-var _owned_run_ui_nodes: Array[Node] = []
 var _gateway_marble_fell_callable: Callable = Callable()
 var _run_flow_composition_configured: bool = false
 
@@ -64,6 +57,7 @@ var _run_flow_composition_configured: bool = false
 func _ready() -> void:
 	if not _setup_run_scope():
 		return
+	_setup_debug_cheats()
 	_connect_loadout_change()
 	_spawn_chain()
 	if not _setup_skill_system():
@@ -229,6 +223,46 @@ func _discard_run_scope() -> void:
 	run_scope = null
 
 
+func _setup_debug_cheats() -> void:
+	if not OS.is_debug_build() or debug_grant_panel == null or run_scope == null:
+		return
+	debug_grant_service = DebugGrantServiceScript.new()
+	if not debug_grant_service.configure(run_scope.loadout, run_scope.progression):
+		debug_grant_service = null
+		return
+	debug_grant_panel.configure_items(debug_grant_service.item_ids())
+	_connect_once(debug_grant_panel, &"skip_battle_requested", Callable(self, "_on_debug_skip_battle_requested"))
+	_connect_once(debug_grant_panel, &"grant_requested", Callable(self, "_on_debug_grant_requested"))
+
+
+func _on_debug_skip_battle_requested() -> void:
+	if run_flow_controller == null:
+		debug_grant_panel.present_result("跳过战斗：运行流程未就绪")
+		return
+	debug_grant_panel.present_result(
+		"跳过战斗：成功" if run_flow_controller.skip_current_battle() else "跳过战斗：当前不在战斗中"
+	)
+
+
+func _on_debug_grant_requested(item_id: StringName) -> void:
+	if debug_grant_service == null:
+		return
+	var result: int = int(debug_grant_service.call("grant", item_id))
+	var detail := "发放失败"
+	match result:
+		DebugGrantServiceScript.Result.GRANTED:
+			detail = "发放成功"
+		DebugGrantServiceScript.Result.UNKNOWN_ID:
+			detail = "未知物品"
+		DebugGrantServiceScript.Result.DUPLICATE:
+			detail = "已拥有该物品"
+		DebugGrantServiceScript.Result.CAPACITY_REACHED:
+			detail = "对应栏位已满"
+		DebugGrantServiceScript.Result.COMMIT_FAILED:
+			detail = "替换技能失败"
+	debug_grant_panel.present_result("%s：%s" % [detail, item_id])
+
+
 ## Builds the Phase 3 modular composition without starting it. P3-A focused
 ## tests call this boundary directly; P3-B production adds UI/bridge wiring in
 ## `_setup_run_flow()` and starts the same controller only after every wire is valid.
@@ -355,9 +389,7 @@ func _dispose_run_flow_composition() -> void:
 	_disconnect_gateway_marble_fell()
 	_disconnect_active_skill_panel_blockers()
 	_disconnect_wallet_changed()
-	for index: int in range(_owned_run_ui_nodes.size() - 1, -1, -1):
-		_free_owned_run_flow_node(_owned_run_ui_nodes[index])
-	_owned_run_ui_nodes.clear()
+	_unconfigure_run_ui()
 	node_choice_panel = null
 	draft_reward_panel = null
 	run_event_panel = null
@@ -405,6 +437,12 @@ func _dispose_run_flow_composition() -> void:
 	reset_battle_callable = Callable()
 	release_floating_texts_callable = Callable()
 	read_stat_callable = Callable()
+
+
+func _unconfigure_run_ui() -> void:
+	for ui: Node in [draft_reward_panel, run_event_panel, devil_shop, normal_shop, inventory_panel]:
+		if ui != null and is_instance_valid(ui) and ui.has_method(&"unconfigure"):
+			ui.call(&"unconfigure")
 
 
 func _dispose_failed_run_flow_composition(discard_created_scope: bool) -> void:
@@ -525,40 +563,21 @@ func _setup_run_flow(
 	if ui_layer == null or run_flow_controller == null:
 		return _rollback_run_flow_startup()
 
-	node_choice_panel = NodeChoicePanelScene.instantiate() as NodeChoicePanel
-	if node_choice_panel == null:
+	node_choice_panel = ui_layer.get_node_or_null("NodeChoicePanel") as NodeChoicePanel
+	draft_reward_panel = ui_layer.get_node_or_null("DraftRewardPanel") as DraftRewardPanel
+	run_event_panel = ui_layer.get_node_or_null("RunEventPanel") as RunEventPanel
+	devil_shop = ui_layer.get_node_or_null("DevilShop") as DevilShop
+	normal_shop = get_node_or_null("Shop") as Control
+	battle_health_hud = ui_layer.get_node_or_null("BattleHealthHud") as BattleHealthHud
+	floor_hud = ui_layer.get_node_or_null("FloorHud") as FloorHud
+	run_failure_panel = ui_layer.get_node_or_null("RunFailurePanel") as RunFailurePanel
+	inventory_panel = get_node_or_null("InventoryPanel") as InventoryPanel
+	var pause_panel: Node = ui_layer.get_node_or_null("PausePanel")
+	if node_choice_panel == null or draft_reward_panel == null or run_event_panel == null \
+			or devil_shop == null or normal_shop == null or battle_health_hud == null \
+			or floor_hud == null or run_failure_panel == null or inventory_panel == null \
+			or pause_panel == null or active_skill_slot == null:
 		return _rollback_run_flow_startup()
-	node_choice_panel.name = "NodeChoicePanel"
-	ui_layer.add_child(node_choice_panel)
-	_owned_run_ui_nodes.append(node_choice_panel)
-
-	draft_reward_panel = DraftRewardPanelScene.instantiate() as DraftRewardPanel
-	if draft_reward_panel == null:
-		return _rollback_run_flow_startup()
-	draft_reward_panel.name = "DraftRewardPanel"
-	ui_layer.add_child(draft_reward_panel)
-	_owned_run_ui_nodes.append(draft_reward_panel)
-
-	run_event_panel = RunEventPanelScene.instantiate() as RunEventPanel
-	if run_event_panel == null:
-		return _rollback_run_flow_startup()
-	run_event_panel.name = "RunEventPanel"
-	ui_layer.add_child(run_event_panel)
-	_owned_run_ui_nodes.append(run_event_panel)
-
-	devil_shop = DevilShopScene.instantiate() as DevilShop
-	if devil_shop == null:
-		return _rollback_run_flow_startup()
-	devil_shop.name = "DevilShop"
-	ui_layer.add_child(devil_shop)
-	_owned_run_ui_nodes.append(devil_shop)
-
-	normal_shop = ShopScene.instantiate() as Control
-	if normal_shop == null:
-		return _rollback_run_flow_startup()
-	normal_shop.name = "Shop"
-	add_child(normal_shop)
-	_owned_run_ui_nodes.append(normal_shop)
 
 	if not bool(normal_shop.call("configure", run_scope.loadout, run_scope.progression, run_scope.wallet)) \
 			or not devil_shop.configure(run_scope.loadout, run_scope.progression, run_scope.wallet, run_scope.health) \
@@ -566,11 +585,6 @@ func _setup_run_flow(
 			or not run_event_panel.configure(run_scope.wallet):
 		return _rollback_run_flow_startup()
 
-	_setup_battle_health_hud(ui_layer)
-	_setup_floor_hud(ui_layer)
-	_setup_pause_panel(ui_layer)
-	_setup_run_failure_panel(ui_layer)
-	_setup_inventory_panel()
 	if inventory_panel == null or battle_health_hud == null or floor_hud == null \
 			or run_failure_panel == null or active_skill_slot == null \
 			or not inventory_panel.configure(run_scope.loadout, run_scope.progression):
@@ -614,6 +628,7 @@ func _connect_active_skill_panel_blockers() -> void:
 	_disconnect_active_skill_panel_blockers()
 	_active_skill_blocking_panels.clear()
 	for panel_path: NodePath in [
+		^"DebugCanvasLayer/DebugGrantPanel",
 		^"CanvasLayer/PausePanel",
 		^"CanvasLayer/RunFailurePanel",
 		^"CanvasLayer/NodeChoicePanel",
@@ -655,64 +670,6 @@ func _sync_active_skill_panel_blocker() -> void:
 			blocked = true
 			break
 	active_skill_slot.set_blocked_by_panel(blocked)
-
-
-func _setup_battle_health_hud(ui_layer: Node) -> void:
-	battle_health_hud = ui_layer.get_node_or_null("BattleHealthHud") as BattleHealthHud
-	if battle_health_hud == null:
-		battle_health_hud = BattleHealthHudScene.instantiate() as BattleHealthHud
-		if battle_health_hud == null:
-			return
-		battle_health_hud.name = "BattleHealthHud"
-		ui_layer.add_child(battle_health_hud)
-		_owned_run_ui_nodes.append(battle_health_hud)
-
-
-func _setup_floor_hud(ui_layer: Node) -> void:
-	floor_hud = ui_layer.get_node_or_null("FloorHud") as FloorHud
-	if floor_hud == null:
-		floor_hud = FloorHudScene.instantiate() as FloorHud
-		if floor_hud == null:
-			return
-		floor_hud.name = "FloorHud"
-		ui_layer.add_child(floor_hud)
-		_owned_run_ui_nodes.append(floor_hud)
-
-
-func _setup_pause_panel(ui_layer: Node) -> void:
-	var pause_panel: Node = ui_layer.get_node_or_null("PausePanel")
-	if pause_panel == null:
-		pause_panel = get_node_or_null("PausePanel")
-	if pause_panel == null:
-		pause_panel = PausePanelScene.instantiate()
-		if pause_panel == null:
-			return
-		pause_panel.name = "PausePanel"
-		ui_layer.add_child(pause_panel)
-		_owned_run_ui_nodes.append(pause_panel)
-		return
-	if pause_panel.get_parent() != ui_layer:
-		pause_panel.get_parent().remove_child(pause_panel)
-		ui_layer.add_child(pause_panel)
-
-
-func _setup_run_failure_panel(ui_layer: Node) -> void:
-	run_failure_panel = ui_layer.get_node_or_null("RunFailurePanel") as RunFailurePanel
-	if active_skill_slot == null:
-		active_skill_slot = ui_layer.get_node_or_null("SkillSlot") as ActiveSkillSlot
-
-
-func _setup_inventory_panel() -> void:
-	inventory_panel = get_node_or_null("InventoryPanel") as InventoryPanel
-	if inventory_panel != null:
-		return
-
-	inventory_panel = InventoryPanelScene.instantiate() as InventoryPanel
-	if inventory_panel == null:
-		return
-	inventory_panel.name = "InventoryPanel"
-	add_child(inventory_panel)
-	_owned_run_ui_nodes.append(inventory_panel)
 
 
 func _on_run_failed(_token: RunFlowToken, _reason: StringName) -> void:

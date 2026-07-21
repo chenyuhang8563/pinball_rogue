@@ -36,6 +36,7 @@ const BattleFlowScript: GDScript = preload("res://Run/run_battle_flow.gd")
 const START: StringName = &"start"
 const RESTART: StringName = &"restart"
 const SELECT_NODE: StringName = &"select_node"
+const SKIP_CURRENT_BATTLE: StringName = &"skip_current_battle"
 const BATTLE_COMPLETE: StringName = &"battle_complete"
 const MARBLE_FALL: StringName = &"marble_fall"
 const SELECT_REWARD: StringName = &"select_reward"
@@ -178,6 +179,15 @@ func select_node(token: RunFlowToken, offer_id: StringName, option_id: StringNam
 
 func choose_node(token: RunFlowToken, offer_id: StringName, option_id: StringName) -> bool:
 	return select_node(token, offer_id, option_id)
+
+
+func skip_current_battle() -> bool:
+	if not _begin_command(SKIP_CURRENT_BATTLE):
+		return false
+	if _state.phase != RunState.Phase.BATTLE_ACTIVE:
+		return _finish_rejected(SKIP_CURRENT_BATTLE, "skip requires an active battle")
+	var result := _battle_flow.force_complete_current_battle()
+	return _finish_command(result)
 
 
 func select_reward(token: RunFlowToken, draft_id: StringName, offer_id: StringName) -> bool:

@@ -8,10 +8,7 @@ signal upgrade_intent(
 )
 signal upgrade_unavailable_intent(token: RunFlowToken, offer_id: StringName)
 
-const UIFontsScript: GDScript = preload("res://UI/fonts.gd")
-const UI_FONT_SIZE: int = 12
 const ItemLevelResolverScript: GDScript = preload("res://UI/item_level_resolver.gd")
-const UpgradeDialogScene: PackedScene = preload("res://UI/skill_replace_dialog.tscn")
 
 @export var toggle_action: StringName = &"toggle_inventory"
 @export var skill_slot_count: int = 1
@@ -38,10 +35,10 @@ var _progression: RefCounted = null
 
 
 func configure(loadout: RefCounted, progression: RefCounted) -> bool:
+	unconfigure()
 	if not _has_port_api(loadout, [&"marbles", &"relics", &"skills"]) \
 			or not _has_port_api(progression, [&"level_of"]):
 		return false
-	_disconnect_port_signals()
 	_loadout = loadout
 	_progression = progression
 	_connect_port_signals()
@@ -49,13 +46,22 @@ func configure(loadout: RefCounted, progression: RefCounted) -> bool:
 	return true
 
 
+func unconfigure() -> void:
+	_disconnect_port_signals()
+	_reset_upgrade_dialog()
+	_active_upgrade_offer = null
+	_upgrade_intent_sent = false
+	_upgrade_selection_active = false
+	_loadout = null
+	_progression = null
+	mode = MODE.OFF
+	refresh_inventory()
+
+
 func _ready() -> void:
-	process_mode = Node.PROCESS_MODE_ALWAYS
-	layout_direction = Control.LAYOUT_DIRECTION_LOCALE
 	_ensure_toggle_action()
 	_connect_localization()
 	_apply_text()
-	_apply_button_label_settings()
 	_setup_upgrade_dialog()
 	_connect_port_signals()
 	refresh_inventory()
@@ -107,6 +113,7 @@ func present_upgrade_offer(offer: UpgradeOffer) -> bool:
 
 
 func finish_upgrade_selection() -> void:
+	_reset_upgrade_dialog()
 	_active_upgrade_offer = null
 	_upgrade_intent_sent = false
 	_upgrade_selection_active = false
@@ -161,13 +168,6 @@ func _apply_text() -> void:
 		exit_button.text = tr("UI_EXIT")
 		if not exit_button.pressed.is_connected(close_inventory):
 			exit_button.pressed.connect(close_inventory)
-
-
-func _apply_button_label_settings() -> void:
-	var exit_button: Button = get_node_or_null("UI/Panel/MarginContainer/Layout/Header/ExitButton") as Button
-	if exit_button == null:
-		return
-	UIFontsScript.apply_button_font(exit_button, UI_FONT_SIZE)
 
 
 func _ensure_toggle_action() -> void:
@@ -275,14 +275,16 @@ func _on_slot_gui_input(event: InputEvent, slot: Node) -> void:
 
 
 func _setup_upgrade_dialog() -> void:
-	var ui_layer := get_node_or_null("UI") as CanvasLayer
-	if ui_layer == null:
-		return
-	_upgrade_dialog = UpgradeDialogScene.instantiate() as SkillReplaceDialog
-	if _upgrade_dialog == null:
-		return
-	ui_layer.add_child(_upgrade_dialog)
-	_upgrade_dialog.upgrade_confirmed.connect(_on_upgrade_confirmed)
+	_upgrade_dialog = get_node_or_null("UI/SkillReplaceDialog") as SkillReplaceDialog
+	if _upgrade_dialog != null and not _upgrade_dialog.upgrade_confirmed.is_connected(_on_upgrade_confirmed):
+		_upgrade_dialog.upgrade_confirmed.connect(_on_upgrade_confirmed)
+
+
+func _reset_upgrade_dialog() -> void:
+	if _upgrade_dialog == null or not is_instance_valid(_upgrade_dialog):
+		_setup_upgrade_dialog()
+	if _upgrade_dialog != null:
+		_upgrade_dialog.reset_pending()
 
 
 func _on_upgrade_confirmed(item: Item) -> void:

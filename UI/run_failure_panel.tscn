@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://dic0ihi3nvfwv"]
 
 [ext_resource type="Script" uid="uid://w70j7g05bq8a" path="res://UI/run_failure_panel.gd" id="1_3alj2"]
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_ycrts"]
 [ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="2_ycrts"]
 [ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="3_q3efa"]
 
@@ -52,9 +53,12 @@ _data = {
 process_mode = 3
 visible = false
 layout_mode = 3
-anchors_preset = 0
+anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_ycrts")
 script = ExtResource("1_3alj2")
 
 [node name="Backdrop" type="ColorRect" parent="." unique_id=1308313525]

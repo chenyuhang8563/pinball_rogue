@@ -139,6 +139,18 @@ func active_plan() -> BattlePlan:
 	return _active_plan
 
 
+func force_complete() -> bool:
+	if _disposed or _active_plan == null or _active_token == null \
+			or _batch_state != BatchState.OPEN and _batch_state != BatchState.SEALED:
+		return false
+	_batch_state = BatchState.SEALED
+	_clear_enemy_tracking()
+	var did_complete := _try_complete()
+	if did_complete:
+		_disconnect_session_sources()
+	return did_complete
+
+
 func _register_enemy(
 	batch_id: int,
 	entry_index: int,

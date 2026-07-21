@@ -1,11 +1,13 @@
 [gd_scene format=3 uid="uid://djxdqfcs7wnw"]
 
-[ext_resource type="Script" uid="uid://igfddiqybmwn" path="res://UI/icon_option_button.gd" id="1_script"]
-[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="2_font"]
-[ext_resource type="PackedScene" path="res://UI/item_icon_view.tscn" id="3_item_icon_view"]
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_mgsoj"]
+[ext_resource type="Script" uid="uid://dvnec8m37oyye" path="res://UI/icon_option_button.gd" id="1_script"]
+[ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/item_icon_view.tscn" id="3_item_icon_view"]
+[ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="4_mgsoj"]
 
 [node name="IconOptionButton" type="Button" unique_id=569716031]
 custom_minimum_size = Vector2(68, 98)
+theme = ExtResource("1_mgsoj")
 clip_text = true
 script = ExtResource("1_script")
 
@@ -52,8 +54,7 @@ custom_minimum_size = Vector2(74, 14)
 layout_mode = 2
 size_flags_horizontal = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 11
+label_settings = ExtResource("4_mgsoj")
 horizontal_alignment = 1
 autowrap_mode = 3
 clip_text = true
@@ -65,8 +66,7 @@ layout_mode = 2
 size_flags_horizontal = 3
 size_flags_vertical = 3
 theme_override_colors/font_color = Color(1, 1, 1, 1)
-theme_override_fonts/font = ExtResource("2_font")
-theme_override_font_sizes/font_size = 10
+label_settings = ExtResource("4_mgsoj")
 horizontal_alignment = 1
 autowrap_mode = 3
 clip_text = true

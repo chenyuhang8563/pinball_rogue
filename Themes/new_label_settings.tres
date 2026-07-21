@@ -1,6 +1,6 @@
 [gd_resource type="LabelSettings" format=3 uid="uid://dumbh8ohpl4wt"]
 
-[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="1_y6vbf"]
+[ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="1_y6vbf"]
 
 [resource]
 font = ExtResource("1_y6vbf")

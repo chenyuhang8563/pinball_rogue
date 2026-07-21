@@ -1,15 +1,9 @@
 [gd_scene format=3 uid="uid://d3qrynyba4t0p"]
 
 [ext_resource type="Script" uid="uid://bdw7uutgq4qwi" path="res://UI/active_skill_slot.gd" id="1_02jbl"]
-[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="2_pgcsl"]
-
-[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_jcs3y"]
-bg_color = Color(0.08, 0.08, 0.1, 0.92)
-border_width_left = 1
-border_width_top = 1
-border_width_right = 1
-border_width_bottom = 1
-border_color = Color(0.42, 0.5, 0.78, 1)
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_pgcsl"]
+[ext_resource type="StyleBox" uid="uid://bxbadmo7oui7u" path="res://Themes/black_panel.tres" id="2_jcs3y"]
+[ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="3_pgcsl"]
 
 [sub_resource type="Gradient" id="Gradient_dphl4"]
 colors = PackedColorArray(0.08, 0.12, 0.3, 0, 0.35, 0.55, 1, 0.5)
@@ -61,7 +55,8 @@ visible = false
 custom_minimum_size = Vector2(32, 32)
 offset_right = 32.0
 offset_bottom = 32.0
-theme_override_styles/panel = SubResource("StyleBoxFlat_jcs3y")
+theme = ExtResource("1_pgcsl")
+theme_override_styles/panel = ExtResource("2_jcs3y")
 script = ExtResource("1_02jbl")
 
 [node name="Icon" type="TextureRect" parent="." unique_id=1967870770]
@@ -90,9 +85,8 @@ anchor_bottom = 1.0
 offset_left = -24.0
 offset_top = -11.0
 offset_bottom = 12.0
-theme_override_fonts/font = ExtResource("2_pgcsl")
-theme_override_font_sizes/font_size = 8
 text = "3/3"
+label_settings = ExtResource("3_pgcsl")
 horizontal_alignment = 2
 vertical_alignment = 2
 
