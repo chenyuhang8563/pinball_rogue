@@ -15,7 +15,7 @@ func test_poison_tick_uses_armor_but_not_global_damage_multiplier() -> void:
 	poison.on_apply(enemy, state)
 	poison.on_process(enemy, state, 1.0)
 
-	assert_eq(enemy.health, 98, "one real poison tick remains its legacy 2 damage")
+	assert_eq(enemy.health, 99, "one poison layer deals one fixed per-layer damage")
 
 
 func test_burn_tick_uses_armor_but_not_global_damage_multiplier() -> void:

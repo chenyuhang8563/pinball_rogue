@@ -58,8 +58,9 @@ func test_poison_tick_reaches_poison_culture_via_typed_event() -> void:
 	assert_false(neighbor.has_buff("poison_debuff"))
 
 	# Drive several poison ticks through the BuffHost; each tick emits the typed
-	# event the host forwards to EffectManager.on_poison_tick.
-	for i: int in range(5):
+	# event the host forwards to EffectManager.on_poison_tick. Three ticks reach
+	# poison_culture's spread threshold while the 5s poison is still alive.
+	for i: int in range(3):
 		source.buff_host._process(1.1)
 
 	assert_true(source.has_buff("poison_debuff"), "poison still active during the test")

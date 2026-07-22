@@ -75,6 +75,20 @@ func get_buff_stacks(buff_id: String) -> int:
 	return active_buff.stacks if active_buff != null else 0
 
 
+## Consumes `amount` stacks from an active buff, treating stacks as a consumable
+## resource (e.g. burn fuel). Removes the buff once stacks reach zero. Returns the
+## remaining stack count, or 0 if the buff is not active.
+func consume_buff_stacks(buff_id: String, amount: int = 1) -> int:
+	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
+	if active_buff == null or amount <= 0:
+		return 0
+	active_buff.stacks = maxi(0, active_buff.stacks - amount)
+	active_buff.state["stacks"] = active_buff.stacks
+	if active_buff.stacks <= 0:
+		remove_buff(buff_id)
+	return active_buff.stacks
+
+
 func get_buff_remaining_time(buff_id: String) -> float:
 	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
 	return active_buff.remaining_time if active_buff != null else 0.0

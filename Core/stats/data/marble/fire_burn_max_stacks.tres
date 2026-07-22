@@ -4,10 +4,10 @@
 
 [resource]
 script = ExtResource("1_stat")
-id = "poison_damage_per_tick"
-display_name = "Poison Damage Per Tick"
+id = "fire_burn_max_stacks"
+display_name = "Fire Burn Max Stacks"
 category = "marble"
-base_value = 2.0
-min_value = 0.0
-max_value = 999999999.0
+base_value = 10.0
+min_value = 1.0
+max_value = 99.0
 integer = true

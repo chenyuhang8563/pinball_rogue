@@ -15,10 +15,11 @@ const STAT_DARK_MARBLE_DAMAGE: String = "dark_marble_damage"
 const STAT_BLUE_FROST_DURATION: String = "blue_frost_duration"
 const STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED: String = "blue_frost_bonus_damage_enabled"
 const STAT_BLUE_FROST_STACKS_PER_HIT: String = "blue_frost_stacks_per_hit"
-const STAT_FIRE_BURN_DURATION: String = "fire_burn_duration"
-const STAT_FIRE_EMBER_SPREAD_ENABLED: String = "fire_ember_spread_enabled"
-const STAT_POISON_DAMAGE_PER_TICK: String = "poison_damage_per_tick"
-const STAT_POISON_TICK_SECONDS: String = "poison_tick_seconds"
+const STAT_POISON_MAX_STACKS: String = "poison_max_stacks"
+const STAT_POISON_STACKS_PER_HIT: String = "poison_stacks_per_hit"
+const STAT_FIRE_BURN_MAX_STACKS: String = "fire_burn_max_stacks"
+const STAT_FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
+const STAT_FIRE_FUEL_PER_HIT: String = "fire_fuel_per_hit"
 const STAT_ECHO_TIMEOUT: String = "echo_timeout"
 const STAT_EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
 const STAT_EXPLOSION_DAMAGE: String = "explosion_damage"
@@ -49,8 +50,9 @@ const UPGRADE_VALUES: Dictionary = {
 	},
 	Marble.MARBLE_TYPE.GREEN: {
 		"title": "ITEM_GREEN_MARBLE_TITLE",
-		"stat": STAT_POISON_DAMAGE_PER_TICK,
-		"values": [2.0, 4.0, 4.0],
+		"stat": STAT_POISON_MAX_STACKS,
+		"values": [10.0, 15.0, 20.0],
+		"awakened_value": 20.0,
 		"descriptions": [
 			"UPGRADE_GREEN_POISON_2_DESC",
 			"UPGRADE_GREEN_POISON_4_DESC",
@@ -79,8 +81,9 @@ const UPGRADE_VALUES: Dictionary = {
 	},
 	Marble.MARBLE_TYPE.FIRE: {
 		"title": "ITEM_FIRE_MARBLE_TITLE",
-		"stat": STAT_FIRE_BURN_DURATION,
-		"values": [3.0, 4.0, 5.0],
+		"stat": STAT_FIRE_BURN_MAX_STACKS,
+		"values": [10.0, 15.0, 15.0],
+		"awakened_value": 15.0,
 		"descriptions": [
 			"UPGRADE_FIRE_DURATION_4_DESC",
 			"UPGRADE_FIRE_DURATION_5_DESC",
@@ -288,8 +291,8 @@ func _sync_stat_modifiers() -> void:
 	if _stat_system.has_method("register_entity"):
 		_stat_system.call("register_entity", STAT_ENTITY_MARBLE_CHAIN, [
 			STAT_DARK_MARBLE_DAMAGE,
-			STAT_POISON_DAMAGE_PER_TICK,
-			STAT_POISON_TICK_SECONDS,
+			STAT_POISON_MAX_STACKS,
+			STAT_POISON_STACKS_PER_HIT,
 			STAT_ECHO_TIMEOUT,
 			STAT_EXPLOSION_EFFECT_SCALE,
 			STAT_EXPLOSION_DAMAGE,
@@ -298,8 +301,9 @@ func _sync_stat_modifiers() -> void:
 			STAT_BLUE_FROST_DURATION,
 			STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED,
 			STAT_BLUE_FROST_STACKS_PER_HIT,
-			STAT_FIRE_BURN_DURATION,
-			STAT_FIRE_EMBER_SPREAD_ENABLED,
+			STAT_FIRE_BURN_MAX_STACKS,
+			STAT_FIRE_BURN_DAMAGE_PER_LAYER,
+			STAT_FIRE_FUEL_PER_HIT,
 		])
 	var types_to_sync: Array[int] = []
 	for raw_type: Variant in _marble_levels.keys():
@@ -330,7 +334,7 @@ func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
 		_add_override_modifier(STAT_EXPLOSION_RADIUS, 100.0)
 		_add_override_modifier(STAT_EXPLOSION_EFFECT_SCALE, 4.0)
 	elif marble_type == Marble.MARBLE_TYPE.GREEN and awakened:
-		_add_override_modifier(STAT_POISON_TICK_SECONDS, 0.5)
+		_add_override_modifier(STAT_POISON_STACKS_PER_HIT, 2.0)
 	elif marble_type == Marble.MARBLE_TYPE.BROWN and awakened:
 		_add_override_modifier(STAT_ECHO_TIMEOUT, 15.0)
 	elif marble_type == Marble.MARBLE_TYPE.BLUE:
@@ -338,8 +342,11 @@ func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
 			_add_override_modifier(STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED, 1.0)
 		if awakened:
 			_add_override_modifier(STAT_BLUE_FROST_STACKS_PER_HIT, 2.0)
-	elif marble_type == Marble.MARBLE_TYPE.FIRE and awakened:
-		_add_override_modifier(STAT_FIRE_EMBER_SPREAD_ENABLED, 1.0)
+	elif marble_type == Marble.MARBLE_TYPE.FIRE:
+		if stored_level >= 3:
+			_add_override_modifier(STAT_FIRE_BURN_DAMAGE_PER_LAYER, 2.0)
+		if awakened:
+			_add_override_modifier(STAT_FIRE_FUEL_PER_HIT, 2.0)
 
 
 func _add_override_modifier(stat_id: String, value: float) -> void:

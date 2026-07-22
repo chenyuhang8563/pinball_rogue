@@ -9,20 +9,24 @@ const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.
 ## expose generic `take_damage()` and `flash_hit_mask()` methods.
 
 const POISON_COLOR: Color = Color(0.2, 1.0, 0.2, 1.0)
-const DAMAGE_PER_LAYER: int = 2
+const DAMAGE_PER_LAYER: int = 1
 const TICK_SECONDS: float = 1.0
 const STAT_ENTITY_MARBLE_CHAIN: String = "marble_chain"
 const STAT_POISON_DAMAGE_PER_LAYER: String = "poison_damage_per_layer"
 const STAT_POISON_MAX_STACKS: String = "poison_max_stacks"
 const STAT_POISON_TICK_SECONDS: String = "poison_tick_seconds"
-const MAX_POISON_STACKS: int = 15
+## Base poison cap before any marble upgrades; the stat-driven value grows this
+## to 15/20. Also the degraded fallback when the stat system is unavailable.
+const BASE_POISON_CAP: int = 10
+## Hard ceiling for the stat-driven poison cap (base 10, grows to 20 via upgrades).
+const MAX_POISON_STACKS: int = 20
 
 
 func _init() -> void:
 	id = "poison_debuff"
 	display_name = "Poison"
-	description = "Deals poison damage per layer once per second and refreshes on exposure."
-	duration = 10.0
+	description = "Deals 1 damage per layer each second; each application refreshes a shared 5 second timer."
+	duration = 5.0
 	stackable = true
 	max_stacks = _get_poison_max_stacks()
 	source = BuffSource.CHAIN_MECHANIC
@@ -88,7 +92,7 @@ func _get_poison_max_stacks() -> int:
 	if stat_system != null and stat_system.has_method("get_stat") \
 			and (not stat_system.has_method("has_stat") or bool(stat_system.call("has_stat", STAT_POISON_MAX_STACKS))):
 		return clampi(int(stat_system.call("get_stat", STAT_POISON_MAX_STACKS, STAT_ENTITY_MARBLE_CHAIN)), 1, MAX_POISON_STACKS)
-	return MAX_POISON_STACKS
+	return BASE_POISON_CAP
 
 
 func _get_poison_tick_seconds() -> float:

@@ -47,19 +47,16 @@ func test_frost_stacks_accumulate_and_convert_to_frozen_at_max() -> void:
 	assert_eq(BlueMarble.apply_frost_to_enemy(enemy), 0, "frozen enemy takes no more frost")
 
 
-func test_burn_ember_spread_constructs_from_registry_on_host_death() -> void:
-	var dying: Enemy = _enemy()
-	var neighbor: Enemy = _enemy()
-	neighbor.global_position = dying.global_position + Vector2(24, 0)
+func test_burn_from_registry_is_fuel_based_and_expires_when_spent() -> void:
+	var enemy: Enemy = _enemy()
 	var burn: BuffDef = _registry.get_buff_def("fire_burn_debuff")
 	assert_not_null(burn)
-	burn.params["ember_spread_enabled"] = true
-	dying.add_buff(burn)
-	assert_true(dying.has_buff("fire_burn_debuff"))
-	assert_false(neighbor.has_buff("fire_burn_debuff"))
+	assert_true(burn.is_permanent(), "burn is a permanent fuel, not a timed debuff")
+	enemy.add_buff(burn, 1)
+	assert_true(enemy.has_buff("fire_burn_debuff"))
 
-	assert_true(dying.defeat(&"test_spread"))
-	assert_true(neighbor.has_buff("fire_burn_debuff"), "ember spread constructs burn from registry")
+	enemy.buff_host._process(1.0)
+	assert_false(enemy.has_buff("fire_burn_debuff"), "burn extinguishes once its single fuel is consumed")
 
 
 func _enemy() -> Enemy:

@@ -4,7 +4,10 @@
 
 [resource]
 script = ExtResource("1_stat")
-id = "fire_ember_spread_enabled"
-display_name = "Fire Ember Spread Enabled"
+id = "fire_fuel_per_hit"
+display_name = "Fire Fuel Per Hit"
 category = "marble"
-base_value = 0.0
+base_value = 1.0
+min_value = 1.0
+max_value = 99.0
+integer = true

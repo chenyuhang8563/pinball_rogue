@@ -151,6 +151,12 @@ func get_buff_stacks(buff_id: String) -> int:
 	return buff_host.get_buff_stacks(buff_id)
 
 
+func consume_buff_stacks(buff_id: String, amount: int = 1) -> int:
+	if buff_host == null:
+		return 0
+	return buff_host.consume_buff_stacks(buff_id, amount)
+
+
 func append_buff_duration(buff_id: String, duration_to_append: float, max_duration: float = -1.0) -> bool:
 	return buff_host != null and buff_host.append_buff_duration(buff_id, duration_to_append, max_duration)
 

@@ -117,6 +117,57 @@ func test_marble_growth_publishes_modifiers_to_stat_system() -> void:
 	assert_true((stats.get("modifiers") as Array).is_empty())
 
 
+func test_green_marble_growth_publishes_poison_cap_and_per_hit_modifiers() -> void:
+	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout, stats)
+	var green := _item("green", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.GREEN)
+	assert_true(loadout.call("add", green))
+
+	# Level II raises the poison cap to 15; per-hit stacks stay untouched.
+	assert_true(progression.call("upgrade_one", green))
+	assert_eq(stats.call("modifier_value", "poison_max_stacks"), 15.0)
+	assert_null(stats.call("modifier_value", "poison_stacks_per_hit"))
+
+	# Level III raises the cap to 20.
+	assert_true(progression.call("upgrade_one", green))
+	assert_eq(stats.call("modifier_value", "poison_max_stacks"), 20.0)
+
+	# Awakened keeps the cap at 20 and applies 2 poison per hit.
+	assert_true(progression.call("upgrade_one", green))
+	assert_eq(stats.call("modifier_value", "poison_max_stacks"), 20.0)
+	assert_eq(stats.call("modifier_value", "poison_stacks_per_hit"), 2.0)
+	progression.call("dispose")
+	assert_true((stats.get("modifiers") as Array).is_empty())
+
+
+func test_fire_marble_growth_publishes_fuel_modifiers() -> void:
+	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout, stats)
+	var fire := _item("fire", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.FIRE)
+	assert_true(loadout.call("add", fire))
+
+	# Level II raises the fuel cap to 15; damage and per-hit fuel stay untouched.
+	assert_true(progression.call("upgrade_one", fire))
+	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 15.0)
+	assert_null(stats.call("modifier_value", "fire_burn_damage_per_layer"))
+	assert_null(stats.call("modifier_value", "fire_fuel_per_hit"))
+
+	# Level III doubles per-fuel damage; cap stays 15.
+	assert_true(progression.call("upgrade_one", fire))
+	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 15.0)
+	assert_eq(stats.call("modifier_value", "fire_burn_damage_per_layer"), 2.0)
+
+	# Awakened applies 2 fuel per hit; damage stays doubled and cap stays 15.
+	assert_true(progression.call("upgrade_one", fire))
+	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 15.0)
+	assert_eq(stats.call("modifier_value", "fire_burn_damage_per_layer"), 2.0)
+	assert_eq(stats.call("modifier_value", "fire_fuel_per_hit"), 2.0)
+	progression.call("dispose")
+	assert_true((stats.get("modifiers") as Array).is_empty())
+
+
 func _item(id: String, type: Item.ItemType, marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT) -> Item:
 	var result := Item.new()
 	result.id = id
