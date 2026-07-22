@@ -84,8 +84,8 @@ const UPGRADE_VALUES: Dictionary = {
 	Marble.MARBLE_TYPE.FIRE: {
 		"title": "ITEM_FIRE_MARBLE_TITLE",
 		"stat": STAT_FIRE_BURN_MAX_STACKS,
-		"values": [10.0, 15.0, 15.0],
-		"awakened_value": 15.0,
+		"values": [10.0, 15.0, 20.0],
+		"awakened_value": 20.0,
 		"descriptions": [
 			"UPGRADE_FIRE_DURATION_4_DESC",
 			"UPGRADE_FIRE_DURATION_5_DESC",
@@ -383,7 +383,7 @@ func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
 			_add_override_modifier(STAT_BLUE_FROST_STACKS_PER_HIT, 2.0)
 	elif marble_type == Marble.MARBLE_TYPE.FIRE:
 		if stored_level >= 3:
-			_add_override_modifier(STAT_FIRE_BURN_DAMAGE_PER_LAYER, 2.0)
+			_add_override_modifier(STAT_FIRE_BURN_DAMAGE_PER_LAYER, 3.0)
 		if awakened:
 			_add_override_modifier(STAT_FIRE_FUEL_PER_HIT, 2.0)
 

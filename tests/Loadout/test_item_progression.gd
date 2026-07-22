@@ -154,15 +154,15 @@ func test_fire_marble_growth_publishes_fuel_modifiers() -> void:
 	assert_null(stats.call("modifier_value", "fire_burn_damage_per_layer"))
 	assert_null(stats.call("modifier_value", "fire_fuel_per_hit"))
 
-	# Level III doubles per-fuel damage; cap stays 15.
+	# Level III raises the fuel cap to 20 and per-fuel damage to 3.
 	assert_true(progression.call("upgrade_one", fire))
-	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 15.0)
-	assert_eq(stats.call("modifier_value", "fire_burn_damage_per_layer"), 2.0)
+	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 20.0)
+	assert_eq(stats.call("modifier_value", "fire_burn_damage_per_layer"), 3.0)
 
-	# Awakened applies 2 fuel per hit; damage stays doubled and cap stays 15.
+	# Awakened applies 2 fuel per hit; cap stays 20 and per-fuel damage stays 3.
 	assert_true(progression.call("upgrade_one", fire))
-	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 15.0)
-	assert_eq(stats.call("modifier_value", "fire_burn_damage_per_layer"), 2.0)
+	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 20.0)
+	assert_eq(stats.call("modifier_value", "fire_burn_damage_per_layer"), 3.0)
 	assert_eq(stats.call("modifier_value", "fire_fuel_per_hit"), 2.0)
 	progression.call("dispose")
 	assert_true((stats.get("modifiers") as Array).is_empty())

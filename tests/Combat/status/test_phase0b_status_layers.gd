@@ -33,22 +33,22 @@ func test_burn_single_fuel_deals_one_total_damage_then_extinguishes() -> void:
 	var enemy: Enemy = _enemy()
 	enemy.add_buff(FireBurnDebuff.new(), 1)
 	enemy.buff_host._process(1.0)
-	assert_eq(enemy.health, 99, "one fuel deals 1 total damage then extinguishes")
+	assert_eq(enemy.health, 98, "one fuel deals the base 2 per-fuel damage then extinguishes")
 	assert_false(enemy.has_buff(FireBurnDebuff.BURN_ID))
 
 
 func test_burn_fuel_deals_decreasing_damage_then_extinguishes() -> void:
 	# Regression source: burn is now a consumable fuel. Boundary: 3 fuel deals
-	# 3 + 2 + 1 = 6 total damage across three seconds, then removes itself.
+	# 6 + 4 + 2 = 12 total damage across three seconds (2 per fuel), then removes itself.
 	var enemy: Enemy = _enemy()
 	enemy.add_buff(FireBurnDebuff.new(), 3)
 	assert_eq(enemy.get_buff_stacks(FireBurnDebuff.BURN_ID), 3)
 	enemy.buff_host._process(1.0)
-	assert_eq(enemy.health, 97, "3 fuel deals 3 damage, 2 fuel left")
+	assert_eq(enemy.health, 94, "3 fuel deals 6 damage, 2 fuel left")
 	enemy.buff_host._process(1.0)
-	assert_eq(enemy.health, 95, "2 fuel deals 2 damage, 1 fuel left")
+	assert_eq(enemy.health, 90, "2 fuel deals 4 damage, 1 fuel left")
 	enemy.buff_host._process(1.0)
-	assert_eq(enemy.health, 94, "1 fuel deals 1 damage, fuel spent")
+	assert_eq(enemy.health, 88, "1 fuel deals 2 damage, fuel spent")
 	assert_false(enemy.has_buff(FireBurnDebuff.BURN_ID))
 
 
@@ -68,11 +68,11 @@ func test_burn_fuel_cap_follows_stat() -> void:
 
 
 func test_burn_damage_per_fuel_doubles_via_stat() -> void:
-	_set_stat("fire_burn_damage_per_layer", 2.0)
+	_set_stat("fire_burn_damage_per_layer", 4.0)
 	var enemy: Enemy = _enemy()
 	enemy.add_buff(FireBurnDebuff.new(), 2)
 	enemy.buff_host._process(1.0)
-	assert_eq(enemy.health, 96, "level III deals 2 damage per fuel (2 fuel x 2)")
+	assert_eq(enemy.health, 92, "per-fuel damage follows the stat (2 fuel x 4)")
 
 
 func test_fire_marble_applies_two_fuel_when_awakened_and_caps() -> void:

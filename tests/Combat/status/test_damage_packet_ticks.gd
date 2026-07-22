@@ -28,7 +28,7 @@ func test_burn_tick_uses_armor_but_not_global_damage_multiplier() -> void:
 	burn.on_apply(enemy, state)
 	burn.on_process(enemy, state, 1.0)
 
-	assert_eq(enemy.health, 99, "one fuel layer deals one configured per-layer damage")
+	assert_eq(enemy.health, 98, "one fuel layer deals the configured 2 per-layer damage")
 
 
 func after_each() -> void:
