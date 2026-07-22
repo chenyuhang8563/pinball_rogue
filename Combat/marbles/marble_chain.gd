@@ -290,10 +290,18 @@ func get_total_damage(target: Node, packet: DamagePacket = null) -> int:
 			total += BlueMarble.get_frost_bonus_damage(stacks_after_hit)
 		elif seg.segment_type == Marble.MARBLE_TYPE.FIRE:
 			FireMarbleScript.apply_burn_to_enemy(target, packet)
-		total += seg.damage
+		total += _segment_contact_damage(seg)
 		total += seg.get_echo_damage()
 
 	return total
+
+
+## Assassin segment damage grows with the assassin_weak_point progression stat; the
+## crit itself is resolved on the enemy side, so here it is just contact damage.
+func _segment_contact_damage(seg: ChainSegment) -> int:
+	if seg.segment_type == Marble.MARBLE_TYPE.ASSASSIN:
+		return roundi(_get_stat_float("assassin_segment_damage", float(seg.damage)))
+	return seg.damage
 
 
 func _get_autoload_node(node_name: StringName) -> Node:

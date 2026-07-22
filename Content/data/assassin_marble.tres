@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="Item" format=3 uid="uid://dkw0b7awsh3jb"]
+
+[ext_resource type="Texture2D" uid="uid://b1e22trg6ih83" path="res://Assets/Marbles/assassin_marble.png" id="1_nbfv6"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "assassin_marble"
+title = "ITEM_ASSASSIN_MARBLE_TITLE"
+icon = ExtResource("1_nbfv6")
+price = 25
+description = "ITEM_ASSASSIN_MARBLE_DESC"
+effect_type = 10
+type = 1
+tags = Array[StringName]([&"marble", &"assassin", &"producer"])
+weight = 100.0
+marble_type = 6

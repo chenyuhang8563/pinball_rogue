@@ -20,6 +20,13 @@ var target: Node2D = null
 var final_amount: int = 0
 var flash_color: Color = Color.WHITE
 var floating_style: StringName = &"default"
+# Weak-point crit metadata. Resolved on the enemy side (it owns the contact
+# direction); the pipeline applies `crit_multiplier` after the legacy formula.
+# Defaults keep non-crit packets bit-identical to the pre-crit behavior.
+var is_crit: bool = false
+var crit_multiplier: float = 1.0
+var crit_source: StringName = &""
+var is_perfect_crit: bool = false
 
 
 func _init(

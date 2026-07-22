@@ -19,6 +19,7 @@ Loadout/{domain,application,presentation,data}/
 Run/{domain,application,presentation,data}/
 Combat/
   battle/                    # 战斗生命周期、敌人、桌台与物理部件
+  crit/                      # 方位破绽与暴击结算（刺客流派核心循环）
   marbles/
   skills/
   effects/

@@ -27,6 +27,7 @@ const FLOAT_DAMAGE_X_SPREAD_HALF: float = 8.0
 @onready var hit_flash: Node = $HitFlash
 @onready var health_label: Label = $HealthLabel
 @onready var buff_host: BuffHost = $BuffHost
+@onready var weak_point_host: Node = get_node_or_null("WeakPointHost")
 @onready var physics_state_machine: Node = $PhysicsStateMachine
 
 var _entity_id: String = ""
@@ -42,6 +43,8 @@ func _ready() -> void:
 	_update_health_label()
 	if buff_host != null and not buff_host.buff_ticked.is_connected(_on_buff_ticked):
 		buff_host.buff_ticked.connect(_on_buff_ticked)
+	if weak_point_host != null and weak_point_host.has_method("sync_to_assassin"):
+		weak_point_host.call("sync_to_assassin")
 
 
 func _exit_tree() -> void:
@@ -68,6 +71,7 @@ func _on_body_entered(body: Node) -> void:
 		var hit_damage: int = _get_damage_from_body(body, packet)
 		packet.base = float(hit_damage)
 		packet.flash_color = _get_active_buff_flash_color()
+		_resolve_weak_point_crit(body, packet)
 		apply_damage_packet(packet)
 		if is_alive() and effect_manager != null and effect_manager.has_method("on_enemy_hit_resolved"):
 			effect_manager.call("on_enemy_hit_resolved", self, was_burning, was_frozen, packet)
@@ -273,6 +277,31 @@ func _get_damage_from_body(body: Node, packet: DamagePacket = null) -> int:
 	if body.has_method("get_hit_damage"):
 		return body.get_hit_damage(self, packet)
 	return 1
+
+
+## Resolves a weak-point crit for a marble hit. The contact direction is measured in
+## enemy-local space (matching the weak-point visual, a child of this enemy) so it
+## stays correct even if the enemy rotates. On a crit the packet is flagged and the
+## consumed weak point is relocated atomically by the host.
+func _resolve_weak_point_crit(body: Node, packet: DamagePacket) -> void:
+	if weak_point_host == null or not weak_point_host.has_method("try_resolve_crit"):
+		return
+	if not body is Node2D:
+		return
+	var local_point: Vector2 = to_local((body as Node2D).global_position)
+	if local_point == Vector2.ZERO:
+		return
+	var info: Dictionary = weak_point_host.call("try_resolve_crit", local_point.angle())
+	if info.is_empty() or not bool(info.get("is_crit", false)):
+		return
+	packet.is_crit = true
+	packet.is_perfect_crit = bool(info.get("is_perfect", false))
+	packet.crit_multiplier = float(info.get("multiplier", 1.0))
+	packet.crit_source = &"weak_point_prism" \
+		if int(info.get("kind", 0)) == int(WeakPoint.Kind.PRISM) else &"weak_point_base"
+	packet.floating_style = &"crit"
+	if weak_point_host.has_method("consume_crit"):
+		weak_point_host.call("consume_crit", info)
 
 
 func _apply_frozen_push_from_body(body: Node) -> void:

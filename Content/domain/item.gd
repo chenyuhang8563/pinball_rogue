@@ -14,6 +14,7 @@ enum EffectType {
 	FIRE_BELLOWS,
 	POISON_CULTURE,
 	ICE_HAMMER,
+	ASSASSIN_MARBLE,
 }
 
 enum ItemType {

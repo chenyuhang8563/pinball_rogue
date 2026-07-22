@@ -4,11 +4,13 @@
 >
 > 本文依据源码和资源的静态审阅整理，旨在为后续遗物、流派和数值设计提供事实基线；不代表运行时试玩或 GUT 执行结果。
 
+> 增量更新 2026-07-23：刺客弹珠与「方位破绽 / 暴击」核心循环（M1）已实现并通过 GUT。下文「暴击与方位破绽（刺客 M1）」小节记录其事实基线；首批 5 件暴击遗物仍为设计稿（M2）。
+
 ## 结论摘要
 
 当前项目已有完整的单局流程、背包、成长、商店、战斗和状态异常骨架。构筑的可用协同集中在火、毒、霜、回响、爆炸五类弹珠机制与四个遗物之间；技能只与弹珠 Head 和有限的全局伤害乘区相连。
 
-优点是遗物 Effect、Buff 定义、成长和战斗生命周期均有相对清晰的单一入口。主要限制是：弹珠链只有一个物理 Head、遗物/物品池硬编码分散、不同伤害来源未统一、暴击等多个 Stat 尚未接入，以及物品 identity 禁止同类弹珠或遗物叠层。
+优点是遗物 Effect、Buff 定义、成长和战斗生命周期均有相对清晰的单一入口。主要限制是：弹珠链只有一个物理 Head、遗物/物品池硬编码分散、不同伤害来源未统一、护甲/闪避等多个 Stat 尚未接入，以及物品 identity 禁止同类弹珠或遗物叠层。暴击已由刺客方位破绽接入（见下文「暴击与方位破绽（刺客 M1）」），但通用 `crit_rate`/`crit_damage` 仍无消费者。
 
 ## 运行时入口与全局服务
 
@@ -103,6 +105,7 @@ MarbleChain (Node2D)
 | `green_marble` | GREEN | 25 | 1 | 命中施加 10 秒毒 |
 | `blue_marble` | BLUE | 22 | 2 | 命中施加 Frost，6 层转 Frozen |
 | `fire_marble` | FIRE | 25 | 1 | 命中施加递减燃烧 |
+| `assassin_marble` | ASSASSIN | 25 | 1 | 链中在场时洞察敌人方位破绽；从破绽方向命中 ×1.5 暴击（见暴击小节） |
 
 ### 弹珠成长
 
@@ -114,6 +117,7 @@ MarbleChain (Node2D)
 | 大地 | 回响附伤 2 | 回响附伤 4 | 附伤 8、持续 15 秒、触发只消耗 1 层 |
 | 冰霜 | Frost 至少 4 秒 | 附伤等于 Frost 层数 | 每次蓝珠命中加 2 Frost |
 | 火焰 | 燃烧 4 秒 | 燃烧 5 秒 | 敌死时传播剩余燃烧 |
+| 刺客 | 段伤 2 | 段伤 3 | 段伤 3 + 双方位破绽 |
 
 ### 伤害与状态
 
@@ -135,7 +139,9 @@ final_damage = round(base_damage * damage_multiplier)
 
 炸弹使用 AOE 独立路径；毒、燃烧、碎冰、闪电、魔法飞弹直接调用 `Enemy.take_damage()`，会吃护甲但不会走通用 `final_damage` 乘区。
 
-当前没有元素克制、元素抗性、暴击或闪避的实际实现。`crit_rate`、`crit_damage`、`dodge_rate` 等 StatDef 存在，但没有运行时消费者。
+`DamagePipeline.resolve_pre_armor` 在既有 `resolved` 结果（公式路径或原始取整路径）之后再乘 `packet.crit_multiplier`（默认 1.0），因此非暴击包保持与旧实现完全相同的取整边界；方位破绽暴击即在敌人侧把该乘数置为 1.5 后写入包。
+
+当前没有元素克制、元素抗性或闪避的实际实现；暴击已由刺客方位破绽接入（见下文），但通用的 `crit_rate`、`crit_damage`、`dodge_rate` 等 StatDef 仍无运行时消费者。
 
 ### 异常状态
 
@@ -152,6 +158,21 @@ final_damage = round(base_damage * damage_multiplier)
 - HitSensor 对 Head 施加 80–360 的切线冲量，同一球 0.08 秒冷却。
 - 墙反弹 0.3；平台反弹 1.0；无反弹墙读取 `bounceless_wall_bounce`，基础 0.2。
 - 大地弹珠将所有非敌人碰撞都视为回响充能，包括挡板、墙、平台等。
+
+## 暴击与方位破绽（刺客 M1）
+
+刺客流派的核心循环已落地（里程碑 1）：刺客弹珠在链中**任意段**在场即让敌人显示方位破绽（head 不特殊）；玩家规划弹道从破绽方向切入造成暴击。
+
+- 在场与数量：`assassin_weak_point_count`（OVERRIDE，写在 `marble_chain` 实体）由 `item_progression.gd::_apply_assassin_weak_point_count` 依据 `get_chain_items()` 实时设置——0 隐藏 / 1 常规 / 2 觉醒双破绽，并监听 `marble_loadout_changed` 重同步（掉球重建链不闪烁）。
+- 状态组件：`Combat/crit/weak_point.gd`（值对象，4 方位 UP/RIGHT/DOWN/LEFT → 中心角 -90/0/90/180，kind BASE/PRISM）、`weak_point_host.gd`（敌人子节点，类比 BuffHost：按 stat 同步破绽数、纯查询 `try_resolve_crit`、命中换边 `consume_crit`、信号 `crit_landed`）、`weak_point_visual.gd` + `.tscn`（按方位贴敌人轮廓的像素标记，`z_index` 在敌人之上；**视觉父节点是敌人 Node2D 而非 host**——host 为普通 `Node` 无 transform，挂在其下会使标记卡在世界原点 / 屏幕左上角）。
+- 数值 `Core/stats/data/crit/*.tres`：`weak_point_crit_multiplier` 1.5、`weak_point_tolerance_deg` 15、`perfect_crit_multiplier` 1.75、`perfect_crit_window_deg` 5（完美窗 M1 默认关闭，留给磨刀石觉醒）、`assassin_weak_point_count` 0、`assassin_segment_damage` 1。
+- 结算：`enemy.gd::_on_body_entered` 用 `to_local(body.global_position).angle()` 取接触方位 → `try_resolve_crit`（角距 ≤ 容差）→ 命中写 `packet.is_crit/crit_multiplier/crit_source` 与 `floating_style=&"crit"` 并 `consume_crit`（基础破绽换边，避免回原方向 / 与其它破绽重叠）。一次接触至多一个破绽、一次暴击。
+- 浮字：`Combat/presentation/crit_floating_text.tscn`，由 `float_damage_text_pool` 的 `crit` 样式选取（Quaver 16px 浮动数字例外）。
+- 视觉素材：`Assets/Crit/weak_point_{base,prism,perfect_core}.png`（32×32 透明像素，经 image-cli 生成，遵循 `critical.md` §12：银白 / 低饱和青、紫白双层、细金针芒；按方位旋转朝外）。
+- 投放：`Content/data/assassin_marble.tres`（MARBLE，`marble_type` ASSASSIN，price 25，tags `marble/assassin/producer`，weight 100），经 `ContentRegistry` 自动进入奖励与商店。
+- 成长：`item_progression.gd` 的 ASSASSIN `UPGRADE_VALUES`（段伤 1/2/3，觉醒 3）。
+- M1 边界：完美暴击与 PRISM 棱镜破绽为 M2 骨架；只有刺客在场才存在破绽（无刺客即无破绽暴击）；战斗中途加入刺客时**已在场敌人不即时重同步**，下一场战斗的新敌人生效。
+- 测试：`tests/Combat/crit/`（`test_weak_point_host` 纯逻辑、`test_assassin_crit_integration` 真实敌人、`test_assassin_progression`、`test_assassin_display_e2e` 含「标记跟随敌人 global_position、不卡左上角」回归）与 `tests/Combat/damage/test_damage_pipeline_crit.gd`。
 
 ## 技能系统
 
@@ -220,7 +241,7 @@ Boss      = 固定 240
 2. **多弹珠不等于多物理球。** Body 是纯视觉；所有物理、碰撞、掉球、挡板操作只作用于一个 Head。
 3. **技能和遗物体系割裂。** 飞弹没有弹珠命中事件，也没有遗物/元素联动。
 4. **伤害结算不统一。** 普通命中、DOT、爆炸、遗物和技能走不同路径；后续“全伤害增幅”“DOT 增伤”“技能触发遗物”容易遗漏或重复计算。
-5. **很多 Stat 是空壳。** 暴击、闪避、护盾、穿甲、敌人移动、run_health 等尚无完整消费者。
+5. **很多 Stat 是空壳。** 闪避、护盾、穿甲、敌人移动、run_health 等尚无完整消费者（暴击已由刺客方位破绽接入）。
 
 ### 内容扩展风险
 
@@ -235,7 +256,7 @@ Boss      = 固定 240
 
 ## 测试覆盖现状
 
-已有 GUT 测试覆盖：Effect/Buff 注册、毒 tick 的 typed event 桥接、火焰传播、成长等级、奖励事务、敌人 HP 编队，以及 BattleSession 的批次/回滚/掉球身份边界。
+已有 GUT 测试覆盖：Effect/Buff 注册、毒 tick 的 typed event 桥接、火焰传播、成长等级、奖励事务、敌人 HP 编队、BattleSession 的批次/回滚/掉球身份边界，以及暴击方位破绽解析、管线暴击乘区与刺客成长 / 在场显隐的端到端接线。
 
 缺少行为级测试：
 
@@ -245,7 +266,7 @@ Boss      = 固定 240
 - 火/毒/冰遗物的端到端协同；
 - 伤害乘区、护甲、DOT、技能之间的统一性。
 
-对应测试目录：`tests/Combat/effects/`、`tests/Combat/status/`、`tests/Loadout/`、`tests/Run/`、`tests/Combat/battle/`。
+对应测试目录：`tests/Combat/effects/`、`tests/Combat/status/`、`tests/Combat/crit/`、`tests/Combat/damage/`、`tests/Loadout/`、`tests/Run/`、`tests/Combat/battle/`。
 
 ## 后续设计建议
 
@@ -302,3 +323,14 @@ Boss      = 固定 240
 - `Run/application/battle_plan_factory.gd`
 - `Commerce/application/normal_shop_session.gd`
 - `Commerce/application/devil_shop_session.gd`
+
+### 暴击与方位破绽（刺客 M1）
+
+- `Combat/crit/weak_point.gd`
+- `Combat/crit/weak_point_host.gd`
+- `Combat/crit/weak_point_visual.gd` / `weak_point_visual.tscn`
+- `Combat/presentation/crit_floating_text.tscn`
+- `Combat/presentation/float_damage_text_pool.gd`（`crit` 样式）
+- `Core/stats/data/crit/*.tres`
+- `Assets/Crit/weak_point_base.png` / `weak_point_prism.png` / `weak_point_perfect_core.png`
+- `Content/data/assassin_marble.tres`

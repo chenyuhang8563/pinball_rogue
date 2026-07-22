@@ -95,8 +95,8 @@ func test_registry_scan_order_and_ids_are_stable() -> void:
 		[] as Array[StringName]
 	).size())
 	assert_eq(ids, [
-		&"blue_marble", &"bomb_marble", &"brown_marble", &"dark_marble", &"dash",
-		&"fire_bellows", &"fire_marble", &"green_marble", &"ice_hammer",
+		&"assassin_marble", &"blue_marble", &"bomb_marble", &"brown_marble", &"dark_marble",
+		&"dash", &"fire_bellows", &"fire_marble", &"green_marble", &"ice_hammer",
 		&"lightning", &"magic_missile", &"poison_culture",
 	] as Array[StringName])
 

@@ -25,6 +25,8 @@ const STAT_EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
 const STAT_EXPLOSION_DAMAGE: String = "explosion_damage"
 const STAT_EXPLOSION_RADIUS: String = "explosion_radius"
 const STAT_ECHO_BONUS_DAMAGE: String = "echo_bonus_damage"
+const STAT_ASSASSIN_SEGMENT_DAMAGE: String = "assassin_segment_damage"
+const STAT_ASSASSIN_WEAK_POINT_COUNT: String = "assassin_weak_point_count"
 
 const UPGRADE_VALUES: Dictionary = {
 	Marble.MARBLE_TYPE.DEFAULT: {
@@ -90,6 +92,17 @@ const UPGRADE_VALUES: Dictionary = {
 			"UPGRADE_FIRE_AWAKEN_DESC",
 		],
 	},
+	Marble.MARBLE_TYPE.ASSASSIN: {
+		"title": "ITEM_ASSASSIN_MARBLE_TITLE",
+		"stat": STAT_ASSASSIN_SEGMENT_DAMAGE,
+		"values": [1.0, 2.0, 3.0],
+		"awakened_value": 3.0,
+		"descriptions": [
+			"UPGRADE_ASSASSIN_DAMAGE_2_DESC",
+			"UPGRADE_ASSASSIN_DAMAGE_3_DESC",
+			"UPGRADE_ASSASSIN_AWAKEN_DESC",
+		],
+	},
 }
 
 const SKILL_LEVELS: Dictionary = {
@@ -119,6 +132,28 @@ var _skill_levels: Dictionary = {}
 func _init(loadout: RefCounted = null, stat_system: Object = null) -> void:
 	_loadout = loadout
 	_stat_system = stat_system
+	_connect_loadout_signals()
+
+
+## Assassin weak-point presence depends on the live chain (an owned marble that is
+## not slotted must not reveal weak points), so re-sync whenever the marble loadout
+## changes. Awakening state is tracked locally and handled in _sync_stat_modifiers.
+func _connect_loadout_signals() -> void:
+	if _loadout != null and is_instance_valid(_loadout) \
+			and _loadout.has_signal("marble_loadout_changed") \
+			and not _loadout.is_connected("marble_loadout_changed", _on_loadout_marble_changed):
+		_loadout.connect("marble_loadout_changed", _on_loadout_marble_changed)
+
+
+func _disconnect_loadout_signals() -> void:
+	if _loadout != null and is_instance_valid(_loadout) \
+			and _loadout.has_signal("marble_loadout_changed") \
+			and _loadout.is_connected("marble_loadout_changed", _on_loadout_marble_changed):
+		_loadout.disconnect("marble_loadout_changed", _on_loadout_marble_changed)
+
+
+func _on_loadout_marble_changed(_items: Array[Item]) -> void:
+	_sync_stat_modifiers()
 
 
 func level_of(item: Item) -> int:
@@ -279,6 +314,7 @@ func get_skill_values(skill_id: String) -> Dictionary:
 
 
 func dispose() -> void:
+	_disconnect_loadout_signals()
 	_clear_upgrade_modifiers()
 	_loadout = null
 	_stat_system = null
@@ -304,6 +340,8 @@ func _sync_stat_modifiers() -> void:
 			STAT_FIRE_BURN_MAX_STACKS,
 			STAT_FIRE_BURN_DAMAGE_PER_LAYER,
 			STAT_FIRE_FUEL_PER_HIT,
+			STAT_ASSASSIN_SEGMENT_DAMAGE,
+			STAT_ASSASSIN_WEAK_POINT_COUNT,
 		])
 	var types_to_sync: Array[int] = []
 	for raw_type: Variant in _marble_levels.keys():
@@ -316,6 +354,7 @@ func _sync_stat_modifiers() -> void:
 			types_to_sync.append(marble_type)
 	for raw_type: int in types_to_sync:
 		_apply_level_modifiers(raw_type as Marble.MARBLE_TYPE)
+	_apply_assassin_weak_point_count()
 
 
 func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
@@ -347,6 +386,23 @@ func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
 			_add_override_modifier(STAT_FIRE_BURN_DAMAGE_PER_LAYER, 2.0)
 		if awakened:
 			_add_override_modifier(STAT_FIRE_FUEL_PER_HIT, 2.0)
+
+
+## Assassin weak-point presence reflects the live chain: 0 when no assassin marble
+## is slotted, 1 when present, 2 when present and awakened. Written as an OVERRIDE
+## modifier on the marble_chain entity so WeakPointHost reads it directly.
+func _apply_assassin_weak_point_count() -> void:
+	var count: int = 0
+	if _loadout_available() and _loadout.has_method("get_chain_items"):
+		var in_field: bool = false
+		for item: Item in _loadout.call("get_chain_items") as Array[Item]:
+			if item != null and int(item.marble_type) == int(Marble.MARBLE_TYPE.ASSASSIN):
+				in_field = true
+				break
+		if in_field:
+			var awakened: bool = bool(_marble_awakened.get(int(Marble.MARBLE_TYPE.ASSASSIN), false))
+			count = 2 if awakened else 1
+	_add_override_modifier(STAT_ASSASSIN_WEAK_POINT_COUNT, float(count))
 
 
 func _add_override_modifier(stat_id: String, value: float) -> void:

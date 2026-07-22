@@ -2,6 +2,7 @@ extends Node
 
 @export var floating_text_scene: PackedScene = preload("res://Combat/presentation/floating_text.tscn")
 @export var burn_floating_text_scene: PackedScene = preload("res://Combat/presentation/burn_floating_text.tscn")
+@export var crit_floating_text_scene: PackedScene = preload("res://Combat/presentation/crit_floating_text.tscn")
 
 var _available: Dictionary = {}
 var _active: Array[Node2D] = []
@@ -67,7 +68,7 @@ func _obtain_text(style: StringName) -> Node2D:
 	var available: Array = _available.get(style, []) as Array
 	if not available.is_empty():
 		return available.pop_back()
-	var scene: PackedScene = burn_floating_text_scene if style == &"burn" else floating_text_scene
+	var scene: PackedScene = _scene_for_style(style)
 	if scene == null:
 		push_warning("FloatDamageTextPool needs a floating_text_scene.")
 		return null
@@ -77,6 +78,16 @@ func _obtain_text(style: StringName) -> Node2D:
 		return null
 	_connect_finished_signal(text)
 	return text
+
+
+func _scene_for_style(style: StringName) -> PackedScene:
+	match style:
+		&"burn":
+			return burn_floating_text_scene
+		&"crit":
+			return crit_floating_text_scene
+		_:
+			return floating_text_scene
 
 
 func _connect_finished_signal(text: Node2D) -> void:
