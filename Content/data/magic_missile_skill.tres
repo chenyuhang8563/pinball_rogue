@@ -12,4 +12,7 @@ icon = ExtResource("2")
 price = 55
 description = "SKILL_MAGIC_MISSILE_DESC"
 type = 3
+rarity = 1
+tags = Array[StringName]([&"skill", &"utility", &"mark"])
+weight = 60
 skill_definition = ExtResource("3")

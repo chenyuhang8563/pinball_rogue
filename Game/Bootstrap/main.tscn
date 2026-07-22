@@ -50,6 +50,7 @@ offset_bottom = 304.0
 [node name="RunEventPanel" parent="CanvasLayer" unique_id=1407412393 instance=ExtResource("9_puekb")]
 
 [node name="DevilShop" parent="CanvasLayer" unique_id=1521257330 instance=ExtResource("10_xi84t")]
+visible = false
 
 [node name="SkillController" type="Node" parent="." unique_id=1382697519]
 script = ExtResource("8_f3gf5")

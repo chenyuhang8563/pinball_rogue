@@ -23,6 +23,14 @@ enum ItemType {
 	SKILL,
 }
 
+enum Rarity {
+	COMMON,
+	UNCOMMON,
+	RARE,
+	BOSS,
+	CURSE,
+}
+
 @export var id: String = ""
 @export var title: String
 @export var icon: Texture2D
@@ -30,6 +38,10 @@ enum ItemType {
 @export var description: String = ""
 @export var effect_type: EffectType = EffectType.NONE
 @export var type: ItemType = ItemType.NONE
+@export var rarity: Rarity = Rarity.COMMON
+@export var tags: Array[StringName] = []
+@export var weight: float = 1.0
+@export var requires_tags: Array[StringName] = []
 @export var marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT
 @export var marble_segment_damage: int = 1
 @export var skill_definition: SkillDefinition

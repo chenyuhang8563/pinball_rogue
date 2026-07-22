@@ -1,6 +1,8 @@
 extends RigidBody2D
 class_name MagicMissile
 
+const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
+
 @export var damage: int = 10
 @export var launch_speed: float = 220.0
 @export var max_lifetime: float = 4.0
@@ -53,9 +55,19 @@ func _on_body_entered(body: Node) -> void:
 	if _damaged_enemy_ids.has(instance_id):
 		return
 	_damaged_enemy_ids[instance_id] = true
-	if not body.has_method("take_damage"):
+	if not body.has_method("apply_damage_packet") and not body.has_method("take_damage"):
 		return
-	body.call("take_damage", damage, Color(0.55, 0.75, 1.0, 1.0))
+	var packet: DamagePacket = DamagePacketScript.new(&"skill_missile", float(damage), &"arcane")
+	packet.is_skill = true
+	packet.target = body as Node2D
+	packet.flash_color = Color(0.55, 0.75, 1.0, 1.0)
+	if body.has_method("apply_damage_packet"):
+		body.call("apply_damage_packet", packet)
+	else:
+		body.call("take_damage", damage, packet.flash_color)
+	var effect_manager: Node = _get_effect_manager()
+	if effect_manager != null and effect_manager.has_method("on_skill_hit") and body is Node2D:
+		effect_manager.call("on_skill_hit", body as Node2D, &"magic_missile", packet)
 
 
 func _on_safety_timer_timeout() -> void:
@@ -70,3 +82,8 @@ func _on_lifetime_timer_timeout() -> void:
 
 func has_shooter_exception() -> bool:
 	return is_instance_valid(_shooter)
+
+
+func _get_effect_manager() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	return tree.root.get_node_or_null("EffectManager") if tree != null else null

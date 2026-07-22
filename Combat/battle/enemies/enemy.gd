@@ -4,6 +4,8 @@ extends RigidBody2D
 signal defeated(enemy: Enemy, cause: StringName)
 
 const StatContextScript: GDScript = preload("res://Core/stats/stat_context.gd")
+const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
+const DamagePipelineScript: GDScript = preload("res://Combat/damage/damage_pipeline.gd")
 const FrostStatusVisualScene: PackedScene = preload("res://Combat/effects/frost_status_visual/frost_status_visual.tscn")
 const FireStatusVisualScene: PackedScene = preload("res://Combat/effects/fire_status_visual/fire_status_visual.tscn")
 const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition"
@@ -54,25 +56,45 @@ func _on_body_entered(body: Node) -> void:
 	if body.is_in_group("marbles"):
 		var was_burning: bool = has_buff("fire_burn_debuff")
 		var was_frozen: bool = has_buff("frozen_debuff")
+		var packet: DamagePacket = DamagePacketScript.new(&"marble_head", 0.0)
+		packet.is_marble = true
+		packet.target = self
+		# This hook intentionally runs before chain aggregation to preserve legacy
+		# lightning timing. Consumers may write metadata or flat damage only; base
+		# is assigned after get_hit_damage completes below.
 		var effect_manager: Node = _get_effect_manager()
 		if effect_manager != null and effect_manager.has_method("on_enemy_hit_by_marble"):
-			effect_manager.call("on_enemy_hit_by_marble", self)
-		var hit_damage: int = _get_damage_from_body(body)
-		take_damage(hit_damage, _get_active_buff_flash_color())
+			effect_manager.call("on_enemy_hit_by_marble", self, packet)
+		var hit_damage: int = _get_damage_from_body(body, packet)
+		packet.base = float(hit_damage)
+		packet.flash_color = _get_active_buff_flash_color()
+		apply_damage_packet(packet)
 		if is_alive() and effect_manager != null and effect_manager.has_method("on_enemy_hit_resolved"):
-			effect_manager.call("on_enemy_hit_resolved", self, was_burning, was_frozen)
+			effect_manager.call("on_enemy_hit_resolved", self, was_burning, was_frozen, packet)
 		_apply_frozen_push_from_body(body)
 
 
 func take_damage(amount: int, flash_color: Color = Color.WHITE, floating_style: StringName = &"default") -> void:
-	var final_damage: int = amount
+	var packet: DamagePacket = DamagePacketScript.new(&"untyped", float(amount))
+	packet.flash_color = flash_color
+	packet.floating_style = floating_style
+	apply_damage_packet(packet)
+
+
+func apply_damage_packet(packet: DamagePacket) -> void:
+	if packet == null:
+		return
+	if packet.target == null or packet.target != self:
+		packet.target = self
+	var pre_armor: int = DamagePipelineScript.resolve_pre_armor(packet, _get_stat_system())
+	var final_damage: int = pre_armor
 	var stat_system: Node = _get_stat_system()
 	if stat_system != null and stat_system.has_method("get_stat") and _entity_id != "":
 		var context: RefCounted = StatContextScript.new(
 			_entity_id,
 			"",
-			"take_damage",
-			{"raw_damage": amount}
+			"apply_damage_packet",
+			{"raw_damage": pre_armor}
 		)
 		final_damage = int(stat_system.call("get_stat", "damage_received", _entity_id, context))
 		var current_health: int = int(stat_system.call("get_stat", "current_health", _entity_id))
@@ -80,12 +102,17 @@ func take_damage(amount: int, flash_color: Color = Color.WHITE, floating_style: 
 		health = int(stat_system.call("get_stat", "current_health", _entity_id))
 	else:
 		health -= final_damage
+	packet.final_amount = final_damage
 
-	flash_hit_mask(flash_color)
-	_show_float_damage_text(final_damage, floating_style)
+	flash_hit_mask(packet.flash_color)
+	_show_float_damage_text(final_damage, packet.floating_style)
+	var effect_manager: Node = _get_effect_manager()
+	if effect_manager != null and effect_manager.has_method("on_damage_dealt"):
+		effect_manager.call("on_damage_dealt", self, packet)
 
 	if health <= 0:
-		defeat(&"health_depleted")
+		if defeat(&"health_depleted") and effect_manager != null and effect_manager.has_method("on_enemy_defeated"):
+			effect_manager.call("on_enemy_defeated", self, packet)
 
 
 func defeat(cause: StringName) -> bool:
@@ -99,9 +126,14 @@ func defeat(cause: StringName) -> bool:
 	return true
 
 
-func add_buff(buff: BuffDef, stacks: int = 1) -> void:
+func add_buff(buff: BuffDef, stacks: int = 1, packet: DamagePacket = null) -> void:
 	if buff_host != null:
-		buff_host.add_buff(buff, stacks)
+		var applied: bool = buff_host.add_buff(buff, stacks)
+		var after_stacks: int = get_buff_stacks(buff.id) if buff != null else 0
+		if applied and buff != null and after_stacks > 0:
+			var effect_manager: Node = _get_effect_manager()
+			if effect_manager != null and effect_manager.has_method("on_status_applied"):
+				effect_manager.call("on_status_applied", self, StringName(buff.id), after_stacks, packet)
 
 
 func remove_buff(buff_id: String) -> void:
@@ -123,10 +155,6 @@ func append_buff_duration(buff_id: String, duration_to_append: float, max_durati
 	return buff_host != null and buff_host.append_buff_duration(buff_id, duration_to_append, max_duration)
 
 
-func trigger_fire_relic_hit(hit_threshold: int, preserve_ticks: bool) -> bool:
-	return buff_host != null and buff_host.trigger_fire_relic_hit(hit_threshold, preserve_ticks)
-
-
 ## Buff 通过宿主门面报告离散 tick；BuffHost 负责 typed 事件发射，使 buff 脚本
 ## 完全不依赖 Effect 域。
 func notify_buff_ticked(buff_id: String) -> void:
@@ -136,11 +164,15 @@ func notify_buff_ticked(buff_id: String) -> void:
 
 ## 单向桥：Buff 只发事件，由宿主把 poison tick 转给 Effect 域（毒循环反转）。
 func _on_buff_ticked(buff_id: String, host: Node) -> void:
-	if buff_id != "poison_debuff" or not host is Node2D:
+	if not host is Node2D:
 		return
 	var effect_manager: Node = _get_effect_manager()
-	if effect_manager != null and effect_manager.has_method("on_poison_tick"):
-		effect_manager.call("on_poison_tick", host as Node2D)
+	if effect_manager == null:
+		return
+	if buff_id == "poison_debuff" and effect_manager.has_method("on_poison_tick"):
+		effect_manager.call("on_poison_tick", host as Node2D, get_buff_stacks(buff_id))
+	if buff_id == "fire_burn_debuff" and effect_manager.has_method("on_burn_tick"):
+		effect_manager.call("on_burn_tick", host as Node2D, get_buff_stacks(buff_id))
 
 
 func is_alive() -> bool:
@@ -231,9 +263,9 @@ func clear_fire_status_visual() -> void:
 	_fire_visual = null
 
 
-func _get_damage_from_body(body: Node) -> int:
+func _get_damage_from_body(body: Node, packet: DamagePacket = null) -> int:
 	if body.has_method("get_hit_damage"):
-		return body.get_hit_damage(self)
+		return body.get_hit_damage(self, packet)
 	return 1
 
 

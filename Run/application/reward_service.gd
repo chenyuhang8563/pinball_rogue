@@ -44,6 +44,7 @@ var _progression: Variant = null
 var _wallet: Variant = null
 var _config: BattleRewardConfig = null
 var _random_source: RunRandomSource = null
+var _content_registry: Node = null
 var _configured: bool = false
 var _active_draft: RewardOffer = null
 var _pending_replacement: Dictionary = {}
@@ -59,7 +60,8 @@ func configure(
 	progression: Variant,
 	wallet: Variant,
 	config: BattleRewardConfig,
-	random_source: RunRandomSource
+	random_source: RunRandomSource,
+	content_registry: Node = null
 ) -> bool:
 	if _settling:
 		return false
@@ -70,6 +72,7 @@ func configure(
 	_wallet = wallet
 	_config = config
 	_random_source = random_source
+	_content_registry = content_registry
 	_configured = _has_api(_loadout, [
 		&"find_owned", &"can_add", &"add", &"replace_skill", &"current_skill",
 		&"revision", &"snapshot", &"restore",
@@ -102,17 +105,19 @@ func create_node_draft(
 		return null
 	var source_items: Array[Item] = _items_from(candidates)
 	if candidates.is_empty():
-		source_items = _load_items(DEFAULT_NODE_ITEM_PATHS)
+		source_items = _registry_all_items()
+		if source_items.is_empty():
+			source_items = _load_items(DEFAULT_NODE_ITEM_PATHS)
 	var eligible: Array[Item] = []
 	for item: Item in source_items:
 		if _contains_identity(eligible, item):
 			continue
-		var resolution := _resolution_for_item(item, false)
+		var resolution := _eligible_resolution(item, false)
 		if resolution >= 0:
 			eligible.append(item)
 	var options: Array[RewardOption] = []
 	while options.size() < 3 and not eligible.is_empty():
-		var item := _take_random(eligible)
+		var item := _take_weighted(eligible)
 		options.append(_make_item_option(item, _resolution_for_item(item, false)))
 	if options.is_empty():
 		options.append(_make_gold_option(COMPENSATION_GOLD))
@@ -145,15 +150,19 @@ func create_normal_draft(
 	var marbles := _items_from(marble_candidates)
 	var skills := _items_from(skill_candidates)
 	if marble_candidates.is_empty():
-		marbles = _load_items(
-			_config.marble_item_paths if not _config.marble_item_paths.is_empty() \
-			else DEFAULT_NORMAL_MARBLE_PATHS
-		)
+		marbles = _registry_query(Item.ItemType.MARBLE)
+		if marbles.is_empty():
+			marbles = _load_items(
+				_config.marble_item_paths if not _config.marble_item_paths.is_empty() \
+				else DEFAULT_NORMAL_MARBLE_PATHS
+			)
 	if skill_candidates.is_empty():
-		skills = _load_items(
-			_config.skill_item_paths if not _config.skill_item_paths.is_empty() \
-			else DEFAULT_NORMAL_SKILL_PATHS
-		)
+		skills = _registry_query(Item.ItemType.SKILL)
+		if skills.is_empty():
+			skills = _load_items(
+				_config.skill_item_paths if not _config.skill_item_paths.is_empty() \
+				else DEFAULT_NORMAL_SKILL_PATHS
+			)
 	marbles = _eligible_pool(marbles, Item.ItemType.MARBLE, false)
 	skills = _eligible_pool(skills, Item.ItemType.SKILL, false)
 	var categories: Array[Dictionary] = [{
@@ -175,7 +184,7 @@ func create_normal_draft(
 			options.append(_make_gold_option(_normal_gold_amount()))
 		else:
 			var category_items: Array[Item] = category[&"items"]
-			var item := _take_random(category_items)
+			var item := _take_weighted(category_items)
 			options.append(_make_item_option(item, _resolution_for_item(item, false)))
 	return _install_draft(
 		token, BattlePlan.RewardPolicy.NORMAL, source_id,
@@ -210,11 +219,13 @@ func create_elite_draft(
 		return null
 	var relics := _items_from(relic_candidates)
 	if relic_candidates.is_empty():
-		relics = _load_items(DEFAULT_RELIC_PATHS)
+		relics = _registry_query(Item.ItemType.RELIC)
+		if relics.is_empty():
+			relics = _load_items(DEFAULT_RELIC_PATHS)
 	relics = _eligible_pool(relics, Item.ItemType.RELIC, true)
 	var options: Array[RewardOption] = []
 	if not relics.is_empty():
-		var relic := _take_random(relics)
+		var relic := _take_weighted(relics)
 		options.append(_make_item_option(relic, _resolution_for_item(relic, true)))
 	options.append(_make_gold_option(_random_source.range_int(ELITE_GOLD_MIN, ELITE_GOLD_MAX)))
 	return _install_draft(
@@ -662,9 +673,15 @@ func _eligible_pool(items: Array[Item], expected_type: Item.ItemType, allow_comp
 	for item: Item in items:
 		if item == null or item.type != expected_type or _contains_identity(result, item):
 			continue
-		if _resolution_for_item(item, allow_compensation) >= 0:
+		if _eligible_resolution(item, allow_compensation) >= 0:
 			result.append(item)
 	return result
+
+
+func _eligible_resolution(item: Item, allow_compensation: bool) -> int:
+	if item == null or item.weight <= 0.0 or not _requirements_met(item):
+		return -1
+	return _resolution_for_item(item, allow_compensation)
 
 
 func _weighted_category_index(categories: Array[Dictionary]) -> int:
@@ -687,6 +704,29 @@ func _take_random(items: Array[Item]) -> Item:
 	return items.pop_at(clampi(index, 0, items.size() - 1))
 
 
+func _take_weighted(items: Array[Item]) -> Item:
+	if items.is_empty():
+		return null
+	var weights := PackedFloat64Array()
+	var first_weight := -1.0
+	var equal_positive_weights := true
+	for item: Item in items:
+		var weight := maxf(0.0, item.weight) if item != null else 0.0
+		weights.append(weight)
+		if first_weight < 0.0:
+			first_weight = weight
+		elif not is_equal_approx(first_weight, weight):
+			equal_positive_weights = false
+	# Preserve the old deterministic explicit-candidate contract while registry
+	# pools use their authored float weights.
+	if equal_positive_weights and first_weight > 0.0:
+		return _take_random(items)
+	var index := _random_source.weighted_index_float(weights)
+	if index < 0:
+		return null
+	return items.pop_at(index)
+
+
 func _items_from(values: Array) -> Array[Item]:
 	var result: Array[Item] = []
 	for value: Variant in values:
@@ -705,6 +745,43 @@ func _load_items(paths: PackedStringArray) -> Array[Item]:
 	return result
 
 
+func _registry_all_items() -> Array[Item]:
+	if _content_registry == null or not is_instance_valid(_content_registry) \
+			or not _content_registry.has_method(&"query"):
+		return []
+	var result: Array[Item] = []
+	for item_type: Item.ItemType in [
+		Item.ItemType.MARBLE, Item.ItemType.RELIC, Item.ItemType.SKILL,
+	]:
+		result.append_array(_registry_query(item_type))
+	return result
+
+
+func _registry_query(item_type: Item.ItemType) -> Array[Item]:
+	if _content_registry == null or not is_instance_valid(_content_registry) \
+			or not _content_registry.has_method(&"query"):
+		return []
+	return _items_from(_content_registry.call(&"query", item_type) as Array)
+
+
+func _requirements_met(item: Item) -> bool:
+	if item == null or item.requires_tags.is_empty():
+		return true
+	var owned_tags: Array[StringName] = []
+	if _loadout != null and _loadout.has_method(&"owned_items"):
+		for value: Variant in _loadout.call(&"owned_items") as Array:
+			var owned := value as Item
+			if owned == null:
+				continue
+			for tag: StringName in owned.tags:
+				if not owned_tags.has(tag):
+					owned_tags.append(tag)
+	for required: StringName in item.requires_tags:
+		if not owned_tags.has(required):
+			return false
+	return true
+
+
 func _contains_identity(items: Array[Item], candidate: Item) -> bool:
 	var key := _identity_key(candidate)
 	for item: Item in items:
@@ -720,7 +797,11 @@ func _identity_key(item: Item) -> String:
 		return "type:%d:marble:%d" % [int(item.type), int(item.marble_type)]
 	if not item.id.is_empty():
 		return "type:%d:id:%s" % [int(item.type), item.id]
-	return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
+	if not item.resource_path.is_empty():
+		return "type:%d:path:%s" % [int(item.type), item.resource_path]
+	if item.effect_type != Item.EffectType.NONE:
+		return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
+	return "type:%d:instance:%d" % [int(item.type), item.get_instance_id()]
 
 
 func _matches_expected_owned(owned: Item, option: RewardOption) -> bool:

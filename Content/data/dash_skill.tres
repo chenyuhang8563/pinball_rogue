@@ -12,4 +12,6 @@ icon = ExtResource("1_akhwl")
 price = 0
 description = "SKILL_DASH_DESC"
 type = 3
+tags = Array[StringName]([&"skill", &"utility", &"starting"])
+weight = 0.0
 skill_definition = ExtResource("3")

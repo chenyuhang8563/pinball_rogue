@@ -25,8 +25,8 @@ class_name MarbleChain
 
 signal chain_collision(collider: Node, collision_type: String)
 
-const StatContextScript: GDScript = preload("res://Core/stats/stat_context.gd")
 const FireMarbleScript: GDScript = preload("res://Combat/marbles/fire_marble.gd")
+const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
 
 # ---- 导出调参 ----
 
@@ -197,6 +197,10 @@ func _on_head_body_entered(collided_body: Node) -> void:
 	else:
 		# 棕色弹珠：碰非敌（墙/挡板等）叠回声
 		_try_add_echo()
+		var effect_manager: Node = _get_autoload_node(&"EffectManager")
+		if effect_manager != null and effect_manager.has_method("on_surface_bounce"):
+			var surface_type: StringName = &"flipper" if collided_body.is_in_group("flipper") else &"wall"
+			effect_manager.call("on_surface_bounce", surface_type, {})
 
 
 # ---- 炸弹逻辑 ----
@@ -222,6 +226,9 @@ func _find_segment(marble_type: Marble.MARBLE_TYPE) -> ChainSegment:
 func _damage_enemies_in_radius(center: Vector2) -> void:
 	var explosion_radius: float = _get_stat_float("explosion_radius", 100.0)
 	var explosion_damage: int = roundi(_get_stat_float("explosion_damage", 5.0))
+	var effect_manager: Node = _get_autoload_node(&"EffectManager")
+	if effect_manager != null and effect_manager.has_method("on_explosion"):
+		effect_manager.call("on_explosion", center, explosion_radius)
 
 	for enemy: Node in get_tree().get_nodes_in_group("enemies"):
 		if enemy == null or not is_instance_valid(enemy):
@@ -231,9 +238,16 @@ func _damage_enemies_in_radius(center: Vector2) -> void:
 		var enemy_node: Node2D = enemy as Node2D
 		if enemy_node.global_position.distance_to(center) > explosion_radius:
 			continue
-		if enemy_node.has_method("take_damage"):
+		if enemy_node.has_method("apply_damage_packet"):
+			var packet: DamagePacket = DamagePacketScript.new(&"bomb", float(explosion_damage), &"physical")
+			packet.is_marble = true
+			packet.target = enemy_node
+			enemy_node.call("apply_damage_packet", packet)
+		elif enemy_node.has_method("take_damage"):
+			# Compatibility for non-Enemy test doubles. Real enemies use the packet
+			# path above and retain the old multiplier-before-armor result.
 			var direct_damage := roundi(float(explosion_damage) * _get_stat_float("damage_multiplier", 1.0))
-			enemy_node.take_damage(direct_damage)
+			enemy_node.call("take_damage", direct_damage)
 
 
 func _spawn_explosion_effect(center: Vector2) -> void:
@@ -260,7 +274,7 @@ func _try_add_echo() -> void:
 # ---- 伤害聚合 ----
 
 ## 敌人碰撞时调用此方法，聚合 Head 基础伤害 + 所有 Body 段贡献。
-func get_total_damage(target: Node) -> int:
+func get_total_damage(target: Node, packet: DamagePacket = null) -> int:
 	var total: int = 0
 
 	if head != null and is_instance_valid(head):
@@ -270,26 +284,16 @@ func get_total_damage(target: Node) -> int:
 		if seg == null or not is_instance_valid(seg):
 			continue
 		if seg.segment_type == Marble.MARBLE_TYPE.GREEN:
-			GreenMarble.apply_poison_to_enemy(target)
+			GreenMarble.apply_poison_to_enemy(target, packet)
 		elif seg.segment_type == Marble.MARBLE_TYPE.BLUE:
-			var stacks_after_hit: int = BlueMarble.apply_frost_to_enemy(target)
+			var stacks_after_hit: int = BlueMarble.apply_frost_to_enemy(target, packet)
 			total += BlueMarble.get_frost_bonus_damage(stacks_after_hit)
 		elif seg.segment_type == Marble.MARBLE_TYPE.FIRE:
-			FireMarbleScript.apply_burn_to_enemy(target)
+			FireMarbleScript.apply_burn_to_enemy(target, packet)
 		total += seg.damage
 		total += seg.get_echo_damage()
 
-	var stat_system: Node = _get_autoload_node(&"StatSystem")
-	if stat_system == null or not stat_system.has_method("get_stat"):
-		return total
-
-	var context: RefCounted = StatContextScript.new(
-		"marble_chain",
-		target.name if target != null else "",
-		"marble_hit",
-		{"base_damage": total}
-	)
-	return int(stat_system.call("get_stat", "final_damage", "marble_chain", context))
+	return total
 
 
 func _get_autoload_node(node_name: StringName) -> Node:

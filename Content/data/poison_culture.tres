@@ -12,3 +12,7 @@ price = 20
 description = "ITEM_POISON_CULTURE_DESC"
 effect_type = 8
 type = 2
+rarity = 1
+tags = Array[StringName]([&"relic", &"poison", &"spread"])
+weight = 60
+requires_tags = Array[StringName]([&"poison"])

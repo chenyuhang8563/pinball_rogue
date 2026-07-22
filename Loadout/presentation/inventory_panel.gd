@@ -9,6 +9,7 @@ signal upgrade_intent(
 signal upgrade_unavailable_intent(token: RunFlowToken, offer_id: StringName)
 
 const ItemLevelResolverScript: GDScript = preload("res://Loadout/presentation/item_level_resolver.gd")
+const RarityStyleResolverScript: GDScript = preload("res://UI/shared/rarity_style_resolver.gd")
 
 @export var toggle_action: StringName = &"toggle_inventory"
 @export var skill_slot_count: int = 1
@@ -215,6 +216,7 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 		if slot.has_meta("item"):
 			slot.remove_meta("item")
 		_clear_icon_view(icon_view)
+		RarityStyleResolverScript.apply_to(slot as Control, null)
 
 		if index >= collection_items.size():
 			continue
@@ -222,6 +224,7 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 		if item == null:
 			continue
 		slot.set_meta("item", item)
+		RarityStyleResolverScript.apply_to(slot as Control, item)
 		_connect_slot(slot)
 		_set_icon_view_texture(icon_view, item.icon)
 		_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item, _progression))

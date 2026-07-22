@@ -35,9 +35,9 @@ func _process(delta: float) -> void:
 	_process_active_buffs(delta)
 
 
-func add_buff(buff: BuffDef, stacks: int = 1) -> void:
+func add_buff(buff: BuffDef, stacks: int = 1) -> bool:
 	if buff == null or buff.id == "":
-		return
+		return false
 
 	var requested_stacks: int = max(1, stacks)
 	if _active_buffs.has(buff.id):
@@ -46,14 +46,15 @@ func add_buff(buff: BuffDef, stacks: int = 1) -> void:
 			_active_buffs.erase(buff.id)
 		else:
 			if existing.definition.reapply_policy == BuffDef.ReapplyPolicy.IGNORE:
-				return
+				return false
 			_refresh_buff(existing, requested_stacks)
-			return
+			return true
 
 	var active_buff: ActiveBuff = ActiveBuff.new(buff, requested_stacks)
 	_active_buffs[buff.id] = active_buff
 	active_buff.state["stacks"] = active_buff.stacks
 	active_buff.definition.on_apply(_host, active_buff.state)
+	return true
 
 
 func remove_buff(buff_id: String) -> void:
@@ -79,11 +80,6 @@ func get_buff_remaining_time(buff_id: String) -> float:
 	return active_buff.remaining_time if active_buff != null else 0.0
 
 
-func get_buff_pending_ticks(buff_id: String) -> int:
-	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
-	return int(active_buff.state.get("pending_ticks", 0)) if active_buff != null else 0
-
-
 func append_buff_duration(buff_id: String, duration_to_append: float, max_duration: float = -1.0) -> bool:
 	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
 	if active_buff == null or active_buff.is_permanent() or duration_to_append <= 0.0:
@@ -96,19 +92,6 @@ func append_buff_duration(buff_id: String, duration_to_append: float, max_durati
 	if applied_duration > 0.0:
 		active_buff.definition.on_duration_appended(_host, active_buff.state, applied_duration)
 	return applied_duration > 0.0
-
-
-func trigger_fire_relic_hit(hit_threshold: int, preserve_ticks: bool) -> bool:
-	var active_buff: ActiveBuff = _active_buffs.get("fire_burn_debuff") as ActiveBuff
-	if active_buff == null or not active_buff.definition.has_method("trigger_relic_hit"):
-		return false
-	return bool(active_buff.definition.call(
-		"trigger_relic_hit",
-		_host,
-		active_buff.state,
-		hit_threshold,
-		preserve_ticks
-	))
 
 
 func notify_host_death() -> void:

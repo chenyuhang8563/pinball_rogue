@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Core/stats/stat_def.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+id = "poison_max_stacks"
+display_name = "Poison Max Stacks"
+category = "marble"
+base_value = 15.0
+min_value = 1.0
+max_value = 15.0
+integer = true

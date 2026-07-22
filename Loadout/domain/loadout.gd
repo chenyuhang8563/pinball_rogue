@@ -8,7 +8,7 @@ signal marble_loadout_changed(items: Array[Item])
 signal skill_slot_changed(item: Item)
 
 const DEFAULT_MARBLE_CAPACITY: int = 3
-const DEFAULT_RELIC_CAPACITY: int = 3
+const DEFAULT_RELIC_CAPACITY: int = 5
 const DEFAULT_SKILL_CAPACITY: int = 1
 
 var _owned_items: Array[Item] = []
@@ -165,9 +165,10 @@ func restore(state: Dictionary) -> bool:
 	if not state.has(&"owned_items") or not state[&"owned_items"] is Array \
 			or not state.has(&"marble_loadout") or not state[&"marble_loadout"] is Dictionary:
 		return false
-	var restored_items: Array[Item] = _validated_owned_items(state[&"owned_items"] as Array) as Array[Item]
-	if restored_items == null:
+	var validated_items: Variant = _validated_owned_items(state[&"owned_items"] as Array)
+	if not validated_items is Array:
 		return false
+	var restored_items: Array[Item] = validated_items as Array[Item]
 	var previous_items := _owned_items
 	var previous_chain := get_chain_items()
 	var previous_skill := current_skill()
@@ -250,17 +251,18 @@ func _on_marble_loadout_changed(items: Array[Item]) -> void:
 
 func _validated_owned_items(values: Array) -> Variant:
 	var result: Array[Item] = []
-	var skill_count := 0
+	var counts: Dictionary[int, int] = {}
 	for value: Variant in values:
 		var item := value as Item
 		if item == null or item.type not in [Item.ItemType.MARBLE, Item.ItemType.RELIC, Item.ItemType.SKILL]:
 			return null
 		if _contains_identity(result, item):
 			return null
-		if item.type == Item.ItemType.SKILL:
-			skill_count += 1
-			if skill_count > DEFAULT_SKILL_CAPACITY:
-				return null
+		var type_key := int(item.type)
+		var count := int(counts.get(type_key, 0)) + 1
+		if count > _capacity_for(item.type):
+			return null
+		counts[type_key] = count
 		result.append(item)
 	return result
 
@@ -294,7 +296,11 @@ func _identity_key(item: Item) -> String:
 		return "type:%d:marble:%d" % [int(item.type), int(item.marble_type)]
 	if item.id != "":
 		return "type:%d:id:%s" % [int(item.type), item.id]
-	return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
+	if not item.resource_path.is_empty():
+		return "type:%d:path:%s" % [int(item.type), item.resource_path]
+	if item.effect_type != Item.EffectType.NONE:
+		return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
+	return "type:%d:instance:%d" % [int(item.type), item.get_instance_id()]
 
 
 func _item_instance_keys(items: Array[Item]) -> Array[String]:

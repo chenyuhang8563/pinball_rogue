@@ -80,7 +80,7 @@ func test_phase7_font_sizes_fallbacks_and_black_style_contracts() -> void:
 	assert_eq(charge.label_settings.font, composite_10)
 	assert_eq(charge.label_settings.font_size, 10)
 	var devil_reward := main.get_node("CanvasLayer/DevilShop/BottomHUD/ConfirmButton") as Button
-	assert_eq(devil_reward.get_theme_font_size(&"font_size"), 8, "Devil reward button 是唯一字号例外")
+	assert_eq(devil_reward.get_theme_font_size(&"font_size"), 10, "Devil reward button uses the approved 10px composite font")
 	assert_eq(devil_reward.get_theme_font(&"font"), composite_10)
 
 	var event_button := main.get_node(

@@ -1,33 +1,31 @@
 extends BuffDef
 class_name FireBurnDebuff
 
+const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
+
 const FIRE_COLOR: Color = Color(1.0, 0.2, 0.15, 1.0)
 const BURN_ID: String = "fire_burn_debuff"
 const STAT_ENTITY_MARBLE_CHAIN: String = "marble_chain"
 const STAT_FIRE_BURN_DURATION: String = "fire_burn_duration"
+const STAT_FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
 const STAT_FIRE_EMBER_SPREAD_ENABLED: String = "fire_ember_spread_enabled"
-const MAX_PENDING_TICKS: int = 10
+const MAX_BURN_LAYERS: int = 10
 
 
 func _init() -> void:
 	id = BURN_ID
 	display_name = "Burn"
-	description = "Deals decreasing fire damage once per second."
-	duration = float(_get_burn_duration_ticks())
-	stackable = false
-	max_stacks = 1
+	description = "Deals fire damage per fuel layer once per second."
+	duration = _get_burn_duration()
+	stackable = true
+	max_stacks = MAX_BURN_LAYERS
 	source = BuffSource.CHAIN_MECHANIC
-	reapply_policy = ReapplyPolicy.IGNORE
+	reapply_policy = ReapplyPolicy.REFRESH
 
 
 func on_apply(host: Node, state: Dictionary) -> void:
-	var pending_ticks: int = clampi(int(params.get("pending_ticks", _get_burn_duration_ticks())), 1, MAX_PENDING_TICKS)
-	# Consume the first tick immediately on collision: the enemy takes damage
-	# equal to the burn duration right away, shifting the remaining ticks to
-	# fire at the START of each subsequent second (rather than the end).
-	_deal_tick_damage(host, pending_ticks)
-	pending_ticks -= 1
-	state["pending_ticks"] = pending_ticks
+	# Reapplication changes the shared stack and refreshes the complete duration;
+	# ticks remain elapsed-time based rather than a consumable pending-tick pool.
 	state["tick_accumulator"] = 0.0
 	state["hit_flash_color"] = FIRE_COLOR
 	if host.has_method("set_fire_status_visual"):
@@ -36,34 +34,10 @@ func on_apply(host: Node, state: Dictionary) -> void:
 
 func on_process(host: Node, state: Dictionary, delta: float) -> void:
 	var tick_accumulator: float = float(state.get("tick_accumulator", 0.0)) + delta
-	var pending_ticks: int = int(state.get("pending_ticks", 0))
-	# Remaining ticks fire at the START of each subsequent second.
-	while tick_accumulator >= 1.0 and pending_ticks > 0:
+	while tick_accumulator >= 1.0:
 		tick_accumulator -= 1.0
-		_deal_tick_damage(host, pending_ticks)
-		pending_ticks -= 1
-	state["pending_ticks"] = pending_ticks
+		_deal_tick_damage(host, int(state.get("stacks", 1)))
 	state["tick_accumulator"] = tick_accumulator
-
-
-func on_duration_appended(_host: Node, state: Dictionary, duration_to_append: float) -> void:
-	var pending_ticks: int = int(state.get("pending_ticks", 0))
-	state["pending_ticks"] = mini(MAX_PENDING_TICKS, pending_ticks + roundi(duration_to_append))
-
-
-func trigger_relic_hit(host: Node, state: Dictionary, hit_threshold: int, preserve_ticks: bool) -> bool:
-	var pending_ticks: int = int(state.get("pending_ticks", 0))
-	if pending_ticks <= 0:
-		return false
-	var hit_count: int = int(state.get("relic_hit_count", 0)) + 1
-	if hit_count < maxi(1, hit_threshold):
-		state["relic_hit_count"] = hit_count
-		return false
-	state["relic_hit_count"] = 0
-	if not preserve_ticks:
-		state["pending_ticks"] = pending_ticks - 1
-	_deal_tick_damage(host, pending_ticks)
-	return true
 
 
 func on_remove(host: Node, _state: Dictionary) -> void:
@@ -72,22 +46,18 @@ func on_remove(host: Node, _state: Dictionary) -> void:
 
 
 func on_host_death(host: Node, state: Dictionary) -> void:
-	var pending_ticks: int = int(state.get("pending_ticks", 0))
-	if pending_ticks <= 0 or not _is_ember_spread_enabled():
+	var layers: int = clampi(int(state.get("stacks", 0)), 0, MAX_BURN_LAYERS)
+	if layers <= 0 or not _is_ember_spread_enabled():
 		return
 	var target: Node2D = _find_nearest_alive_enemy(host)
 	if target == null:
-		return
-	if target.has_method("has_buff") and bool(target.call("has_buff", BURN_ID)):
-		if target.has_method("append_buff_duration"):
-			target.call("append_buff_duration", BURN_ID, float(pending_ticks), float(MAX_PENDING_TICKS))
 		return
 	if target.has_method("add_buff"):
 		var spread_burn: BuffDef = make_buff(BURN_ID)
 		if spread_burn == null:
 			return
-		spread_burn.params["pending_ticks"] = pending_ticks
-		target.call("add_buff", spread_burn)
+		var spread_layers: int = maxi(1, ceili(float(layers) * 0.5))
+		target.call("add_buff", spread_burn, spread_layers)
 
 
 func _find_nearest_alive_enemy(host: Node) -> Node2D:
@@ -109,21 +79,40 @@ func _find_nearest_alive_enemy(host: Node) -> Node2D:
 	return best
 
 
-## Deals one burn tick to the host. The damage equals the current pending tick
-## count (i.e. the remaining burn duration), so the first tick hits for the full
-## burn duration and each subsequent tick decreases by one.
-func _deal_tick_damage(host: Node, pending_ticks: int) -> void:
-	if pending_ticks <= 0:
+## Deals one burn tick to the host. Fuel layers remain stable for the refreshed
+## duration, and each layer contributes the configured per-layer damage.
+func _deal_tick_damage(host: Node, layers: int) -> void:
+	if layers <= 0:
 		return
-	if host.has_method("take_damage"):
-		host.call("take_damage", pending_ticks, FIRE_COLOR, &"burn")
+	var damage: int = maxi(0, roundi(float(layers) * _get_burn_damage_per_layer()))
+	if damage <= 0:
+		return
+	if host.has_method("apply_damage_packet"):
+		var packet: DamagePacket = DamagePacketScript.new(&"dot_burn", float(damage), &"fire")
+		packet.is_dot = true
+		packet.flash_color = FIRE_COLOR
+		packet.floating_style = &"burn"
+		if host is Node2D:
+			packet.target = host as Node2D
+		host.call("apply_damage_packet", packet)
+	elif host.has_method("take_damage"):
+		host.call("take_damage", damage, FIRE_COLOR, &"burn")
+	if host.has_method("notify_buff_ticked"):
+		host.call("notify_buff_ticked", BURN_ID)
 
 
-func _get_burn_duration_ticks() -> int:
+func _get_burn_duration() -> float:
 	var stat_system: Node = _get_stat_system()
 	if stat_system != null and stat_system.has_method("get_stat"):
-		return clampi(roundi(float(stat_system.call("get_stat", STAT_FIRE_BURN_DURATION, STAT_ENTITY_MARBLE_CHAIN))), 1, MAX_PENDING_TICKS)
-	return 3
+		return maxf(0.1, float(stat_system.call("get_stat", STAT_FIRE_BURN_DURATION, STAT_ENTITY_MARBLE_CHAIN)))
+	return 3.0
+
+
+func _get_burn_damage_per_layer() -> float:
+	var stat_system: Node = _get_stat_system()
+	if stat_system != null and stat_system.has_method("get_stat"):
+		return maxf(0.0, float(stat_system.call("get_stat", STAT_FIRE_BURN_DAMAGE_PER_LAYER, STAT_ENTITY_MARBLE_CHAIN)))
+	return 1.0
 
 
 func _is_ember_spread_enabled() -> bool:

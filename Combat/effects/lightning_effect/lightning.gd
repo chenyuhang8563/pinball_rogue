@@ -2,6 +2,7 @@ extends RefCounted
 class_name LightningEffect
 
 const StatModifierScript: GDScript = preload("res://Core/stats/stat_modifier.gd")
+const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
 const LightningEffectScene := preload("res://Combat/effects/lightning_effect/lightning_effect.tscn")
 
 const DEFAULT_CONFIG: RelicLevelConfig = preload("res://Content/data/relic_configs/lightning.tres")
@@ -36,7 +37,7 @@ func is_awakened() -> bool:
 	return _awakened
 
 
-func on_enemy_hit_by_marble(enemy: Node2D) -> void:
+func on_enemy_hit_by_marble(enemy: Node2D, _packet: DamagePacket = null) -> void:
 	if enemy == null:
 		return
 
@@ -51,8 +52,16 @@ func on_enemy_hit_by_marble(enemy: Node2D) -> void:
 			target = _find_nearest_enemy(previous, [])
 		if target == null:
 			return
-		if target.has_method("take_damage"):
-			target.take_damage(_get_damage())
+		var packet: DamagePacket = DamagePacketScript.new(&"relic_lightning", float(_get_damage()), &"lightning")
+		packet.is_relic = true
+		packet.target = target
+		if target.has_method("apply_damage_packet"):
+			target.call("apply_damage_packet", packet)
+		elif target.has_method("take_damage"):
+			target.call("take_damage", _get_damage())
+		var effect_manager: Node = _get_effect_manager()
+		if effect_manager != null and effect_manager.has_method("on_chain_hit"):
+			effect_manager.call("on_chain_hit", target, _hit_index, packet)
 		_spawn_lightning_effect(previous.global_position, target.global_position)
 		previous = target
 		visited.append(target)
@@ -112,6 +121,11 @@ func _get_stat_system() -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null("StatSystem")
+
+
+func _get_effect_manager() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	return tree.root.get_node_or_null("EffectManager") if tree != null else null
 
 
 func _spawn_lightning_effect(from_position: Vector2, to_position: Vector2) -> void:

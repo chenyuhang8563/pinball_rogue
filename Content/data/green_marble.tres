@@ -11,5 +11,7 @@ icon = ExtResource("1_1xaem")
 price = 25
 description = "ITEM_GREEN_MARBLE_DESC"
 type = 1
+tags = Array[StringName]([&"marble", &"poison", &"producer"])
+weight = 100.0
 marble_type = 3
 metadata/_custom_type_script = "uid://cbxvjrptlxvsm"

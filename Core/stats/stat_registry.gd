@@ -16,10 +16,13 @@ const BLUE_FROST_DURATION: String = "blue_frost_duration"
 const BLUE_FROST_BONUS_DAMAGE_ENABLED: String = "blue_frost_bonus_damage_enabled"
 const BLUE_FROST_STACKS_PER_HIT: String = "blue_frost_stacks_per_hit"
 const POISON_DAMAGE_PER_TICK: String = "poison_damage_per_tick"
+const POISON_DAMAGE_PER_LAYER: String = "poison_damage_per_layer"
+const POISON_MAX_STACKS: String = "poison_max_stacks"
 const POISON_TICK_SECONDS: String = "poison_tick_seconds"
 const ECHO_TIMEOUT: String = "echo_timeout"
 const EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
 const FIRE_BURN_DURATION: String = "fire_burn_duration"
+const FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
 const FIRE_EMBER_SPREAD_ENABLED: String = "fire_ember_spread_enabled"
 
 const DAMAGE_MULTIPLIER: String = "damage_multiplier"
@@ -67,10 +70,13 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Core/stats/data/marble/blue_frost_bonus_damage_enabled.tres",
 	"res://Core/stats/data/marble/blue_frost_stacks_per_hit.tres",
 	"res://Core/stats/data/marble/poison_damage_per_tick.tres",
+	"res://Core/stats/data/marble/poison_damage_per_layer.tres",
+	"res://Core/stats/data/marble/poison_max_stacks.tres",
 	"res://Core/stats/data/marble/poison_tick_seconds.tres",
 	"res://Core/stats/data/marble/echo_timeout.tres",
 	"res://Core/stats/data/marble/explosion_effect_scale.tres",
 	"res://Core/stats/data/marble/fire_burn_duration.tres",
+	"res://Core/stats/data/marble/fire_burn_damage_per_layer.tres",
 	"res://Core/stats/data/marble/fire_ember_spread_enabled.tres",
 	"res://Core/stats/data/combat/damage_multiplier.tres",
 	"res://Core/stats/data/combat/final_damage.tres",

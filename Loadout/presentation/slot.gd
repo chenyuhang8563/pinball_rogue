@@ -1,6 +1,7 @@
 extends Panel
 
 const ItemTooltipScene: PackedScene = preload("res://UI/shared/item_tooltip.tscn")
+const RarityStyleResolverScript: GDScript = preload("res://UI/shared/rarity_style_resolver.gd")
 
 signal purchase_requested(offer_id: StringName)
 
@@ -46,16 +47,17 @@ func _clear_offer_content() -> void:
 
 func _refresh_offer_presentation() -> void:
 	var is_upgrade: bool = offer != null and bool(offer.is_upgrade)
-	var level_up := get_node_or_null("LevelUp") as Sprite2D
-	if level_up != null:
-		level_up.visible = is_upgrade
 	var original_price_label := get_node_or_null("OriginalPrice") as Label
 	var is_discounted: bool = is_upgrade and int(offer.original_price) > int(offer.price)
 	if original_price_label != null:
 		original_price_label.text = str(offer.original_price) if is_discounted else ""
 	var presentation := get_node_or_null("OfferPresentationAnimation") as AnimationPlayer
 	if presentation != null:
-		var animation_name: StringName = &"discounted" if is_discounted else &"regular"
+		var animation_name: StringName = &"regular"
+		if is_discounted:
+			animation_name = &"discounted"
+		elif is_upgrade:
+			animation_name = &"upgrade"
 		if presentation.has_animation(animation_name):
 			presentation.play(animation_name)
 
@@ -63,6 +65,7 @@ func _refresh_offer_presentation() -> void:
 @export var item: Item = null:
 	set(value):
 		item = value
+		RarityStyleResolverScript.apply_to(self, value)
 
 		if value == null:
 			_set_icon_texture(null)

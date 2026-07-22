@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/shared/item_icon_view.tscn" id="1_item_icon_view"]
 [ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_xqyry"]
+[ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/shared/item_icon_view.gd" id="3_i3k2v"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_1jgv4"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -52,6 +53,7 @@ border_width_bottom = 1
 border_color = Color(0.55, 0.53, 0.47, 1)
 
 [node name="Inventory" type="VBoxContainer" unique_id=933844377]
+anchors_preset = 12
 anchor_top = 1.0
 anchor_right = 1.0
 anchor_bottom = 1.0
@@ -75,13 +77,12 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_1jgv4")
 
-[node name="Icon" parent="MarbleBox/MarbleSlot1" unique_id=1944830098 instance=ExtResource("1_item_icon_view")]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Icon" type="Control" parent="MarbleBox/MarbleSlot1" unique_id=637470541 instance=ExtResource("1_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
+anchors_preset = 0
+mouse_filter = 2
+theme = ExtResource("1_xqyry")
+script = ExtResource("3_i3k2v")
 
 [node name="MarbleSlot2" type="Panel" parent="MarbleBox" unique_id=522869658]
 custom_minimum_size = Vector2(32, 32)
@@ -90,13 +91,12 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_uov6c")
 
-[node name="Icon" parent="MarbleBox/MarbleSlot2" unique_id=232817990 instance=ExtResource("1_item_icon_view")]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Icon" type="Control" parent="MarbleBox/MarbleSlot2" unique_id=827236878 instance=ExtResource("1_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
+anchors_preset = 0
+mouse_filter = 2
+theme = ExtResource("1_xqyry")
+script = ExtResource("3_i3k2v")
 
 [node name="MarbleSlot3" type="Panel" parent="MarbleBox" unique_id=1546262332]
 custom_minimum_size = Vector2(32, 32)
@@ -105,13 +105,12 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_marble3")
 
-[node name="Icon" parent="MarbleBox/MarbleSlot3" unique_id=1944830099 instance=ExtResource("1_item_icon_view")]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Icon" type="Control" parent="MarbleBox/MarbleSlot3" unique_id=285218450 instance=ExtResource("1_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
+anchors_preset = 0
+mouse_filter = 2
+theme = ExtResource("1_xqyry")
+script = ExtResource("3_i3k2v")
 
 [node name="RelicBar" type="HBoxContainer" parent="." unique_id=1152765059]
 layout_mode = 2
@@ -124,13 +123,12 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_xqyry")
 
-[node name="Icon" parent="RelicBar/RelicSlot1" unique_id=1672906444 instance=ExtResource("1_item_icon_view")]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Icon" type="Control" parent="RelicBar/RelicSlot1" unique_id=477367526 instance=ExtResource("1_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
+anchors_preset = 0
+mouse_filter = 2
+theme = ExtResource("1_xqyry")
+script = ExtResource("3_i3k2v")
 
 [node name="RelicSlot2" type="Panel" parent="RelicBar" unique_id=1320411477]
 custom_minimum_size = Vector2(32, 32)
@@ -139,13 +137,12 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_88mhb")
 
-[node name="Icon" parent="RelicBar/RelicSlot2" unique_id=1619567034 instance=ExtResource("1_item_icon_view")]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Icon" type="Control" parent="RelicBar/RelicSlot2" unique_id=700194 instance=ExtResource("1_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
+anchors_preset = 0
+mouse_filter = 2
+theme = ExtResource("1_xqyry")
+script = ExtResource("3_i3k2v")
 
 [node name="RelicSlot3" type="Panel" parent="RelicBar" unique_id=320995921]
 custom_minimum_size = Vector2(32, 32)
@@ -154,10 +151,37 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_2aw4r")
 
-[node name="Icon" parent="RelicBar/RelicSlot3" unique_id=388748991 instance=ExtResource("1_item_icon_view")]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
+[node name="Icon" type="Control" parent="RelicBar/RelicSlot3" unique_id=679969083 instance=ExtResource("1_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
+anchors_preset = 0
+mouse_filter = 2
+theme = ExtResource("1_xqyry")
+script = ExtResource("3_i3k2v")
+
+[node name="RelicSlot4" type="Panel" parent="RelicBar" unique_id=1655040195]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_2aw4r")
+
+[node name="Icon" type="Control" parent="RelicBar/RelicSlot4" unique_id=1777109410 instance=ExtResource("1_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
+anchors_preset = 0
+mouse_filter = 2
+theme = ExtResource("1_xqyry")
+script = ExtResource("3_i3k2v")
+
+[node name="RelicSlot5" type="Panel" parent="RelicBar" unique_id=1328493862]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+theme_override_styles/panel = SubResource("StyleBoxFlat_2aw4r")
+
+[node name="Icon" type="Control" parent="RelicBar/RelicSlot5" unique_id=228446127 instance=ExtResource("1_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
+anchors_preset = 0
+mouse_filter = 2
+theme = ExtResource("1_xqyry")
+script = ExtResource("3_i3k2v")

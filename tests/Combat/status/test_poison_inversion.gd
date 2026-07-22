@@ -72,9 +72,8 @@ func test_poison_tick_reaches_poison_culture_via_typed_event() -> void:
 func _configure_poison_culture() -> void:
 	_loadout = LoadoutScript.new()
 	var relic := Item.new()
-	relic.id = "poison_culture_relic"
+	relic.id = "poison_culture"
 	relic.type = Item.ItemType.RELIC
-	relic.effect_type = Item.EffectType.POISON_CULTURE
 	assert_true(_loadout.call("add", relic))
 	_progression = ProgressionScript.new(_loadout)
 	_effect_manager = get_node_or_null("/root/EffectManager")

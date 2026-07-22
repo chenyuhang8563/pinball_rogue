@@ -3,7 +3,7 @@ class_name FrostDebuff
 
 const FROZEN_DEBUFF_ID: String = "frozen_debuff"
 const FROST_COLOR: Color = Color(0.55, 0.85, 1.0, 1.0)
-const DEFAULT_DURATION: float = 5.0
+const DEFAULT_DURATION: float = 2.0
 const MAX_FROST_STACKS: int = 6
 const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition"
 const STAT_ENTITY_MARBLE_CHAIN: String = "marble_chain"
@@ -62,7 +62,7 @@ func _convert_to_frozen(host: Node) -> void:
 func _get_frost_duration() -> float:
 	var stat_system: Node = _get_stat_system()
 	if stat_system != null and stat_system.has_method("get_stat"):
-		return maxf(DEFAULT_DURATION, float(stat_system.call("get_stat", STAT_BLUE_FROST_DURATION, STAT_ENTITY_MARBLE_CHAIN)))
+		return maxf(0.1, float(stat_system.call("get_stat", STAT_BLUE_FROST_DURATION, STAT_ENTITY_MARBLE_CHAIN)))
 	return DEFAULT_DURATION
 
 

@@ -11,6 +11,8 @@ var _progression: Variant = null
 var _wallet: Variant = null
 var _health: Variant = null
 var _config: Resource = null
+var _random_source: RunRandomSource = null
+var _content_registry: Node = null
 var _configured: bool = false
 var _offers: Dictionary = {}
 var _offer_order: Array[StringName] = []
@@ -25,12 +27,16 @@ func configure(
 	inventory_adapter: Variant,
 	progression_adapter: Variant,
 	wallet_adapter: Variant,
-	health_adapter: Variant
+	health_adapter: Variant,
+	random_source: RunRandomSource = null,
+	content_registry: Node = null
 ) -> bool:
 	_inventory = inventory_adapter
 	_progression = progression_adapter
 	_wallet = wallet_adapter
 	_health = health_adapter
+	_random_source = random_source if random_source != null else RunRandomSource.new()
+	_content_registry = content_registry
 	_configured = _has_api(_inventory, [&"find_owned", &"can_add", &"add", &"replace_skill", &"current_skill", &"revision"]) \
 		and _has_api(_progression, [&"level_of", &"can_upgrade", &"upgrade_one", &"reset_skill", &"revision"]) \
 		and _has_api(_wallet, [&"balance", &"can_debit", &"debit", &"revision"]) \
@@ -42,12 +48,17 @@ func open(config: Resource, candidates: Array) -> Array:
 	_config = config
 	if not _configured or _config == null:
 		return []
-	var eligible := _eligible_items(candidates)
+	var source_candidates: Array = candidates
+	if _content_registry != null:
+		source_candidates = _registry_candidates()
+	var eligible := _eligible_items(source_candidates)
 	var generated: Array = []
 	var stock_count := maxi(0, int(_config.get("stock_count")))
 	var multipliers: Dictionary = _config.get("level_price_multipliers") as Dictionary
 	while generated.size() < stock_count and not eligible.is_empty():
-		var item: Item = eligible.pop_at(randi_range(0, eligible.size() - 1)) as Item
+		var item: Item = _take_weighted_item(eligible)
+		if item == null:
+			break
 		var owned: Item = _inventory.call("find_owned", item) as Item
 		var current_level := int(_progression.call("level_of", owned)) if owned != null else 0
 		var target_level := _pick_target_level(current_level)
@@ -207,7 +218,8 @@ func _eligible_items(candidates: Array) -> Array:
 	var result: Array = []
 	for value: Variant in candidates:
 		var candidate := value as Item
-		if not _is_purchasable(candidate) or _contains_identity(result, candidate):
+		if not _is_purchasable(candidate) or candidate.weight <= 0.0 \
+				or not _requirements_met(candidate) or _contains_identity(result, candidate):
 			continue
 		var owned: Item = _inventory.call("find_owned", candidate) as Item
 		if owned != null:
@@ -225,20 +237,16 @@ func _eligible_items(candidates: Array) -> Array:
 func _pick_target_level(current_level: int) -> int:
 	var weights: Dictionary = _config.get("level_weights") as Dictionary
 	var choices: Array[int] = []
-	var total_weight := 0
+	var choice_weights := PackedFloat64Array()
 	for level: int in [2, 3, 4]:
-		var weight := int(weights.get(level, 1))
+		var weight := maxf(0.0, float(weights.get(level, 1)))
 		if level > current_level and weight > 0:
 			choices.append(level)
-			total_weight += weight
-	if choices.is_empty() or total_weight <= 0:
+			choice_weights.append(weight)
+	if choices.is_empty():
 		return 0
-	var roll := randi_range(1, total_weight)
-	for level: int in choices:
-		roll -= int(weights.get(level, 1))
-		if roll <= 0:
-			return level
-	return choices.back()
+	var index := _random_source.weighted_index_float(choice_weights)
+	return choices[index] if index >= 0 else 0
 
 
 func _copy_external_offer(value: Variant) -> RefCounted:
@@ -397,6 +405,44 @@ func _contains_identity(items: Array, candidate: Item) -> bool:
 		if ItemIdentityScript.same(item, candidate):
 			return true
 	return false
+
+
+func _take_weighted_item(items: Array) -> Item:
+	if items.is_empty():
+		return null
+	var weights := PackedFloat64Array()
+	for value: Variant in items:
+		var item := value as Item
+		weights.append(maxf(0.0, item.weight) if item != null else 0.0)
+	var index := _random_source.weighted_index_float(weights)
+	if index < 0:
+		return null
+	return items.pop_at(index) as Item
+
+
+func _registry_candidates() -> Array:
+	if _content_registry == null or not is_instance_valid(_content_registry) \
+			or not _content_registry.has_method(&"query"):
+		return []
+	return _content_registry.call(&"query", Item.ItemType.RELIC) as Array
+
+
+func _requirements_met(item: Item) -> bool:
+	if item == null or item.requires_tags.is_empty():
+		return true
+	var owned_tags: Array[StringName] = []
+	if _inventory != null and _inventory.has_method(&"owned_items"):
+		for value: Variant in _inventory.call(&"owned_items") as Array:
+			var owned := value as Item
+			if owned == null:
+				continue
+			for tag: StringName in owned.tags:
+				if not owned_tags.has(tag):
+					owned_tags.append(tag)
+	for required: StringName in item.requires_tags:
+		if not owned_tags.has(required):
+			return false
+	return true
 
 
 func _is_purchasable(item: Item) -> bool:

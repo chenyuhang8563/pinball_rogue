@@ -8,7 +8,11 @@ static func key(item: Item) -> String:
 		return "type:%d:marble:%d" % [int(item.type), int(item.marble_type)]
 	if item.id != "":
 		return "type:%d:id:%s" % [int(item.type), item.id]
-	return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
+	if not item.resource_path.is_empty():
+		return "type:%d:path:%s" % [int(item.type), item.resource_path]
+	if item.effect_type != Item.EffectType.NONE:
+		return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
+	return "type:%d:instance:%d" % [int(item.type), item.get_instance_id()]
 
 
 static func same(first: Item, second: Item) -> bool:
@@ -16,6 +20,4 @@ static func same(first: Item, second: Item) -> bool:
 		return false
 	if first.type == Item.ItemType.MARBLE:
 		return first.marble_type == second.marble_type
-	if first.id != "" or second.id != "":
-		return first.id != "" and first.id == second.id
-	return first.effect_type == second.effect_type
+	return key(first) == key(second)

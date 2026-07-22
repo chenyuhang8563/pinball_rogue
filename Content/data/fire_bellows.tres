@@ -12,3 +12,7 @@ price = 20
 description = "ITEM_FIRE_BELLOWS_DESC"
 effect_type = 7
 type = 2
+rarity = 1
+tags = Array[StringName]([&"relic", &"fire", &"spread"])
+weight = 60.0
+requires_tags = Array[StringName]([&"fire"])

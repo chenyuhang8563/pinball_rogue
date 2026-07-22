@@ -384,7 +384,6 @@ _data = {
 
 [node name="DevilShop" type="Control" unique_id=1521257330]
 process_mode = 3
-visible = false
 z_index = 100
 layout_mode = 3
 anchors_preset = 15
@@ -612,7 +611,7 @@ offset_top = 22.0
 offset_right = 144.0
 offset_bottom = 46.0
 theme_override_fonts/font = ExtResource("12_gwky3")
-theme_override_font_sizes/font_size = 8
+theme_override_font_sizes/font_size = 10
 theme_override_styles/normal = SubResource("StyleBoxFlat_bfup0")
 
 [node name="Status" type="Label" parent="BottomHUD" unique_id=1655246210]

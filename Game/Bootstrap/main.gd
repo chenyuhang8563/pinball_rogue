@@ -33,6 +33,7 @@ var event_resolver: EventResolver = null
 var battle_plan_factory: BattlePlanFactory = null
 var run_flow_controller: RunFlowController = null
 var run_random_source: RunRandomSource = null
+var content_registry: Node = null
 var battle_reward_config: BattleRewardConfig = null
 var run_floor_config: RunFloorConfig = null
 var run_ui_adapter: RunFlowUIAdapter = null
@@ -320,7 +321,12 @@ func _setup_run_flow_composition(
 		func() -> Node: return RunFlowController.new(),
 		func(node: Node) -> bool: return node is RunFlowController
 	) as RunFlowController
-	run_random_source = RunRandomSource.new()
+	run_random_source = component_overrides.get(&"run_random_source") as RunRandomSource
+	if run_random_source == null:
+		run_random_source = RunRandomSource.new()
+	content_registry = component_overrides.get(&"content_registry") as Node
+	if content_registry == null:
+		content_registry = _get_autoload_node(&"ContentRegistry")
 	reset_battle_callable = Callable(self, "reset_battle_state")
 	release_floating_texts_callable = Callable(self, "_release_all_floating_texts")
 	read_stat_callable = Callable(self, "_read_stat")
@@ -328,7 +334,7 @@ func _setup_run_flow_composition(
 	run_floor_config = DefaultRunFloorConfig
 
 	if battle_spawner == null or base_enemies == null or battle_gateway == null \
-			or run_flow_controller == null:
+			or run_flow_controller == null or not _is_valid_content_registry(content_registry):
 		_dispose_failed_run_flow_composition(created_run_scope)
 		return false
 	battle_spawner.enemy_container = base_enemies
@@ -340,7 +346,8 @@ func _setup_run_flow_composition(
 		run_scope.progression,
 		run_scope.wallet,
 		battle_reward_config,
-		run_random_source
+		run_random_source,
+		content_registry
 	):
 		_dispose_failed_run_flow_composition(created_run_scope)
 		return false
@@ -432,6 +439,7 @@ func _dispose_run_flow_composition() -> void:
 	battle_reward_config = null
 	run_floor_config = null
 	run_random_source = null
+	content_registry = null
 	reset_battle_callable = Callable()
 	release_floating_texts_callable = Callable()
 	read_stat_callable = Callable()
@@ -505,6 +513,7 @@ func _has_valid_run_flow_composition() -> bool:
 		and battle_plan_factory != null \
 		and run_flow_controller != null and is_instance_valid(run_flow_controller) \
 		and run_random_source != null \
+		and _is_valid_content_registry(content_registry) \
 		and reset_battle_callable.is_valid() \
 		and release_floating_texts_callable.is_valid() \
 		and read_stat_callable.is_valid()
@@ -581,6 +590,8 @@ func _setup_run_flow(
 			or not draft_reward_panel.configure(run_scope.loadout) \
 			or not run_event_panel.configure(run_scope.wallet):
 		return _rollback_run_flow_startup()
+	if not _configure_shop_content_sources():
+		return _rollback_run_flow_startup()
 
 	if inventory_panel == null or battle_hud == null \
 			or run_failure_panel == null or active_skill_slot == null \
@@ -610,6 +621,38 @@ func _setup_run_flow(
 	if not run_flow_controller.start_run():
 		return _rollback_run_flow_startup()
 	return true
+
+
+func _configure_shop_content_sources() -> bool:
+	if normal_shop == null or devil_shop == null or run_scope == null \
+			or run_random_source == null or not _is_valid_content_registry(content_registry):
+		return false
+	var normal_session := normal_shop.get("normal_shop_session") as RefCounted
+	var devil_session := devil_shop.get("devil_shop_session") as RefCounted
+	if normal_session == null or devil_session == null:
+		return false
+	return bool(normal_session.call(
+		"configure",
+		run_scope.loadout,
+		run_scope.progression,
+		run_scope.wallet,
+		run_random_source,
+		content_registry
+	)) and bool(devil_session.call(
+		"configure",
+		run_scope.loadout,
+		run_scope.progression,
+		run_scope.wallet,
+		run_scope.health,
+		run_random_source,
+		content_registry
+	))
+
+
+func _is_valid_content_registry(registry: Node) -> bool:
+	return registry != null and is_instance_valid(registry) \
+		and registry.has_method(&"is_valid") and bool(registry.call(&"is_valid")) \
+		and registry.has_method(&"all_items") and registry.has_method(&"query")
 
 
 func _rollback_run_flow_startup() -> bool:

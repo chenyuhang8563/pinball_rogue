@@ -54,7 +54,6 @@ func test_burn_ember_spread_constructs_from_registry_on_host_death() -> void:
 	var burn: BuffDef = _registry.get_buff_def("fire_burn_debuff")
 	assert_not_null(burn)
 	burn.params["ember_spread_enabled"] = true
-	burn.params["pending_ticks"] = 4
 	dying.add_buff(burn)
 	assert_true(dying.has_buff("fire_burn_debuff"))
 	assert_false(neighbor.has_buff("fire_burn_debuff"))
