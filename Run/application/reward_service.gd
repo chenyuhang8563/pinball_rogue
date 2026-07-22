@@ -22,6 +22,7 @@ const DEFAULT_NODE_ITEM_PATHS: PackedStringArray = [
 	"res://Content/data/poison_culture.tres",
 	"res://Content/data/ice_hammer.tres",
 	"res://Content/data/permafrost.tres",
+	"res://Content/data/cryoclasm.tres",
 ]
 const DEFAULT_RELIC_PATHS: PackedStringArray = [
 	"res://Content/data/lightning.tres",
@@ -29,6 +30,7 @@ const DEFAULT_RELIC_PATHS: PackedStringArray = [
 	"res://Content/data/poison_culture.tres",
 	"res://Content/data/ice_hammer.tres",
 	"res://Content/data/permafrost.tres",
+	"res://Content/data/cryoclasm.tres",
 ]
 const DEFAULT_NORMAL_MARBLE_PATHS: PackedStringArray = [
 	"res://Content/data/brown_marble.tres",

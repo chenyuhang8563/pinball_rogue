@@ -9,6 +9,7 @@ const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	&"poison_culture": preload("res://Combat/effects/poison_culture/poison_culture.gd"),
 	&"ice_hammer": preload("res://Combat/effects/ice_hammer/ice_hammer.gd"),
 	&"permafrost": preload("res://Combat/effects/permafrost/permafrost.gd"),
+	&"cryoclasm": preload("res://Combat/effects/cryoclasm/cryoclasm.gd"),
 }
 
 

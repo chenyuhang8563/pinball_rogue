@@ -134,11 +134,20 @@ func _enforce_cap() -> void:
 
 
 func _prune_dead_ice_balls() -> void:
+	# 保留条件：对象有效、存活、且仍带 ice_ball 标记。冰爆碎裂会移除 frozen_debuff、
+	# 经 Enemy.end_frozen_physics 清掉 ice_ball 标记——此处据此剔除，避免一个"仍有效但
+	# 已不是冰球"的 id 残留，污染计数与上限淘汰。注意：不在 on_frozen_body_impact 开头
+	# 调用本方法，使冰爆先执行时永冻仍能据同一事件快照结算碰撞伤害。
 	var alive_ids: Array[int] = []
 	for instance_id: int in _ice_balls:
 		var ball: Object = instance_from_id(instance_id)
-		if ball != null and is_instance_valid(ball):
-			alive_ids.append(instance_id)
+		if ball == null or not is_instance_valid(ball):
+			continue
+		if ball.has_method("is_alive") and not bool(ball.call("is_alive")):
+			continue
+		if not bool((ball as Node).get_meta(&"ice_ball", false)):
+			continue
+		alive_ids.append(instance_id)
 	_ice_balls = alive_ids
 
 

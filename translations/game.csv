@@ -74,6 +74,8 @@ ITEM_ICE_HAMMER_TITLE,Icebreaker Hammer,碎冰锤
 ITEM_ICE_HAMMER_DESC,Hitting a frozen enemy shatters it and damages nearby enemies.,命中冻结的敌人会将其碎冰并伤害附近敌人。
 ITEM_PERMAFROST_TITLE,Permafrost,永冻
 ITEM_PERMAFROST_DESC,Frozen enemies become larger ice balls that cannot thaw this ball and can be knocked around. Ice balls hitting enemies deal impact damage.,冻结的敌人变成更大、本发内不解冻、可推动的冰球障碍；冰球撞击敌人造成碰撞伤害。
+ITEM_CRYOCLASM_TITLE,Cryoclasm,冰爆
+ITEM_CRYOCLASM_DESC,"Frozen enemies that slam into walls or enemies at high speed shatter, clearing freeze and frost and firing a fan of homing ice shards at distinct enemies.","冻结的敌人高速撞墙或撞敌时碎裂，解除冻结与冰霜，并沿运动方向扇区射出追踪冰碎片攻击不同敌人。"
 UPGRADE_DARK_DAMAGE_2_DESC,Damage 2,伤害 2
 UPGRADE_DARK_DAMAGE_3_DESC,Damage 3,伤害 3
 UPGRADE_DARK_AWAKEN_DESC,Awaken: Damage 4,觉醒：伤害 4

@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Item" format=3]
+
+[ext_resource type="Texture2D" uid="uid://bisvwgdniimce" path="res://Assets/Items/relic_cryoclasm.png" id="1_icon"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "cryoclasm"
+title = "ITEM_CRYOCLASM_TITLE"
+icon = ExtResource("1_icon")
+price = 30
+description = "ITEM_CRYOCLASM_DESC"
+effect_type = 0
+type = 2
+rarity = 1
+tags = Array[StringName]([&"relic", &"frost", &"payoff", &"physics"])
+weight = 60.0
+requires_tags = Array[StringName]([&"frost"])

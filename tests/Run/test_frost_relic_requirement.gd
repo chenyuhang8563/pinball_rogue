@@ -45,6 +45,7 @@ class HealthPort extends RefCounted:
 
 var _registry: Node = null
 var _permafrost: Item = null
+var _cryoclasm: Item = null
 var _blue_marble: Item = null
 
 
@@ -53,64 +54,78 @@ func before_each() -> void:
 	add_child_autofree(_registry)
 	assert_eq(_registry.call("rebuild"), OK)
 	_permafrost = _registry.call("by_id", &"permafrost") as Item
+	_cryoclasm = _registry.call("by_id", &"cryoclasm") as Item
 	_blue_marble = _registry.call("by_id", &"blue_marble") as Item
 	assert_not_null(_permafrost, "real permafrost.tres must be registered")
+	assert_not_null(_cryoclasm, "real cryoclasm.tres must be registered")
 	assert_not_null(_blue_marble, "blue marble supplies the frost tag")
 	assert_true(_permafrost.requires_tags.has(&"frost"))
+	assert_true(_cryoclasm.requires_tags.has(&"frost"))
 
 
-func test_permafrost_blocked_across_all_channels_without_frost_marble() -> void:
+func test_frost_relics_blocked_across_all_channels_without_frost_marble() -> void:
 	var loadout: RefCounted = LoadoutScript.new()  # 无冰霜弹珠 → 无 frost 标签
 	var service: RewardService = _configure_service(loadout)
 
-	# 节点奖励：以 permafrost 为唯一候选 → 被过滤 → 只剩金币补偿。
-	var node: RewardOffer = service.create_node_draft(
-		TokenScript.new(1, 1, 1), &"frost-req-node", [_permafrost]
-	)
-	assert_false(_draft_item_ids(node).has("permafrost"), "node channel hides permafrost")
-	service.clear_active()
+	# 节点 / 精英奖励：逐一以单件冰封遗物为候选 → 均被前置门过滤 → 只剩金币补偿。
+	for relic: Item in [_permafrost, _cryoclasm]:
+		var node: RewardOffer = service.create_node_draft(
+			TokenScript.new(1, 1, 1), StringName("frost-req-node-" + relic.id), [relic]
+		)
+		assert_false(_draft_item_ids(node).has(relic.id), "node channel hides %s" % relic.id)
+		service.clear_active()
+		var elite: RewardOffer = service.create_elite_draft(
+			TokenScript.new(1, 1, 1), StringName("frost-req-elite-" + relic.id), [relic]
+		)
+		assert_false(_draft_item_ids(elite).has(relic.id), "elite channel hides %s" % relic.id)
+		service.clear_active()
 
-	# 精英奖励：同样以 permafrost 为唯一遗物候选 → 被过滤 → 只剩金币。
-	var elite: RewardOffer = service.create_elite_draft(
-		TokenScript.new(1, 1, 1), &"frost-req-elite", [_permafrost]
-	)
-	assert_false(_draft_item_ids(elite).has("permafrost"), "elite channel hides permafrost")
-
-	# 恶魔商店：以 permafrost 为唯一候选 → 被过滤 → 0 件商品。
-	var devil_offers: Array = _open_devil(loadout, [_permafrost])
+	# 恶魔商店：抽干全部合格遗物，两件冰封遗物均不出现。
+	var devil_offers: Array = _open_devil(loadout, [_permafrost, _cryoclasm])
 	assert_false(_offer_ids(devil_offers).has("permafrost"), "devil shop hides permafrost")
+	assert_false(_offer_ids(devil_offers).has("cryoclasm"), "devil shop hides cryoclasm")
 
-	# 普通商店：结构上不卖遗物，但其共享前置门也必须拒绝 permafrost。
+	# 普通商店：结构上不卖遗物，但其共享前置门也必须拒绝两件冰封遗物。
 	var normal: RefCounted = _configure_normal(loadout)
 	assert_false(
 		bool(normal.call("_requirements_met", _permafrost)),
 		"normal shop requirement gate rejects permafrost without frost"
 	)
+	assert_false(
+		bool(normal.call("_requirements_met", _cryoclasm)),
+		"normal shop requirement gate rejects cryoclasm without frost"
+	)
 
 
-func test_permafrost_offered_across_all_channels_with_frost_marble() -> void:
+func test_frost_relics_offered_across_all_channels_with_frost_marble() -> void:
 	var loadout: RefCounted = LoadoutScript.new()
 	assert_true(loadout.call("add", _blue_marble), "blue marble grants the frost tag")
 	var service: RewardService = _configure_service(loadout)
 
-	var node: RewardOffer = service.create_node_draft(
-		TokenScript.new(1, 1, 1), &"frost-req-node2", [_permafrost]
-	)
-	assert_true(_draft_item_ids(node).has("permafrost"), "node channel offers permafrost")
-	service.clear_active()
+	for relic: Item in [_permafrost, _cryoclasm]:
+		var node: RewardOffer = service.create_node_draft(
+			TokenScript.new(1, 1, 1), StringName("frost-req-node2-" + relic.id), [relic]
+		)
+		assert_true(_draft_item_ids(node).has(relic.id), "node channel offers %s" % relic.id)
+		service.clear_active()
+		var elite: RewardOffer = service.create_elite_draft(
+			TokenScript.new(1, 1, 1), StringName("frost-req-elite2-" + relic.id), [relic]
+		)
+		assert_true(_draft_item_ids(elite).has(relic.id), "elite channel offers %s" % relic.id)
+		service.clear_active()
 
-	var elite: RewardOffer = service.create_elite_draft(
-		TokenScript.new(1, 1, 1), &"frost-req-elite2", [_permafrost]
-	)
-	assert_true(_draft_item_ids(elite).has("permafrost"), "elite channel offers permafrost")
-
-	var devil_offers: Array = _open_devil(loadout, [_permafrost])
+	var devil_offers: Array = _open_devil(loadout, [_permafrost, _cryoclasm])
 	assert_true(_offer_ids(devil_offers).has("permafrost"), "devil shop offers permafrost")
+	assert_true(_offer_ids(devil_offers).has("cryoclasm"), "devil shop offers cryoclasm")
 
 	var normal: RefCounted = _configure_normal(loadout)
 	assert_true(
 		bool(normal.call("_requirements_met", _permafrost)),
 		"normal shop requirement gate accepts permafrost with frost"
+	)
+	assert_true(
+		bool(normal.call("_requirements_met", _cryoclasm)),
+		"normal shop requirement gate accepts cryoclasm with frost"
 	)
 
 
