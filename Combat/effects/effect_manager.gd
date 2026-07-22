@@ -64,6 +64,13 @@ func on_frozen_body_impact(
 	_dispatch("on_frozen_body_impact", [enemy, hit_body, velocity, kind, was_ice_ball])
 
 
+## 本发边界事件：Head 落入 KillZone、本发结束时由 Main 分发（每发一次）。
+## 永冻等 Effect 用它在发末还原全部冰球（移除 frozen_debuff），
+## 使"本发内不解冻"的承诺随本发结束自动到期。无参数：清理范围由各 Effect 自持。
+func on_ball_lost() -> void:
+	_dispatch("on_ball_lost", [])
+
+
 func on_explosion(center: Vector2, radius: float) -> void:
 	_dispatch("on_explosion", [center, radius])
 
