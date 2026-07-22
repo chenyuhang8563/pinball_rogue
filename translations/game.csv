@@ -8,6 +8,7 @@ UI_INVENTORY_TITLE,Inventory,物品栏
 UI_SKILLS_TITLE,Skills,技能
 UI_EXIT,Exit,退出
 UI_SHOP_TITLE,Shop,商店
+UI_SHOP_MARBLE_FULL,"Marble slots full. Right-click a marble below to sell.",弹珠槽已满，右键下方弹珠出售
 UI_OK,OK,确定
 UI_LANGUAGE_CHINESE,中文,中文
 UI_LANGUAGE_ENGLISH,English,English

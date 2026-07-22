@@ -19,6 +19,7 @@
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://Loadout/presentation/skill_replace_dialog.tscn" id="13_b5trs"]
 [ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="15_16e15"]
 [ext_resource type="StyleBox" uid="uid://bxbadmo7oui7u" path="res://Themes/black_panel.tres" id="17_6qmg5"]
+[ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="22_m6wq7"]
 
 [node name="Shop" type="Control" unique_id=395620655 node_paths=PackedStringArray("shop_container", "marble_box_container", "relic_bar_container")]
 process_mode = 3
@@ -108,3 +109,13 @@ offset_bottom = 32.0
 
 [node name="SkillReplaceDialog" parent="UI/Panel" unique_id=1955345262 instance=ExtResource("13_b5trs")]
 layout_mode = 1
+
+[node name="ShopStatus" type="Label" parent="UI/Panel" unique_id=1208888835]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 216.0
+offset_right = 232.0
+offset_bottom = 232.0
+text = ""
+label_settings = ExtResource("22_m6wq7")
+horizontal_alignment = 1

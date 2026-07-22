@@ -133,6 +133,17 @@ func _apply_text() -> void:
 	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
 	if exit_button != null:
 		exit_button.text = tr("UI_EXIT")
+	_clear_status()
+
+func _set_status_text(key: StringName) -> void:
+	var status_label := get_node_or_null("UI/Panel/ShopStatus") as Label
+	if status_label != null:
+		status_label.text = tr(key)
+
+func _clear_status() -> void:
+	var status_label := get_node_or_null("UI/Panel/ShopStatus") as Label
+	if status_label != null:
+		status_label.text = ""
 
 func sell_item(item: Item) -> bool:
 	return _sell_item(item)
@@ -147,6 +158,7 @@ func _sell_item(item: Item) -> bool:
 		_handle_failed_result(result)
 		return false
 	normal_shop_session.call("acknowledge_external_change")
+	_clear_status()
 	_sync_presentation_from_session()
 	refresh_collection_rows()
 	return true
@@ -283,12 +295,18 @@ func _purchase_offer_id(offer_id: StringName) -> bool:
 	var code := int(result.get("code"))
 	if code == PurchaseResultScript.Code.SUCCESS and bool(result.get("committed")):
 		_pending_skill_offer_id = &""
+		_clear_status()
 		_sync_presentation_from_session()
 		refresh_collection_rows()
 		return true
 	if code == PurchaseResultScript.Code.SKILL_REPLACEMENT_REQUIRED and offer != null:
 		_request_skill_replacement(offer_id, offer)
 		return false
+	if code == PurchaseResultScript.Code.CAPACITY_CHANGED and offer != null \
+			and offer.item != null and offer.item.type == Item.ItemType.MARBLE:
+		_set_status_text(&"UI_SHOP_MARBLE_FULL")
+		return false
+	_clear_status()
 	_handle_failed_result(result)
 	return false
 

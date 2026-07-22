@@ -3,6 +3,7 @@ extends GutTest
 const FakeInventoryScript: GDScript = preload("res://tests/Commerce/fake_inventory_adapter.gd")
 const FakeProgressionScript: GDScript = preload("res://tests/Commerce/fake_progression_adapter.gd")
 const FakeWalletScript: GDScript = preload("res://tests/Commerce/fake_wallet_adapter.gd")
+const LoadoutScript: GDScript = preload("res://Loadout/domain/loadout.gd")
 const NormalShopSessionScript: GDScript = preload("res://Commerce/application/normal_shop_session.gd")
 const CommerceOfferScript: GDScript = preload("res://Commerce/domain/commerce_offer.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
@@ -59,6 +60,34 @@ func test_capacity_change_rejects_without_debit() -> void:
 	assert_eq(result.code, PurchaseResultScript.Code.CAPACITY_CHANGED)
 	assert_eq(wallet.amount, 50)
 	assert_true(inventory.items.is_empty())
+	assert_false(session.call("get_offers")[0].consumed)
+
+
+func test_full_marble_capacity_rejects_without_debit() -> void:
+	# Problem source: buying a fourth marble when the fixed three-slot loadout is full.
+	# Repair invariant: capacity failure is rejected before payment and the offer remains available.
+	# Boundary: exactly three owned marbles must block a distinct fourth marble.
+	var inventory: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(50)
+	var owned_paths: Array[String] = [
+		"res://Content/data/dark_marble.tres",
+		"res://Content/data/bomb_marble.tres",
+		"res://Content/data/brown_marble.tres",
+	]
+	for path: String in owned_paths:
+		var owned := (load(path) as Item).duplicate(true) as Item
+		assert_true(inventory.add(owned))
+	var session: RefCounted = _normal_session(inventory, progression, wallet)
+	var offer_item := _make_item("fourth_marble", Item.ItemType.MARBLE, 20)
+	offer_item.marble_type = Marble.MARBLE_TYPE.BLUE
+	var offer: RefCounted = _install_offer(session, offer_item, 1, 20, false)
+
+	var result: RefCounted = session.call("purchase", offer.offer_id)
+
+	assert_eq(result.code, PurchaseResultScript.Code.CAPACITY_CHANGED)
+	assert_eq(wallet.amount, 50)
+	assert_eq((inventory.call("marbles") as Array).size(), 3)
 	assert_false(session.call("get_offers")[0].consumed)
 
 
