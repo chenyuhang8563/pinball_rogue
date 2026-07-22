@@ -33,7 +33,6 @@ marble_box_container = NodePath("UI/Panel/CollectionRows/MarbleBox")
 relic_bar_container = NodePath("UI/Panel/CollectionRows/RelicBar")
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1475380502]
-visible = false
 
 [node name="Panel" type="Panel" parent="UI" unique_id=1521898696]
 anchors_preset = 15
@@ -87,7 +86,6 @@ columns = 3
 
 [node name="CollectionRows" parent="UI/Panel" unique_id=1783459460 instance=ExtResource("5_inventory")]
 layout_mode = 1
-anchors_preset = 12
 offset_left = 0.0
 offset_top = -104.0
 offset_right = 0.0
@@ -113,9 +111,15 @@ layout_mode = 1
 [node name="ShopStatus" type="Label" parent="UI/Panel" unique_id=1208888835]
 layout_mode = 0
 offset_left = 8.0
-offset_top = 216.0
+offset_top = 199.0
 offset_right = 232.0
-offset_bottom = 232.0
-text = ""
+offset_bottom = 215.0
 label_settings = ExtResource("22_m6wq7")
 horizontal_alignment = 1
+
+[node name="ShopStatusTimer" type="Timer" parent="UI/Panel"]
+process_mode = 3
+wait_time = 3.0
+one_shot = true
+
+[connection signal="timeout" from="UI/Panel/ShopStatusTimer" to="." method="_on_shop_status_timer_timeout"]

@@ -107,6 +107,33 @@ func test_selling_item_does_not_refresh_shop_offers() -> void:
 	assert_eq(shop_container.get_child_count(), 1)
 
 
+func test_shop_status_timer_restarts_and_clears_the_hint() -> void:
+	# Full-marble feedback must reset its timeout instead of letting an old timeout clear it early.
+	var shop_scene: PackedScene = load("res://Commerce/presentation/normal_shop/shop.tscn") as PackedScene
+	var shop: Control = shop_scene.instantiate() as Control
+	shop_scene = null
+	add_child(shop)
+	var status := shop.get_node("UI/Panel/ShopStatus") as Label
+	var timer := shop.get_node("UI/Panel/ShopStatusTimer") as Timer
+	assert_eq(timer.wait_time, 3.0)
+	timer.wait_time = 0.04
+
+	shop.call("_set_status_text", &"UI_SHOP_MARBLE_FULL")
+	assert_false(timer.is_stopped())
+	await get_tree().create_timer(0.025, true).timeout
+	shop.call("_set_status_text", &"UI_SHOP_MARBLE_FULL")
+	await get_tree().create_timer(0.025, true).timeout
+	assert_eq(status.text, tr("UI_SHOP_MARBLE_FULL"))
+	await timer.timeout
+	await get_tree().process_frame
+
+	assert_eq(status.text, "")
+	assert_true(timer.is_stopped())
+	timer.stop()
+	shop.queue_free()
+	await get_tree().process_frame
+
+
 func test_devil_confirm_purchase_delegates_selection_commit_and_advances_presentation() -> void:
 	var devil_shop_scene: PackedScene = load("res://Commerce/presentation/devil_shop/devil_shop.tscn") as PackedScene
 	var devil_shop: Control = devil_shop_scene.instantiate() as Control

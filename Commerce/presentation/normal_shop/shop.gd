@@ -139,11 +139,20 @@ func _set_status_text(key: StringName) -> void:
 	var status_label := get_node_or_null("UI/Panel/ShopStatus") as Label
 	if status_label != null:
 		status_label.text = tr(key)
+	var status_timer := get_node_or_null("UI/Panel/ShopStatusTimer") as Timer
+	if status_timer != null:
+		status_timer.start()
 
 func _clear_status() -> void:
+	var status_timer := get_node_or_null("UI/Panel/ShopStatusTimer") as Timer
+	if status_timer != null:
+		status_timer.stop()
 	var status_label := get_node_or_null("UI/Panel/ShopStatus") as Label
 	if status_label != null:
 		status_label.text = ""
+
+func _on_shop_status_timer_timeout() -> void:
+	_clear_status()
 
 func sell_item(item: Item) -> bool:
 	return _sell_item(item)
