@@ -54,6 +54,16 @@ func on_burn_tick(enemy: Node2D, stacks: int) -> void:
 	_dispatch("on_burn_tick", [enemy, stacks])
 
 
+## 冻结/冰球敌人以足够速度撞到东西时由 Enemy 分发。快照语义：
+## velocity 为碰撞前速度；kind ∈ {&"enemy", &"world"}；hit_body 仅 kind==&"enemy"
+## 时有效；was_ice_ball 为碰撞瞬间的冰球标记。全部为分发时刻的不可变快照，
+## 下游 Effect 不得依赖可能被同批其他 Effect 修改的现场状态。
+func on_frozen_body_impact(
+	enemy: Node2D, hit_body: Node2D, velocity: Vector2, kind: StringName, was_ice_ball: bool
+) -> void:
+	_dispatch("on_frozen_body_impact", [enemy, hit_body, velocity, kind, was_ice_ball])
+
+
 func on_explosion(center: Vector2, radius: float) -> void:
 	_dispatch("on_explosion", [center, radius])
 
