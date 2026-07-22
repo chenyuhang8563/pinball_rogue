@@ -97,7 +97,7 @@ func test_registry_scan_order_and_ids_are_stable() -> void:
 	assert_eq(ids, [
 		&"blue_marble", &"bomb_marble", &"brown_marble", &"dark_marble", &"dash",
 		&"fire_bellows", &"fire_marble", &"green_marble", &"ice_hammer",
-		&"lightning", &"magic_missile", &"poison_culture",
+		&"lightning", &"magic_missile", &"permafrost", &"poison_culture",
 	] as Array[StringName])
 
 
@@ -175,11 +175,11 @@ func test_shop_channels_use_registry_and_one_shared_random_source() -> void:
 	var health := HealthPort.new()
 	assert_true(devil.call("configure", loadout, progression, wallet, health, random, registry))
 	var config: Resource = DevilConfigScript.new()
-	config.set("stock_count", 4)
+	config.set("stock_count", 5)
 	config.set("level_weights", {2: 1, 3: 0, 4: 0})
 	var devil_offers: Array = devil.call("open", config, [])
 	assert_eq(_offer_ids(devil_offers), [
-		"fire_bellows", "ice_hammer", "lightning", "poison_culture",
+		"fire_bellows", "ice_hammer", "lightning", "permafrost", "poison_culture",
 	])
 	assert_eq(devil.get("_random_source"), random)
 	assert_eq(devil.get("_content_registry"), registry)

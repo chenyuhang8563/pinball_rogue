@@ -49,6 +49,8 @@ var _pre_step_velocity: Vector2 = Vector2.ZERO
 var _velocity_history: Array[Vector2] = []
 var _velocity_history_cursor: int = 0
 var _last_frozen_impact_usec: int = -10_000_000
+## 进入冰球态前的原始 scale 快照（零向量 = 未处于冰球态）。
+var _ice_ball_base_scale: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -253,7 +255,31 @@ func begin_frozen_physics() -> void:
 
 
 func end_frozen_physics() -> void:
+	# 冰球态与 frozen_debuff 生命周期绑定：无论谁移除冻结（冰爆碎裂 / 永冻上限
+	# 淘汰 / 本发结束清理），都经 frozen_debuff.on_remove 到这里，自动还原
+	# scale / 标记，物理态随后切回 Normal。
+	_restore_ice_ball()
 	_transition_physics_state(&"Normal")
+
+
+## 冰球态（永冻遗物）。active 时快照原始 scale 并按 scale_factor 放大——节点
+## scale 同时放大 Sprite 与子 CollisionShape2D（物理形状变换随节点 scale 生效）。
+## 还原一律走 end_frozen_physics（即 frozen_debuff 移除），保证单一路径。
+func set_ice_ball(active: bool, scale_factor: float = 1.0) -> void:
+	if active:
+		if _ice_ball_base_scale == Vector2.ZERO:
+			_ice_ball_base_scale = scale
+		set_meta(&"ice_ball", true)
+		scale = _ice_ball_base_scale * maxf(0.1, scale_factor)
+	else:
+		_restore_ice_ball()
+
+
+func _restore_ice_ball() -> void:
+	set_meta(&"ice_ball", false)
+	if _ice_ball_base_scale != Vector2.ZERO:
+		scale = _ice_ball_base_scale
+		_ice_ball_base_scale = Vector2.ZERO
 
 
 func restore_frozen_physics_snapshot(snapshot: Dictionary) -> void:

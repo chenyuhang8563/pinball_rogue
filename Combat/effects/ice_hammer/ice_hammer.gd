@@ -36,7 +36,10 @@ func on_enemy_hit_resolved(enemy: Node2D, _was_burning: bool, was_frozen: bool, 
 		return
 	if enemy.has_method("is_alive") and not bool(enemy.call("is_alive")):
 		return
-	if enemy.has_method("remove_buff"):
+	# 永冻共存规则：目标是永冻冰球（ice_ball 标记）时照常执行局部 AOE，
+	# 但不解除 Frozen——否则玩家无法把自己做出的冰球击推出去。
+	# 普通冻结目标保持现有"命中即碎冰"行为。
+	if not bool(enemy.get_meta(&"ice_ball", false)) and enemy.has_method("remove_buff"):
 		enemy.call("remove_buff", "frozen_debuff")
 	_shatter(enemy)
 
