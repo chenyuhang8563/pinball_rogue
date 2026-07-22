@@ -4,7 +4,7 @@
 [ext_resource type="Script" uid="uid://gc4ks25jmwe7" path="res://Combat/battle/table/flipper/flipper.gd" id="1_ld17q"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_ld17q"]
-bounce = 1.0
+bounce = 0.8
 absorbent = true
 
 [node name="Flipper" type="Node2D" unique_id=42033138]
