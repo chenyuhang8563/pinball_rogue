@@ -105,7 +105,7 @@ MarbleChain (Node2D)
 | `green_marble` | GREEN | 25 | 1 | 命中施加 10 秒毒 |
 | `blue_marble` | BLUE | 22 | 2 | 命中施加 Frost，6 层转 Frozen |
 | `fire_marble` | FIRE | 25 | 1 | 命中施加递减燃烧 |
-| `assassin_marble` | ASSASSIN | 25 | 1 | 链中在场时洞察敌人方位破绽；从破绽方向命中 ×1.5 暴击（见暴击小节） |
+| `assassin_marble` | ASSASSIN | 25 | 1 | 链中在场时洞察敌人方位破绽；从破绽方向命中 ×2 暴击（见暴击小节） |
 
 ### 弹珠成长
 
@@ -165,7 +165,7 @@ final_damage = round(base_damage * damage_multiplier)
 
 - 在场与数量：`assassin_weak_point_count`（OVERRIDE，写在 `marble_chain` 实体）由 `item_progression.gd::_apply_assassin_weak_point_count` 依据 `get_chain_items()` 实时设置——0 隐藏 / 1 常规 / 2 觉醒双破绽，并监听 `marble_loadout_changed` 重同步（掉球重建链不闪烁）。
 - 状态组件：`Combat/crit/weak_point.gd`（值对象，4 方位 UP/RIGHT/DOWN/LEFT → 中心角 -90/0/90/180，kind BASE/PRISM）、`weak_point_host.gd`（敌人子节点，类比 BuffHost：按 stat 同步破绽数、纯查询 `try_resolve_crit`、命中换边 `consume_crit`、信号 `crit_landed`）、`weak_point_visual.gd` + `.tscn`（按方位贴敌人轮廓的像素标记，`z_index` 在敌人之上；**视觉父节点是敌人 Node2D 而非 host**——host 为普通 `Node` 无 transform，挂在其下会使标记卡在世界原点 / 屏幕左上角）。
-- 数值 `Core/stats/data/crit/*.tres`：`weak_point_crit_multiplier` 1.5、`weak_point_tolerance_deg` 15、`perfect_crit_multiplier` 1.75、`perfect_crit_window_deg` 5（完美窗 M1 默认关闭，留给磨刀石觉醒）、`assassin_weak_point_count` 0、`assassin_segment_damage` 1。
+- 数值 `Core/stats/data/crit/*.tres`：`weak_point_crit_multiplier` 2.0、`weak_point_tolerance_deg` 20、`perfect_crit_multiplier` 2.25、`perfect_crit_window_deg` 5（完美窗 M1 默认关闭，留给磨刀石觉醒）、`assassin_weak_point_count` 0、`assassin_segment_damage` 1。
 - 结算：`enemy.gd::_on_body_entered` 用 `to_local(body.global_position).angle()` 取接触方位 → `try_resolve_crit`（角距 ≤ 容差）→ 命中写 `packet.is_crit/crit_multiplier/crit_source` 与 `floating_style=&"crit"` 并 `consume_crit`（基础破绽换边，避免回原方向 / 与其它破绽重叠）。一次接触至多一个破绽、一次暴击。
 - 浮字：`Combat/presentation/crit_floating_text.tscn`，由 `float_damage_text_pool` 的 `crit` 样式选取（Quaver 16px 浮动数字例外）。
 - 视觉素材：`Assets/Crit/weak_point_{base,prism,perfect_core}.png`（32×32 透明像素，经 image-cli 生成，遵循 `critical.md` §12：银白 / 低饱和青、紫白双层、细金针芒；按方位旋转朝外）。
