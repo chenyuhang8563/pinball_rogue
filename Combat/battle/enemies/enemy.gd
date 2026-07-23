@@ -156,7 +156,7 @@ func apply_damage_packet(packet: DamagePacket) -> void:
 	packet.final_amount = final_damage
 
 	flash_hit_mask(packet.flash_color)
-	_show_float_damage_text(final_damage, packet.floating_style)
+	_show_float_damage_text(final_damage, resolve_floating_style(packet))
 	if effect_manager != null and effect_manager.has_method("on_damage_dealt"):
 		effect_manager.call("on_damage_dealt", self, packet)
 
@@ -501,6 +501,29 @@ func _get_effect_manager() -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null("EffectManager")
+
+
+## Resolves the floating damage text style for a packet. Explicit styles set by
+## the damage source (burn DoT, weak-point crit/perfect, execution decree) take
+## priority; otherwise element-driven colours apply, with the bomb source mapped
+## to the explosion style. Echo has no dedicated packet and stays default.
+static func resolve_floating_style(packet: DamagePacket) -> StringName:
+	if packet == null:
+		return &"default"
+	if packet.floating_style != &"default":
+		return packet.floating_style
+	match packet.element:
+		&"fire":
+			return &"burn"
+		&"poison":
+			return &"poison"
+		&"frost":
+			return &"frost"
+		&"lightning":
+			return &"lightning"
+	if packet.source == &"bomb":
+		return &"explosion"
+	return &"default"
 
 
 func _show_float_damage_text(damage_amount: int, style: StringName = &"default") -> void:

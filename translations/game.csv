@@ -95,6 +95,8 @@ STAT_BASE_DAMAGE,Base Damage,基础伤害
 STAT_ARMOR,Armor,护甲
 STAT_CRIT_RATE,Crit Rate,暴击率
 STAT_CRIT_DAMAGE,Crit Damage,暴击伤害
+FLOATING_CRIT_TAG,Crit,暴击
+FLOATING_PERFECT_TAG,Perfect,完美
 STAT_MOVE_SPEED,Move Speed,移动速度
 STAT_MAX_HEALTH,Max Health,最大生命值
 STAT_RUN_HEALTH,Run Health,旅程生命值
