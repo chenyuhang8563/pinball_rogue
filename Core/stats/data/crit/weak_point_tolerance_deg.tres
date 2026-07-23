@@ -7,6 +7,6 @@ script = ExtResource("1_stat")
 id = "weak_point_tolerance_deg"
 display_name = "Weak Point Tolerance (deg)"
 category = "crit"
-base_value = 15.0
+base_value = 20.0
 min_value = 0.0
 max_value = 44.0

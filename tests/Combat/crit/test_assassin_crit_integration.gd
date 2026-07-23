@@ -1,7 +1,7 @@
 extends GutTest
 
 ## End-to-end core loop on the real enemy.tscn: with an assassin weak point present, a
-## marble hitting from the marked side crits (x1.5 + crit float style + base source),
+## marble hitting from the marked side crits (x2 + crit float style + base source),
 ## the opposite side does not, and a crit relocates the weak point.
 
 const EnemyScene: PackedScene = preload("res://Combat/battle/enemies/enemy.tscn")
@@ -134,12 +134,12 @@ func test_hit_from_marked_side_crits() -> void:
 
 	assert_not_null(recorder.last_packet)
 	assert_true(recorder.last_packet.is_crit)
-	assert_eq(recorder.last_packet.crit_multiplier, 1.5)
+	assert_eq(recorder.last_packet.crit_multiplier, 2.0)
 	assert_eq(recorder.last_packet.crit_source, &"weak_point_base")
 	assert_eq(recorder.last_packet.floating_style, &"crit")
-	# base 10 x damage_multiplier 1.0 = 10, crit x1.5 = 15.
-	assert_eq(recorder.last_packet.final_amount, 15)
-	assert_eq(enemy.health, 85)
+	# base 10 x damage_multiplier 1.0 = 10, crit x2 = 20.
+	assert_eq(recorder.last_packet.final_amount, 20)
+	assert_eq(enemy.health, 80)
 
 
 func test_hit_from_wrong_side_does_not_crit() -> void:

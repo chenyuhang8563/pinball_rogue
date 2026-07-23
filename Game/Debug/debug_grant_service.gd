@@ -22,6 +22,11 @@ const ITEM_PATHS: PackedStringArray = [
 	"res://Content/data/fire_bellows.tres",
 	"res://Content/data/poison_culture.tres",
 	"res://Content/data/ice_hammer.tres",
+	"res://Content/data/assassins_whetstone.tres",
+	"res://Content/data/fortuna_dice.tres",
+	"res://Content/data/many_faced_prism.tres",
+	"res://Content/data/scarlet_thread.tres",
+	"res://Content/data/execution_decree.tres",
 	"res://Content/data/dash_skill.tres",
 	"res://Content/data/magic_missile_skill.tres",
 ]

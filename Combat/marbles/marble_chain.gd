@@ -230,6 +230,7 @@ func _damage_enemies_in_radius(center: Vector2) -> void:
 	if effect_manager != null and effect_manager.has_method("on_explosion"):
 		effect_manager.call("on_explosion", center, explosion_radius)
 
+	var targets: Array[Node2D] = []
 	for enemy: Node in get_tree().get_nodes_in_group("enemies"):
 		if enemy == null or not is_instance_valid(enemy):
 			continue
@@ -238,10 +239,19 @@ func _damage_enemies_in_radius(center: Vector2) -> void:
 		var enemy_node: Node2D = enemy as Node2D
 		if enemy_node.global_position.distance_to(center) > explosion_radius:
 			continue
+		targets.append(enemy_node)
+	var event_id: int = DamagePacket.next_event_id()
+	var main_target: Node2D = null
+	for target: Node2D in targets:
+		if main_target == null or target.global_position.distance_squared_to(center) < main_target.global_position.distance_squared_to(center):
+			main_target = target
+	for enemy_node: Node2D in targets:
 		if enemy_node.has_method("apply_damage_packet"):
 			var packet: DamagePacket = DamagePacketScript.new(&"bomb", float(explosion_damage), &"physical")
 			packet.is_marble = true
 			packet.target = enemy_node
+			packet.event_id = event_id
+			packet.is_event_main = enemy_node == main_target
 			enemy_node.call("apply_damage_packet", packet)
 		elif enemy_node.has_method("take_damage"):
 			# Compatibility for non-Enemy test doubles. Real enemies use the packet

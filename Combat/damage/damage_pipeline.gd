@@ -30,4 +30,4 @@ static func resolve_pre_armor(packet: DamagePacket, stat_system: Node = null) ->
 	# Weak-point crits are resolved on the enemy side and expressed as a packet
 	# multiplier applied after the legacy result. crit_multiplier defaults to 1.0,
 	# so non-crit packets keep the exact legacy rounding boundary.
-	return max(0, roundi(float(resolved) * packet.crit_multiplier))
+	return max(0, roundi(float(resolved) * packet.crit_multiplier * packet.damage_multiplier))

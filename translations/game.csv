@@ -114,3 +114,13 @@ ITEM_ASSASSIN_MARBLE_DESC,Reveals enemy weak points; strike from the marked side
 UPGRADE_ASSASSIN_DAMAGE_2_DESC,Assassin segment damage increased to 2,刺客段伤害提升至 2
 UPGRADE_ASSASSIN_DAMAGE_3_DESC,Assassin segment damage increased to 3,刺客段伤害提升至 3
 UPGRADE_ASSASSIN_AWAKEN_DESC,Awaken: reveal two weak points at once,觉醒：同时揭示两个破绽
+ITEM_ASSASSINS_WHETSTONE_TITLE,Assassin's Whetstone,刺客磨刀石
+ITEM_ASSASSINS_WHETSTONE_DESC,Expand weak-point tolerance. Awaken for perfect cuts.,扩大破绽容差；觉醒后可触发完美切入。
+ITEM_FORTUNA_DICE_TITLE,Fortuna's Dice,福尔图娜的骰子
+ITEM_FORTUNA_DICE_DESC,Each immediate damage instance rolls a damage multiplier.,每次即时伤害独立掷出伤害倍率。
+ITEM_MANY_FACED_PRISM_TITLE,Many-Faced Prism,千面棱镜
+ITEM_MANY_FACED_PRISM_DESC,Base weak-point crits create a temporary prism weak point.,命中基础破绽后生成临时棱镜破绽。
+ITEM_SCARLET_THREAD_TITLE,Scarlet Thread,猩红丝线
+ITEM_SCARLET_THREAD_DESC,Critical hits cut nearby enemies with scarlet threads.,暴击会以猩红丝线切割附近敌人。
+ITEM_EXECUTION_DECREE_TITLE,Execution Decree,处刑敕令
+ITEM_EXECUTION_DECREE_DESC,Non-critical immediate hits arm a guaranteed execution crit.,非暴击即时伤害累积进度，武装下一次处刑暴击。

@@ -1,0 +1,33 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Combat/presentation/floating_text.gd" id="1_script"]
+[ext_resource type="FontFile" path="res://Assets/Fonts/quaver.ttf" id="2_quaver"]
+[ext_resource type="FontVariation" path="res://Themes/Fonts/quaver_fusion_12.tres" id="3_quaver_fusion_12"]
+
+[node name="PerfectFloatingText" type="Node2D"]
+z_index = 100
+script = ExtResource("1_script")
+
+[node name="PerfectTag" type="Label" parent="."]
+custom_minimum_size = Vector2(40, 12)
+offset_left = -20.0
+offset_top = -24.0
+offset_right = 20.0
+offset_bottom = -10.0
+theme_override_colors/font_color = Color(1, 0.92, 0.42, 1)
+theme_override_fonts/font = ExtResource("3_quaver_fusion_12")
+text = "完美"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(40, 16)
+offset_left = -20.0
+offset_top = -8.0
+offset_right = 20.0
+offset_bottom = 15.0
+theme_override_colors/font_color = Color(1, 0.92, 0.42, 1)
+theme_override_fonts/font = ExtResource("2_quaver")
+text = "99"
+horizontal_alignment = 1
+vertical_alignment = 1

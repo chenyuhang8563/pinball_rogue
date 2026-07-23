@@ -8,6 +8,11 @@ const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	&"fire_bellows": preload("res://Combat/effects/fire_bellows/fire_bellows.gd"),
 	&"poison_culture": preload("res://Combat/effects/poison_culture/poison_culture.gd"),
 	&"ice_hammer": preload("res://Combat/effects/ice_hammer/ice_hammer.gd"),
+	&"assassins_whetstone": preload("res://Combat/effects/assassins_whetstone/assassins_whetstone.gd"),
+	&"fortuna_dice": preload("res://Combat/effects/fortuna_dice/fortuna_dice.gd"),
+	&"many_faced_prism": preload("res://Combat/effects/many_faced_prism/many_faced_prism.gd"),
+	&"scarlet_thread": preload("res://Combat/effects/scarlet_thread/scarlet_thread.gd"),
+	&"execution_decree": preload("res://Combat/effects/execution_decree/execution_decree.gd"),
 }
 
 

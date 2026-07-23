@@ -44,6 +44,7 @@ func on_enemy_hit_by_marble(enemy: Node2D, _packet: DamagePacket = null) -> void
 	var hit_count: int = int(_config.extra.get("awakened_hits", 3)) if _awakened else 1
 	var previous: Node2D = enemy
 	var visited: Array[Node2D] = [enemy]
+	var event_id: int = DamagePacket.next_event_id()
 	for _hit_index: int in range(hit_count):
 		var target := _find_nearest_enemy(previous, visited)
 		if target == null:
@@ -55,6 +56,8 @@ func on_enemy_hit_by_marble(enemy: Node2D, _packet: DamagePacket = null) -> void
 		var packet: DamagePacket = DamagePacketScript.new(&"relic_lightning", float(_get_damage()), &"lightning")
 		packet.is_relic = true
 		packet.target = target
+		packet.event_id = event_id
+		packet.is_event_main = _hit_index == 0
 		if target.has_method("apply_damage_packet"):
 			target.call("apply_damage_packet", packet)
 		elif target.has_method("take_damage"):

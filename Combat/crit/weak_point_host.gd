@@ -25,6 +25,7 @@ const STAT_WEAK_POINT_TOLERANCE_DEG: String = "weak_point_tolerance_deg"
 const STAT_WEAK_POINT_CRIT_MULTIPLIER: String = "weak_point_crit_multiplier"
 const STAT_PERFECT_CRIT_WINDOW_DEG: String = "perfect_crit_window_deg"
 const STAT_PERFECT_CRIT_MULTIPLIER: String = "perfect_crit_multiplier"
+const STAT_PERFECT_CRIT_ENABLED: String = "perfect_crit_enabled"
 
 const ALL_DIRECTIONS: Array = [
 	WeakPoint.Direction.UP,
@@ -57,6 +58,10 @@ func _process(delta: float) -> void:
 func sync_to_assassin() -> void:
 	var target_count: int = _assassin_weak_point_count()
 	var base_points: Array = _base_weak_points()
+	if target_count <= 0:
+		weak_points.clear()
+		_refresh_visual()
+		return
 	while base_points.size() > target_count:
 		var removed: WeakPoint = base_points.pop_back()
 		weak_points.erase(removed)
@@ -71,7 +76,7 @@ func sync_to_assassin() -> void:
 ## contact angle (in radians, enemy-local). Returns {} when nothing matches, otherwise
 ## {is_crit, is_perfect, multiplier, kind, direction, weak_point}. Does not mutate.
 func try_resolve_crit(contact_angle_rad: float) -> Dictionary:
-	var tolerance: float = _stat_float(STAT_WEAK_POINT_TOLERANCE_DEG, 15.0)
+	var tolerance: float = _stat_float(STAT_WEAK_POINT_TOLERANCE_DEG, 20.0)
 	var contact_deg: float = rad_to_deg(contact_angle_rad)
 	var best_point: WeakPoint = null
 	var best_distance: float = INF
@@ -86,9 +91,9 @@ func try_resolve_crit(contact_angle_rad: float) -> Dictionary:
 	if best_point == null:
 		return {}
 	var perfect_window: float = _stat_float(STAT_PERFECT_CRIT_WINDOW_DEG, 5.0)
-	var is_perfect: bool = perfect_crit_enabled and best_distance <= perfect_window
-	var multiplier: float = _stat_float(STAT_PERFECT_CRIT_MULTIPLIER, 1.75) if is_perfect \
-		else _stat_float(STAT_WEAK_POINT_CRIT_MULTIPLIER, 1.5)
+	var is_perfect: bool = (perfect_crit_enabled or _stat_float(STAT_PERFECT_CRIT_ENABLED, 0.0) >= 1.0) and best_distance <= perfect_window
+	var multiplier: float = _stat_float(STAT_PERFECT_CRIT_MULTIPLIER, 2.25) if is_perfect \
+		else _stat_float(STAT_WEAK_POINT_CRIT_MULTIPLIER, 2.0)
 	return {
 		"is_crit": true,
 		"is_perfect": is_perfect,
@@ -107,13 +112,42 @@ func consume_crit(info: Dictionary) -> void:
 		return
 	var point: Variant = info.get("weak_point")
 	if point is WeakPoint:
-		_relocate_if_base(point as WeakPoint)
+		if (point as WeakPoint).kind == WeakPoint.Kind.PRISM:
+			weak_points.erase(point)
+		else:
+			_relocate_if_base(point as WeakPoint)
 	crit_landed.emit(_host, info)
 	_refresh_visual()
 
 
 ## Milestone 2 hook (skeleton): adds a timed PRISM weak point at a direction.
+func try_spawn_prism(avoid_direction: int, duration: float) -> bool:
+	for wp: Variant in weak_points:
+		if wp is WeakPoint and (wp as WeakPoint).kind == WeakPoint.Kind.PRISM:
+			var existing: WeakPoint = wp as WeakPoint
+			existing.remaining_time = duration
+			existing.total_time = duration
+			_refresh_visual()
+			return true
+	var occupied: Array = []
+	for wp: Variant in weak_points:
+		if wp is WeakPoint:
+			occupied.append((wp as WeakPoint).direction)
+	var candidates: Array = []
+	for direction: Variant in ALL_DIRECTIONS:
+		if int(direction) != avoid_direction and not occupied.has(direction):
+			candidates.append(direction)
+	if candidates.is_empty():
+		return false
+	var selected: WeakPoint.Direction = candidates[_rng.randi_range(0, candidates.size() - 1)] as WeakPoint.Direction
+	weak_points.append(WeakPoint.new(selected, WeakPoint.Kind.PRISM, duration))
+	_refresh_visual()
+	return true
+
+
 func add_prism(direction: WeakPoint.Direction, duration: float) -> void:
+	if weak_points.any(func(wp: Variant) -> bool: return wp is WeakPoint and (wp as WeakPoint).direction == direction):
+		return
 	weak_points.append(WeakPoint.new(direction, WeakPoint.Kind.PRISM, duration))
 	_refresh_visual()
 
@@ -225,6 +259,10 @@ func _refresh_visual() -> void:
 					"direction": point.direction,
 					"kind": point.kind,
 					"angle_deg": point.center_angle_deg(),
+					"is_perfect": perfect_crit_enabled or _stat_float(STAT_PERFECT_CRIT_ENABLED, 0.0) >= 1.0,
+					"remaining_time": point.remaining_time,
+					"total_time": point.total_time,
+					"is_permanent": point.is_permanent(),
 				})
 		_visual.call("update_weak_points", data)
 

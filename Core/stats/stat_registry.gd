@@ -34,6 +34,7 @@ const WEAK_POINT_CRIT_MULTIPLIER: String = "weak_point_crit_multiplier"
 const PERFECT_CRIT_MULTIPLIER: String = "perfect_crit_multiplier"
 const WEAK_POINT_TOLERANCE_DEG: String = "weak_point_tolerance_deg"
 const PERFECT_CRIT_WINDOW_DEG: String = "perfect_crit_window_deg"
+const PERFECT_CRIT_ENABLED: String = "perfect_crit_enabled"
 const ASSASSIN_WEAK_POINT_COUNT: String = "assassin_weak_point_count"
 const ASSASSIN_SEGMENT_DAMAGE: String = "assassin_segment_damage"
 const ARMOR: String = "armor"
@@ -93,6 +94,7 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Core/stats/data/crit/perfect_crit_multiplier.tres",
 	"res://Core/stats/data/crit/weak_point_tolerance_deg.tres",
 	"res://Core/stats/data/crit/perfect_crit_window_deg.tres",
+	"res://Core/stats/data/crit/perfect_crit_enabled.tres",
 	"res://Core/stats/data/crit/assassin_weak_point_count.tres",
 	"res://Core/stats/data/crit/assassin_segment_damage.tres",
 	"res://Core/stats/data/combat/armor.tres",

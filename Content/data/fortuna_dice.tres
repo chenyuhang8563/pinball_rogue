@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="Item" load_steps=3 format=3]
+
+[ext_resource type="Texture2D" path="res://Assets/Items/fortuna_dice.png" id="1_icon"]
+[ext_resource type="Script" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "fortuna_dice"
+title = "ITEM_FORTUNA_DICE_TITLE"
+icon = ExtResource("1_icon")
+price = 25
+description = "ITEM_FORTUNA_DICE_DESC"
+effect_type = 12
+type = 2
+rarity = 1
+tags = Array[StringName]([&"relic", &"damage"])
+weight = 55.0

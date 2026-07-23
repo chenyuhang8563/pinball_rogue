@@ -7,6 +7,6 @@ script = ExtResource("1_stat")
 id = "perfect_crit_multiplier"
 display_name = "Perfect Crit Multiplier"
 category = "crit"
-base_value = 1.75
+base_value = 2.25
 min_value = 1.0
 max_value = 100.0

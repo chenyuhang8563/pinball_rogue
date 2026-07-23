@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Item" load_steps=3 format=3]
+
+[ext_resource type="Texture2D" path="res://Assets/Items/many_faced_prism.png" id="1_icon"]
+[ext_resource type="Script" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "many_faced_prism"
+title = "ITEM_MANY_FACED_PRISM_TITLE"
+icon = ExtResource("1_icon")
+price = 30
+description = "ITEM_MANY_FACED_PRISM_DESC"
+effect_type = 13
+type = 2
+rarity = 2
+tags = Array[StringName]([&"relic", &"crit"])
+weight = 45.0
+requires_tags = Array[StringName]([&"assassin"])

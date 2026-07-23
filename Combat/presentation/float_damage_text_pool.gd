@@ -3,6 +3,7 @@ extends Node
 @export var floating_text_scene: PackedScene = preload("res://Combat/presentation/floating_text.tscn")
 @export var burn_floating_text_scene: PackedScene = preload("res://Combat/presentation/burn_floating_text.tscn")
 @export var crit_floating_text_scene: PackedScene = preload("res://Combat/presentation/crit_floating_text.tscn")
+@export var perfect_floating_text_scene: PackedScene = preload("res://Combat/presentation/perfect_floating_text.tscn")
 
 var _available: Dictionary = {}
 var _active: Array[Node2D] = []
@@ -86,6 +87,8 @@ func _scene_for_style(style: StringName) -> PackedScene:
 			return burn_floating_text_scene
 		&"crit":
 			return crit_floating_text_scene
+		&"perfect":
+			return perfect_floating_text_scene
 		_:
 			return floating_text_scene
 

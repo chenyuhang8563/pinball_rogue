@@ -31,6 +31,7 @@ var direction: Direction = Direction.UP
 var kind: Kind = Kind.BASE
 ## Remaining lifetime in seconds. Negative means infinite (base weak points).
 var remaining_time: float = -1.0
+var total_time: float = -1.0
 
 
 func _init(
@@ -41,6 +42,7 @@ func _init(
 	direction = p_direction
 	kind = p_kind
 	remaining_time = p_remaining_time
+	total_time = p_remaining_time
 
 
 func center_angle_deg() -> float:

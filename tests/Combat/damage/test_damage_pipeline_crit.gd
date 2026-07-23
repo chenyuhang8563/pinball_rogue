@@ -22,6 +22,10 @@ func test_damage_packet_crit_fields_default_to_inactive() -> void:
 	assert_eq(packet.crit_multiplier, 1.0)
 	assert_eq(packet.crit_source, &"")
 	assert_false(packet.is_perfect_crit)
+	assert_eq(packet.damage_multiplier, 1.0)
+	assert_eq(packet.event_id, 0)
+	assert_true(packet.is_event_main)
+	assert_eq(packet.crit_direction, -1)
 
 
 func test_crit_multiplier_applies_to_allowlisted_marble_source() -> void:
@@ -76,3 +80,19 @@ func test_crit_multiplier_one_is_identity_on_both_paths() -> void:
 	var raw := DamagePacket.new(&"dot_poison", 5.0)
 	raw.crit_multiplier = 1.0
 	assert_eq(DamagePipeline.resolve_pre_armor(raw, stats), 5)
+
+
+func test_damage_multiplier_multiplies_after_crit_at_the_existing_rounding_boundary() -> void:
+	var stats := FakeStatSystem.new()
+	add_child_autofree(stats)
+	var packet := DamagePacket.new(&"marble_head", 10.0)
+	packet.crit_multiplier = 1.5
+	packet.damage_multiplier = 1.3
+	assert_eq(DamagePipeline.resolve_pre_armor(packet, stats), 20)
+
+
+func test_event_ids_are_unique_and_positive() -> void:
+	var first: int = DamagePacket.next_event_id()
+	var second: int = DamagePacket.next_event_id()
+	assert_gt(first, 0)
+	assert_gt(second, first)

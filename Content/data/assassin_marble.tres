@@ -12,6 +12,6 @@ price = 25
 description = "ITEM_ASSASSIN_MARBLE_DESC"
 effect_type = 10
 type = 1
-tags = Array[StringName]([&"marble", &"assassin", &"producer"])
+tags = Array[StringName]([&"marble", &"assassin", &"producer", &"crit_source"])
 weight = 100.0
 marble_type = 6

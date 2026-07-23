@@ -27,6 +27,17 @@ var is_crit: bool = false
 var crit_multiplier: float = 1.0
 var crit_source: StringName = &""
 var is_perfect_crit: bool = false
+# Immediate-damage multiplier supplied by relic effects. Defaults preserve every
+# existing packet's rounding behaviour.
+var damage_multiplier: float = 1.0
+# A non-zero id groups a multi-target hit into one logical event.  Zero means a
+# self-contained single-target event.
+var event_id: int = 0
+var is_event_main: bool = true
+# Direction of the consumed weak point, used by prism generation to avoid it.
+var crit_direction: int = -1
+
+static var _next_event_id: int = 1
 
 
 func _init(
@@ -37,6 +48,14 @@ func _init(
 	source = p_source
 	base = p_base
 	element = p_element
+
+
+static func next_event_id() -> int:
+	var result: int = _next_event_id
+	_next_event_id += 1
+	if _next_event_id <= 0:
+		_next_event_id = 1
+	return result
 
 
 ## Deliberately source-based: metadata such as `is_marble` must not let future

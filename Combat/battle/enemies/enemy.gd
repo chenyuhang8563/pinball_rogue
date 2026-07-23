@@ -90,6 +90,9 @@ func apply_damage_packet(packet: DamagePacket) -> void:
 		return
 	if packet.target == null or packet.target != self:
 		packet.target = self
+	var effect_manager: Node = _get_effect_manager()
+	if effect_manager != null and effect_manager.has_method("modify_damage_packet"):
+		effect_manager.call("modify_damage_packet", self, packet)
 	var pre_armor: int = DamagePipelineScript.resolve_pre_armor(packet, _get_stat_system())
 	var final_damage: int = pre_armor
 	var stat_system: Node = _get_stat_system()
@@ -110,7 +113,6 @@ func apply_damage_packet(packet: DamagePacket) -> void:
 
 	flash_hit_mask(packet.flash_color)
 	_show_float_damage_text(final_damage, packet.floating_style)
-	var effect_manager: Node = _get_effect_manager()
 	if effect_manager != null and effect_manager.has_method("on_damage_dealt"):
 		effect_manager.call("on_damage_dealt", self, packet)
 
@@ -299,7 +301,8 @@ func _resolve_weak_point_crit(body: Node, packet: DamagePacket) -> void:
 	packet.crit_multiplier = float(info.get("multiplier", 1.0))
 	packet.crit_source = &"weak_point_prism" \
 		if int(info.get("kind", 0)) == int(WeakPoint.Kind.PRISM) else &"weak_point_base"
-	packet.floating_style = &"crit"
+	packet.crit_direction = int(info.get("direction", -1))
+	packet.floating_style = &"perfect" if packet.is_perfect_crit else &"crit"
 	if weak_point_host.has_method("consume_crit"):
 		weak_point_host.call("consume_crit", info)
 

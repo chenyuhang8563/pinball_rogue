@@ -49,6 +49,11 @@ func _draw() -> void:
 		var is_perfect: bool = bool(info.get("is_perfect", false))
 		if not _draw_marker(angle_deg, kind, is_perfect):
 			_draw_arc_fallback(angle_deg, kind)
+		if kind == WeakPoint.Kind.PRISM and not bool(info.get("is_permanent", false)):
+			var total_time: float = float(info.get("total_time", 0.0))
+			var remaining_time: float = float(info.get("remaining_time", 0.0))
+			if total_time > 0.0:
+				_draw_prism_timer_ring(angle_deg, clampf(remaining_time / total_time, 0.0, 1.0))
 
 
 func _draw_marker(angle_deg: float, kind: int, is_perfect: bool) -> bool:
@@ -79,3 +84,8 @@ func _draw_arc_fallback(angle_deg: float, kind: int) -> void:
 	var start_angle: float = center_rad - deg_to_rad(ARC_HALF_WIDTH_DEG)
 	var end_angle: float = center_rad + deg_to_rad(ARC_HALF_WIDTH_DEG)
 	draw_arc(Vector2.ZERO, ARC_RADIUS, start_angle, end_angle, 24, color, ARC_THICKNESS, true)
+
+
+func _draw_prism_timer_ring(angle_deg: float, ratio: float) -> void:
+	var center: Vector2 = Vector2.RIGHT.rotated(deg_to_rad(angle_deg)) * OUTLINE_RADIUS
+	draw_arc(center, 7.0 * ratio, 0.0, TAU, 16, Color(0.85, 0.72, 1.0, 0.55), 1.0, true)

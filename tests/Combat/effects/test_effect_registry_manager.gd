@@ -11,6 +11,11 @@ const RELIC_IDS: Array[StringName] = [
 	&"fire_bellows",
 	&"poison_culture",
 	&"ice_hammer",
+	&"assassins_whetstone",
+	&"fortuna_dice",
+	&"many_faced_prism",
+	&"scarlet_thread",
+	&"execution_decree",
 ]
 
 var _effect_manager: Node = null
