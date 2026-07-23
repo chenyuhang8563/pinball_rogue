@@ -6,6 +6,7 @@ extends Node
 const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	&"lightning": preload("res://Combat/effects/lightning_effect/lightning.gd"),
 	&"fire_bellows": preload("res://Combat/effects/fire_bellows/fire_bellows.gd"),
+	&"accelerant": preload("res://Combat/effects/accelerant/accelerant.gd"),
 	&"poison_culture": preload("res://Combat/effects/poison_culture/poison_culture.gd"),
 	&"ice_hammer": preload("res://Combat/effects/ice_hammer/ice_hammer.gd"),
 	&"assassins_whetstone": preload("res://Combat/effects/assassins_whetstone/assassins_whetstone.gd"),
@@ -15,6 +16,9 @@ const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	&"execution_decree": preload("res://Combat/effects/execution_decree/execution_decree.gd"),
 	&"permafrost": preload("res://Combat/effects/permafrost/permafrost.gd"),
 	&"cryoclasm": preload("res://Combat/effects/cryoclasm/cryoclasm.gd"),
+	&"cremation": preload("res://Combat/effects/cremation/cremation.gd"),
+	&"thermal_shock": preload("res://Combat/effects/thermal_shock/thermal_shock.gd"),
+	&"miasma": preload("res://Combat/effects/miasma/miasma.gd"),
 }
 
 

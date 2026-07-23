@@ -112,6 +112,8 @@ func _sync_active_effects() -> void:
 	for effect_type in _active_effects.keys():
 		if not owned_effects.has(effect_type):
 			var removed: Variant = _active_effects[effect_type]
+			if removed != null and removed.has_method("deactivate"):
+				removed.call("deactivate")
 			if removed != null and removed.has_method("dispose"):
 				removed.call("dispose")
 			_active_effects.erase(effect_type)

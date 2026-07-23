@@ -1,9 +1,9 @@
 keys,en,zh_CN
 ITEM_FIRE_MARBLE_TITLE,Fire Marble,火焰弹珠
-ITEM_FIRE_MARBLE_DESC,Applies burning fuel that deals damage each second equal to remaining fuel and consumes 1 fuel.,命中敌人施加燃烧燃料，每秒按剩余燃料造成伤害并消耗 1 燃料。
+ITEM_FIRE_MARBLE_DESC,First hit applies 4 burn fuel; later hits add 1. Each second, burn deals damage equal to remaining fuel and consumes 1 fuel.,首次命中附着 4 层燃烧燃料；燃烧期间命中追加 1 层。每秒按剩余燃料造成伤害并消耗 1 燃料。
 UPGRADE_FIRE_DURATION_4_DESC,Burn fuel cap increased to 15,燃烧燃料上限提升至 15
 UPGRADE_FIRE_DURATION_5_DESC,Burn fuel cap increased to 20 and deals 3 damage per fuel,燃烧燃料上限提升至 20，且每燃料造成 3 点伤害
-UPGRADE_FIRE_AWAKEN_DESC,Awaken: apply 2 fuel per hit,觉醒：每次命中施加 2 燃料
+UPGRADE_FIRE_AWAKEN_DESC,Awaken: retains the level III burn damage,觉醒：保留 III 级燃烧伤害
 UI_INVENTORY_TITLE,Inventory,物品栏
 UI_SKILLS_TITLE,Skills,技能
 UI_EXIT,Exit,退出
@@ -128,3 +128,11 @@ ITEM_SCARLET_THREAD_TITLE,Scarlet Thread,猩红丝线
 ITEM_SCARLET_THREAD_DESC,Critical hits cut nearby enemies with scarlet threads.,暴击会以猩红丝线切割附近敌人。
 ITEM_EXECUTION_DECREE_TITLE,Execution Decree,处刑敕令
 ITEM_EXECUTION_DECREE_DESC,Non-critical immediate hits arm a guaranteed execution crit.,非暴击即时伤害累积进度，武装下一次处刑暴击。
+ITEM_ACCELERANT_TITLE,Accelerant,助燃剂
+ITEM_ACCELERANT_DESC,"Hits on burning enemies add extra fuel, but fuel evaporates twice as fast.",命中燃烧敌人时额外施加燃料，但燃料挥发速度加倍。
+ITEM_CREMATION_TITLE,Cremation,火葬
+ITEM_CREMATION_DESC,"Marble hits on high-fuel enemies detonate, dealing fire shockwave damage to nearby enemies.",弹珠命中高燃料敌人时引爆，对周围敌人造成火焰冲击波。
+ITEM_THERMAL_SHOCK_TITLE,Thermal Shock,热冲击
+ITEM_THERMAL_SHOCK_DESC,"When burn and freeze coexist, shatter for fixed damage and remove both statuses.",燃烧与冻结共存时发生碎裂，造成固定伤害并解除两种状态。
+ITEM_MIASMA_TITLE,Miasma,瘴气
+ITEM_MIASMA_DESC,"When burn and poison coexist, detonate toxic fog for area damage and clear poison.",燃烧与感染共存时发生毒雾爆燃，造成范围伤害并清除感染。

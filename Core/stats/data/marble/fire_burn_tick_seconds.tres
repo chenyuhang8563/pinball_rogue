@@ -4,10 +4,10 @@
 
 [resource]
 script = ExtResource("1_stat")
-id = "fire_fuel_per_hit"
-display_name = "Fire Fuel Per Hit"
+id = "fire_burn_tick_seconds"
+display_name = "Fire Burn Tick Seconds"
 category = "marble"
 base_value = 1.0
-min_value = 1.0
-max_value = 99.0
-integer = true
+min_value = 0.01
+max_value = 999999999.0
+integer = false

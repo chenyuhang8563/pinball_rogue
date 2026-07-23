@@ -95,10 +95,11 @@ func test_registry_scan_order_and_ids_are_stable() -> void:
 		[] as Array[StringName]
 	).size())
 	assert_eq(ids, [
-		&"assassin_marble", &"assassins_whetstone", &"blue_marble", &"bomb_marble", &"brown_marble",
-		&"cryoclasm", &"dark_marble", &"dash", &"execution_decree", &"fire_bellows",
-		&"fire_marble", &"fortuna_dice", &"green_marble", &"ice_hammer", &"lightning",
-		&"magic_missile", &"many_faced_prism", &"permafrost", &"poison_culture", &"scarlet_thread",
+		&"accelerant", &"assassin_marble", &"assassins_whetstone", &"blue_marble", &"bomb_marble",
+		&"brown_marble", &"cremation", &"cryoclasm", &"dark_marble", &"dash", &"execution_decree",
+		&"fire_bellows", &"fire_marble", &"fortuna_dice", &"green_marble", &"ice_hammer", &"lightning",
+		&"magic_missile", &"many_faced_prism", &"miasma", &"permafrost", &"poison_culture",
+		&"scarlet_thread", &"thermal_shock",
 	] as Array[StringName])
 
 
@@ -167,8 +168,8 @@ func test_shop_channels_use_registry_and_one_shared_random_source() -> void:
 	assert_eq(normal.get("_random_source"), random)
 	assert_eq(normal.get("_content_registry"), registry)
 
-	# Owning each producer satisfies the existing gates. The two universally
-	# eligible M2 relics join this deterministic Devil Shop draw.
+	# Owning each producer satisfies the authored requires_tags gates; the seeded
+	# RNG makes the expanded ice/fire/critical relic pool deterministic.
 	assert_true(loadout.call("add", registry.call("by_id", &"fire_marble") as Item))
 	assert_true(loadout.call("add", registry.call("by_id", &"green_marble") as Item))
 	assert_true(loadout.call("add", registry.call("by_id", &"blue_marble") as Item))
@@ -180,7 +181,7 @@ func test_shop_channels_use_registry_and_one_shared_random_source() -> void:
 	config.set("level_weights", {2: 1, 3: 0, 4: 0})
 	var devil_offers: Array = devil.call("open", config, [])
 	assert_eq(_offer_ids(devil_offers), [
-		"cryoclasm", "fire_bellows", "fortuna_dice", "ice_hammer", "lightning", "poison_culture",
+		"accelerant", "cryoclasm", "fortuna_dice", "ice_hammer", "lightning", "poison_culture",
 	])
 	assert_eq(devil.get("_random_source"), random)
 	assert_eq(devil.get("_content_registry"), registry)

@@ -8,6 +8,7 @@ const BURN_ID: String = "fire_burn_debuff"
 const STAT_ENTITY_MARBLE_CHAIN: String = "marble_chain"
 const STAT_FIRE_BURN_MAX_STACKS: String = "fire_burn_max_stacks"
 const STAT_FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
+const STAT_FIRE_BURN_TICK_SECONDS: String = "fire_burn_tick_seconds"
 ## Hard ceiling for the stat-driven fuel cap (base 10, grows to 15 via upgrades).
 const MAX_BURN_FUEL: int = 99
 
@@ -26,9 +27,10 @@ func _init() -> void:
 
 
 func on_apply(host: Node, state: Dictionary) -> void:
-	# Reapplication adds fuel (clamped to the cap by BuffHost) and refreshes the
-	# tick cadence.
-	state["tick_accumulator"] = 0.0
+	# Reapplication adds fuel (clamped to the cap by BuffHost) without delaying
+	# the already-scheduled burn tick.
+	if not state.has("tick_accumulator"):
+		state["tick_accumulator"] = 0.0
 	state["hit_flash_color"] = FIRE_COLOR
 	if host.has_method("set_fire_status_visual"):
 		host.call("set_fire_status_visual")
@@ -36,8 +38,9 @@ func on_apply(host: Node, state: Dictionary) -> void:
 
 func on_process(host: Node, state: Dictionary, delta: float) -> void:
 	var tick_accumulator: float = float(state.get("tick_accumulator", 0.0)) + delta
-	while tick_accumulator >= 1.0:
-		tick_accumulator -= 1.0
+	var tick_seconds: float = _get_fire_burn_tick_seconds()
+	while tick_accumulator >= tick_seconds:
+		tick_accumulator -= tick_seconds
 		var fuel: int = int(state.get("stacks", 1))
 		if fuel <= 0:
 			break
@@ -99,6 +102,14 @@ func _get_burn_damage_per_layer() -> float:
 	var stat_system: Node = _get_stat_system()
 	if stat_system != null and stat_system.has_method("get_stat"):
 		return maxf(0.0, float(stat_system.call("get_stat", STAT_FIRE_BURN_DAMAGE_PER_LAYER, STAT_ENTITY_MARBLE_CHAIN)))
+	return 1.0
+
+
+func _get_fire_burn_tick_seconds() -> float:
+	var stat_system: Node = _get_stat_system()
+	if stat_system != null and stat_system.has_method("get_stat") \
+			and (not stat_system.has_method("has_stat") or bool(stat_system.call("has_stat", STAT_FIRE_BURN_TICK_SECONDS))):
+		return maxf(0.01, float(stat_system.call("get_stat", STAT_FIRE_BURN_TICK_SECONDS, STAT_ENTITY_MARBLE_CHAIN)))
 	return 1.0
 
 

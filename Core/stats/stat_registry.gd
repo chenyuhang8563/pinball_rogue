@@ -23,7 +23,7 @@ const ECHO_TIMEOUT: String = "echo_timeout"
 const EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
 const FIRE_BURN_MAX_STACKS: String = "fire_burn_max_stacks"
 const FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
-const FIRE_FUEL_PER_HIT: String = "fire_fuel_per_hit"
+const FIRE_BURN_TICK_SECONDS: String = "fire_burn_tick_seconds"
 
 const DAMAGE_MULTIPLIER: String = "damage_multiplier"
 const FINAL_DAMAGE: String = "final_damage"
@@ -84,7 +84,7 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Core/stats/data/marble/explosion_effect_scale.tres",
 	"res://Core/stats/data/marble/fire_burn_max_stacks.tres",
 	"res://Core/stats/data/marble/fire_burn_damage_per_layer.tres",
-	"res://Core/stats/data/marble/fire_fuel_per_hit.tres",
+	"res://Core/stats/data/marble/fire_burn_tick_seconds.tres",
 	"res://Core/stats/data/combat/damage_multiplier.tres",
 	"res://Core/stats/data/combat/final_damage.tres",
 	"res://Core/stats/data/combat/damage_received.tres",

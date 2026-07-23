@@ -19,7 +19,6 @@ const STAT_POISON_MAX_STACKS: String = "poison_max_stacks"
 const STAT_POISON_STACKS_PER_HIT: String = "poison_stacks_per_hit"
 const STAT_FIRE_BURN_MAX_STACKS: String = "fire_burn_max_stacks"
 const STAT_FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
-const STAT_FIRE_FUEL_PER_HIT: String = "fire_fuel_per_hit"
 const STAT_ECHO_TIMEOUT: String = "echo_timeout"
 const STAT_EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
 const STAT_EXPLOSION_DAMAGE: String = "explosion_damage"
@@ -339,7 +338,6 @@ func _sync_stat_modifiers() -> void:
 			STAT_BLUE_FROST_STACKS_PER_HIT,
 			STAT_FIRE_BURN_MAX_STACKS,
 			STAT_FIRE_BURN_DAMAGE_PER_LAYER,
-			STAT_FIRE_FUEL_PER_HIT,
 			STAT_ASSASSIN_SEGMENT_DAMAGE,
 			STAT_ASSASSIN_WEAK_POINT_COUNT,
 		])
@@ -384,8 +382,6 @@ func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
 	elif marble_type == Marble.MARBLE_TYPE.FIRE:
 		if stored_level >= 3:
 			_add_override_modifier(STAT_FIRE_BURN_DAMAGE_PER_LAYER, 3.0)
-		if awakened:
-			_add_override_modifier(STAT_FIRE_FUEL_PER_HIT, 2.0)
 
 
 ## Assassin weak-point presence reflects the live chain: 0 when no assassin marble

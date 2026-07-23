@@ -42,3 +42,20 @@ func test_float_weights_are_seed_reproducible_and_negative_is_locally_zero() -> 
 		pool.append(item)
 	for _index: int in range(12):
 		assert_eq(registry.weighted_pick(pool, first), registry.weighted_pick(pool, second))
+
+
+func test_new_fire_relics_use_distinct_32_pixel_rgba_icons() -> void:
+	var registry: Node = get_node_or_null("/root/ContentRegistry")
+	assert_not_null(registry)
+	var expected_icons: Dictionary[StringName, String] = {
+		&"accelerant": "res://Assets/Items/relic_accelerant.png",
+		&"cremation": "res://Assets/Items/relic_cremation.png",
+		&"fire_bellows": "res://Assets/Items/relic_fire_bellows.png",
+	}
+	for item_id: StringName in expected_icons:
+		var item: Item = registry.by_id(item_id)
+		assert_not_null(item)
+		assert_eq(item.icon.resource_path, expected_icons[item_id])
+		assert_eq(item.icon.get_width(), 32)
+		assert_eq(item.icon.get_height(), 32)
+		assert_ne(item.icon.get_image().detect_alpha(), Image.ALPHA_NONE)
