@@ -6,7 +6,6 @@ const StatModifierScript: GDScript = preload("res://Core/stats/stat_modifier.gd"
 const DEFAULT_CONFIG: RelicLevelConfig = preload("res://Content/data/relic_configs/accelerant.tres")
 const FIRE_BURN_DEBUFF_ID: String = "fire_burn_debuff"
 const STAT_ENTITY_MARBLE_CHAIN: String = "marble_chain"
-const STAT_FIRE_FUEL_PER_HIT: String = "fire_fuel_per_hit"
 const STAT_FIRE_BURN_TICK_SECONDS: String = "fire_burn_tick_seconds"
 const TICK_SECONDS_MODIFIER_ID: String = "accelerant_fire_burn_tick_seconds"
 const MODIFIER_SOURCE: String = "relic:accelerant"

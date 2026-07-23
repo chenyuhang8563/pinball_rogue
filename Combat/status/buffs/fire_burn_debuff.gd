@@ -27,9 +27,10 @@ func _init() -> void:
 
 
 func on_apply(host: Node, state: Dictionary) -> void:
-	# Reapplication adds fuel (clamped to the cap by BuffHost) and refreshes the
-	# tick cadence.
-	state["tick_accumulator"] = 0.0
+	# Reapplication adds fuel (clamped to the cap by BuffHost) without delaying
+	# the already-scheduled burn tick.
+	if not state.has("tick_accumulator"):
+		state["tick_accumulator"] = 0.0
 	state["hit_flash_color"] = FIRE_COLOR
 	if host.has_method("set_fire_status_visual"):
 		host.call("set_fire_status_visual")

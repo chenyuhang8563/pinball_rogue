@@ -141,14 +141,14 @@ func test_green_marble_growth_publishes_poison_cap_and_per_hit_modifiers() -> vo
 	assert_true((stats.get("modifiers") as Array).is_empty())
 
 
-func test_fire_marble_growth_publishes_fuel_modifiers() -> void:
+func test_fire_marble_growth_publishes_cap_and_damage_without_changing_hit_fuel() -> void:
 	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
 	var loadout: RefCounted = LoadoutScript.new()
 	var progression: RefCounted = ProgressionScript.new(loadout, stats)
 	var fire := _item("fire", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.FIRE)
 	assert_true(loadout.call("add", fire))
 
-	# Level II raises the fuel cap to 15; damage and per-hit fuel stay untouched.
+	# Level II raises the fuel cap to 15; damage stays unchanged.
 	assert_true(progression.call("upgrade_one", fire))
 	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 15.0)
 	assert_null(stats.call("modifier_value", "fire_burn_damage_per_layer"))
@@ -159,11 +159,12 @@ func test_fire_marble_growth_publishes_fuel_modifiers() -> void:
 	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 15.0)
 	assert_eq(stats.call("modifier_value", "fire_burn_damage_per_layer"), 2.0)
 
-	# Awakened applies 2 fuel per hit; damage stays doubled and cap stays 15.
+	# Regression source: burn redesign fixes hits at 4 initial fuel then 1 follow-up.
+	# Repair: awakening retains level III damage, never altering fuel attached per hit.
 	assert_true(progression.call("upgrade_one", fire))
 	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 15.0)
 	assert_eq(stats.call("modifier_value", "fire_burn_damage_per_layer"), 2.0)
-	assert_eq(stats.call("modifier_value", "fire_fuel_per_hit"), 2.0)
+	assert_null(stats.call("modifier_value", "fire_fuel_per_hit"))
 	progression.call("dispose")
 	assert_true((stats.get("modifiers") as Array).is_empty())
 

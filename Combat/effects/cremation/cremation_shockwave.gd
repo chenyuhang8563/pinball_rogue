@@ -4,14 +4,14 @@ extends Node2D
 ## 调用 setup(radius) 设置与伤害判定匹配的视觉半径（像素）。
 
 const EXPAND_DURATION: float = 0.35
-## fire.png 纹理半径基准（像素），用于将伤害半径换算为节点缩放。
-const BASE_TEXTURE_RADIUS: float = 16.0
+## 粒子爆燃的基准半径（像素），用于将伤害半径换算为节点缩放。
+const BASE_EFFECT_RADIUS: float = 16.0
 
 var _target_scale: Vector2 = Vector2(5.0, 5.0)
 
 
 func setup(radius: float) -> void:
-	var s: float = maxf(0.1, radius / BASE_TEXTURE_RADIUS)
+	var s: float = maxf(0.1, radius / BASE_EFFECT_RADIUS)
 	_target_scale = Vector2(s, s)
 
 

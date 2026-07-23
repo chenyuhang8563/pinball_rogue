@@ -1,17 +1,41 @@
-[gd_scene load_steps=4 format=3]
+[gd_scene load_steps=6 format=3]
 
 [ext_resource type="Script" path="res://Combat/effects/fire_bellows/spark_projectile.gd" id="1_spark"]
-[ext_resource type="Texture2D" path="res://Assets/Effects/fire/fire.png" id="2_fire"]
+[ext_resource type="Texture2D" path="res://Assets/Effects/fire/fire_bellows_spark.png" id="2_spark_texture"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_spark"]
 radius = 4.0
 
+[sub_resource type="Gradient" id="Gradient_trail"]
+offsets = PackedFloat32Array(0, 0.5, 1)
+colors = PackedColorArray(1, 0.95, 0.45, 1, 1, 0.18, 0.02, 0.75, 0.7, 0.03, 0, 0)
+
+[sub_resource type="GradientTexture1D" id="GradientTexture1D_trail"]
+gradient = SubResource("Gradient_trail")
+
+[sub_resource type="CanvasItemMaterial" id="CanvasItemMaterial_spark"]
+blend_mode = 1
+
 [node name="SparkProjectile" type="Area2D"]
 script = ExtResource("1_spark")
 
-[node name="Sprite2D" type="Sprite2D" parent="."]
-scale = Vector2(0.25, 0.25)
-texture = ExtResource("2_fire")
+[node name="SparkTrailParticles" type="CPUParticles2D" parent="."]
+amount = 18
+lifetime = 0.28
+local_coords = false
+texture_filter = 1
+material = SubResource("CanvasItemMaterial_spark")
+texture = ExtResource("2_spark_texture")
+emission_shape = 1
+emission_sphere_radius = 2.0
+direction = Vector2(-1, 0)
+spread = 30.0
+gravity = Vector2(0, 0)
+initial_velocity_min = 22.0
+initial_velocity_max = 44.0
+scale_amount_min = 0.45
+scale_amount_max = 0.9
+color_ramp = SubResource("GradientTexture1D_trail")
 
 [node name="CollisionShape2D" type="CollisionShape2D" parent="."]
 shape = SubResource("CircleShape2D_spark")

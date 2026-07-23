@@ -1,9 +1,9 @@
 keys,en,zh_CN
 ITEM_FIRE_MARBLE_TITLE,Fire Marble,火焰弹珠
-ITEM_FIRE_MARBLE_DESC,Applies burning fuel that deals damage each second equal to remaining fuel and consumes 1 fuel.,命中敌人施加燃烧燃料，每秒按剩余燃料造成伤害并消耗 1 燃料。
+ITEM_FIRE_MARBLE_DESC,First hit applies 4 burn fuel; later hits add 1. Each second, burn deals damage equal to remaining fuel and consumes 1 fuel.,首次命中附着 4 层燃烧燃料；燃烧期间命中追加 1 层。每秒按剩余燃料造成伤害并消耗 1 燃料。
 UPGRADE_FIRE_DURATION_4_DESC,Burn fuel cap increased to 15,燃烧燃料上限提升至 15
 UPGRADE_FIRE_DURATION_5_DESC,Burn deals 2 damage per fuel,燃烧每燃料造成 2 点伤害
-UPGRADE_FIRE_AWAKEN_DESC,Awaken: apply 2 fuel per hit,觉醒：每次命中施加 2 燃料
+UPGRADE_FIRE_AWAKEN_DESC,Awaken: retains the level III burn damage,觉醒：保留 III 级燃烧伤害
 UI_INVENTORY_TITLE,Inventory,物品栏
 UI_SKILLS_TITLE,Skills,技能
 UI_EXIT,Exit,退出

@@ -49,8 +49,7 @@ func on_enemy_hit_resolved(enemy: Node2D, was_burning: bool, _was_frozen: bool, 
 		var spark: SparkProjectile = SparkProjectileScene.instantiate() as SparkProjectile
 		if spark == null:
 			continue
-		scene.add_child(spark)
-		spark.setup(enemy.global_position, target)
+		spark.call_deferred("spawn_from", scene, enemy.global_position, target)
 
 
 func _get_spark_count() -> int:

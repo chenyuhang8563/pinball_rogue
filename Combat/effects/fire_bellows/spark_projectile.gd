@@ -15,11 +15,20 @@ var _progress: float = 0.0
 var _arrived: bool = false
 
 
+func spawn_from(scene: Node, source_pos: Vector2, target: Node2D) -> void:
+	if scene == null or not is_instance_valid(scene) or target == null or not is_instance_valid(target):
+		queue_free()
+		return
+	scene.add_child(self)
+	setup(source_pos, target)
+
+
 func setup(source_pos: Vector2, target: Node2D) -> void:
 	_start_pos = source_pos
 	_target = weakref(target)
 	_end_pos = target.global_position
 	global_position = source_pos
+	rotation = source_pos.angle_to_point(_end_pos)
 	var tween: Tween = create_tween()
 	tween.tween_property(self, "_progress", 1.0, FLIGHT_DURATION)
 	tween.tween_callback(_on_arrive)
