@@ -132,7 +132,8 @@ func apply_damage_packet(packet: DamagePacket) -> void:
 	if packet.target == null or packet.target != self:
 		packet.target = self
 	var effect_manager: Node = _get_effect_manager()
-	if effect_manager != null and effect_manager.has_method("modify_damage_packet"):
+	if not packet.bypasses_damage_modifiers \
+			and effect_manager != null and effect_manager.has_method("modify_damage_packet"):
 		effect_manager.call("modify_damage_packet", self, packet)
 	var pre_armor: int = max(0, roundi(packet.base + packet.flat)) if packet.bypasses_damage_modifiers \
 			else DamagePipelineScript.resolve_pre_armor(packet, _get_stat_system())

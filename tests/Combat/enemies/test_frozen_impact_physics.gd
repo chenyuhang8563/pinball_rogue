@@ -18,6 +18,7 @@ const LoadoutScript: GDScript = preload("res://Loadout/domain/loadout.gd")
 const ProgressionScript: GDScript = preload("res://Loadout/application/item_progression.gd")
 const ItemScript: GDScript = preload("res://Content/domain/item.gd")
 const StatModifierScript: GDScript = preload("res://Core/stats/stat_modifier.gd")
+const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
 
 
 class ImpactRecorder:
@@ -31,6 +32,15 @@ class ImpactRecorder:
 			&"velocity": velocity,
 			&"kind": kind,
 		})
+
+
+class DamageAmplifier:
+	extends RefCounted
+	var calls: int = 0
+
+	func modify_damage_packet(_enemy: Node2D, packet: DamagePacket) -> void:
+		calls += 1
+		packet.flat += 50.0
 
 
 var _effect_manager: Node = null
@@ -188,6 +198,25 @@ func test_frozen_collision_takes_one_damage_even_when_armor_is_higher() -> void:
 	add_child_autofree(wall)
 	enemy._on_body_entered(wall)
 	assert_eq(enemy.health, 99, "frozen collision bypasses armor and removes exactly one HP")
+
+
+func test_frozen_collision_ignores_effect_damage_modifiers_but_regular_damage_uses_them() -> void:
+	# Problem source: the main-branch packet modifier hook could change frozen_collision before bypass logic ran.
+	# Repair/boundary: a frozen collision remains exactly -1, while an ordinary packet still accepts effect modifiers.
+	var amplifier := DamageAmplifier.new()
+	_effect_manager._active_effects[&"damage_amplifier"] = amplifier
+	var frozen_enemy: Enemy = _enemy(Vector2.ZERO)
+	_freeze(frozen_enemy)
+	var wall := StaticBody2D.new()
+	add_child_autofree(wall)
+	frozen_enemy._on_body_entered(wall)
+	assert_eq(frozen_enemy.health, 99, "frozen_collision ignores effect damage modifiers")
+	assert_eq(amplifier.calls, 0, "frozen_collision never invokes packet modifiers")
+
+	var ordinary_enemy: Enemy = _enemy(Vector2.ZERO)
+	ordinary_enemy.apply_damage_packet(DamagePacketScript.new(&"untyped", 1.0))
+	assert_eq(ordinary_enemy.health, 49, "ordinary damage still receives the effect modifier")
+	assert_eq(amplifier.calls, 1, "ordinary packets still invoke packet modifiers")
 
 
 func test_frozen_flipper_collision_damages_without_dispatching_frozen_impact() -> void:
