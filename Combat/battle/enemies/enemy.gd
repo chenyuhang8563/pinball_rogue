@@ -13,6 +13,10 @@ const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition
 ## 实际偏移范围为 [-FLOAT_DAMAGE_X_SPREAD_HALF, FLOAT_DAMAGE_X_SPREAD_HALF]，
 ## 使同一点上的多次伤害在水平方向上散开，避免完全重叠。
 const FLOAT_DAMAGE_X_SPREAD_HALF: float = 8.0
+## 碰撞前速度采样环大小。contact_monitor 的 body_entered 比碰撞步晚一个物理步触发，
+## 触发时最新采样往往已是碰撞后的值，因此保留最近若干步速度、排除最新帧后取最强者
+## 还原碰撞前速度（详见 _get_impact_velocity）。
+const FROZEN_IMPACT_VELOCITY_HISTORY: int = 3
 
 @export var health: int = 100:
 	set(value):
@@ -34,6 +38,12 @@ var _entity_id: String = ""
 var _death_emitted: bool = false
 var _frost_visual: Node2D = null
 var _fire_visual: Node2D = null
+## 本物理步开始时的速度快照（在 _integrate_forces 记录）。body_entered 触发时
+## linear_velocity 可能已是反弹后的值，冻结体碰撞判定必须使用碰撞前速度。
+var _pre_step_velocity: Vector2 = Vector2.ZERO
+## 最近若干步的速度采样环（碰撞判定用"最近最强速度"还原碰撞前速度）。
+var _velocity_history: Array[Vector2] = []
+var _velocity_history_cursor: int = 0
 
 
 func _ready() -> void:
@@ -55,10 +65,30 @@ func _exit_tree() -> void:
 		stat_system.call("unregister_entity", _entity_id)
 
 
+func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
+	# 记录本物理步开始时的速度，作为碰撞判定用的"碰撞前速度"快照。
+	_pre_step_velocity = state.linear_velocity
+	if _velocity_history.size() < FROZEN_IMPACT_VELOCITY_HISTORY:
+		_velocity_history.append(state.linear_velocity)
+	else:
+		_velocity_history[_velocity_history_cursor] = state.linear_velocity
+		_velocity_history_cursor = (_velocity_history_cursor + 1) % FROZEN_IMPACT_VELOCITY_HISTORY
+
+
 func _on_body_entered(body: Node) -> void:
+	if body == null or body == self or not is_alive():
+		return
+	var was_frozen_at_collision: bool = has_buff("frozen_debuff")
+	if was_frozen_at_collision:
+		_apply_frozen_collision_damage()
+		if not is_alive():
+			return
 	if body.is_in_group("marbles"):
 		var was_burning: bool = has_buff("fire_burn_debuff")
 		var was_frozen: bool = has_buff("frozen_debuff")
+		# 弹珠接触冻结敌人也属于冻结碰撞，必须在碎冰锤可能解除 Frozen 前分发。
+		if was_frozen:
+			_try_report_frozen_impact(body)
 		var packet: DamagePacket = DamagePacketScript.new(&"marble_head", 0.0)
 		packet.is_marble = true
 		packet.target = self
@@ -76,6 +106,17 @@ func _on_body_entered(body: Node) -> void:
 		if is_alive() and effect_manager != null and effect_manager.has_method("on_enemy_hit_resolved"):
 			effect_manager.call("on_enemy_hit_resolved", self, was_burning, was_frozen, packet)
 		_apply_frozen_push_from_body(body)
+		return
+	_try_report_frozen_impact(body)
+
+
+## Frozen 敌人的任意 body_entered 接触固定结算 1 点自身伤害。使用 DamagePacket 以
+## 复用生命同步、死亡、伤害飘字和 Effect 通知管线，并显式绕过伤害修正保证固定 -1。
+func _apply_frozen_collision_damage() -> void:
+	var packet: DamagePacket = DamagePacketScript.new(&"frozen_collision", 1.0)
+	packet.bypasses_damage_modifiers = true
+	packet.target = self
+	apply_damage_packet(packet)
 
 
 func take_damage(amount: int, flash_color: Color = Color.WHITE, floating_style: StringName = &"default") -> void:
@@ -93,17 +134,19 @@ func apply_damage_packet(packet: DamagePacket) -> void:
 	var effect_manager: Node = _get_effect_manager()
 	if effect_manager != null and effect_manager.has_method("modify_damage_packet"):
 		effect_manager.call("modify_damage_packet", self, packet)
-	var pre_armor: int = DamagePipelineScript.resolve_pre_armor(packet, _get_stat_system())
+	var pre_armor: int = max(0, roundi(packet.base + packet.flat)) if packet.bypasses_damage_modifiers \
+			else DamagePipelineScript.resolve_pre_armor(packet, _get_stat_system())
 	var final_damage: int = pre_armor
 	var stat_system: Node = _get_stat_system()
 	if stat_system != null and stat_system.has_method("get_stat") and _entity_id != "":
-		var context: RefCounted = StatContextScript.new(
-			_entity_id,
-			"",
-			"apply_damage_packet",
-			{"raw_damage": pre_armor}
-		)
-		final_damage = int(stat_system.call("get_stat", "damage_received", _entity_id, context))
+		if not packet.bypasses_damage_modifiers:
+			var context: RefCounted = StatContextScript.new(
+				_entity_id,
+				"",
+				"apply_damage_packet",
+				{"raw_damage": pre_armor}
+			)
+			final_damage = int(stat_system.call("get_stat", "damage_received", _entity_id, context))
 		var current_health: int = int(stat_system.call("get_stat", "current_health", _entity_id))
 		stat_system.call("set_stat_base", _entity_id, "current_health", current_health - final_damage)
 		health = int(stat_system.call("get_stat", "current_health", _entity_id))
@@ -328,6 +371,81 @@ func _apply_frozen_push_impulse(impulse: Vector2) -> void:
 	set_sleeping(false)
 	angular_velocity = 0.0
 	linear_velocity += impulse / maxf(mass, 0.001)
+
+
+## 碰撞判定用的"碰撞前速度"：取最近采样环中最强的速度，但排除最新一帧采样。
+## contact_monitor 的 body_entered 比碰撞步晚一个物理步触发（Godot 延迟上报接触）：
+## 回调执行时最新采样已是"碰撞后一步"的速度——对撞墙反弹的主动方是反弹低速
+## （取最强可避开），但对被撞的静止目标却是被撞击后获得的高速度，会导致它
+## 误报自己的"碰撞前速度"。排除最新采样后，剩余采样中最强者 = 碰撞步开始时
+## 的速度；敌人对撞再用该方向关系过滤被撞的静止目标。
+## 采样环为空（GUT 分支测试直接注入 _pre_step_velocity、未经真实物理步）时回退到
+## _pre_step_velocity 本身。
+func _get_impact_velocity() -> Vector2:
+	var count: int = _velocity_history.size()
+	if count == 0:
+		return _pre_step_velocity
+	var strongest := Vector2.ZERO
+	# 环满时最新采样位于 (cursor - 1) mod count；环未满时不跳过，最新采样仍是
+	# 碰撞前速度。
+	var newest_index: int = -1
+	if count >= FROZEN_IMPACT_VELOCITY_HISTORY:
+		newest_index = (_velocity_history_cursor - 1 + count) % count
+	for i: int in range(count):
+		if i == newest_index:
+			continue
+		var sample: Vector2 = _velocity_history[i]
+		if sample.length_squared() > strongest.length_squared():
+			strongest = sample
+	if strongest == Vector2.ZERO and _pre_step_velocity != Vector2.ZERO:
+		return _pre_step_velocity
+	return strongest
+
+
+## 冻结体碰撞判定与事件分发（可测试缝隙，GUT 可直接调用）。
+## 分类（绝不把非敌人一律当墙）：
+## - enemies 组 -> kind=&"enemy"，hit_body=对方；
+## - marbles 组 -> kind=&"marble"；
+## - flipper/projectiles/skill_projectiles 组或 AnimatableBody2D（台面挡板）-> ignored；
+## - 仅 StaticBody2D（墙体/平台/边界）-> kind=&"world"，hit_body=null；
+## - 其余未分类刚体（无组 RigidBody2D/CharacterBody2D 等）-> ignored，宁缺勿误报。
+## 仅在自身冻结时分发，不使用速度阈值或时间冷却：body_entered 的每次接触边沿
+## 都是觉醒永冻可延时、冰爆可碎裂的一次碰撞。敌人互撞仍用方向过滤避免受撞方误报。
+## 返回是否分发了事件（被分类、方向或无接收方拦截时为 false）。
+func _try_report_frozen_impact(body: Node) -> bool:
+	if body == null or body == self or not is_alive():
+		return false
+	if not bool(get_meta("frozen", false)):
+		return false
+	var kind: StringName
+	var hit_body: Node2D = null
+	if body.is_in_group("enemies"):
+		kind = &"enemy"
+		hit_body = body as Node2D
+	elif body.is_in_group("marbles"):
+		kind = &"marble"
+	elif body.is_in_group("flipper") or body.is_in_group("projectiles") or body.is_in_group("skill_projectiles") \
+			or body is AnimatableBody2D:
+		return false
+	elif body is StaticBody2D:
+		kind = &"world"
+	else:
+		return false
+	var impact_velocity: Vector2 = _get_impact_velocity()
+	# 敌人对撞时要求"我方正朝对方移动"（碰撞前速度指向对方）。被撞的静止目标
+	# 获得的碰撞后速度背离撞击方；不排除会把"被高速撞击"误报为"自己高速撞敌"
+	# （信号可能晚碰撞步 2 步触发，采样环排除最新帧也拦不住它）。冰材质恢复
+	# 系数 0.08，碰撞后双方不会交换位置，用信号时刻位置判方向是可靠的。
+	if kind == &"enemy" and hit_body != null:
+		var to_other: Vector2 = hit_body.global_position - global_position
+		if to_other.length_squared() > 0.0001 and impact_velocity.dot(to_other.normalized()) <= 0.0:
+			return false
+	var effect_manager: Node = _get_effect_manager()
+	if effect_manager == null or not effect_manager.has_method("on_frozen_body_impact"):
+		return false
+	var velocity: Vector2 = impact_velocity
+	effect_manager.call("on_frozen_body_impact", self, hit_body, velocity, kind)
+	return true
 
 
 func _transition_physics_state(state_name: StringName) -> void:

@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="RelicLevelConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Combat/effects/relic_level_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+max_level = 3
+level_values = [3, 4, 6]
+extra = {
+"shard_damage": [3, 4, 6],
+"shard_speed": 260.0,
+"shard_lifetime": 3.0,
+"shard_turn_rate": 8.0,
+"fan_half_angle_deg": 60.0,
+"awakened_retain_frost": 2,
+"awakened_shard_frost": 1
+}

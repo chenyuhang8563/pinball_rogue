@@ -110,6 +110,10 @@ func _on_accepted_marble_fell(_token: RunFlowToken, body: RigidBody2D) -> void:
 		return
 	# 确认掉落的确实是 Head
 	if body == marble_chain.head:
+		# 本发边界事件：拥有临时投射物的遗物可在此自行清理。
+		var effect_manager: Node = _get_autoload_node(&"EffectManager")
+		if effect_manager != null and effect_manager.has_method("on_ball_lost"):
+			effect_manager.call("on_ball_lost")
 		if skill_controller != null:
 			skill_controller.cancel_active_skill("head_fell")
 		marble_chain.queue_free()

@@ -96,9 +96,9 @@ func test_registry_scan_order_and_ids_are_stable() -> void:
 	).size())
 	assert_eq(ids, [
 		&"assassin_marble", &"assassins_whetstone", &"blue_marble", &"bomb_marble", &"brown_marble",
-		&"dark_marble", &"dash", &"execution_decree", &"fire_bellows", &"fire_marble",
-		&"fortuna_dice", &"green_marble", &"ice_hammer", &"lightning", &"magic_missile",
-		&"many_faced_prism", &"poison_culture", &"scarlet_thread",
+		&"cryoclasm", &"dark_marble", &"dash", &"execution_decree", &"fire_bellows",
+		&"fire_marble", &"fortuna_dice", &"green_marble", &"ice_hammer", &"lightning",
+		&"magic_missile", &"many_faced_prism", &"permafrost", &"poison_culture", &"scarlet_thread",
 	] as Array[StringName])
 
 
@@ -176,11 +176,11 @@ func test_shop_channels_use_registry_and_one_shared_random_source() -> void:
 	var health := HealthPort.new()
 	assert_true(devil.call("configure", loadout, progression, wallet, health, random, registry))
 	var config: Resource = DevilConfigScript.new()
-	config.set("stock_count", 4)
+	config.set("stock_count", 6)
 	config.set("level_weights", {2: 1, 3: 0, 4: 0})
 	var devil_offers: Array = devil.call("open", config, [])
 	assert_eq(_offer_ids(devil_offers), [
-		"execution_decree", "fortuna_dice", "ice_hammer", "lightning",
+		"cryoclasm", "fire_bellows", "fortuna_dice", "ice_hammer", "lightning", "poison_culture",
 	])
 	assert_eq(devil.get("_random_source"), random)
 	assert_eq(devil.get("_content_registry"), registry)

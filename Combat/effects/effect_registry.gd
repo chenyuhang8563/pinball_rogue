@@ -13,6 +13,8 @@ const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	&"many_faced_prism": preload("res://Combat/effects/many_faced_prism/many_faced_prism.gd"),
 	&"scarlet_thread": preload("res://Combat/effects/scarlet_thread/scarlet_thread.gd"),
 	&"execution_decree": preload("res://Combat/effects/execution_decree/execution_decree.gd"),
+	&"permafrost": preload("res://Combat/effects/permafrost/permafrost.gd"),
+	&"cryoclasm": preload("res://Combat/effects/cryoclasm/cryoclasm.gd"),
 }
 
 

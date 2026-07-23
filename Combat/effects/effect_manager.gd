@@ -58,6 +58,21 @@ func on_burn_tick(enemy: Node2D, stacks: int) -> void:
 	_dispatch("on_burn_tick", [enemy, stacks])
 
 
+## 冻结敌人与弹珠、世界或另一敌人碰撞时由 Enemy 分发。快照语义：
+## velocity 为碰撞前速度；kind ∈ {&"marble", &"enemy", &"world"}；hit_body 仅
+## kind==&"enemy" 时有效。全部为分发时刻的不可变快照。
+func on_frozen_body_impact(
+	enemy: Node2D, hit_body: Node2D, velocity: Vector2, kind: StringName
+) -> void:
+	_dispatch("on_frozen_body_impact", [enemy, hit_body, velocity, kind])
+
+
+## 本发边界事件：Head 落入 KillZone、本发结束时由 Main 分发（每发一次）。
+## 有存活投射物的 Effect 可在本发结束时自行清理。无参数：清理范围由各 Effect 自持。
+func on_ball_lost() -> void:
+	_dispatch("on_ball_lost", [])
+
+
 func on_explosion(center: Vector2, radius: float) -> void:
 	_dispatch("on_explosion", [center, radius])
 
