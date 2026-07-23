@@ -5,9 +5,7 @@
 [resource]
 script = ExtResource("1_config")
 max_level = 3
-level_values = [4, 7, 11]
+level_values = [1, 2, 3]
 extra = {
-"ice_ball_scale": 1.5,
-"awakened_cap_bonus": 1,
-"awakened_frost_on_impact": 1
+"awakened_impact_duration": 2.5
 }

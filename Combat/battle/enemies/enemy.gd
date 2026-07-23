@@ -13,11 +13,6 @@ const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition
 ## 实际偏移范围为 [-FLOAT_DAMAGE_X_SPREAD_HALF, FLOAT_DAMAGE_X_SPREAD_HALF]，
 ## 使同一点上的多次伤害在水平方向上散开，避免完全重叠。
 const FLOAT_DAMAGE_X_SPREAD_HALF: float = 8.0
-## 冻结体碰撞事件的触发阈值（px/s）：碰撞前速度达到该值才算有效碰撞，
-## 过滤墙角微推与抖动。冰爆碎裂会在其遗物配置里使用更高的二级阈值。
-const FROZEN_IMPACT_SPEED_THRESHOLD: float = 40.0
-## 冻结体碰撞事件冷却（秒）：防止贴墙连续接触反复结算。
-const FROZEN_IMPACT_COOLDOWN_SECONDS: float = 0.25
 ## 碰撞前速度采样环大小。contact_monitor 的 body_entered 比碰撞步晚一个物理步触发，
 ## 触发时最新采样往往已是碰撞后的值，因此保留最近若干步速度、排除最新帧后取最强者
 ## 还原碰撞前速度（详见 _get_impact_velocity）。
@@ -48,9 +43,6 @@ var _pre_step_velocity: Vector2 = Vector2.ZERO
 ## 最近若干步的速度采样环（碰撞判定用"最近最强速度"还原碰撞前速度）。
 var _velocity_history: Array[Vector2] = []
 var _velocity_history_cursor: int = 0
-var _last_frozen_impact_usec: int = -10_000_000
-## 进入冰球态前的原始 scale 快照（零向量 = 未处于冰球态）。
-var _ice_ball_base_scale: Vector2 = Vector2.ZERO
 
 
 func _ready() -> void:
@@ -81,9 +73,19 @@ func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
 
 
 func _on_body_entered(body: Node) -> void:
+	if body == null or body == self or not is_alive():
+		return
+	var was_frozen_at_collision: bool = has_buff("frozen_debuff")
+	if was_frozen_at_collision:
+		_apply_frozen_collision_damage()
+		if not is_alive():
+			return
 	if body.is_in_group("marbles"):
 		var was_burning: bool = has_buff("fire_burn_debuff")
 		var was_frozen: bool = has_buff("frozen_debuff")
+		# 弹珠接触冻结敌人也属于冻结碰撞，必须在碎冰锤可能解除 Frozen 前分发。
+		if was_frozen:
+			_try_report_frozen_impact(body)
 		var packet: DamagePacket = DamagePacketScript.new(&"marble_head", 0.0)
 		packet.is_marble = true
 		packet.target = self
@@ -100,10 +102,17 @@ func _on_body_entered(body: Node) -> void:
 		if is_alive() and effect_manager != null and effect_manager.has_method("on_enemy_hit_resolved"):
 			effect_manager.call("on_enemy_hit_resolved", self, was_burning, was_frozen, packet)
 		_apply_frozen_push_from_body(body)
-		# Head 接触走碎冰锤链路（on_enemy_hit_resolved），绝不触发冻结体碰撞事件，
-		# 守住"碎冰锤=我方球撞冻结敌人；冰爆=冻结体自身高速碰撞"的分工。
 		return
 	_try_report_frozen_impact(body)
+
+
+## Frozen 敌人的任意 body_entered 接触固定结算 1 点自身伤害。使用 DamagePacket 以
+## 复用生命同步、死亡、伤害飘字和 Effect 通知管线，并显式绕过伤害修正保证固定 -1。
+func _apply_frozen_collision_damage() -> void:
+	var packet: DamagePacket = DamagePacketScript.new(&"frozen_collision", 1.0)
+	packet.bypasses_damage_modifiers = true
+	packet.target = self
+	apply_damage_packet(packet)
 
 
 func take_damage(amount: int, flash_color: Color = Color.WHITE, floating_style: StringName = &"default") -> void:
@@ -118,17 +127,19 @@ func apply_damage_packet(packet: DamagePacket) -> void:
 		return
 	if packet.target == null or packet.target != self:
 		packet.target = self
-	var pre_armor: int = DamagePipelineScript.resolve_pre_armor(packet, _get_stat_system())
+	var pre_armor: int = max(0, roundi(packet.base + packet.flat)) if packet.bypasses_damage_modifiers \
+			else DamagePipelineScript.resolve_pre_armor(packet, _get_stat_system())
 	var final_damage: int = pre_armor
 	var stat_system: Node = _get_stat_system()
 	if stat_system != null and stat_system.has_method("get_stat") and _entity_id != "":
-		var context: RefCounted = StatContextScript.new(
-			_entity_id,
-			"",
-			"apply_damage_packet",
-			{"raw_damage": pre_armor}
-		)
-		final_damage = int(stat_system.call("get_stat", "damage_received", _entity_id, context))
+		if not packet.bypasses_damage_modifiers:
+			var context: RefCounted = StatContextScript.new(
+				_entity_id,
+				"",
+				"apply_damage_packet",
+				{"raw_damage": pre_armor}
+			)
+			final_damage = int(stat_system.call("get_stat", "damage_received", _entity_id, context))
 		var current_health: int = int(stat_system.call("get_stat", "current_health", _entity_id))
 		stat_system.call("set_stat_base", _entity_id, "current_health", current_health - final_damage)
 		health = int(stat_system.call("get_stat", "current_health", _entity_id))
@@ -255,31 +266,7 @@ func begin_frozen_physics() -> void:
 
 
 func end_frozen_physics() -> void:
-	# 冰球态与 frozen_debuff 生命周期绑定：无论谁移除冻结（冰爆碎裂 / 永冻上限
-	# 淘汰 / 本发结束清理），都经 frozen_debuff.on_remove 到这里，自动还原
-	# scale / 标记，物理态随后切回 Normal。
-	_restore_ice_ball()
 	_transition_physics_state(&"Normal")
-
-
-## 冰球态（永冻遗物）。active 时快照原始 scale 并按 scale_factor 放大——节点
-## scale 同时放大 Sprite 与子 CollisionShape2D（物理形状变换随节点 scale 生效）。
-## 还原一律走 end_frozen_physics（即 frozen_debuff 移除），保证单一路径。
-func set_ice_ball(active: bool, scale_factor: float = 1.0) -> void:
-	if active:
-		if _ice_ball_base_scale == Vector2.ZERO:
-			_ice_ball_base_scale = scale
-		set_meta(&"ice_ball", true)
-		scale = _ice_ball_base_scale * maxf(0.1, scale_factor)
-	else:
-		_restore_ice_ball()
-
-
-func _restore_ice_ball() -> void:
-	set_meta(&"ice_ball", false)
-	if _ice_ball_base_scale != Vector2.ZERO:
-		scale = _ice_ball_base_scale
-		_ice_ball_base_scale = Vector2.ZERO
 
 
 func restore_frozen_physics_snapshot(snapshot: Dictionary) -> void:
@@ -359,7 +346,7 @@ func _apply_frozen_push_impulse(impulse: Vector2) -> void:
 ## 回调执行时最新采样已是"碰撞后一步"的速度——对撞墙反弹的主动方是反弹低速
 ## （取最强可避开），但对被撞的静止目标却是被撞击后获得的高速度，会导致它
 ## 误报自己的"碰撞前速度"。排除最新采样后，剩余采样中最强者 = 碰撞步开始时
-## 的速度：主动方为接近速度、被撞静止目标为 0（被阈值拦下），两边都正确。
+## 的速度；敌人对撞再用该方向关系过滤被撞的静止目标。
 ## 采样环为空（GUT 分支测试直接注入 _pre_step_velocity、未经真实物理步）时回退到
 ## _pre_step_velocity 本身。
 func _get_impact_velocity() -> Vector2:
@@ -367,8 +354,8 @@ func _get_impact_velocity() -> Vector2:
 	if count == 0:
 		return _pre_step_velocity
 	var strongest := Vector2.ZERO
-	# 环满时最新采样位于 (cursor - 1) mod count；环未满时不跳过（刚入场的身体
-	# 不可能处于真实的冰球碰撞场景，且此时最新采样即碰撞前速度）。
+	# 环满时最新采样位于 (cursor - 1) mod count；环未满时不跳过，最新采样仍是
+	# 碰撞前速度。
 	var newest_index: int = -1
 	if count >= FROZEN_IMPACT_VELOCITY_HISTORY:
 		newest_index = (_velocity_history_cursor - 1 + count) % count
@@ -384,16 +371,15 @@ func _get_impact_velocity() -> Vector2:
 
 
 ## 冻结体碰撞判定与事件分发（可测试缝隙，GUT 可直接调用）。
-## 三态分类（绝不把非敌人一律当墙）：
+## 分类（绝不把非敌人一律当墙）：
 ## - enemies 组 -> kind=&"enemy"，hit_body=对方；
-## - marbles/flipper/projectiles/skill_projectiles 组或 AnimatableBody2D（台面挡板）
-##   -> ignored（Head 接触走碎冰锤链路；挡板不参与冰爆语义）；
+## - marbles 组 -> kind=&"marble"；
+## - flipper/projectiles/skill_projectiles 组或 AnimatableBody2D（台面挡板）-> ignored；
 ## - 仅 StaticBody2D（墙体/平台/边界）-> kind=&"world"，hit_body=null；
 ## - 其余未分类刚体（无组 RigidBody2D/CharacterBody2D 等）-> ignored，宁缺勿误报。
-## 仅在自身冻结/冰球态且碰撞前速度（最近采样环最强值）达阈值时，经冷却后分发。
-## 分发前一次性捕获不可变快照（was_ice_ball/kind/velocity）：Vector2 为值类型，
-## 下游 Effect（永冻/冰爆）只依据快照判断，不读可能被前一个 Effect 改过的现场状态。
-## 返回是否分发了事件（被阈值/冷却/分类拦截或无接收方时为 false，不消耗冷却）。
+## 仅在自身冻结时分发，不使用速度阈值或时间冷却：body_entered 的每次接触边沿
+## 都是觉醒永冻可延时、冰爆可碎裂的一次碰撞。敌人互撞仍用方向过滤避免受撞方误报。
+## 返回是否分发了事件（被分类、方向或无接收方拦截时为 false）。
 func _try_report_frozen_impact(body: Node) -> bool:
 	if body == null or body == self or not is_alive():
 		return false
@@ -404,8 +390,9 @@ func _try_report_frozen_impact(body: Node) -> bool:
 	if body.is_in_group("enemies"):
 		kind = &"enemy"
 		hit_body = body as Node2D
-	elif body.is_in_group("marbles") or body.is_in_group("flipper") \
-			or body.is_in_group("projectiles") or body.is_in_group("skill_projectiles") \
+	elif body.is_in_group("marbles"):
+		kind = &"marble"
+	elif body.is_in_group("flipper") or body.is_in_group("projectiles") or body.is_in_group("skill_projectiles") \
 			or body is AnimatableBody2D:
 		return false
 	elif body is StaticBody2D:
@@ -413,8 +400,6 @@ func _try_report_frozen_impact(body: Node) -> bool:
 	else:
 		return false
 	var impact_velocity: Vector2 = _get_impact_velocity()
-	if impact_velocity.length() < FROZEN_IMPACT_SPEED_THRESHOLD:
-		return false
 	# 敌人对撞时要求"我方正朝对方移动"（碰撞前速度指向对方）。被撞的静止目标
 	# 获得的碰撞后速度背离撞击方；不排除会把"被高速撞击"误报为"自己高速撞敌"
 	# （信号可能晚碰撞步 2 步触发，采样环排除最新帧也拦不住它）。冰材质恢复
@@ -426,13 +411,8 @@ func _try_report_frozen_impact(body: Node) -> bool:
 	var effect_manager: Node = _get_effect_manager()
 	if effect_manager == null or not effect_manager.has_method("on_frozen_body_impact"):
 		return false
-	var now_usec: int = Time.get_ticks_usec()
-	if now_usec - _last_frozen_impact_usec < int(FROZEN_IMPACT_COOLDOWN_SECONDS * 1000000.0):
-		return false
-	_last_frozen_impact_usec = now_usec
-	var was_ice_ball: bool = bool(get_meta(&"ice_ball", false))
 	var velocity: Vector2 = impact_velocity
-	effect_manager.call("on_frozen_body_impact", self, hit_body, velocity, kind, was_ice_ball)
+	effect_manager.call("on_frozen_body_impact", self, hit_body, velocity, kind)
 	return true
 
 

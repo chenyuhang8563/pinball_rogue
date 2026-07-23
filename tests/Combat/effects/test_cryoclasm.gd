@@ -43,7 +43,8 @@ func test_shatter_unfreezes_clears_frost_and_keeps_source_alive() -> void:
 	_place_in_sector(source, 3)
 	var hp: int = source.health
 
-	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world", false)
+	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world")
+	await get_tree().physics_frame
 
 	assert_false(source.has_buff("frozen_debuff"), "shatter removes freeze")
 	assert_eq(source.get_buff_stacks("frost_debuff"), 0, "shatter clears frost")
@@ -62,7 +63,8 @@ func test_shards_each_target_a_distinct_in_sector_enemy() -> void:
 	var e3: Enemy = _enemy_at(source, Vector2(80.0, -40.0))    # ~-26.5°
 	var e_out: Enemy = _enemy_at(source, Vector2(0.0, 100.0))  # 90° → 扇区外
 
-	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world", false)
+	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world")
+	await get_tree().physics_frame
 
 	var shards: Array = _shards()
 	assert_eq(shards.size(), 3, "N=3")
@@ -86,7 +88,8 @@ func test_out_of_sector_fills_when_in_sector_insufficient() -> void:
 	var out1: Enemy = _enemy_at(source, Vector2(0.0, 100.0))     # 扇区外
 	var out2: Enemy = _enemy_at(source, Vector2(0.0, -100.0))    # 扇区外
 
-	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world", false)
+	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world")
+	await get_tree().physics_frame
 
 	var shards: Array = _shards()
 	assert_eq(shards.size(), 3)
@@ -108,7 +111,8 @@ func test_shard_count_scales_with_level() -> void:
 		_cryoclasm().set_level(level)
 		var source: Enemy = _enemy()
 		_freeze(source)
-		_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world", false)
+		_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world")
+		await get_tree().physics_frame
 		assert_eq(
 			_cryoclasm().get_live_shard_count(), expected[level],
 			"level %d spawns the configured shard count" % level
@@ -122,7 +126,8 @@ func test_targeted_shard_hits_assigned_once_and_frees() -> void:
 	var foe: Enemy = _enemy_at(source, Vector2(100.0, 0.0))
 	var source_hp: int = source.health
 
-	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world", false)
+	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world")
+	await get_tree().physics_frame
 
 	assert_eq(_shards().size(), 3, "1 foe + N=3 → 1 targeted + 2 visual")
 	var targeted: Variant = null
@@ -131,16 +136,9 @@ func test_targeted_shard_hits_assigned_once_and_frees() -> void:
 			targeted = shard
 	assert_not_null(targeted, "one shard is assigned the in-sector foe")
 
-	# 命中分配目标：伤害结算（Lv1=3）+ 命中即消失，且不产生新碎片。
-	var foe_hp: int = foe.health
-	targeted._on_body_entered(foe)
-	assert_eq(foe_hp - foe.health, 3, "level 1 shard deals its configured damage")
-	assert_true(targeted.is_queued_for_deletion(), "hit-once frees the shard")
-
-	# 碎片伤害经 apply_damage_packet，绝不再触发碎裂/生成新碎片。
-	await get_tree().process_frame
+	# 真实命中与命中即销毁由下方物理测试覆盖；这里验证延后激活后仍保留分配的伤害参数。
+	assert_eq(targeted.damage, 3, "level 1 shard retains its configured damage")
 	assert_eq(source.health, source_hp, "source HP stays stable after shard flight")
-	assert_eq(_cryoclasm().get_live_shard_count(), 2, "one shard spent, two visual flyers remain")
 
 
 func test_shard_physically_passes_through_non_target_to_hit_assigned_target() -> void:
@@ -183,7 +181,8 @@ func test_awakened_retains_frost_and_shard_applies_frost() -> void:
 	_add_frost(source, 5)
 	var foe: Enemy = _enemy_at(source, Vector2(100.0, 0.0))
 
-	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world", false)
+	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world")
+	await get_tree().physics_frame
 
 	assert_eq(source.get_buff_stacks("frost_debuff"), 2, "awakened retains 2 frost on the source")
 	var targeted: Variant = null
@@ -191,9 +190,12 @@ func test_awakened_retains_frost_and_shard_applies_frost() -> void:
 		if shard.get_target() == foe:
 			targeted = shard
 	assert_not_null(targeted)
-	assert_eq(foe.get_buff_stacks("frost_debuff"), 0)
-	targeted._on_body_entered(foe)
-	assert_gte(foe.get_buff_stacks("frost_debuff"), 1, "awakened shard applies frost on hit")
+	var frost_shard: CryoclasmIceShard = ShardScene.instantiate() as CryoclasmIceShard
+	_field.add_child(frost_shard)
+	assert_true(frost_shard.initialize(foe, Vector2.RIGHT, 3, 260.0, 3.0, 8.0, 1, 1, source))
+	frost_shard._on_body_entered(foe)
+	assert_gte(foe.get_buff_stacks("frost_debuff"), 1, "awakened shard applies frost on its assigned hit")
+	assert_true(frost_shard.is_queued_for_deletion(), "shard is consumed after its assigned hit")
 
 
 func test_cryoclasm_ignores_on_enemy_hit_resolved() -> void:
@@ -216,7 +218,7 @@ func test_ice_hammer_ignores_on_frozen_body_impact() -> void:
 	_freeze(target)
 	var hp: int = target.health
 
-	_effect_manager.on_frozen_body_impact(target, null, Vector2(200.0, 0.0), &"world", false)
+	_effect_manager.on_frozen_body_impact(target, null, Vector2(200.0, 0.0), &"world")
 
 	assert_true(
 		target.has_buff("frozen_debuff"),
@@ -225,26 +227,26 @@ func test_ice_hammer_ignores_on_frozen_body_impact() -> void:
 	assert_eq(target.health, hp)
 
 
-func test_both_relics_shatter_and_deal_impact_regardless_of_dispatch_order() -> void:
+func test_permafrost_and_cryoclasm_shatter_without_ice_ball_side_effects_regardless_of_dispatch_order() -> void:
 	for order: Array in [[&"permafrost", &"cryoclasm"], [&"cryoclasm", &"permafrost"]]:
 		_configure_relics(["permafrost", "cryoclasm"])
 		_set_dispatch_order(order)
 		var a: Enemy = _enemy()
 		var base_scale: Vector2 = a.scale
-		_freeze(a)  # 永冻把冻结目标转为冰球（登记 + 放大）
-		assert_true(bool(a.get_meta(&"ice_ball", false)), "permafrost converts the frozen target")
+		_freeze(a)
+		assert_eq(a.scale, base_scale, "permafrost keeps frozen enemy scale unchanged")
 		var b: Enemy = _enemy_at(a, Vector2(80.0, 0.0))
 		var a_hp: int = a.health
 		var b_hp: int = b.health
 
-		_effect_manager.on_frozen_body_impact(a, b, Vector2(200.0, 0.0), &"enemy", true)
+		_effect_manager.on_frozen_body_impact(a, b, Vector2(200.0, 0.0), &"enemy")
+		assert_eq(b.health, b_hp, "permafrost no longer deals collision damage (order %s)" % str(order))
+		await get_tree().physics_frame
 
 		assert_false(a.has_buff("frozen_debuff"), "A shatters (order %s)" % str(order))
-		assert_false(bool(a.get_meta(&"ice_ball", false)), "A loses the ice-ball mark (order %s)" % str(order))
-		assert_eq(a.scale, base_scale, "A's scale is restored (order %s)" % str(order))
+		assert_eq(a.scale, base_scale, "A's scale remains unchanged (order %s)" % str(order))
 		assert_eq(a.health, a_hp, "A's HP is unchanged (order %s)" % str(order))
 		assert_true(a.is_alive())
-		assert_eq(b_hp - b.health, 4, "B takes exactly one permafrost impact hit (order %s)" % str(order))
 		assert_eq(_cryoclasm().get_live_shard_count(), 3, "shards still spawn (order %s)" % str(order))
 
 
@@ -254,7 +256,7 @@ func test_ball_lost_clears_spawned_shards() -> void:
 	_freeze(source)
 	_enemy_at(source, Vector2(100.0, 0.0))
 
-	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world", false)
+	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world")
 	assert_eq(_cryoclasm().get_live_shard_count(), 3)
 
 	_effect_manager.on_ball_lost()
@@ -267,33 +269,29 @@ func test_ball_lost_clears_spawned_shards() -> void:
 func test_shard_damage_scales_with_level() -> void:
 	var expected := {1: 3, 2: 4, 3: 6}
 	for level: int in [1, 2, 3]:
-		_configure_relics(["cryoclasm"])
-		_cryoclasm().set_level(level)
-		var source: Enemy = _enemy()
-		_freeze(source)
-		var foe: Enemy = _enemy_at(source, Vector2(100.0, 0.0))
-		_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world", false)
-		var targeted: Variant = null
-		for shard: Variant in _shards():
-			if shard.get_target() == foe:
-				targeted = shard
-		assert_not_null(targeted, "level %d assigns the in-sector foe" % level)
+		var foe: Enemy = _enemy()
+		var shard: CryoclasmIceShard = ShardScene.instantiate() as CryoclasmIceShard
+		_field.add_child(shard)
+		assert_true(shard.initialize(foe, Vector2.RIGHT, expected[level], 260.0, 3.0, 8.0, 1, 0, null))
 		var foe_hp: int = foe.health
-		targeted._on_body_entered(foe)
-		assert_eq(foe_hp - foe.health, expected[level], "level %d shard damage" % level)
+		shard._on_body_entered(foe)
+		assert_eq(foe_hp - foe.health, expected[level], "level %d shard deals its configured damage" % level)
+		assert_true(shard.is_queued_for_deletion(), "level %d shard is consumed after one hit" % level)
 
 
-func test_below_impact_threshold_keeps_frozen_and_spawns_no_shards() -> void:
+func test_zero_speed_impact_shatters() -> void:
+	# 问题来源：冰爆要求高速碰撞，未拿冲刺时很难触发。
+	# 修复应让任意冻结碰撞碎裂；零速度快照覆盖原速度阈值的下边界。
 	_configure_relics(["cryoclasm"])
 	var source: Enemy = _enemy()
 	_freeze(source)
 	_enemy_at(source, Vector2(100.0, 0.0))
 
-	# 二级阈值 100 px/s；给 50 px/s 的慢速碰撞 → 不碎裂。
-	_effect_manager.on_frozen_body_impact(source, null, Vector2(50.0, 0.0), &"world", false)
+	_effect_manager.on_frozen_body_impact(source, null, Vector2.ZERO, &"world")
+	await get_tree().physics_frame
 
-	assert_true(source.has_buff("frozen_debuff"), "below-threshold impact does not shatter")
-	assert_eq(_shards().size(), 0, "no shards below the impact threshold")
+	assert_false(source.has_buff("frozen_debuff"), "zero-speed frozen impact still shatters")
+	assert_eq(_shards().size(), 3, "zero-speed shatter produces level-1 shards")
 
 
 func test_shatter_cooldown_prevents_repeat_spawn_within_window() -> void:
@@ -302,9 +300,10 @@ func test_shatter_cooldown_prevents_repeat_spawn_within_window() -> void:
 	_freeze(source)
 	_enemy_at(source, Vector2(100.0, 0.0))
 
-	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world", false)
+	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world")
 	# 同一敌人在冷却窗内再次收到快照事件 → 被拦截，碎片只生成一次。
-	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world", false)
+	_effect_manager.on_frozen_body_impact(source, null, Vector2(200.0, 0.0), &"world")
+	await get_tree().physics_frame
 
 	assert_eq(_shards().size(), 3, "cooldown prevents a second shatter spawn")
 

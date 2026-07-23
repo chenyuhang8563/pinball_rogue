@@ -1,13 +1,13 @@
 extends RefCounted
 class_name CryoclasmEffect
 
-## 冰爆遗物：冻结体（冻结/冰球）以足够速度撞墙或撞敌时碎裂——解除冻结、清空 Frost
+## 冰爆遗物：冻结敌人碰到弹珠、墙或另一敌人时碎裂——解除冻结、清空 Frost
 ## （觉醒保留固定层数）、目标仍存活且不扣血，沿运动方向扇区射出 N 枚冰碎片
 ## （N = 等级值 3/4/6）。扇区内敌人优先、扇区外补位，各碎片追踪一个互异目标；
 ## 目标不足则剩余碎片为无目标视觉飞行物（到期自毁）。
 ## 分工：本 Effect 不响应 on_enemy_hit_resolved（那是碎冰锤链路）。
-## 与永冻共存：双方都据同一事件快照独立结算——本 Effect 不读实时冻结态、永冻不在
-## 碰撞回调开头 prune，故无论分发先后，冰球都碎裂且被撞敌人都吃一次永冻碰撞伤害。
+## 与永冻共存：双方都据同一事件快照独立结算；冰爆不读实时冻结态，永冻仅延长
+## 当前冻结持续时间，故无论分发先后都能正常碎裂。
 
 const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
 const IceShardScene: PackedScene = preload("res://Combat/effects/cryoclasm/cryoclasm_ice_shard.tscn")
@@ -48,18 +48,13 @@ func is_awakened() -> bool:
 
 
 ## 冻结体碰撞事件。事件本身只由冻结体产生（Enemy 侧已保证），这里不再读实时 buff，
-## 只校验：敌人有效存活、kind 合法（enemy/world）、快照速度达冰爆二级阈值、未在冷却。
-func on_frozen_body_impact(
-	enemy: Node2D, _hit_body: Node2D, velocity: Vector2, kind: StringName, _was_ice_ball: bool
-) -> void:
+## 只校验：敌人有效存活、kind 合法（marble/enemy/world）、未在碎裂冷却。
+func on_frozen_body_impact(enemy: Node2D, _hit_body: Node2D, velocity: Vector2, kind: StringName) -> void:
 	if enemy == null or not is_instance_valid(enemy):
 		return
-	if kind != &"enemy" and kind != &"world":
+	if kind != &"marble" and kind != &"enemy" and kind != &"world":
 		return
 	if enemy.has_method("is_alive") and not bool(enemy.call("is_alive")):
-		return
-	var threshold: float = float(_config.extra.get("impact_speed_threshold", 100.0))
-	if velocity.length() < threshold:
 		return
 	var enemy_id: int = enemy.get_instance_id()
 	var now_usec: int = Time.get_ticks_usec()
@@ -78,7 +73,7 @@ func _shatter(enemy: Node2D, velocity: Vector2) -> void:
 	if base_dir.is_zero_approx():
 		base_dir = Vector2.RIGHT
 
-	# 碎裂：解除冻结 + 清空 Frost（冰球 scale 由 Enemy.end_frozen_physics 自动还原）；
+	# 碎裂：解除冻结 + 清空 Frost；
 	# 目标仍存活、不扣其 HP。觉醒时保留固定层数 Frost。
 	if enemy.has_method("remove_buff"):
 		enemy.call("remove_buff", FROZEN_DEBUFF_ID)
@@ -115,22 +110,44 @@ func _spawn_shards(enemy: Node2D, shatter_pos: Vector2, base_dir: Vector2) -> vo
 	var applies_frost: int = int(_config.extra.get("awakened_shard_frost", 1)) if _awakened else 0
 
 	for i: int in range(count):
-		var shard: Node2D = IceShardScene.instantiate() as Node2D
+		var shard: CryoclasmIceShard = IceShardScene.instantiate() as CryoclasmIceShard
 		if shard == null:
 			continue
-		parent.add_child(shard)
-		shard.global_position = shatter_pos
 		# 所有 N 枚先获得扇区均匀初向；有目标者随后逐帧转向，无目标者沿初向直线飞行。
 		var direction: Vector2 = base_dir.rotated(_fan_offset(i, count, half_angle))
 		var target: Node2D = targets[i] if i < targets.size() else null
-		if shard.has_method("initialize"):
-			shard.call(
-				"initialize", target, direction, damage, speed, lifetime, turn_rate, 1,
-				applies_frost, enemy
-			)
 		_live_shards.append(shard.get_instance_id())
+		# Enemy.body_entered 正在刷新物理查询时不能注册新刚体或改碰撞例外。
+		# 目标、撞击点与发射参数在本帧快照，仅物理激活延后。
+		call_deferred(
+			"_activate_shard", parent, shard, shatter_pos, target, direction, damage, speed, lifetime,
+			turn_rate, applies_frost, enemy
+		)
 
 
+func _activate_shard(
+	parent: Node,
+	shard: CryoclasmIceShard,
+	spawn_position: Vector2,
+	target: Node2D,
+	direction: Vector2,
+	damage: int,
+	speed: float,
+	lifetime: float,
+	turn_rate: float,
+	applies_frost: int,
+	ignored_source: Node2D
+) -> void:
+	if parent == null or not is_instance_valid(parent) \
+			or shard == null or not is_instance_valid(shard) or shard.is_queued_for_deletion():
+		if shard != null and is_instance_valid(shard) and not shard.is_queued_for_deletion():
+			shard.queue_free()
+		return
+	parent.add_child(shard)
+	shard.activate_from_spawn(
+		spawn_position, target, direction, damage, speed, lifetime, turn_rate, 1, applies_frost,
+		ignored_source as PhysicsBody2D
+	)
 ## 碎片伤害按等级从 extra.shard_damage（[3,4,6]）取值，clamp 到数组范围；兼容标量配置。
 func _shard_damage() -> int:
 	var values: Variant = _config.extra.get("shard_damage", [4])

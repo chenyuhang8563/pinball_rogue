@@ -14,6 +14,8 @@ var is_relic: bool = false
 var is_crit_eligible: bool = false
 var is_echo: bool = false
 var is_marble: bool = false
+## 环境/规则型固定伤害使用此标记绕过全局倍率、护甲与受伤修正。
+var bypasses_damage_modifiers: bool = false
 var proc_coefficient: float = 1.0
 var generation: int = 0
 var target: Node2D = null

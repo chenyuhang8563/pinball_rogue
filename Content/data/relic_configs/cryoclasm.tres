@@ -12,7 +12,6 @@ extra = {
 "shard_lifetime": 3.0,
 "shard_turn_rate": 8.0,
 "fan_half_angle_deg": 60.0,
-"impact_speed_threshold": 100.0,
 "awakened_retain_frost": 2,
 "awakened_shard_frost": 1
 }

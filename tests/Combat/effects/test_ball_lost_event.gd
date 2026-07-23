@@ -23,7 +23,7 @@ class UnrelatedEffect:
 	var on_frozen_body_impact_calls: int = 0
 
 	func on_frozen_body_impact(
-		_enemy: Node2D, _hit_body: Node2D, _velocity: Vector2, _kind: StringName, _was_ice_ball: bool
+		_enemy: Node2D, _hit_body: Node2D, _velocity: Vector2, _kind: StringName
 	) -> void:
 		on_frozen_body_impact_calls += 1
 

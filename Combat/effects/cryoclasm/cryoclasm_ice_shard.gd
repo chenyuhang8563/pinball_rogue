@@ -32,6 +32,29 @@ func _ready() -> void:
 	add_to_group("relic_projectiles")
 
 
+## 仅由 CryoclasmEffect 在 deferred 阶段调用：先写入刚体出生 transform，再启用速度和碰撞。
+func activate_from_spawn(
+	spawn_position: Vector2,
+	target: Node2D,
+	initial_direction: Vector2,
+	p_damage: int,
+	p_speed: float,
+	p_lifetime: float,
+	p_turn_rate: float = 8.0,
+	generation: int = 1,
+	applies_frost: int = 0,
+	ignored_source: PhysicsBody2D = null
+) -> bool:
+	global_position = spawn_position
+	PhysicsServer2D.body_set_state(
+		get_rid(), PhysicsServer2D.BODY_STATE_TRANSFORM, global_transform
+	)
+	return initialize(
+		target, initial_direction, p_damage, p_speed, p_lifetime, p_turn_rate, generation, applies_frost,
+		ignored_source
+	)
+
+
 ## target 可为 null（无目标视觉飞行物）。initial_direction 为扇区发射初向；有目标者
 ## 逐帧转向，目标失效后保持最后方向。ignored_source 为永久碰撞例外（源碎裂敌人）。
 func initialize(
@@ -60,6 +83,9 @@ func initialize(
 	rotation = _direction.angle()
 	linear_velocity = _direction * speed
 	set_sleeping(false)
+	if _target == null:
+		# 无目标碎片是纯视觉飞行物；不应被墙、挡板或弹珠弹开而改变轨迹。
+		collision_mask = 0
 	if _ignored_source != null and is_instance_valid(_ignored_source):
 		add_collision_exception_with(_ignored_source)
 	# 物理穿透非分配目标：对所有当前敌人加碰撞例外——有目标者只保留其分配目标可碰撞，

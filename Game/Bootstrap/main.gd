@@ -110,7 +110,7 @@ func _on_accepted_marble_fell(_token: RunFlowToken, body: RigidBody2D) -> void:
 		return
 	# 确认掉落的确实是 Head
 	if body == marble_chain.head:
-		# 本发边界事件：永冻"本发内不解冻"的承诺在此到期，冰球还原由各 Effect 自持。
+		# 本发边界事件：拥有临时投射物的遗物可在此自行清理。
 		var effect_manager: Node = _get_autoload_node(&"EffectManager")
 		if effect_manager != null and effect_manager.has_method("on_ball_lost"):
 			effect_manager.call("on_ball_lost")
