@@ -9,16 +9,16 @@ class BellowsEnemy:
 	extends Node2D
 
 	var burning: bool = false
-	var added_stacks: int = 0
+	var fuel: int = 0
 
 	func has_buff(buff_id: String) -> bool:
 		return burning and buff_id == FireBurnDebuff.BURN_ID
 
-	func add_buff(_buff: BuffDef, stacks: int = 1, _packet: DamagePacket = null) -> void:
-		added_stacks += stacks
-
 	func is_alive() -> bool:
 		return true
+
+	func get_buff_stacks(buff_id: String) -> int:
+		return fuel if burning and buff_id == FireBurnDebuff.BURN_ID else 0
 
 
 func after_each() -> void:
@@ -176,42 +176,36 @@ func test_frost_uses_the_configured_two_second_duration() -> void:
 
 # ---- Fire bellows ----
 
-func test_fire_bellows_counts_first_burning_hit_and_adds_a_layer_at_threshold() -> void:
-	var enemy := BellowsEnemy.new()
-	add_child_autofree(enemy)
+func test_fire_bellows_selects_unburned_neighbor_before_burning_neighbors() -> void:
+	var source := BellowsEnemy.new()
+	var burning_neighbor := BellowsEnemy.new()
+	var unburned_neighbor := BellowsEnemy.new()
+	add_child_autofree(source)
+	add_child_autofree(burning_neighbor)
+	add_child_autofree(unburned_neighbor)
+	source.add_to_group("enemies")
+	burning_neighbor.add_to_group("enemies")
+	unburned_neighbor.add_to_group("enemies")
+	source.burning = true
+	burning_neighbor.burning = true
+	burning_neighbor.fuel = 1
+	source.global_position = Vector2.ZERO
+	burning_neighbor.global_position = Vector2(12.0, 0.0)
+	unburned_neighbor.global_position = Vector2(48.0, 0.0)
+
 	var bellows := FireBellowsEffect.new()
-
-	enemy.burning = true
-	for _index: int in range(3):
-		bellows.on_enemy_hit_resolved(enemy, false, false)
-	assert_eq(enemy.added_stacks, 0, "the first burning hit counts toward the threshold")
-	bellows.on_enemy_hit_resolved(enemy, false, false)
-	assert_eq(enemy.added_stacks, 1, "threshold hit adds one fuel")
+	assert_eq(bellows._find_spark_target(source), unburned_neighbor)
 
 
-func test_fire_bellows_threshold_scales_down_at_higher_levels() -> void:
-	# Level thresholds are config [4, 3, 2]: level 2 fires on the 3rd hit.
-	var level_two_enemy := BellowsEnemy.new()
-	add_child_autofree(level_two_enemy)
-	var level_two_bellows := FireBellowsEffect.new()
-	level_two_bellows.set_level(2)
-	level_two_enemy.burning = true
-	for _index: int in range(2):
-		level_two_bellows.on_enemy_hit_resolved(level_two_enemy, false, false)
-	assert_eq(level_two_enemy.added_stacks, 0)
-	level_two_bellows.on_enemy_hit_resolved(level_two_enemy, false, false)
-	assert_eq(level_two_enemy.added_stacks, 1, "level 2 adds fuel on the 3rd hit")
-
-	# Level 3 fires on the 2nd hit.
-	var level_three_enemy := BellowsEnemy.new()
-	add_child_autofree(level_three_enemy)
-	var level_three_bellows := FireBellowsEffect.new()
-	level_three_bellows.set_level(3)
-	level_three_enemy.burning = true
-	level_three_bellows.on_enemy_hit_resolved(level_three_enemy, false, false)
-	assert_eq(level_three_enemy.added_stacks, 0)
-	level_three_bellows.on_enemy_hit_resolved(level_three_enemy, false, false)
-	assert_eq(level_three_enemy.added_stacks, 1, "level 3 adds fuel on the 2nd hit")
+func test_fire_bellows_spark_count_scales_with_level_and_awakening() -> void:
+	var bellows := FireBellowsEffect.new()
+	assert_eq(bellows._get_spark_count(), 1)
+	bellows.set_level(2)
+	assert_eq(bellows._get_spark_count(), 2)
+	bellows.set_level(3)
+	assert_eq(bellows._get_spark_count(), 3)
+	bellows.set_awakened(true)
+	assert_eq(bellows._get_spark_count(), 4)
 
 
 func _set_stat(stat_id: String, value: float) -> void:

@@ -1,0 +1,17 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="Script" path="res://Combat/effects/fire_bellows/spark_projectile.gd" id="1_spark"]
+[ext_resource type="Texture2D" path="res://Assets/Effects/fire/fire.png" id="2_fire"]
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_spark"]
+radius = 4.0
+
+[node name="SparkProjectile" type="Area2D"]
+script = ExtResource("1_spark")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.25, 0.25)
+texture = ExtResource("2_fire")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_spark")

@@ -95,9 +95,10 @@ func test_registry_scan_order_and_ids_are_stable() -> void:
 		[] as Array[StringName]
 	).size())
 	assert_eq(ids, [
-		&"blue_marble", &"bomb_marble", &"brown_marble", &"dark_marble", &"dash",
-		&"fire_bellows", &"fire_marble", &"green_marble", &"ice_hammer",
-		&"lightning", &"magic_missile", &"poison_culture",
+		&"accelerant", &"blue_marble", &"bomb_marble", &"brown_marble",
+		&"cremation", &"dark_marble", &"dash", &"fire_bellows", &"fire_marble",
+		&"green_marble", &"ice_hammer", &"lightning", &"magic_missile",
+		&"miasma", &"poison_culture", &"thermal_shock",
 	] as Array[StringName])
 
 
@@ -166,8 +167,9 @@ func test_shop_channels_use_registry_and_one_shared_random_source() -> void:
 	assert_eq(normal.get("_random_source"), random)
 	assert_eq(normal.get("_content_registry"), registry)
 
-	# Owning each producer satisfies the three authored requires_tags gates, so
-	# the devil registry channel exposes exactly the four relics.
+	# Owning each producer satisfies the authored requires_tags gates, so the
+	# devil registry channel draws its stock from the gated relics. The seeded
+	# RNG makes the four-offer draw deterministic.
 	assert_true(loadout.call("add", registry.call("by_id", &"fire_marble") as Item))
 	assert_true(loadout.call("add", registry.call("by_id", &"green_marble") as Item))
 	assert_true(loadout.call("add", registry.call("by_id", &"blue_marble") as Item))
@@ -179,7 +181,7 @@ func test_shop_channels_use_registry_and_one_shared_random_source() -> void:
 	config.set("level_weights", {2: 1, 3: 0, 4: 0})
 	var devil_offers: Array = devil.call("open", config, [])
 	assert_eq(_offer_ids(devil_offers), [
-		"fire_bellows", "ice_hammer", "lightning", "poison_culture",
+		"cremation", "ice_hammer", "lightning", "poison_culture",
 	])
 	assert_eq(devil.get("_random_source"), random)
 	assert_eq(devil.get("_content_registry"), registry)

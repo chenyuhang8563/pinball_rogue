@@ -109,3 +109,11 @@ DEVIL_SHOP_GOLD_CHIPS,Gold: %d,金币：%d
 DEVIL_SHOP_HEALTH_CHIPS,Health: %d,生命：%d
 DEVIL_SHOP_PAYMENT_VALUE,Value: %d,价值：%d
 DEVIL_SHOP_PRICE,Price: %d,价格：%d
+ITEM_ACCELERANT_TITLE,Accelerant,助燃剂
+ITEM_ACCELERANT_DESC,"Hits on burning enemies add extra fuel, but fuel evaporates twice as fast.",命中燃烧敌人时额外施加燃料，但燃料挥发速度加倍。
+ITEM_CREMATION_TITLE,Cremation,火葬
+ITEM_CREMATION_DESC,"Marble hits on high-fuel enemies detonate, dealing fire shockwave damage to nearby enemies.",弹珠命中高燃料敌人时引爆，对周围敌人造成火焰冲击波。
+ITEM_THERMAL_SHOCK_TITLE,Thermal Shock,热冲击
+ITEM_THERMAL_SHOCK_DESC,"When burn and freeze coexist, shatter for fixed damage and remove both statuses.",燃烧与冻结共存时发生碎裂，造成固定伤害并解除两种状态。
+ITEM_MIASMA_TITLE,Miasma,瘴气
+ITEM_MIASMA_DESC,"When burn and poison coexist, detonate toxic fog for area damage and clear poison.",燃烧与感染共存时发生毒雾爆燃，造成范围伤害并清除感染。
