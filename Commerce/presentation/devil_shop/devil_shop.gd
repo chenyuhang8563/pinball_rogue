@@ -3,6 +3,7 @@ class_name DevilShop
 
 const DevilShopSessionScript: GDScript = preload("res://Commerce/application/devil_shop_session.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
+const ShopRefreshResultScript: GDScript = preload("res://Commerce/domain/shop_refresh_result.gd")
 
 signal shop_close_intent(token: RunFlowToken, shop_kind: StringName)
 signal health_changed(value: int)
@@ -44,6 +45,7 @@ var _run_flow_shop_kind: StringName = &""
 @onready var _total_value: Label = get_node_or_null("BottomHUD/PaymentValue") as Label
 @onready var _confirm_button: Button = get_node_or_null("BottomHUD/ConfirmButton") as Button
 @onready var _status_label: Label = get_node_or_null("BottomHUD/Status") as Label
+@onready var _refresh_control: Control = get_node_or_null("ShopRefreshControl") as Control
 @onready var _scale_sprite: AnimatedSprite2D = get_node_or_null("DevilArt") as AnimatedSprite2D
 @onready var _pan_animation_player: AnimationPlayer = get_node_or_null("PanAnimationPlayer") as AnimationPlayer
 @onready var _repeat_timer: Timer = get_node_or_null("RepeatTimer") as Timer
@@ -128,6 +130,7 @@ func _open_for_run() -> void:
 	_purchases_disabled = false
 	var opened: Array = []
 	if _configured and devil_shop_session != null and config != null:
+		devil_shop_session.call("begin_visit")
 		opened = devil_shop_session.call("open", config, config.item_pool) as Array
 	_set_offer_views(opened)
 	_reset_chips()
@@ -353,6 +356,26 @@ func _regenerate_after_invalid_offer() -> void:
 	_refresh_ui()
 
 
+func refresh_offers() -> bool:
+	if _purchases_disabled or devil_shop_session == null or config == null:
+		return false
+	var result: RefCounted = devil_shop_session.call("refresh", config.item_pool)
+	if result == null:
+		return false
+	if int(result.get("code")) != ShopRefreshResultScript.Code.SUCCESS or not bool(result.get("committed")):
+		if int(result.get("code")) == ShopRefreshResultScript.Code.INSUFFICIENT_FUNDS:
+			_status_text("UI_SHOP_REFRESH_INSUFFICIENT")
+		_refresh_ui()
+		return false
+	_pending_skill_offer_id = &""
+	_sync_presentation_from_session()
+	_reset_chips()
+	offer_changed.emit(get_current_offer())
+	_refresh_battle_hud()
+	_refresh_ui()
+	return true
+
+
 func _refresh_after_failed_purchase(sync_session_views: bool) -> void:
 	_pending_skill_offer_id = &""
 	if sync_session_views:
@@ -429,6 +452,7 @@ func _refresh_battle_hud() -> void:
 func _on_wallet_changed(value: int) -> void:
 	if _battle_hud != null:
 		_battle_hud.set_gold(value)
+	_refresh_refresh_control()
 
 
 func _on_health_port_changed(value: int) -> void:
@@ -460,6 +484,10 @@ func _connect_buttons() -> void:
 			_skill_dialog.confirmed.connect(_on_skill_replace_confirmed)
 		if not _skill_dialog.cancelled.is_connected(_on_skill_replace_cancelled):
 			_skill_dialog.cancelled.connect(_on_skill_replace_cancelled)
+	if _refresh_control != null and _refresh_control.has_signal(&"refresh_requested"):
+		var refresh_callback := Callable(self, "refresh_offers")
+		if not _refresh_control.is_connected(&"refresh_requested", refresh_callback):
+			_refresh_control.connect(&"refresh_requested", refresh_callback)
 
 
 func _connect_chip_button(path: String, delta: int) -> void:
@@ -544,6 +572,7 @@ func _refresh_ui(animate_scale: bool = false) -> void:
 	if _confirm_button != null:
 		_confirm_button.disabled = not can_confirm_purchase()
 		_confirm_button.text = tr("DEVIL_SHOP_SOLD_OUT") if is_sold_out else tr("DEVIL_SHOP_CONFIRM")
+	_refresh_refresh_control()
 	if offer == null:
 		if is_sold_out and _status_label != null:
 			_status_label.text = ""
@@ -558,6 +587,14 @@ func _refresh_ui(animate_scale: bool = false) -> void:
 	if _status_label != null:
 		_status_label.text = ""
 	_set_scale_pose(get_scale_state(), animate_scale)
+
+
+func _refresh_refresh_control() -> void:
+	if _refresh_control == null or not _refresh_control.has_method("set_refresh_state"):
+		return
+	var refresh_cost := int(devil_shop_session.call("next_refresh_cost")) if devil_shop_session != null else 0
+	var gold := int(_wallet.call("balance")) if _wallet != null else 0
+	_refresh_control.call("set_refresh_state", refresh_cost, not _purchases_disabled and gold >= refresh_cost)
 
 
 func _set_scale_pose(next_state: ScaleState, animate: bool) -> void:

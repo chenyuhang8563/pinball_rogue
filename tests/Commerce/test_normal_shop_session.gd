@@ -7,6 +7,7 @@ const LoadoutScript: GDScript = preload("res://Loadout/domain/loadout.gd")
 const NormalShopSessionScript: GDScript = preload("res://Commerce/application/normal_shop_session.gd")
 const CommerceOfferScript: GDScript = preload("res://Commerce/domain/commerce_offer.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
+const ShopRefreshResultScript: GDScript = preload("res://Commerce/domain/shop_refresh_result.gd")
 
 
 func test_new_item_purchase_commits_once_and_consumes_offer() -> void:
@@ -253,6 +254,118 @@ func test_acknowledge_external_change_preserves_offer_set() -> void:
 		assert_eq(StringName(offers_after[i].offer_id), ids_before[i])
 		assert_eq(offers_after[i].item, offers_before[i].item)
 		assert_eq(int(offers_after[i].price), int(offers_before[i].price))
+
+
+func test_refresh_price_progresses_after_each_successful_refresh() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(50)
+	var session: RefCounted = _normal_session(inventory, progression, wallet)
+	var candidate := _make_item("refresh_candidate", Item.ItemType.RELIC, 10)
+
+	session.call("begin_visit")
+	assert_eq(session.call("next_refresh_cost"), 0)
+	var first: RefCounted = session.call("refresh", [candidate])
+	assert_eq(first.code, ShopRefreshResultScript.Code.SUCCESS)
+	assert_true(first.committed)
+	assert_eq(first.cost, 0)
+	assert_eq(wallet.amount, 50)
+	assert_eq(session.call("next_refresh_cost"), 10)
+
+	var second: RefCounted = session.call("refresh", [candidate])
+	assert_eq(second.code, ShopRefreshResultScript.Code.SUCCESS)
+	assert_eq(second.cost, 10)
+	assert_eq(wallet.amount, 40)
+	assert_eq(session.call("next_refresh_cost"), 20)
+
+
+func test_zero_balance_can_use_the_first_free_refresh() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new()
+	var session: RefCounted = _normal_session(inventory, progression, wallet)
+	var candidate := _make_item("free_refresh", Item.ItemType.RELIC, 10)
+
+	session.call("begin_visit")
+	var result: RefCounted = session.call("refresh", [candidate])
+
+	assert_eq(result.code, ShopRefreshResultScript.Code.SUCCESS)
+	assert_true(result.committed)
+	assert_eq(wallet.amount, 0)
+	assert_eq(session.call("next_refresh_cost"), 10)
+
+
+func test_insufficient_paid_refresh_preserves_offers_balance_and_price() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new()
+	var session: RefCounted = _normal_session(inventory, progression, wallet)
+	var candidate := _make_item("unaffordable_refresh", Item.ItemType.RELIC, 10)
+
+	session.call("begin_visit")
+	assert_true((session.call("refresh", [candidate]) as RefCounted).committed)
+	var offers_before: Array = session.call("get_offers")
+	var result: RefCounted = session.call("refresh", [candidate])
+	var offers_after: Array = session.call("get_offers")
+
+	assert_eq(result.code, ShopRefreshResultScript.Code.INSUFFICIENT_FUNDS)
+	assert_false(result.committed)
+	assert_eq(wallet.amount, 0)
+	assert_eq(session.call("next_refresh_cost"), 10)
+	assert_eq(offers_after.size(), offers_before.size())
+	assert_eq(offers_after[0].offer_id, offers_before[0].offer_id)
+
+
+func test_failed_paid_refresh_rolls_back_wallet_and_preserves_shop_state() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(20)
+	var session: RefCounted = _normal_session(inventory, progression, wallet)
+	var candidate := _make_item("rollback_refresh", Item.ItemType.RELIC, 10)
+
+	session.call("begin_visit")
+	assert_true((session.call("refresh", [candidate]) as RefCounted).committed)
+	var offers_before: Array = session.call("get_offers")
+	wallet.debit_failure = FakeWalletScript.AFTER_MUTATION
+	var result: RefCounted = session.call("refresh", [candidate])
+	var offers_after: Array = session.call("get_offers")
+
+	assert_eq(result.code, ShopRefreshResultScript.Code.PAYMENT_FAILED)
+	assert_false(result.committed)
+	assert_true(result.rollback_completed)
+	assert_eq(wallet.amount, 20)
+	assert_eq(session.call("next_refresh_cost"), 10)
+	assert_eq(offers_after[0].offer_id, offers_before[0].offer_id)
+
+
+func test_empty_refresh_pool_does_not_charge_or_advance_price() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(20)
+	var session: RefCounted = _normal_session(inventory, progression, wallet)
+
+	session.call("begin_visit")
+	var result: RefCounted = session.call("refresh", [])
+
+	assert_eq(result.code, ShopRefreshResultScript.Code.EMPTY_CANDIDATES)
+	assert_false(result.committed)
+	assert_eq(wallet.amount, 20)
+	assert_eq(session.call("next_refresh_cost"), 0)
+	assert_true((session.call("get_offers") as Array).is_empty())
+
+
+func test_begin_visit_resets_refresh_price_to_free() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(20)
+	var session: RefCounted = _normal_session(inventory, progression, wallet)
+	var candidate := _make_item("visit_reset_refresh", Item.ItemType.RELIC, 10)
+
+	session.call("begin_visit")
+	assert_true((session.call("refresh", [candidate]) as RefCounted).committed)
+	assert_eq(session.call("next_refresh_cost"), 10)
+	session.call("begin_visit")
+	assert_eq(session.call("next_refresh_cost"), 0)
 
 
 func _assert_revision_change_is_stale(adapter_name: StringName) -> void:

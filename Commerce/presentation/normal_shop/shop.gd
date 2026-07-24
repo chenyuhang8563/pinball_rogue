@@ -3,6 +3,7 @@ extends Control
 const NormalShopSessionScript: GDScript = preload("res://Commerce/application/normal_shop_session.gd")
 const NormalShopSaleServiceScript: GDScript = preload("res://Commerce/application/normal_shop_sale_service.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
+const ShopRefreshResultScript: GDScript = preload("res://Commerce/domain/shop_refresh_result.gd")
 const SHOP_SLOT_COUNT: int = 6
 
 signal gold_changed(value: int)
@@ -67,6 +68,9 @@ func _ready() -> void:
 	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
 	if exit_button != null and not exit_button.pressed.is_connected(close_shop):
 		exit_button.pressed.connect(close_shop)
+	var refresh_button: Button = get_node_or_null("UI/Panel/RefreshButton") as Button
+	if refresh_button != null and not refresh_button.pressed.is_connected(_on_refresh_button_pressed):
+		refresh_button.pressed.connect(_on_refresh_button_pressed)
 	_connect_collection_slot_inputs()
 	_connect_skill_replace_dialog()
 	_connect_port_signals()
@@ -93,6 +97,8 @@ func present_shop(token: RunFlowToken, shop_kind: StringName) -> bool:
 		return false
 	_run_flow_token = token
 	_run_flow_shop_kind = shop_kind
+	if normal_shop_session != null:
+		normal_shop_session.call("begin_visit")
 	mode = MODE.ON
 	return true
 
@@ -133,6 +139,7 @@ func _apply_text() -> void:
 	var exit_button: Button = get_node_or_null("UI/Panel/ExitButton") as Button
 	if exit_button != null:
 		exit_button.text = tr("UI_EXIT")
+	_refresh_refresh_control()
 	_clear_status()
 
 func _set_status_text(key: StringName) -> void:
@@ -218,6 +225,7 @@ func _disconnect_port_signals() -> void:
 func _on_wallet_changed(value: int) -> void:
 	gold_changed.emit(value)
 	_refresh_slot_affordability()
+	_refresh_refresh_control()
 
 
 func _on_loadout_changed() -> void:
@@ -306,15 +314,20 @@ func _purchase_offer_id(offer_id: StringName) -> bool:
 		_pending_skill_offer_id = &""
 		_clear_status()
 		_sync_presentation_from_session()
+		_refresh_refresh_control()
 		refresh_collection_rows()
 		return true
 	if code == PurchaseResultScript.Code.SKILL_REPLACEMENT_REQUIRED and offer != null:
 		_request_skill_replacement(offer_id, offer)
 		return false
-	if code == PurchaseResultScript.Code.CAPACITY_CHANGED and offer != null \
-			and offer.item != null and offer.item.type == Item.ItemType.MARBLE:
-		_set_status_text(&"UI_SHOP_MARBLE_FULL")
-		return false
+	if code == PurchaseResultScript.Code.CAPACITY_CHANGED and offer != null and offer.item != null:
+		match offer.item.type:
+			Item.ItemType.MARBLE:
+				_set_status_text(&"UI_SHOP_MARBLE_FULL")
+				return false
+			Item.ItemType.RELIC:
+				_set_status_text(&"UI_SHOP_RELIC_FULL")
+				return false
 	_clear_status()
 	_handle_failed_result(result)
 	return false
@@ -454,6 +467,39 @@ func _on_shop_slot_purchase_requested(offer_id: StringName) -> void:
 	var offer: Variant = _find_session_offer_by_id(offer_id)
 	if offer != null:
 		purchase_offer(offer)
+
+
+func _on_refresh_button_pressed() -> void:
+	if normal_shop_session == null:
+		return
+	if shop_item_pool.is_empty():
+		shop_item_pool = shop_items.duplicate()
+	var result: RefCounted = normal_shop_session.call("refresh", shop_item_pool, SHOP_SLOT_COUNT)
+	if result == null:
+		_refresh_refresh_control()
+		return
+	if int(result.get("code")) == ShopRefreshResultScript.Code.SUCCESS \
+			and bool(result.get("committed")):
+		_clear_status()
+		_sync_presentation_from_session()
+	elif int(result.get("code")) == ShopRefreshResultScript.Code.INSUFFICIENT_FUNDS:
+		_set_status_text(&"UI_SHOP_REFRESH_INSUFFICIENT")
+	_refresh_refresh_control()
+
+
+func _refresh_refresh_control() -> void:
+	var refresh_button := get_node_or_null("UI/Panel/RefreshButton") as Button
+	var refresh_cost_label := get_node_or_null("UI/Panel/RefreshCost") as Label
+	if refresh_button == null or refresh_cost_label == null:
+		return
+	if normal_shop_session == null:
+		refresh_button.disabled = true
+		refresh_cost_label.text = ""
+		return
+	var cost := int(normal_shop_session.call("next_refresh_cost"))
+	refresh_button.disabled = cost > 0 and not bool(_wallet.call("can_debit", cost))
+	refresh_cost_label.text = tr("UI_SHOP_REFRESH_FREE") if cost == 0 \
+		else tr("UI_SHOP_REFRESH_COST") % cost
 
 
 func _refresh_slot_affordability() -> void:

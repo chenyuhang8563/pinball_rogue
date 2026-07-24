@@ -15,6 +15,7 @@
 [ext_resource type="FontVariation" uid="uid://bi65xp2y217fg" path="res://Themes/Fonts/quaver_fusion_10.tres" id="12_gwky3"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://Loadout/presentation/skill_replace_dialog.tscn" id="13_ugyp2"]
 [ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://Combat/presentation/battle_hud.tscn" id="14_c404g"]
+[ext_resource type="PackedScene" uid="uid://kgpdgfgq3ewo" path="res://Commerce/presentation/shared/shop_refresh_control.tscn" id="19_ed1yn"]
 
 [sub_resource type="SpriteFrames" id="SpriteFrames_x0gdb"]
 animations = [{
@@ -648,3 +649,8 @@ libraries/ = SubResource("AnimationLibrary_ugyp2")
 layout_mode = 0
 offset_right = 61.0
 offset_bottom = 45.0
+
+[node name="ShopRefreshControl" parent="." unique_id=534367236 instance=ExtResource("19_ed1yn")]
+layout_mode = 0
+offset_top = 218.0
+offset_bottom = 266.0

@@ -107,6 +107,41 @@ func test_selling_item_does_not_refresh_shop_offers() -> void:
 	assert_eq(shop_container.get_child_count(), 1)
 
 
+func test_full_relic_capacity_keeps_offer_and_shows_relic_full_hint() -> void:
+	# Problem source: buying a sixth relic regenerated the normal shop instead of preserving its offer.
+	# Repair invariant: a capacity rejection keeps the offer and shows the matching ShopStatus hint.
+	# Boundary: exactly five owned relics block a distinct sixth relic without changing shop state.
+	var scope := _scope(100, 20, 5)
+	var loadout: RefCounted = scope.get("loadout") as RefCounted
+	var progression: RefCounted = scope.get("progression") as RefCounted
+	var wallet: RefCounted = scope.get("wallet") as RefCounted
+	for index: int in range(5):
+		assert_true(loadout.call("add", _make_relic("owned_relic_%d" % index, 1)))
+
+	var offered_relic := _make_relic("sixth_relic", 20)
+	var shop_scene: PackedScene = load("res://Commerce/presentation/normal_shop/shop.tscn") as PackedScene
+	var shop: Control = autofree(shop_scene.instantiate()) as Control
+	shop_scene = null
+	assert_true(shop.call("configure", loadout, progression, wallet))
+	var item_pool: Array[Item] = [offered_relic]
+	shop.set("shop_item_pool", item_pool)
+	add_child(shop)
+	shop.call("refresh_shop_inventory")
+	await get_tree().process_frame
+
+	var offers_before: Array = shop.get("shop_offers") as Array
+	var offer_id_before := StringName(offers_before[0].get("offer_id"))
+	assert_false(shop.call("purchase_offer", offers_before[0]))
+
+	var offers_after: Array = shop.get("shop_offers") as Array
+	var status := shop.get_node("UI/Panel/ShopStatus") as Label
+	assert_eq((loadout.call("relics") as Array).size(), 5)
+	assert_eq(int(wallet.call("balance")), 100)
+	assert_eq(offers_after.size(), 1)
+	assert_eq(StringName(offers_after[0].get("offer_id")), offer_id_before)
+	assert_eq(status.text, tr("UI_SHOP_RELIC_FULL"))
+
+
 func test_shop_status_timer_restarts_and_clears_the_hint() -> void:
 	# Full-marble feedback must reset its timeout instead of letting an old timeout clear it early.
 	var shop_scene: PackedScene = load("res://Commerce/presentation/normal_shop/shop.tscn") as PackedScene
@@ -132,6 +167,19 @@ func test_shop_status_timer_restarts_and_clears_the_hint() -> void:
 	timer.stop()
 	shop.queue_free()
 	await get_tree().process_frame
+
+
+func test_normal_shop_scene_exposes_a_32_pixel_refresh_control() -> void:
+	var shop_scene: PackedScene = load("res://Commerce/presentation/normal_shop/shop.tscn") as PackedScene
+	var shop: Control = shop_scene.instantiate() as Control
+	shop_scene = null
+	var button := shop.get_node("UI/Panel/RefreshButton") as Button
+	var price_label := shop.get_node("UI/Panel/RefreshCost") as Label
+	assert_not_null(button.icon)
+	assert_eq(button.icon.get_width(), 32)
+	assert_eq(button.icon.get_height(), 32)
+	assert_not_null(price_label.label_settings)
+	shop.free()
 
 
 func test_devil_confirm_purchase_delegates_selection_commit_and_advances_presentation() -> void:
@@ -172,6 +220,20 @@ func test_devil_confirm_purchase_delegates_selection_commit_and_advances_present
 	assert_true(bool((devil_shop.get("offers") as Array)[0].get("consumed")))
 	assert_eq(devil_shop.get("gold_chips"), 0)
 	assert_eq(devil_shop.get("health_chips"), 0)
+
+
+func test_devil_shop_scene_exposes_a_reusable_refresh_control() -> void:
+	var devil_shop_scene: PackedScene = load("res://Commerce/presentation/devil_shop/devil_shop.tscn") as PackedScene
+	var devil_shop: Control = devil_shop_scene.instantiate() as Control
+	devil_shop_scene = null
+	var refresh_button := devil_shop.get_node("ShopRefreshControl/RefreshButton") as Button
+	var refresh_label := devil_shop.get_node("ShopRefreshControl/RefreshCost") as Label
+	assert_not_null(refresh_button)
+	assert_not_null(refresh_button.icon)
+	assert_eq(refresh_button.icon.get_size(), Vector2(32, 32))
+	assert_not_null(refresh_button.theme)
+	assert_not_null(refresh_label.label_settings)
+	devil_shop.free()
 
 
 func test_devil_confirm_button_replaces_claim_text_when_last_reward_is_sold_out() -> void:
@@ -225,11 +287,11 @@ func _make_relic(item_id: String, price: int) -> Item:
 	return relic
 
 
-func _scope(gold: int, health: int) -> Node:
+func _scope(gold: int, health: int, relic_slot_count: int = 3) -> Node:
 	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
 	stats.set("values", {
 		"marble_slot_count": 3,
-		"relic_slot_count": 3,
+		"relic_slot_count": relic_slot_count,
 		"buy_price_multiplier": 1.0,
 		"sell_price_multiplier": 0.5,
 	})

@@ -5,6 +5,9 @@ const DevilShopPricingScript: GDScript = preload("res://Commerce/domain/devil_sh
 const ItemIdentityScript: GDScript = preload("res://Commerce/domain/item_identity.gd")
 const PurchasePlanScript: GDScript = preload("res://Commerce/application/purchase_plan.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
+const ShopRefreshResultScript: GDScript = preload("res://Commerce/domain/shop_refresh_result.gd")
+
+const REFRESH_COST_STEP: int = 10
 
 var _inventory: Variant = null
 var _progression: Variant = null
@@ -21,6 +24,7 @@ var _payments: Dictionary = {}
 var _skill_replacement_authorizations: Dictionary = {}
 var _version: int = 0
 var _nonce: int = 0
+var _successful_refresh_count: int = 0
 
 
 func configure(
@@ -48,6 +52,62 @@ func open(config: Resource, candidates: Array) -> Array:
 	_config = config
 	if not _configured or _config == null:
 		return []
+	return _regenerate_offers(candidates)
+
+
+## Starts a fresh devil-shop visit. Refresh pricing is scoped to the current visit.
+func begin_visit() -> void:
+	_successful_refresh_count = 0
+
+
+func next_refresh_cost() -> int:
+	return _successful_refresh_count * REFRESH_COST_STEP
+
+
+## Replaces every devil-shop offer after charging the next visit-scoped gold price.
+func refresh(candidates: Array) -> RefCounted:
+	var cost := next_refresh_cost()
+	var balance_before := int(_wallet.call("balance")) if _configured else 0
+	if not _configured or _config == null:
+		return ShopRefreshResultScript.failure(
+			ShopRefreshResultScript.Code.NOT_CONFIGURED, cost, balance_before, balance_before
+		)
+	if candidates.is_empty():
+		return ShopRefreshResultScript.failure(
+			ShopRefreshResultScript.Code.EMPTY_CANDIDATES, cost, balance_before, balance_before
+		)
+	var generated_offers := _generate_offers(candidates)
+	if generated_offers.is_empty():
+		return ShopRefreshResultScript.failure(
+			ShopRefreshResultScript.Code.EMPTY_CANDIDATES, cost, balance_before, balance_before
+		)
+	if cost > 0:
+		if not bool(_wallet.call("can_debit", cost)):
+			return ShopRefreshResultScript.failure(
+				ShopRefreshResultScript.Code.INSUFFICIENT_FUNDS, cost, balance_before, balance_before
+			)
+		var wallet_snapshot: Dictionary = _wallet.call("snapshot") as Dictionary
+		if not bool(_wallet.call("debit", cost)):
+			var rollback_completed := bool(_wallet.call("restore", wallet_snapshot))
+			return ShopRefreshResultScript.failure(
+				ShopRefreshResultScript.Code.PAYMENT_FAILED,
+				cost,
+				balance_before,
+				int(_wallet.call("balance")),
+				rollback_completed
+			)
+	var refreshed_offers := _install_offers(generated_offers)
+	_successful_refresh_count += 1
+	return ShopRefreshResultScript.success(
+		cost, balance_before, int(_wallet.call("balance")), refreshed_offers
+	)
+
+
+func _regenerate_offers(candidates: Array) -> Array:
+	return _install_offers(_generate_offers(candidates))
+
+
+func _generate_offers(candidates: Array) -> Array:
 	var source_candidates: Array = candidates
 	if _content_registry != null:
 		source_candidates = _registry_candidates()
@@ -69,7 +129,7 @@ func open(config: Resource, candidates: Array) -> Array:
 		generated.append(CommerceOfferScript.new(
 			&"", 0, item, ItemIdentityScript.key(item), target_level, price, full_price, owned != null
 		))
-	return _install_offers(generated)
+	return generated
 
 
 func replace_offers(offers: Array) -> Array:
