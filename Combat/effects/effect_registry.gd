@@ -19,6 +19,12 @@ const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	&"cremation": preload("res://Combat/effects/cremation/cremation.gd"),
 	&"thermal_shock": preload("res://Combat/effects/thermal_shock/thermal_shock.gd"),
 	&"miasma": preload("res://Combat/effects/miasma/miasma.gd"),
+	&"carrion": preload("res://Combat/effects/carrion/carrion.gd"),
+	&"parasite": preload("res://Combat/effects/parasite/parasite.gd"),
+	&"pustule": preload("res://Combat/effects/pustule/pustule.gd"),
+	&"venom_knife": preload("res://Combat/effects/venom_knife/venom_knife.gd"),
+	&"scorpion_tail": preload("res://Combat/effects/scorpion_tail/scorpion_tail.gd"),
+	&"witch_hat": preload("res://Combat/effects/witch_hat/witch_hat.gd"),
 }
 
 

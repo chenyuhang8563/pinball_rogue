@@ -17,6 +17,9 @@ const FLOAT_DAMAGE_X_SPREAD_HALF: float = 8.0
 ## 触发时最新采样往往已是碰撞后的值，因此保留最近若干步速度、排除最新帧后取最强者
 ## 还原碰撞前速度（详见 _get_impact_velocity）。
 const FROZEN_IMPACT_VELOCITY_HISTORY: int = 3
+## 感染状态视觉：病绿 tint + 绕身苍蝇。场景延迟加载，贴图/场景缺失时只保留 tint。
+const INFECTION_VISUAL_SCENE_PATH: String = "res://Combat/effects/infection_status_visual/infection_status_visual.tscn"
+const INFECTION_TINT: Color = Color(0.62, 1.0, 0.55, 1.0)
 
 @export var health: int = 100:
 	set(value):
@@ -44,6 +47,7 @@ var _pre_step_velocity: Vector2 = Vector2.ZERO
 ## 最近若干步的速度采样环（碰撞判定用"最近最强速度"还原碰撞前速度）。
 var _velocity_history: Array[Vector2] = []
 var _velocity_history_cursor: int = 0
+var _infection_visual: Node2D = null
 
 
 func _ready() -> void:
@@ -317,6 +321,29 @@ func clear_fire_status_visual() -> void:
 	if _fire_visual != null and is_instance_valid(_fire_visual):
 		_fire_visual.queue_free()
 	_fire_visual = null
+
+
+## Toggles the infection look: a sickly-green tint on the body plus orbiting flies.
+## Called by InfectionDebuff on apply/remove. The orbiting-fly scene is optional —
+## if it is not present the tint alone still marks the host as infected.
+func set_infection_visual(active: bool) -> void:
+	if active:
+		if sprite != null:
+			sprite.modulate = INFECTION_TINT
+		if (_infection_visual == null or not is_instance_valid(_infection_visual)) \
+				and ResourceLoader.exists(INFECTION_VISUAL_SCENE_PATH):
+			var scene: PackedScene = load(INFECTION_VISUAL_SCENE_PATH) as PackedScene
+			if scene != null:
+				_infection_visual = scene.instantiate() as Node2D
+				if _infection_visual != null:
+					_infection_visual.name = "InfectionStatusVisual"
+					add_child(_infection_visual)
+		return
+	if sprite != null:
+		sprite.modulate = Color.WHITE
+	if _infection_visual != null and is_instance_valid(_infection_visual):
+		_infection_visual.queue_free()
+	_infection_visual = null
 
 
 func _get_damage_from_body(body: Node, packet: DamagePacket = null) -> int:

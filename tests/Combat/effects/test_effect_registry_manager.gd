@@ -9,6 +9,7 @@ const ProgressionScript: GDScript = preload("res://Loadout/application/item_prog
 const RELIC_IDS: Array[StringName] = [
 	&"lightning",
 	&"fire_bellows",
+	&"accelerant",
 	&"poison_culture",
 	&"ice_hammer",
 	&"assassins_whetstone",
@@ -16,6 +17,17 @@ const RELIC_IDS: Array[StringName] = [
 	&"many_faced_prism",
 	&"scarlet_thread",
 	&"execution_decree",
+	&"permafrost",
+	&"cryoclasm",
+	&"cremation",
+	&"thermal_shock",
+	&"miasma",
+	&"carrion",
+	&"parasite",
+	&"pustule",
+	&"venom_knife",
+	&"scorpion_tail",
+	&"witch_hat",
 ]
 
 var _effect_manager: Node = null

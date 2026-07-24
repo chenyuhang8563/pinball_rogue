@@ -1,5 +1,13 @@
 extends Node
 
+## Core plague spawn constants. Flies are the green-marble payoff (not a relic), so
+## they always release on an infected death; relics (carrion/pustule) layer on top.
+const FLY_SCENE_PATH: String = "res://Combat/effects/plague_fly/plague_fly.tscn"
+const BASE_FLY_LIFETIME: float = 5.0
+const BASE_FLY_DAMAGE: int = 1
+## Radial scatter for extra pustule flies so they don't stack on one pixel.
+const EXTRA_FLY_SCATTER_RADIUS: float = 12.0
+
 var _active_effects: Dictionary = {}
 var _loadout: RefCounted = null
 var _progression: RefCounted = null
@@ -48,6 +56,12 @@ func modify_damage_packet(enemy: Node2D, packet: DamagePacket) -> void:
 
 func on_enemy_defeated(enemy: Node2D, packet: DamagePacket) -> void:
 	_dispatch("on_enemy_defeated", [enemy, packet])
+	_spawn_plague_flies(enemy)
+
+
+## Friendly plague flies broadcast each bite so the parasite relic can layer poison.
+func on_fly_bite(enemy: Node2D, packet: DamagePacket = null) -> void:
+	_dispatch("on_fly_bite", [enemy, packet])
 
 
 func on_status_applied(enemy: Node2D, status_id: StringName, stacks: int, packet: DamagePacket = null) -> void:
@@ -148,6 +162,68 @@ func _dispatch(method_name: StringName, args: Array) -> void:
 	for effect in _active_effects.values():
 		if effect.has_method(method_name):
 			effect.callv(method_name, args)
+
+
+## Core plague payoff: an infected enemy releases one base fly on death, plus extra
+## flies if the pustule relic is owned. Fly lifetime/damage fold in the carrion
+## relic. Runs even with zero relics (flies are the green-marble identity).
+func _spawn_plague_flies(enemy: Node2D) -> void:
+	if enemy == null or not is_instance_valid(enemy):
+		return
+	if not enemy.has_method("has_buff") or not bool(enemy.call("has_buff", InfectionDebuff.INFECTION_ID)):
+		return
+	if not ResourceLoader.exists(FLY_SCENE_PATH):
+		return
+	var scene: PackedScene = load(FLY_SCENE_PATH) as PackedScene
+	if scene == null:
+		return
+	var parent: Node = enemy.get_parent()
+	if parent == null or not is_instance_valid(parent):
+		return
+	var origin: Vector2 = enemy.global_position
+	var base_duration: float = BASE_FLY_LIFETIME + _fly_duration_bonus()
+	var fly_damage: int = BASE_FLY_DAMAGE + _fly_damage_bonus()
+	_spawn_one_fly(scene, parent, origin, base_duration, fly_damage)
+	var pustule: Variant = _get_active_effect(&"pustule")
+	if pustule == null:
+		return
+	var extra_count: int = maxi(0, int(pustule.call("get_extra_fly_count")))
+	var extra_duration: float = maxf(1.0, base_duration - float(pustule.call("get_extra_fly_duration_penalty")))
+	for index: int in range(extra_count):
+		var offset: Vector2 = Vector2.RIGHT.rotated(float(index) * TAU / float(maxi(1, extra_count))) * EXTRA_FLY_SCATTER_RADIUS
+		_spawn_one_fly(scene, parent, origin + offset, extra_duration, fly_damage)
+
+
+func _spawn_one_fly(scene: PackedScene, parent: Node, pos: Vector2, duration: float, damage: int) -> void:
+	var instance: Node = scene.instantiate()
+	if instance == null:
+		return
+	if not instance is PlagueFly:
+		instance.free()
+		return
+	var fly: PlagueFly = instance as PlagueFly
+	parent.add_child(fly)
+	fly.global_position = pos
+	fly.lifetime = duration
+	fly.bite_damage = damage
+
+
+func _fly_duration_bonus() -> float:
+	var carrion: Variant = _get_active_effect(&"carrion")
+	if carrion != null and carrion.has_method("get_fly_duration_bonus"):
+		return float(carrion.call("get_fly_duration_bonus"))
+	return 0.0
+
+
+func _fly_damage_bonus() -> int:
+	var carrion: Variant = _get_active_effect(&"carrion")
+	if carrion != null and carrion.has_method("get_fly_damage_bonus"):
+		return int(carrion.call("get_fly_damage_bonus"))
+	return 0
+
+
+func _get_active_effect(item_id: StringName) -> Variant:
+	return _active_effects.get(item_id, null)
 
 
 func _connect_port_signals() -> void:

@@ -80,6 +80,18 @@ ITEM_PERMAFROST_TITLE,Permafrost,永冻
 ITEM_PERMAFROST_DESC,Frozen duration +1/+2/+3s. Awakened: each collision while frozen adds 2.5s.,冻结持续时间+1/+2/+3秒。觉醒：冻结状态每次碰撞额外+2.5秒。
 ITEM_CRYOCLASM_TITLE,Cryoclasm,冰爆
 ITEM_CRYOCLASM_DESC,"Frozen enemies shatter when touched by the marble, a wall, or another enemy, clearing freeze and frost and firing a fan of homing ice shards at distinct enemies.","冻结敌人碰到弹珠、墙体或其他敌人时碎裂，解除冻结与冰霜，并沿运动方向扇区射出追踪冰碎片攻击不同敌人。"
+ITEM_CARRION_TITLE,Carrion,死蝇
+ITEM_CARRION_DESC,Plague flies linger longer; awakened flies bite harder.,瘟疫苍蝇停留更久；觉醒后苍蝇叮咬伤害更高。
+ITEM_PARASITE_TITLE,Parasite,寄生
+ITEM_PARASITE_DESC,Friendly plague flies layer poison on enemies they bite.,友方瘟疫苍蝇叮咬敌人时会为其叠加中毒。
+ITEM_PUSTULE_TITLE,Plague Blister,疫疱
+ITEM_PUSTULE_DESC,"Infected enemies burst on death, releasing extra plague flies.",感染的敌人死亡时爆裂，额外释放瘟疫苍蝇。
+ITEM_VENOM_KNIFE_TITLE,Venom Knife,淬毒短刃
+ITEM_VENOM_KNIFE_DESC,Your poison applications add extra stacks.,施加中毒时额外叠加毒层。
+ITEM_SCORPION_TAIL_TITLE,Scorpion Tail,蝎尾针
+ITEM_SCORPION_TAIL_DESC,Each poison layer deals more damage every tick.,每层中毒在每次跳伤时造成更多伤害。
+ITEM_WITCH_HAT_TITLE,Witch Hat,巫毒帽
+ITEM_WITCH_HAT_DESC,Poison can build to higher stack counts.,中毒可叠加至更高层数。
 UPGRADE_DARK_DAMAGE_2_DESC,Damage 2,伤害 2
 UPGRADE_DARK_DAMAGE_3_DESC,Damage 3,伤害 3
 UPGRADE_DARK_AWAKEN_DESC,Awaken: Damage 4,觉醒：伤害 4
