@@ -21,6 +21,9 @@ const DEFAULT_NODE_ITEM_PATHS: PackedStringArray = [
 	"res://Content/data/fire_bellows.tres",
 	"res://Content/data/poison_culture.tres",
 	"res://Content/data/ice_hammer.tres",
+	"res://Content/data/venom_knife.tres",
+	"res://Content/data/scorpion_tail.tres",
+	"res://Content/data/witch_hat.tres",
 ]
 const DEFAULT_RELIC_PATHS: PackedStringArray = [
 	"res://Content/data/lightning.tres",

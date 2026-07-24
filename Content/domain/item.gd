@@ -15,6 +15,14 @@ enum EffectType {
 	POISON_CULTURE,
 	ICE_HAMMER,
 	ASSASSIN_MARBLE,
+	# --- 瘟疫流派遗物 ---
+	CARRION,
+	PARASITE,
+	PUSTULE,
+	# --- 通用毒系遗物（不依赖瘟疫苍蝇） ---
+	VENOM_KNIFE,
+	SCORPION_TAIL,
+	WITCH_HAT,
 }
 
 enum ItemType {

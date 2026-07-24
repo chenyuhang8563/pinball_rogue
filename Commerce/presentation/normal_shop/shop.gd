@@ -311,9 +311,14 @@ func _purchase_offer_id(offer_id: StringName) -> bool:
 	if code == PurchaseResultScript.Code.SKILL_REPLACEMENT_REQUIRED and offer != null:
 		_request_skill_replacement(offer_id, offer)
 		return false
-	if code == PurchaseResultScript.Code.CAPACITY_CHANGED and offer != null \
-			and offer.item != null and offer.item.type == Item.ItemType.MARBLE:
-		_set_status_text(&"UI_SHOP_MARBLE_FULL")
+	if code == PurchaseResultScript.Code.CAPACITY_CHANGED and offer != null and offer.item != null:
+		match offer.item.type:
+			Item.ItemType.MARBLE:
+				_set_status_text(&"UI_SHOP_MARBLE_FULL")
+			Item.ItemType.RELIC:
+				_set_status_text(&"UI_SHOP_RELIC_FULL")
+			_:
+				_clear_status()
 		return false
 	_clear_status()
 	_handle_failed_result(result)
@@ -334,12 +339,13 @@ func _handle_failed_result(result: RefCounted) -> void:
 	match int(result.get("code")):
 		PurchaseResultScript.Code.STALE_SNAPSHOT, \
 		PurchaseResultScript.Code.OWNERSHIP_CHANGED, \
-		PurchaseResultScript.Code.LEVEL_CHANGED, \
-		PurchaseResultScript.Code.CAPACITY_CHANGED:
+		PurchaseResultScript.Code.LEVEL_CHANGED:
 			if shop_item_pool.is_empty():
 				_set_presentation_offers([])
 			else:
 				_regenerate_from_pool(false)
+		PurchaseResultScript.Code.CAPACITY_CHANGED:
+			pass
 		PurchaseResultScript.Code.INSUFFICIENT_FUNDS:
 			_refresh_slot_affordability()
 		PurchaseResultScript.Code.COMMIT_FAILED:

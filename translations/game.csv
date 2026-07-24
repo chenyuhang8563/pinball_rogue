@@ -9,6 +9,7 @@ UI_SKILLS_TITLE,Skills,技能
 UI_EXIT,Exit,退出
 UI_SHOP_TITLE,Shop,商店
 UI_SHOP_MARBLE_FULL,"Marble slots full. Right-click a marble below to sell.",弹珠槽已满，右键下方弹珠出售
+UI_SHOP_RELIC_FULL,"Relic slots full. Right-click a relic below to sell.",遗物槽已满，右键下方遗物出售
 UI_OK,OK,确定
 UI_LANGUAGE_CHINESE,中文,中文
 UI_LANGUAGE_ENGLISH,English,English
@@ -72,6 +73,18 @@ ITEM_POISON_CULTURE_TITLE,Plague,瘟疫培养皿
 ITEM_POISON_CULTURE_DESC,Every third poison tick spreads poison to nearby enemies.,每三次中毒跳伤会把中毒传播给附近敌人。
 ITEM_ICE_HAMMER_TITLE,Icebreaker Hammer,碎冰锤
 ITEM_ICE_HAMMER_DESC,Hitting a frozen enemy shatters it and damages nearby enemies.,命中冻结的敌人会将其碎冰并伤害附近敌人。
+ITEM_CARRION_TITLE,Carrion,死畜
+ITEM_CARRION_DESC,Plague flies linger longer; awakened flies bite harder.,瘟疫苍蝇停留更久；觉醒后苍蝇叮咬伤害更高。
+ITEM_PARASITE_TITLE,Parasite,寄生
+ITEM_PARASITE_DESC,Friendly plague flies layer poison on enemies they bite.,友方瘟疫苍蝇叮咬敌人时会为其叠加中毒。
+ITEM_PUSTULE_TITLE,Plague Blister,疫疱
+ITEM_PUSTULE_DESC,"Infected enemies burst on death, releasing extra plague flies.",感染的敌人死亡时爆裂，额外释放瘟疫苍蝇。
+ITEM_VENOM_KNIFE_TITLE,Venom Knife,淬毒短刃
+ITEM_VENOM_KNIFE_DESC,Your poison applications add extra stacks.,施加中毒时额外叠加毒层。
+ITEM_SCORPION_TAIL_TITLE,Scorpion Tail,蝎尾针
+ITEM_SCORPION_TAIL_DESC,Each poison layer deals more damage every tick.,每层中毒在每次跳伤时造成更多伤害。
+ITEM_WITCH_HAT_TITLE,Witch Hat,巫毒帽
+ITEM_WITCH_HAT_DESC,Poison can build to higher stack counts.,中毒可叠加至更高层数。
 UPGRADE_DARK_DAMAGE_2_DESC,Damage 2,伤害 2
 UPGRADE_DARK_DAMAGE_3_DESC,Damage 3,伤害 3
 UPGRADE_DARK_AWAKEN_DESC,Awaken: Damage 4,觉醒：伤害 4

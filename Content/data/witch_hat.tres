@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Item" format=3]
+
+[ext_resource type="Texture2D" path="res://Assets/Items/fb2006.png" id="1_icon"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "witch_hat"
+title = "ITEM_WITCH_HAT_TITLE"
+icon = ExtResource("1_icon")
+price = 20
+description = "ITEM_WITCH_HAT_DESC"
+effect_type = 16
+type = 2
+rarity = 1
+tags = Array[StringName]([&"relic", &"poison", &"enhance"])
+weight = 60
+requires_tags = Array[StringName]([&"poison"])

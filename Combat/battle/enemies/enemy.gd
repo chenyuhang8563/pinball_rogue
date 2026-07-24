@@ -13,6 +13,9 @@ const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition
 ## 实际偏移范围为 [-FLOAT_DAMAGE_X_SPREAD_HALF, FLOAT_DAMAGE_X_SPREAD_HALF]，
 ## 使同一点上的多次伤害在水平方向上散开，避免完全重叠。
 const FLOAT_DAMAGE_X_SPREAD_HALF: float = 8.0
+## 感染状态视觉：病绿 tint + 绕身苍蝇。场景延迟加载，贴图/场景缺失时只保留 tint。
+const INFECTION_VISUAL_SCENE_PATH: String = "res://Combat/effects/infection_status_visual/infection_status_visual.tscn"
+const INFECTION_TINT: Color = Color(0.62, 1.0, 0.55, 1.0)
 
 @export var health: int = 100:
 	set(value):
@@ -34,6 +37,7 @@ var _entity_id: String = ""
 var _death_emitted: bool = false
 var _frost_visual: Node2D = null
 var _fire_visual: Node2D = null
+var _infection_visual: Node2D = null
 
 
 func _ready() -> void:
@@ -271,6 +275,29 @@ func clear_fire_status_visual() -> void:
 	if _fire_visual != null and is_instance_valid(_fire_visual):
 		_fire_visual.queue_free()
 	_fire_visual = null
+
+
+## Toggles the infection look: a sickly-green tint on the body plus orbiting flies.
+## Called by InfectionDebuff on apply/remove. The orbiting-fly scene is optional —
+## if it is not present the tint alone still marks the host as infected.
+func set_infection_visual(active: bool) -> void:
+	if active:
+		if sprite != null:
+			sprite.modulate = INFECTION_TINT
+		if (_infection_visual == null or not is_instance_valid(_infection_visual)) \
+				and ResourceLoader.exists(INFECTION_VISUAL_SCENE_PATH):
+			var scene: PackedScene = load(INFECTION_VISUAL_SCENE_PATH) as PackedScene
+			if scene != null:
+				_infection_visual = scene.instantiate() as Node2D
+				if _infection_visual != null:
+					_infection_visual.name = "InfectionStatusVisual"
+					add_child(_infection_visual)
+		return
+	if sprite != null:
+		sprite.modulate = Color.WHITE
+	if _infection_visual != null and is_instance_valid(_infection_visual):
+		_infection_visual.queue_free()
+	_infection_visual = null
 
 
 func _get_damage_from_body(body: Node, packet: DamagePacket = null) -> int:

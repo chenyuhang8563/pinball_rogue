@@ -8,6 +8,12 @@ const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	&"fire_bellows": preload("res://Combat/effects/fire_bellows/fire_bellows.gd"),
 	&"poison_culture": preload("res://Combat/effects/poison_culture/poison_culture.gd"),
 	&"ice_hammer": preload("res://Combat/effects/ice_hammer/ice_hammer.gd"),
+	&"carrion": preload("res://Combat/effects/carrion/carrion.gd"),
+	&"parasite": preload("res://Combat/effects/parasite/parasite.gd"),
+	&"pustule": preload("res://Combat/effects/pustule/pustule.gd"),
+	&"venom_knife": preload("res://Combat/effects/venom_knife/venom_knife.gd"),
+	&"scorpion_tail": preload("res://Combat/effects/scorpion_tail/scorpion_tail.gd"),
+	&"witch_hat": preload("res://Combat/effects/witch_hat/witch_hat.gd"),
 }
 
 

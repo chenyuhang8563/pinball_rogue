@@ -1,0 +1,15 @@
+[gd_scene format=3 uid="uid://c2fvw8nrlnlss"]
+
+[ext_resource type="PackedScene" uid="uid://bpdxlmcvcepba" path="res://Combat/effects/infection_status_visual/infection_status_visual.tscn" id="1_p1q1g"]
+[ext_resource type="Script" path="res://tests/Integration/presentation/plague_preview/preview_capture.gd" id="1_prqh8"]
+[ext_resource type="Script" uid="uid://h4nqaerfnyf8" path="res://Combat/effects/infection_status_visual/infection_status_visual.gd" id="2_prqh8"]
+
+[node name="InfectionStatusVisualPreview" type="Node2D" unique_id=1260291753]
+script = ExtResource("1_prqh8")
+output_file = "E:/Projects/pinball_rogue/.codex/hud_screenshots/infection_status_visual_preview.png"
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=646885166]
+
+[node name="InfectionVisual" type="Node2D" parent="." unique_id=1149857186 instance=ExtResource("1_p1q1g")]
+scale = Vector2(6, 6)
+script = ExtResource("2_prqh8")

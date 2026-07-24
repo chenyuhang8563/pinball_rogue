@@ -18,8 +18,9 @@ const STAT_POISON_TICK_SECONDS: String = "poison_tick_seconds"
 ## Base poison cap before any marble upgrades; the stat-driven value grows this
 ## to 15/20. Also the degraded fallback when the stat system is unavailable.
 const BASE_POISON_CAP: int = 10
-## Hard ceiling for the stat-driven poison cap (base 10, grows to 20 via upgrades).
-const MAX_POISON_STACKS: int = 20
+## Hard ceiling for the stat-driven poison cap. Green Marble upgrades grow it to
+## 20; the Witch Hat relic can then extend that ceiling to 30.
+const MAX_POISON_STACKS: int = 30
 
 
 func _init() -> void:
@@ -40,6 +41,22 @@ func on_apply(host: Node, state: Dictionary) -> void:
 	state["tick_accumulator"] = 0.0
 	state["hit_flash_color"] = POISON_COLOR
 	_flash_host(host)
+	_try_infect(host, state)
+
+
+## Once poison stacks reach the infection threshold the host becomes permanently
+## infected. Infection never reverts even if the poison DoT later decays, so this
+## is a one-way gate checked on every apply/refresh.
+func _try_infect(host: Node, state: Dictionary) -> void:
+	if int(state.get("stacks", 0)) < InfectionDebuff.INFECTION_THRESHOLD:
+		return
+	if not host.has_method("add_buff") or not host.has_method("has_buff"):
+		return
+	if bool(host.call("has_buff", InfectionDebuff.INFECTION_ID)):
+		return
+	var infection: BuffDef = make_buff(InfectionDebuff.INFECTION_ID)
+	if infection != null:
+		host.call("add_buff", infection, 1)
 
 
 func on_process(host: Node, state: Dictionary, delta: float) -> void:
