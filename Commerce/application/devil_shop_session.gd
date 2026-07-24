@@ -157,6 +157,44 @@ func get_current_offer() -> RefCounted:
 	return offer.duplicate_view() if offer != null else null
 
 
+func get_optimal_payment(offer_id: StringName) -> Dictionary:
+	if not _configured or _config == null:
+		return {}
+	var offer: Variant = _offers.get(offer_id)
+	if offer == null or offer != _current_internal():
+		return {}
+	var validation_code := _validate_offer(offer, false)
+	if validation_code != PurchaseResultScript.Code.SUCCESS:
+		return {}
+	var price: int = int(offer.price)
+	var available_gold: int = maxi(0, int(_wallet.call("balance")))
+	var gold: int = mini(price, available_gold)
+	var remaining_value: int = price - gold
+	var health_value: int = maxi(1, int(_config.get("health_to_gold")))
+	var available_health: int = maxi(
+		0,
+		int(_health.call("current")) - int(_config.get("minimum_remaining_health"))
+	)
+	var health: int = mini(available_health, ceili(float(remaining_value) / float(health_value)))
+	return {
+		&"gold": gold,
+		&"health": health,
+		&"is_sufficient": _payment_value(gold, health) >= offer.price,
+	}
+
+
+func select_optimal_payment(offer_id: StringName) -> Dictionary:
+	var payment := get_optimal_payment(offer_id)
+	if payment.is_empty():
+		return {}
+	_payments.erase(offer_id)
+	if bool(payment[&"is_sufficient"]):
+		var result := select_payment(offer_id, int(payment[&"gold"]), int(payment[&"health"]))
+		if int(result.get("code")) != PurchaseResultScript.Code.SUCCESS:
+			return {}
+	return payment
+
+
 func select_payment(offer_id: StringName, gold: int, health: int) -> RefCounted:
 	if not _configured or _config == null:
 		return _failure(PurchaseResultScript.Code.NOT_CONFIGURED, null, "devil session is not open")

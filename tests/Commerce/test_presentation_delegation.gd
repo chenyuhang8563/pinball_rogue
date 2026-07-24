@@ -3,6 +3,7 @@ extends GutTest
 const RunScopeScript: GDScript = preload("res://Game/Bootstrap/run_scope.gd")
 const FakeStatSystemScript: GDScript = preload("res://tests/Loadout/fake_stat_system.gd")
 const DevilShopConfigScript: GDScript = preload("res://Commerce/domain/devil_shop_config.gd")
+const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
 const FakeInventoryScript: GDScript = preload("res://tests/Commerce/fake_inventory_adapter.gd")
 const FakeProgressionScript: GDScript = preload("res://tests/Commerce/fake_progression_adapter.gd")
 const FakeWalletScript: GDScript = preload("res://tests/Commerce/fake_wallet_adapter.gd")
@@ -220,6 +221,44 @@ func test_devil_confirm_purchase_delegates_selection_commit_and_advances_present
 	assert_true(bool((devil_shop.get("offers") as Array)[0].get("consumed")))
 	assert_eq(devil_shop.get("gold_chips"), 0)
 	assert_eq(devil_shop.get("health_chips"), 0)
+
+
+func test_devil_offer_click_autofills_gold_first_then_health() -> void:
+	var devil_shop_scene: PackedScene = load("res://Commerce/presentation/devil_shop/devil_shop.tscn") as PackedScene
+	var devil_shop: Control = devil_shop_scene.instantiate() as Control
+	devil_shop_scene = null
+	add_child_autofree(devil_shop)
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(12)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var config: Resource = _devil_config()
+	var reward := _make_relic("presentation_autofill", 20)
+	devil_shop.set("config", config)
+	assert_true(devil_shop.call("configure", inventory, progression, wallet, health))
+	var session: RefCounted = devil_shop.get("devil_shop_session") as RefCounted
+	devil_shop.call("_set_offer_views", session.call("open", config, [reward]) as Array)
+	devil_shop.call("_refresh_ui")
+	var offer_slot := devil_shop.get_node("OfferPan/OfferSlot") as Panel
+	var offer: RefCounted = devil_shop.call("get_current_offer") as RefCounted
+
+	var click := InputEventMouseButton.new()
+	click.button_index = MOUSE_BUTTON_LEFT
+	click.pressed = true
+	offer_slot.gui_input.emit(click)
+
+	assert_eq(offer.get("price"), 30)
+	assert_eq(devil_shop.get("gold_chips"), 12)
+	assert_eq(devil_shop.get("health_chips"), 4, "18 remaining value needs four 5-value health chips")
+	assert_true(devil_shop.call("can_confirm_purchase"))
+	wallet.amount = 0
+	health.amount = 1
+	offer_slot.gui_input.emit(click)
+	assert_false(devil_shop.call("can_confirm_purchase"))
+	assert_eq(
+		int(session.call("purchase", offer.get("offer_id")).get("code")),
+		PurchaseResultScript.Code.PAYMENT_NOT_SELECTED
+	)
 
 
 func test_devil_shop_scene_exposes_a_reusable_refresh_control() -> void:

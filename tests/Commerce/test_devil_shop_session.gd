@@ -247,6 +247,57 @@ func test_capacity_change_rejects_payment_selection_without_state_change() -> vo
 	assert_eq(_state(inventory, progression, wallet, health), before)
 
 
+func test_optimal_payment_prioritizes_gold_and_uses_minimum_health_chips() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(12)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var offer: RefCounted = _install_offer(
+		session, _make_item("optimal_payment", Item.ItemType.RELIC, 20), 2, 20, false
+	)
+
+	var payment: Dictionary = session.call("get_optimal_payment", offer.offer_id) as Dictionary
+
+	assert_eq(payment[&"gold"], 12)
+	assert_eq(payment[&"health"], 2, "8 remaining value should use two 5-value health chips")
+	assert_true(payment[&"is_sufficient"], "health payment may exceed the quote")
+
+
+func test_optimal_payment_uses_only_gold_when_it_covers_the_quote() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(50)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var offer: RefCounted = _install_offer(
+		session, _make_item("gold_only_payment", Item.ItemType.RELIC, 20), 2, 20, false
+	)
+
+	var payment: Dictionary = session.call("get_optimal_payment", offer.offer_id) as Dictionary
+
+	assert_eq(payment[&"gold"], 20)
+	assert_eq(payment[&"health"], 0)
+	assert_true(payment[&"is_sufficient"])
+
+
+func test_optimal_payment_fills_available_resources_when_total_is_insufficient() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(4)
+	var health: RefCounted = FakeHealthScript.new(2)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var offer: RefCounted = _install_offer(
+		session, _make_item("partial_payment", Item.ItemType.RELIC, 20), 2, 20, false
+	)
+
+	var payment: Dictionary = session.call("get_optimal_payment", offer.offer_id) as Dictionary
+
+	assert_eq(payment[&"gold"], 4)
+	assert_eq(payment[&"health"], 1, "minimum remaining health must stay intact")
+	assert_false(payment[&"is_sufficient"])
+
+
 func test_repeated_settlement_after_success_does_not_change_state() -> void:
 	var inventory: RefCounted = FakeInventoryScript.new()
 	var progression: RefCounted = FakeProgressionScript.new()

@@ -488,6 +488,21 @@ func _connect_buttons() -> void:
 		var refresh_callback := Callable(self, "refresh_offers")
 		if not _refresh_control.is_connected(&"refresh_requested", refresh_callback):
 			_refresh_control.connect(&"refresh_requested", refresh_callback)
+	if _offer_slot != null and _offer_slot.has_signal(&"purchase_requested"):
+		var offer_callback := Callable(self, "_on_offer_slot_purchase_requested")
+		if not _offer_slot.is_connected(&"purchase_requested", offer_callback):
+			_offer_slot.connect(&"purchase_requested", offer_callback)
+
+
+func _on_offer_slot_purchase_requested(offer_id: StringName) -> void:
+	if _purchases_disabled or devil_shop_session == null:
+		return
+	var payment: Dictionary = devil_shop_session.call("select_optimal_payment", offer_id) as Dictionary
+	if payment.is_empty():
+		return
+	gold_chips = int(payment.get(&"gold", 0))
+	health_chips = int(payment.get(&"health", 0))
+	_refresh_ui(true)
 
 
 func _connect_chip_button(path: String, delta: int) -> void:
