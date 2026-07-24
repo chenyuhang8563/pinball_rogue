@@ -15,8 +15,8 @@ const MAX_BURN_FUEL: int = 99
 
 func _init() -> void:
 	id = BURN_ID
-	display_name = "Burn"
-	description = "Each second deals damage equal to remaining fuel, then consumes 1 fuel; extinguishes at zero."
+	display_name = "STATUS_BURN_NAME"
+	description = "STATUS_BURN_DESC"
 	# Burn is a consumable fuel, not a timed debuff: it is permanent until its
 	# fuel is spent and it removes itself.
 	duration = -1.0

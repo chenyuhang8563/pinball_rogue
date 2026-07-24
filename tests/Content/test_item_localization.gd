@@ -19,6 +19,21 @@ func test_pustule_description_is_chinese_in_chinese_locale() -> void:
 	TranslationServer.set_locale(previous_locale)
 
 
+func test_burn_status_uses_translatable_name_and_description_keys() -> void:
+	# Regression source: the burn tooltip was shown in English in a Chinese game.
+	# Repair: BuffDef stores translation keys; boundary: both its name and description resolve in zh_CN.
+	var previous_locale := TranslationServer.get_locale()
+	TranslationServer.set_locale("zh_CN")
+	var burn := FireBurnDebuff.new()
+	var translated_name := TranslationServer.translate(burn.display_name)
+	var translated_description := TranslationServer.translate(burn.description)
+	TranslationServer.set_locale(previous_locale)
+	assert_eq(burn.display_name, "STATUS_BURN_NAME")
+	assert_eq(burn.description, "STATUS_BURN_DESC")
+	assert_eq(translated_name, "燃烧")
+	assert_eq(translated_description, "每秒根据剩余燃料层数造成伤害，并消耗 1 层燃料；燃料归零时熄灭。")
+
+
 func test_plague_relic_resources_match_the_appended_effect_type_enum_values() -> void:
 	assert_eq(CarrionItem.effect_type, Item.EffectType.CARRION)
 	assert_eq(ParasiteItem.effect_type, Item.EffectType.PARASITE)

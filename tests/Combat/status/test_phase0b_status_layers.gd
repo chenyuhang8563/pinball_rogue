@@ -30,25 +30,27 @@ func after_each() -> void:
 # ---- Burn (fuel model) ----
 
 func test_burn_single_fuel_deals_one_total_damage_then_extinguishes() -> void:
+	# Regression source: user reported that one burn fuel must deal exactly one damage.
+	# Repair: the base per-fuel stat is 1; boundary: the final fuel still damages once before removal.
 	var enemy: Enemy = _enemy()
 	enemy.add_buff(FireBurnDebuff.new(), 1)
 	enemy.buff_host._process(1.0)
-	assert_eq(enemy.health, 98, "one fuel deals the base 2 per-fuel damage then extinguishes")
+	assert_eq(enemy.health, 99, "one fuel deals one damage then extinguishes")
 	assert_false(enemy.has_buff(FireBurnDebuff.BURN_ID))
 
 
 func test_burn_fuel_deals_decreasing_damage_then_extinguishes() -> void:
-	# Regression source: burn is now a consumable fuel. Boundary: 3 fuel deals
-	# 6 + 4 + 2 = 12 total damage across three seconds (2 per fuel), then removes itself.
+	# Regression source: user reported one damage per burn fuel. Repair: each tick uses
+	# current fuel x 1; boundary: 3 fuel remains decreasing (3 + 2 + 1), then removes itself.
 	var enemy: Enemy = _enemy()
 	enemy.add_buff(FireBurnDebuff.new(), 3)
 	assert_eq(enemy.get_buff_stacks(FireBurnDebuff.BURN_ID), 3)
 	enemy.buff_host._process(1.0)
-	assert_eq(enemy.health, 94, "3 fuel deals 6 damage, 2 fuel left")
+	assert_eq(enemy.health, 97, "3 fuel deals 3 damage, 2 fuel left")
 	enemy.buff_host._process(1.0)
-	assert_eq(enemy.health, 90, "2 fuel deals 4 damage, 1 fuel left")
+	assert_eq(enemy.health, 95, "2 fuel deals 2 damage, 1 fuel left")
 	enemy.buff_host._process(1.0)
-	assert_eq(enemy.health, 88, "1 fuel deals 2 damage, fuel spent")
+	assert_eq(enemy.health, 94, "1 fuel deals 1 damage, fuel spent")
 	assert_false(enemy.has_buff(FireBurnDebuff.BURN_ID))
 
 
@@ -93,7 +95,7 @@ func test_fire_marble_followup_preserves_the_pending_burn_tick() -> void:
 	enemy.buff_host._process(0.5)
 	FireMarble.apply_burn_to_enemy(enemy)
 	enemy.buff_host._process(0.5)
-	assert_eq(enemy.health, 90, "the five-fuel tick resolves at the original one-second deadline")
+	assert_eq(enemy.health, 95, "the five-fuel tick resolves at the original one-second deadline")
 	assert_eq(enemy.get_buff_stacks(FireBurnDebuff.BURN_ID), 4, "the tick consumes one fuel after damage")
 
 
@@ -102,13 +104,13 @@ func test_fire_marble_burns_four_three_two_one_then_restarts_after_extinguishing
 	# Boundary: after 4→3→2→1 reaches zero, the next hit is a new four-fuel burn.
 	var enemy: Enemy = _enemy()
 	FireMarble.apply_burn_to_enemy(enemy)
-	var expected_health_after_tick: Array[int] = [92, 86, 82]
+	var expected_health_after_tick: Array[int] = [96, 93, 91]
 	for index: int in range(expected_health_after_tick.size()):
 		enemy.buff_host._process(1.0)
 		assert_eq(enemy.get_buff_stacks(FireBurnDebuff.BURN_ID), 3 - index)
 		assert_eq(enemy.health, expected_health_after_tick[index], "damage resolves from fuel before consuming one")
 	enemy.buff_host._process(1.0)
-	assert_eq(enemy.health, 80, "four, three, two, one fuel deal twenty total burn damage")
+	assert_eq(enemy.health, 90, "four, three, two, one fuel deal ten total burn damage")
 	assert_false(enemy.has_buff(FireBurnDebuff.BURN_ID))
 	FireMarble.apply_burn_to_enemy(enemy)
 	assert_eq(enemy.get_buff_stacks(FireBurnDebuff.BURN_ID), 4, "a new burn starts at four fuel after extinguishing")
