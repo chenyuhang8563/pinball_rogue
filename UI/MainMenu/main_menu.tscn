@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://d32hlcgtnr1lh"]
 
 [ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="1_3jj5y"]
-[ext_resource type="Script" path="res://UI/MainMenu/main_menu.gd" id="1_bddxb"]
+[ext_resource type="Script" uid="uid://coj8ynjphsrhl" path="res://UI/MainMenu/main_menu.gd" id="1_bddxb"]
 [ext_resource type="Theme" uid="uid://dyyi8m07c16qi" path="res://Themes/button.tres" id="2_h8rmy"]
 [ext_resource type="Texture2D" uid="uid://dbuhmu8cptbrt" path="res://Assets/UI/Settings.png" id="4_bddxb"]
 [ext_resource type="PackedScene" uid="uid://dgsquy0q41jr3" path="res://Run/presentation/settings_panel.tscn" id="5_iau2q"]

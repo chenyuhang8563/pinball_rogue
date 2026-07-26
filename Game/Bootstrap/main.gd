@@ -55,6 +55,7 @@ var debug_grant_service: RefCounted = null
 var _active_skill_blocking_panels: Array[Node] = []
 var _gateway_marble_fell_callable: Callable = Callable()
 var _run_flow_composition_configured: bool = false
+var _restoring_checkpoint: bool = false
 
 
 func _ready() -> void:
@@ -628,12 +629,24 @@ func _setup_run_flow(
 	_sync_battle_hud_gold()
 	_connect_wallet_changed()
 	_connect_once(run_flow_controller, &"run_failed", Callable(self, "_on_run_failed"))
+	_connect_once(run_flow_controller, &"run_completed", Callable(self, "_on_run_completed"))
 	_connect_once(run_flow_controller, &"terminal_acknowledged", Callable(self, "_on_terminal_acknowledged"))
+	_connect_checkpoint_signals()
 	_connect_once(pause_panel, &"settings_requested", Callable(self, "_on_pause_settings_requested"))
 	_connect_once(settings_panel, &"continue_requested", Callable(self, "_on_settings_continue_requested"))
 	_connect_once(settings_panel, &"back_requested", Callable(self, "_on_settings_back_requested"))
 	_connect_once(settings_panel, &"exit_requested", Callable(self, "_on_settings_exit_requested"))
-	if not run_flow_controller.start_run():
+	var repository := _get_autoload_node(&"RunSaveRepository")
+	var intent := RunSaveStore.StartIntent.NEW_RUN
+	if repository != null:
+		intent = int(repository.call("consume_start_intent")) as RunSaveStore.StartIntent
+		if intent == RunSaveStore.StartIntent.NONE:
+			intent = RunSaveStore.StartIntent.NEW_RUN
+	if intent == RunSaveStore.StartIntent.CONTINUE_RUN:
+		var save_data := repository.call("load_save") as RunSaveData if repository != null else null
+		if save_data == null or not _restore_checkpoint(save_data.checkpoint):
+			return _rollback_run_flow_startup()
+	elif not run_flow_controller.start_run():
 		return _rollback_run_flow_startup()
 	return true
 
@@ -728,12 +741,135 @@ func _sync_active_skill_panel_blocker() -> void:
 
 
 func _on_run_failed(_token: RunFlowToken, _reason: StringName) -> void:
+	_delete_run_save()
 	if skill_controller != null:
 		skill_controller.cancel_active_skill("run_failed")
 		skill_controller.clear_projectiles()
 	if marble_chain != null and is_instance_valid(marble_chain):
 		marble_chain.queue_free()
 	marble_chain = null
+
+
+func _on_run_completed(_token: RunFlowToken) -> void:
+	_delete_run_save()
+
+
+func _connect_checkpoint_signals() -> void:
+	_connect_once(run_flow_controller, &"battle_started", Callable(self, "_on_battle_checkpoint"))
+	_connect_once(run_flow_controller, &"node_options_presented", Callable(self, "_on_node_checkpoint"))
+	_connect_once(run_flow_controller, &"reward_presented", Callable(self, "_on_reward_checkpoint"))
+	_connect_once(run_flow_controller, &"event_presented", Callable(self, "_on_event_checkpoint"))
+	_connect_once(run_flow_controller, &"upgrade_presented", Callable(self, "_on_upgrade_checkpoint"))
+	_connect_once(run_flow_controller, &"shop_opened", Callable(self, "_on_shop_checkpoint"))
+
+
+func _on_battle_checkpoint(_token: RunFlowToken, _plan: BattlePlan) -> void:
+	_write_checkpoint()
+
+
+func _on_node_checkpoint(_offer: RunNodeOffer) -> void:
+	_write_checkpoint()
+
+
+func _on_reward_checkpoint(_offer: RewardOffer) -> void:
+	_write_checkpoint()
+
+
+func _on_event_checkpoint(_presentation: EventPresentation) -> void:
+	_write_checkpoint()
+
+
+func _on_upgrade_checkpoint(_offer: UpgradeOffer) -> void:
+	_write_checkpoint()
+
+
+func _on_shop_checkpoint(_token: RunFlowToken, _shop_kind: StringName) -> void:
+	_write_checkpoint()
+
+
+func _write_checkpoint() -> bool:
+	if _restoring_checkpoint or run_scope == null or run_random_source == null \
+			or run_flow_controller == null:
+		return false
+	var scope_state := run_scope.snapshot()
+	var flow_state := run_flow_controller.snapshot()
+	if scope_state.is_empty() or flow_state.is_empty():
+		return false
+	var state_data := flow_state.get(&"state", {}) as Dictionary
+	var phase := int(state_data.get(&"phase", RunState.Phase.IDLE))
+	var payload := flow_state.get(&"payload", {}) as Dictionary
+	if phase == RunState.Phase.NORMAL_SHOP_ACTIVE:
+		var session := normal_shop.get("normal_shop_session") as RefCounted
+		payload[&"shop_session"] = session.call("snapshot") if session != null else {}
+	elif phase == RunState.Phase.DEVIL_SHOP_ACTIVE:
+		var session := devil_shop.get("devil_shop_session") as RefCounted
+		payload[&"shop_session"] = session.call("snapshot") if session != null else {}
+	if phase in [RunState.Phase.NORMAL_SHOP_ACTIVE, RunState.Phase.DEVIL_SHOP_ACTIVE] \
+			and (payload.get(&"shop_session", {}) as Dictionary).is_empty():
+		return false
+	flow_state[&"payload"] = payload
+	var content_ids: Array[StringName] = []
+	for value: Variant in scope_state[&"owned_item_ids"] as Array:
+		_append_unique_id(content_ids, StringName(value))
+	_collect_content_ids(flow_state, content_ids)
+	var repository := _get_autoload_node(&"RunSaveRepository")
+	return repository != null and bool(repository.call("write_checkpoint", {
+		&"scope": scope_state,
+		&"random": run_random_source.snapshot(),
+		&"flow": flow_state,
+		&"content_ids": content_ids,
+	}))
+
+
+func _restore_checkpoint(checkpoint: Dictionary) -> bool:
+	if not checkpoint.get(&"scope") is Dictionary or not checkpoint.get(&"random") is Dictionary \
+			or not checkpoint.get(&"flow") is Dictionary:
+		return false
+	_restoring_checkpoint = true
+	var restored := run_scope.restore(checkpoint[&"scope"] as Dictionary, content_registry) \
+		and run_random_source.restore(checkpoint[&"random"] as Dictionary)
+	if restored:
+		var flow_state := checkpoint[&"flow"] as Dictionary
+		var state_data := flow_state.get(&"state", {}) as Dictionary
+		var payload := flow_state.get(&"payload", {}) as Dictionary
+		var phase := int(state_data.get(&"phase", RunState.Phase.IDLE))
+		if phase == RunState.Phase.NORMAL_SHOP_ACTIVE:
+			var session := normal_shop.get("normal_shop_session") as RefCounted
+			restored = session != null and bool(session.call("restore", payload.get(&"shop_session", {})))
+		elif phase == RunState.Phase.DEVIL_SHOP_ACTIVE:
+			var session := devil_shop.get("devil_shop_session") as RefCounted
+			restored = session != null and bool(session.call("restore", payload.get(&"shop_session", {})))
+	if restored:
+		restored = run_flow_controller.restore(checkpoint[&"flow"] as Dictionary, content_registry)
+	_restoring_checkpoint = false
+	if restored:
+		_sync_battle_hud_gold()
+		_spawn_chain()
+	return restored
+
+
+func _collect_content_ids(value: Variant, result: Array[StringName]) -> void:
+	if value is Dictionary:
+		var dictionary := value as Dictionary
+		for key: Variant in dictionary:
+			if StringName(key) == &"item_id":
+				_append_unique_id(result, StringName(dictionary[key]))
+			else:
+				_collect_content_ids(dictionary[key], result)
+	elif value is Array:
+		for element: Variant in value as Array:
+			_collect_content_ids(element, result)
+
+
+func _append_unique_id(values: Array[StringName], item_id: StringName) -> void:
+	if not item_id.is_empty() and not values.has(item_id):
+		values.append(item_id)
+
+
+func _delete_run_save() -> void:
+	var repository := _get_autoload_node(&"RunSaveRepository")
+	if repository != null:
+		repository.call("delete_save")
 
 
 func _on_terminal_acknowledged(_token: RunFlowToken, _phase: RunState.Phase) -> void:

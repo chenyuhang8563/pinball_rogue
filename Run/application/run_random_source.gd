@@ -71,3 +71,17 @@ func shuffle(values: Array) -> Array:
 			values[index] = values[swap_index]
 			values[swap_index] = value
 	return values
+
+
+func snapshot() -> Dictionary:
+	return {&"state": _rng.state}
+
+
+func restore(value: Dictionary) -> bool:
+	if not value.has(&"state"):
+		return false
+	var restored_state := int(value[&"state"])
+	if restored_state == 0:
+		return false
+	_rng.state = restored_state
+	return _rng.state == restored_state

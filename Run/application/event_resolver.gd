@@ -46,6 +46,10 @@ func active_presentation() -> EventPresentation:
 	return _active
 
 
+func restore_active(token: RunFlowToken, event_id: StringName) -> EventPresentation:
+	return present_event(token, event_id)
+
+
 func present(token: RunFlowToken) -> EventPresentation:
 	if not _can_present(token):
 		return null

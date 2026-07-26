@@ -12,7 +12,7 @@ static func key(item: Item) -> String:
 		return "type:%d:path:%s" % [int(item.type), item.resource_path]
 	if item.effect_type != Item.EffectType.NONE:
 		return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
-	return "type:%d:instance:%d" % [int(item.type), item.get_instance_id()]
+	return "type:%d:anonymous:%s:%d" % [int(item.type), item.title, int(item.rarity)]
 
 
 static func same(first: Item, second: Item) -> bool:

@@ -58,6 +58,17 @@ func before_each() -> void:
 	FailingRunFlowController.configure_calls = 0
 	TrackingRunFlowController.configure_calls = 0
 	TrackingRunFlowController.start_calls = 0
+	var repository := get_tree().root.get_node_or_null(^"RunSaveRepository")
+	if repository != null:
+		repository.call("set_paths_for_test", "user://saves/test_main_run_flow.tres")
+		repository.call("delete_save")
+
+
+func after_each() -> void:
+	var repository := get_tree().root.get_node_or_null(^"RunSaveRepository")
+	if repository != null:
+		repository.call("delete_save")
+		repository.call("reset_paths")
 
 
 func test_p3a_composition_shares_scope_random_configs_and_main_runtime_ports_without_start() -> void:

@@ -20,6 +20,7 @@ var _skill_replacement_authorizations: Dictionary = {}
 var _version: int = 0
 var _nonce: int = 0
 var _successful_refresh_count: int = 0
+var _restored_visit_pending: bool = false
 
 
 func configure(
@@ -43,6 +44,9 @@ func configure(
 func regenerate(candidates: Array, max_offers: int = 6) -> Array:
 	if not _configured:
 		return []
+	if _restored_visit_pending:
+		_restored_visit_pending = false
+		return get_offers()
 	var source_candidates: Array = candidates
 	if _content_registry != null:
 		var registry_candidates := _registry_candidates()
@@ -82,6 +86,8 @@ func regenerate(candidates: Array, max_offers: int = 6) -> Array:
 
 ## Starts a fresh normal-shop visit. Refresh pricing is scoped to the current visit.
 func begin_visit() -> void:
+	if _restored_visit_pending:
+		return
 	_successful_refresh_count = 0
 
 
@@ -141,6 +147,69 @@ func get_offers() -> Array:
 		if offer != null:
 			result.append(offer.duplicate_view())
 	return result
+
+
+func snapshot() -> Dictionary:
+	var values: Array[Dictionary] = []
+	for offer_id: StringName in _offer_order:
+		var offer: Variant = _offers.get(offer_id)
+		if offer == null or offer.consumed or offer.item == null or offer.item.id.is_empty():
+			return {}
+		values.append({
+			&"offer_id": offer.offer_id,
+			&"snapshot_version": offer.snapshot_version,
+			&"item_id": StringName(offer.item.id),
+			&"target_level": offer.target_level,
+			&"price": offer.price,
+			&"original_price": offer.original_price,
+			&"is_upgrade": offer.is_upgrade,
+		})
+	return {
+		&"version": _version,
+		&"nonce": _nonce,
+		&"successful_refresh_count": _successful_refresh_count,
+		&"offers": values,
+	}
+
+
+func restore(state: Dictionary) -> bool:
+	if not _configured or _content_registry == null or not _content_registry.has_method(&"by_id") \
+			or not state.get(&"offers") is Array:
+		return false
+	var version := int(state.get(&"version", 0))
+	var nonce := int(state.get(&"nonce", 0))
+	var restored: Dictionary = {}
+	var order: Array[StringName] = []
+	for raw: Variant in state[&"offers"] as Array:
+		if not raw is Dictionary:
+			return false
+		var data := raw as Dictionary
+		var offer_id := StringName(data.get(&"offer_id", &""))
+		var item := _content_registry.call(&"by_id", StringName(data.get(&"item_id", &""))) as Item
+		var target_level := int(data.get(&"target_level", 0))
+		var price := int(data.get(&"price", -1))
+		var original_price := int(data.get(&"original_price", -1))
+		if offer_id.is_empty() or restored.has(offer_id) or item == null \
+				or target_level < 1 or target_level > 4 or price < 0 or original_price < price:
+			return false
+		var offer: RefCounted = CommerceOfferScript.new(
+			offer_id, version, item, ItemIdentityScript.key(item), target_level, price,
+			original_price, bool(data.get(&"is_upgrade", false)), false,
+			int(_inventory.call("revision")), int(_progression.call("revision")),
+			int(_wallet.call("revision"))
+		)
+		restored[offer_id] = offer
+		order.append(offer_id)
+	if order.is_empty():
+		return false
+	_offers = restored
+	_offer_order = order
+	_skill_replacement_authorizations.clear()
+	_version = version
+	_nonce = nonce
+	_successful_refresh_count = maxi(0, int(state.get(&"successful_refresh_count", 0)))
+	_restored_visit_pending = true
+	return true
 
 
 func purchase(offer_id: StringName) -> RefCounted:

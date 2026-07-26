@@ -259,6 +259,8 @@ func restore(state: Dictionary) -> bool:
 	]:
 		if not state.has(field) or not state[field] is Dictionary:
 			return false
+	if not _valid_snapshot(state):
+		return false
 	_marble_levels = (state[&"marble_levels"] as Dictionary).duplicate(true)
 	_marble_awakened = (state[&"marble_awakened"] as Dictionary).duplicate(true)
 	_relic_levels = (state[&"relic_levels"] as Dictionary).duplicate(true)
@@ -266,6 +268,48 @@ func restore(state: Dictionary) -> bool:
 	_skill_levels = (state[&"skill_levels"] as Dictionary).duplicate(true)
 	_sync_stat_modifiers()
 	return revision() == int(state.get(&"revision", revision()))
+
+
+func _valid_snapshot(state: Dictionary) -> bool:
+	if not _loadout_available():
+		return false
+	var owned_marbles: Dictionary[int, bool] = {}
+	var owned_relics: Dictionary[String, bool] = {}
+	for item: Item in _loadout.call("owned_items") as Array[Item]:
+		match item.type:
+			Item.ItemType.MARBLE:
+				owned_marbles[int(item.marble_type)] = true
+			Item.ItemType.RELIC:
+				owned_relics[_relic_key(item)] = true
+			Item.ItemType.SKILL:
+				pass
+	for key: Variant in (state[&"marble_levels"] as Dictionary):
+		if not key is int or not owned_marbles.has(int(key)) \
+				or not (state[&"marble_levels"] as Dictionary)[key] is int \
+				or int((state[&"marble_levels"] as Dictionary)[key]) < 1 \
+				or int((state[&"marble_levels"] as Dictionary)[key]) > MAX_LEVEL:
+			return false
+	for key: Variant in (state[&"marble_awakened"] as Dictionary):
+		if not key is int or not owned_marbles.has(int(key)) \
+				or not (state[&"marble_awakened"] as Dictionary)[key] is bool:
+			return false
+	for key: Variant in (state[&"relic_levels"] as Dictionary):
+		if not key is String or not owned_relics.has(String(key)) \
+				or not (state[&"relic_levels"] as Dictionary)[key] is int \
+				or int((state[&"relic_levels"] as Dictionary)[key]) < 1 \
+				or int((state[&"relic_levels"] as Dictionary)[key]) > MAX_LEVEL:
+			return false
+	for key: Variant in (state[&"relic_awakened"] as Dictionary):
+		if not key is String or not owned_relics.has(String(key)) \
+				or not (state[&"relic_awakened"] as Dictionary)[key] is bool:
+			return false
+	for key: Variant in (state[&"skill_levels"] as Dictionary):
+		if not key is String or not SKILL_LEVELS.has(String(key)) \
+				or not (state[&"skill_levels"] as Dictionary)[key] is int \
+				or int((state[&"skill_levels"] as Dictionary)[key]) < 1 \
+				or int((state[&"skill_levels"] as Dictionary)[key]) > AWAKENED_LEVEL:
+			return false
+	return true
 
 
 func revision() -> int:

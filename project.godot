@@ -25,13 +25,14 @@ StatSystem="*res://Core/stats/stat_system.gd"
 BuffRegistry="*res://Combat/status/buff_registry.gd"
 FloatDamageTextPool="*res://Combat/presentation/float_damage_text_pool.gd"
 ContentRegistry="*res://Content/application/content_registry.gd"
+RunSaveRepository="*res://Run/save/run_save_repository.gd"
 
 [display]
 
 window/size/viewport_width=240
 window/size/viewport_height=320
-window/size/window_width_override=480
-window/size/window_height_override=640
+window/size/window_width_override=600
+window/size/window_height_override=800
 window/subwindows/embed_subwindows=false
 window/stretch/mode="canvas_items"
 

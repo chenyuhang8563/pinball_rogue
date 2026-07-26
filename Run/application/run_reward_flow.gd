@@ -74,6 +74,22 @@ func completed() -> bool:
 	return _active != null and _active.completed
 
 
+func snapshot_active() -> Dictionary:
+	return _service.snapshot_active() if _service != null else {}
+
+
+func restore_active(
+	token: RunFlowToken,
+	state: Dictionary,
+	content_registry: Node
+) -> RewardOffer:
+	_error_detail = ""
+	_active = _service.restore_active(token, state, content_registry) if _service != null else null
+	if _active == null:
+		_error_detail = "saved reward draft is invalid"
+	return _active
+
+
 func clear() -> bool:
 	_active = null
 	return _service != null and _service.clear_active()

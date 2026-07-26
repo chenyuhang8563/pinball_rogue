@@ -108,6 +108,81 @@ func active_draft() -> RewardOffer:
 	return _active_draft
 
 
+func snapshot_active() -> Dictionary:
+	if _active_draft == null or _active_draft.consumed:
+		return {}
+	var options: Array[Dictionary] = []
+	for option: RewardOption in _active_draft.options():
+		if option == null or option.consumed:
+			return {}
+		options.append({
+			&"offer_id": option.offer_id,
+			&"kind": int(option.kind),
+			&"item_id": StringName(option.item.id) if option.item != null else &"",
+			&"gold_amount": option.gold_amount,
+			&"item_identity": option.item_identity,
+			&"resolution": int(option.resolution),
+			&"compensation_amount": option.compensation_amount,
+		})
+	return {
+		&"policy": int(_active_draft.policy),
+		&"source_id": _active_draft.source_id,
+		&"draft_id": _active_draft.draft_id,
+		&"mode": int(_active_draft.mode),
+		&"options": options,
+	}
+
+
+func restore_active(token: RunFlowToken, state: Dictionary, content_registry: Node) -> RewardOffer:
+	if not _configured or token == null or not token.is_valid() or content_registry == null \
+			or not content_registry.has_method(&"by_id") or not state.get(&"options") is Array:
+		return null
+	var policy := int(state.get(&"policy", -1))
+	var mode := int(state.get(&"mode", -1))
+	var source_id := StringName(state.get(&"source_id", &""))
+	var draft_id := StringName(state.get(&"draft_id", &""))
+	if policy < BattlePlan.RewardPolicy.NONE or policy > BattlePlan.RewardPolicy.ELITE \
+			or mode < RewardOffer.Mode.NODE_EXCLUSIVE or mode > RewardOffer.Mode.ELITE_CLAIM_ALL \
+			or source_id.is_empty() or draft_id.is_empty():
+		return null
+	var options: Array[RewardOption] = []
+	for raw: Variant in state[&"options"] as Array:
+		if not raw is Dictionary:
+			return null
+		var option_data := raw as Dictionary
+		var kind := int(option_data.get(&"kind", -1))
+		var item: Item = null
+		if kind == RewardOption.Kind.ITEM:
+			item = content_registry.call(&"by_id", StringName(option_data.get(&"item_id", &""))) as Item
+			if item == null:
+				return null
+		elif kind != RewardOption.Kind.GOLD:
+			return null
+		var option: RewardOption = RewardOptionScript.new(
+			StringName(option_data.get(&"offer_id", &"")), kind as RewardOption.Kind, item,
+			int(option_data.get(&"gold_amount", 0)),
+			String(option_data.get(&"item_identity", "")),
+			int(option_data.get(&"resolution", RewardOption.Resolution.CREDIT_GOLD)) as RewardOption.Resolution,
+			int(option_data.get(&"compensation_amount", 0))
+		)
+		if not option.is_valid():
+			return null
+		options.append(option)
+	if options.is_empty():
+		return null
+	var inventory_revision := int(_loadout.call("revision"))
+	var progression_revision := int(_progression.call("revision"))
+	var wallet_revision := int(_wallet.call("revision"))
+	for option: RewardOption in options:
+		_capture_option_state(option, inventory_revision, progression_revision, wallet_revision)
+	_pending_replacement.clear()
+	_active_draft = RewardOfferScript.new(
+		token, policy as BattlePlan.RewardPolicy, source_id, options, draft_id,
+		mode as RewardOffer.Mode, inventory_revision, progression_revision, wallet_revision
+	)
+	return _active_draft
+
+
 func pending_replacement_token() -> StringName:
 	return StringName(_pending_replacement.get(&"token", &""))
 
@@ -817,13 +892,12 @@ func _identity_key(item: Item) -> String:
 		return "type:%d:path:%s" % [int(item.type), item.resource_path]
 	if item.effect_type != Item.EffectType.NONE:
 		return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
-	return "type:%d:instance:%d" % [int(item.type), item.get_instance_id()]
+	return "type:%d:anonymous:%s:%d" % [int(item.type), item.title, int(item.rarity)]
 
 
 func _matches_expected_owned(owned: Item, option: RewardOption) -> bool:
-	# Loadout revision already includes instance identity. Settlement follows the
-	# domain identity contract so relic candidates always resolve to the owned
-	# instance returned by Loadout.find_owned().
+	# Revisions are stable across processes. Settlement still resolves the
+	# currently owned instance and compares it to the saved semantic identity.
 	return owned != null and _identity_key(owned) == option.expected_owned_identity
 
 

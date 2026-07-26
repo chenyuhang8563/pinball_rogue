@@ -141,6 +141,85 @@ func current_upgrade_offer() -> UpgradeOffer:
 	return _upgrade_service.active_offer()
 
 
+func snapshot() -> Dictionary:
+	if not _configured or _state.is_terminal() or _state.phase == RunState.Phase.EVENT_RESULT_ACTIVE:
+		return {}
+	var payload: Dictionary = {}
+	match _state.phase:
+		RunState.Phase.CHOOSING_NODE:
+			payload = _snapshot_node_offer(_active_node_offer)
+		RunState.Phase.REWARD_ACTIVE:
+			payload = _reward_flow.snapshot_active()
+		RunState.Phase.EVENT_ACTIVE:
+			payload = _event_flow.snapshot_active()
+		RunState.Phase.UPGRADE_ACTIVE:
+			payload = _snapshot_upgrade_offer(_upgrade_service.active_offer())
+		RunState.Phase.NORMAL_SHOP_ACTIVE, RunState.Phase.DEVIL_SHOP_ACTIVE:
+			payload = {&"shop_kind": _active_shop_kind}
+		RunState.Phase.BATTLE_ACTIVE:
+			payload = {}
+		_:
+			return {}
+	if _state.phase != RunState.Phase.BATTLE_ACTIVE and payload.is_empty():
+		return {}
+	return {&"state": _state.snapshot(), &"payload": payload}
+
+
+func restore(checkpoint: Dictionary, content_registry: Node) -> bool:
+	if not _configured or _command_guard or content_registry == null \
+			or not checkpoint.get(&"state") is Dictionary \
+			or not checkpoint.get(&"payload") is Dictionary:
+		return false
+	var restored_state := RunStateScript.new() as RunState
+	if not restored_state.restore(checkpoint[&"state"] as Dictionary):
+		return false
+	var payload := checkpoint[&"payload"] as Dictionary
+	var restored_node_offer: RunNodeOffer = null
+	if restored_state.phase == RunState.Phase.CHOOSING_NODE:
+		restored_node_offer = _restore_node_offer(restored_state.token(), payload)
+		if restored_node_offer == null or restored_node_offer.floor_number != restored_state.floor_number:
+			return false
+	_state = restored_state
+	_terminal_acknowledged = false
+	_active_node_offer = null
+	_active_shop_kind = &""
+	_node_policy.reset()
+	_reward_flow.clear()
+	_event_flow.clear()
+	_upgrade_service.clear()
+	_battle_flow.clear()
+	match _state.phase:
+		RunState.Phase.CHOOSING_NODE:
+			_active_node_offer = restored_node_offer
+			if not _node_policy.restore_choice_wave_index(_active_node_offer.choice_wave_index):
+				return false
+		RunState.Phase.REWARD_ACTIVE:
+			if _reward_flow.restore_active(_state.token(), payload, content_registry) == null:
+				return false
+		RunState.Phase.EVENT_ACTIVE:
+			if _event_flow.restore_active(_state.token(), payload) == null:
+				return false
+		RunState.Phase.UPGRADE_ACTIVE:
+			var upgrade := _upgrade_service.present(_state.token(), _state.node_id)
+			if not _upgrade_matches_snapshot(upgrade, payload):
+				return false
+		RunState.Phase.NORMAL_SHOP_ACTIVE:
+			if StringName(payload.get(&"shop_kind", &"")) != &"shop":
+				return false
+			_active_shop_kind = &"shop"
+		RunState.Phase.DEVIL_SHOP_ACTIVE:
+			if StringName(payload.get(&"shop_kind", &"")) != &"devil_shop":
+				return false
+			_active_shop_kind = &"devil_shop"
+		RunState.Phase.BATTLE_ACTIVE:
+			pass
+		_:
+			return false
+	floor_changed.emit(_state.floor_number)
+	health_changed.emit(int(_health.call("current")))
+	return _resume_current_phase()
+
+
 func start_run() -> bool:
 	if not _begin_command(START):
 		return false
@@ -386,6 +465,110 @@ func _start_battle(plan: BattlePlan) -> bool:
 		return true
 	battle_start_failed.emit(token, plan)
 	return _fail_run(&"battle_start_failed")
+
+
+func _resume_current_phase() -> bool:
+	var token := _state.token()
+	match _state.phase:
+		RunState.Phase.BATTLE_ACTIVE:
+			return _start_battle(_state.battle_plan)
+		RunState.Phase.CHOOSING_NODE:
+			node_options_presented.emit(_active_node_offer)
+		RunState.Phase.REWARD_ACTIVE:
+			reward_presented.emit(_reward_flow.active_offer())
+		RunState.Phase.EVENT_ACTIVE:
+			event_presented.emit(_event_flow.active_presentation())
+		RunState.Phase.UPGRADE_ACTIVE:
+			upgrade_presented.emit(_upgrade_service.active_offer())
+		RunState.Phase.NORMAL_SHOP_ACTIVE, RunState.Phase.DEVIL_SHOP_ACTIVE:
+			shop_opened.emit(token, _active_shop_kind)
+		_:
+			return false
+	return true
+
+
+func _snapshot_node_offer(offer: RunNodeOffer) -> Dictionary:
+	if offer == null or offer.consumed:
+		return {}
+	var choices: Array[Dictionary] = []
+	for choice: RunNodeChoice in offer.choices():
+		choices.append({
+			&"option_id": choice.option_id,
+			&"kind": int(choice.kind),
+			&"kind_id": choice.kind_id,
+			&"title": choice.title,
+			&"description": choice.description,
+			&"battle_plan": RunState.serialize_battle_plan(choice.battle_plan),
+		})
+	return {
+		&"offer_id": offer.offer_id,
+		&"floor_number": offer.floor_number,
+		&"choice_wave_index": offer.choice_wave_index,
+		&"choices": choices,
+	}
+
+
+func _restore_node_offer(token: RunFlowToken, payload: Dictionary) -> RunNodeOffer:
+	if not payload.get(&"choices") is Array:
+		return null
+	var choices: Array[RunNodeChoice] = []
+	for raw: Variant in payload[&"choices"] as Array:
+		if not raw is Dictionary:
+			return null
+		var data := raw as Dictionary
+		var kind := int(data.get(&"kind", -1))
+		if kind < RunNodeOption.Kind.BATTLE or kind > RunNodeOption.Kind.DEVIL_SHOP:
+			return null
+		var plan := RunState.deserialize_battle_plan(data.get(&"battle_plan", {}) as Dictionary)
+		var choice := RunNodeChoice.new(
+			StringName(data.get(&"option_id", &"")), kind as RunNodeOption.Kind,
+			StringName(data.get(&"kind_id", &"")), String(data.get(&"title", "")),
+			String(data.get(&"description", "")), plan
+		)
+		if not choice.is_valid():
+			return null
+		choices.append(choice)
+	var offer := RunNodeOffer.new(
+		token, StringName(payload.get(&"offer_id", &"")),
+		int(payload.get(&"floor_number", 0)), int(payload.get(&"choice_wave_index", 0)), choices
+	)
+	return offer if offer.is_valid() else null
+
+
+func _snapshot_upgrade_offer(offer: UpgradeOffer) -> Dictionary:
+	if offer == null or offer.consumed:
+		return {}
+	var candidates: Array[Dictionary] = []
+	for candidate: UpgradeCandidate in offer.candidates():
+		if candidate.item == null or candidate.item.id.is_empty():
+			return {}
+		candidates.append({
+			&"candidate_id": candidate.candidate_id,
+			&"item_id": StringName(candidate.item.id),
+			&"expected_level": candidate.expected_level,
+		})
+	return {&"offer_id": offer.offer_id, &"candidates": candidates}
+
+
+func _upgrade_matches_snapshot(offer: UpgradeOffer, payload: Dictionary) -> bool:
+	if offer == null or offer.offer_id != StringName(payload.get(&"offer_id", &"")) \
+			or not payload.get(&"candidates") is Array:
+		return false
+	var saved := payload[&"candidates"] as Array
+	var current := offer.candidates()
+	if saved.size() != current.size():
+		return false
+	for index: int in current.size():
+		if not saved[index] is Dictionary:
+			return false
+		var data := saved[index] as Dictionary
+		var candidate: UpgradeCandidate = current[index]
+		if candidate == null or candidate.item == null \
+				or candidate.candidate_id != StringName(data.get(&"candidate_id", &"")) \
+				or candidate.item.id != String(data.get(&"item_id", "")) \
+				or candidate.expected_level != int(data.get(&"expected_level", 0)):
+			return false
+	return true
 
 
 func _on_battle_completed(token: RunFlowToken, battle_id: StringName, plan: BattlePlan) -> void:

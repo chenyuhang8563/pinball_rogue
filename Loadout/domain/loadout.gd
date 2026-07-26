@@ -201,7 +201,7 @@ func restore(state: Dictionary) -> bool:
 
 func revision() -> int:
 	var state := {
-		&"owned": _item_instance_keys(_owned_items),
+		&"owned": _item_identity_keys(_owned_items),
 		&"chain_revision": int(_marble_loadout.call("revision")),
 	}
 	return state.hash()
@@ -300,13 +300,13 @@ func _identity_key(item: Item) -> String:
 		return "type:%d:path:%s" % [int(item.type), item.resource_path]
 	if item.effect_type != Item.EffectType.NONE:
 		return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
-	return "type:%d:instance:%d" % [int(item.type), item.get_instance_id()]
+	return "type:%d:anonymous:%s:%d" % [int(item.type), item.title, int(item.rarity)]
 
 
-func _item_instance_keys(items: Array[Item]) -> Array[String]:
+func _item_identity_keys(items: Array[Item]) -> Array[String]:
 	var result: Array[String] = []
 	for item: Item in items:
-		result.append("%s@%d" % [_identity_key(item), item.get_instance_id()])
+		result.append(_identity_key(item))
 	return result
 
 

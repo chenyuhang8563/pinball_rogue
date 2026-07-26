@@ -64,6 +64,32 @@ func test_skill_controller_lifecycle_reconfigure_disconnects_old_run_flow() -> v
 	controller.free()
 
 
+# 问题来源：进入下一场战斗后，玩家观察到技能使用次数没有恢复为最大值。
+# 修复边界：已消耗多个次数且正在充能的技能，也必须在 battle_started 时恢复满次数与满进度。
+func test_skill_controller_restores_all_charges_when_a_battle_starts() -> void:
+	var controller := SkillController.new()
+	var flow := RunFlowController.new()
+	add_child_autofree(controller)
+	add_child_autofree(flow)
+	controller.runtime = SkillRuntime.new(3, 5.0)
+	assert_true(controller.runtime.try_consume_charge())
+	assert_true(controller.runtime.try_consume_charge())
+	controller.runtime.advance_recharge(2.5)
+	var token := RunFlowToken.new(1, 1, 1)
+	var group := BattleGroupDef.new()
+	group.id = "charge_reset"
+	var plan := BattlePlan.new(
+		&"charge_reset", group, BattlePlan.Origin.NODE, BattlePlan.RewardPolicy.NORMAL
+	)
+
+	assert_true(controller.configure_lifecycle(flow))
+	flow.battle_started.emit(token, plan)
+
+	assert_eq(controller.get_current_charges(), 3)
+	assert_eq(controller.get_max_charges(), 3)
+	assert_eq(controller.get_recharge_progress(), 1.0)
+
+
 func test_main_consumes_gateway_marble_output_and_disconnects_it_explicitly() -> void:
 	var main := MainScene.instantiate()
 	var gateway := BattleGateway.new()

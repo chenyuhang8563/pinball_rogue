@@ -358,6 +358,9 @@ func disconnect_lifecycle() -> void:
 
 func _on_battle_started(_token: RunFlowToken, _plan: BattlePlan) -> void:
 	cancel_active_skill("battle_started")
+	if runtime != null:
+		runtime.restore_full_charges()
+		_emit_runtime_changed()
 	clear_projectiles()
 	_clear_dash_damage_bonus()
 

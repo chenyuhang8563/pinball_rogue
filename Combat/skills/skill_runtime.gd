@@ -31,6 +31,13 @@ func try_consume_charge() -> bool:
 	return true
 
 
+func restore_full_charges() -> void:
+	current_charges = max_charges
+	recharge_elapsed = 0.0
+	charges_changed.emit(current_charges, max_charges)
+	recharge_progress_changed.emit(get_recharge_progress())
+
+
 func advance_recharge(delta: float) -> bool:
 	if current_charges >= max_charges or delta <= 0.0:
 		return false
@@ -51,4 +58,3 @@ func get_recharge_progress() -> float:
 	if current_charges >= max_charges:
 		return 1.0
 	return clampf(recharge_elapsed / recharge_time, 0.0, 1.0)
-
