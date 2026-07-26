@@ -105,7 +105,7 @@ func configure(
 	_configured = _node_policy.configure(_factory, _floor_config, _random) \
 		and _reward_flow.configure(reward_service) \
 		and _event_flow.configure(event_resolver, _factory, _floor_config, _random) \
-		and _upgrade_service.configure(run_scope.loadout, run_scope.progression) \
+		and _upgrade_service.configure(run_scope.loadout, run_scope.progression, run_scope.wallet) \
 		and _battle_flow.configure(battle_gateway)
 	if not _configured or not _health.has_signal(&"changed"):
 		_configured = false

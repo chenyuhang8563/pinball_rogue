@@ -16,6 +16,7 @@ UI_SHOP_REFRESH_FREE,Free,免费
 UI_SHOP_REFRESH_COST,Refresh: %d Gold,刷新：%d 金币
 UI_SHOP_REFRESH_INSUFFICIENT,Not enough Gold to refresh.,金币不足，无法刷新
 UI_OK,OK,确定
+UI_BACK,Back,返回
 UI_LANGUAGE_CHINESE,中文,中文
 UI_LANGUAGE_ENGLISH,English,English
 UI_CHOOSE_NEXT_NODE_TITLE,Choose Next Node,选择下个节点
@@ -26,6 +27,7 @@ UI_UPGRADE_MARBLE_DESC,Choose one marble to upgrade.,选择一个弹珠进行升
 UI_UPGRADE_INVENTORY_TITLE,Choose an Item to Upgrade,选择一个物品升级
 UI_UPGRADE_ITEM_CONFIRM,Upgrade %s?,确认升级 %s？
 UI_UPGRADE_ITEM_UNAVAILABLE,%s is already at maximum level.,%s 已达到最高等级，无法升级。
+UI_UPGRADE_ALL_MAX_COMPENSATION,"No items can be upgraded. You will receive %d Gold. Confirm?",无法升级，将给予金币（%d），是否确认？
 UI_RELIC_TYPE,Relic,遗物
 UI_MARBLE_TYPE,Marble,弹珠
 UI_EMPTY,Empty,空

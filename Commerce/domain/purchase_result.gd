@@ -16,6 +16,7 @@ enum Code {
 	INVALID_PAYMENT,
 	COMMIT_FAILED,
 	ROLLBACK_FAILED,
+	LAST_MARBLE,
 }
 
 var code: Code = Code.SUCCESS

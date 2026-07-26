@@ -93,7 +93,7 @@ func build_chain(items: Array[Item], spawn_positions: Array[Vector2]) -> void:
 	add_child(_body_container)
 
 	# Head
-	head = _create_head(_get_spawn_position(spawn_positions, 0))
+	head = _create_head(items[0], _get_spawn_position(spawn_positions, 0))
 	add_child(head)
 
 	# Body 段
@@ -146,11 +146,15 @@ func _clear_chain() -> void:
 
 
 ## 创建 Head（唯一 RigidBody2D）。
-func _create_head(spawn_pos: Vector2) -> Marble:
+func _create_head(item: Item, spawn_pos: Vector2) -> Marble:
 	var instance: Node = _head_scene.instantiate()
 	var marble: Marble = instance as Marble
 	marble.global_position = spawn_pos
-	marble.marble_type = Marble.MARBLE_TYPE.DEFAULT
+	marble.marble_type = item.marble_type
+	marble.damage = item.marble_segment_damage
+	var sprite_node: Sprite2D = marble.get_node_or_null("Sprite2D") as Sprite2D
+	if sprite_node != null and item.icon != null:
+		sprite_node.texture = item.icon
 	marble.is_head = true
 	return marble
 

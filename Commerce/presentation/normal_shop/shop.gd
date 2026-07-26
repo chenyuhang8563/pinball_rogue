@@ -364,6 +364,8 @@ func _handle_failed_result(result: RefCounted) -> void:
 				_set_presentation_offers([])
 		PurchaseResultScript.Code.ROLLBACK_FAILED:
 			_set_presentation_offers([])
+		PurchaseResultScript.Code.LAST_MARBLE:
+			pass
 		PurchaseResultScript.Code.OFFER_CONSUMED:
 			_sync_presentation_from_session()
 		PurchaseResultScript.Code.UNKNOWN_OFFER, PurchaseResultScript.Code.NOT_CONFIGURED:

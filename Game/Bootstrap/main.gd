@@ -7,6 +7,7 @@ const DefaultBattleRewardConfig: BattleRewardConfig = preload(
 )
 const DefaultRunFloorConfig: RunFloorConfig = preload("res://Run/data/default_run_floor_config.tres")
 const DebugGrantServiceScript: GDScript = preload("res://Game/Debug/debug_grant_service.gd")
+const MAIN_MENU_SCENE: String = "res://UI/MainMenu/main_menu.tscn"
 
 @onready var marbles: Node2D = $Marbles
 @onready var skill_controller: SkillController = $SkillController
@@ -48,6 +49,8 @@ var normal_shop: Control = null
 var battle_hud: BattleHud = null
 var inventory_panel: InventoryPanel = null
 var run_failure_panel: RunFailurePanel = null
+var pause_panel: PausePanel = null
+var settings_panel: SettingsPanel = null
 var debug_grant_service: RefCounted = null
 var _active_skill_blocking_panels: Array[Node] = []
 var _gateway_marble_fell_callable: Callable = Callable()
@@ -408,6 +411,8 @@ func _dispose_run_flow_composition() -> void:
 	battle_hud = null
 	inventory_panel = null
 	run_failure_panel = null
+	pause_panel = null
+	settings_panel = null
 
 	if run_flow_controller != null and is_instance_valid(run_flow_controller):
 		if run_flow_controller.is_inside_tree():
@@ -582,11 +587,12 @@ func _setup_run_flow(
 	battle_hud = ui_layer.get_node_or_null("BattleHud") as BattleHud
 	run_failure_panel = ui_layer.get_node_or_null("RunFailurePanel") as RunFailurePanel
 	inventory_panel = get_node_or_null("InventoryPanel") as InventoryPanel
-	var pause_panel: Node = ui_layer.get_node_or_null("PausePanel")
+	pause_panel = ui_layer.get_node_or_null("PausePanel") as PausePanel
+	settings_panel = ui_layer.get_node_or_null("SettingsPanel") as SettingsPanel
 	if node_choice_panel == null or draft_reward_panel == null or run_event_panel == null \
 			or devil_shop == null or normal_shop == null or battle_hud == null \
 			or run_failure_panel == null or inventory_panel == null \
-			or pause_panel == null or active_skill_slot == null:
+			or pause_panel == null or settings_panel == null or active_skill_slot == null:
 		return _rollback_run_flow_startup()
 
 	if not bool(normal_shop.call("configure", run_scope.loadout, run_scope.progression, run_scope.wallet)) \
@@ -622,6 +628,11 @@ func _setup_run_flow(
 	_sync_battle_hud_gold()
 	_connect_wallet_changed()
 	_connect_once(run_flow_controller, &"run_failed", Callable(self, "_on_run_failed"))
+	_connect_once(run_flow_controller, &"terminal_acknowledged", Callable(self, "_on_terminal_acknowledged"))
+	_connect_once(pause_panel, &"settings_requested", Callable(self, "_on_pause_settings_requested"))
+	_connect_once(settings_panel, &"continue_requested", Callable(self, "_on_settings_continue_requested"))
+	_connect_once(settings_panel, &"back_requested", Callable(self, "_on_settings_back_requested"))
+	_connect_once(settings_panel, &"exit_requested", Callable(self, "_on_settings_exit_requested"))
 	if not run_flow_controller.start_run():
 		return _rollback_run_flow_startup()
 	return true
@@ -673,6 +684,7 @@ func _connect_active_skill_panel_blockers() -> void:
 	for panel_path: NodePath in [
 		^"DebugCanvasLayer/DebugGrantPanel",
 		^"CanvasLayer/PausePanel",
+		^"CanvasLayer/SettingsPanel",
 		^"CanvasLayer/RunFailurePanel",
 		^"CanvasLayer/NodeChoicePanel",
 		^"CanvasLayer/DraftRewardPanel",
@@ -722,6 +734,40 @@ func _on_run_failed(_token: RunFlowToken, _reason: StringName) -> void:
 	if marble_chain != null and is_instance_valid(marble_chain):
 		marble_chain.queue_free()
 	marble_chain = null
+
+
+func _on_terminal_acknowledged(_token: RunFlowToken, _phase: RunState.Phase) -> void:
+	get_tree().paused = false
+	call_deferred(&"_return_to_main_menu")
+
+
+func _return_to_main_menu() -> void:
+	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+
+
+func _on_pause_settings_requested() -> void:
+	if pause_panel == null or settings_panel == null:
+		return
+	pause_panel.hide_for_settings()
+	settings_panel.present(true)
+
+
+func _on_settings_continue_requested() -> void:
+	if settings_panel != null:
+		settings_panel.dismiss()
+	if pause_panel != null:
+		pause_panel.close_pause()
+
+
+func _on_settings_back_requested() -> void:
+	if settings_panel != null:
+		settings_panel.dismiss()
+	if pause_panel != null:
+		pause_panel.reopen_from_settings()
+
+
+func _on_settings_exit_requested() -> void:
+	get_tree().quit()
 
 
 func _sync_battle_hud_gold() -> void:

@@ -201,6 +201,23 @@ func test_shop_channels_use_registry_and_one_shared_random_source() -> void:
 	assert_eq(devil.get("_content_registry"), registry)
 
 
+func test_normal_shop_keeps_scene_pool_when_registry_has_no_items() -> void:
+	# 问题来源：导出版本中商店未显示任何商品，空注册表曾直接清空场景内商品池。
+	# 修复边界：仅注册表查询为空时回退；有注册表商品时仍应由注册表决定货源。
+	var empty_registry := ChannelRegistry.new()
+	autofree(empty_registry)
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout)
+	var wallet: RefCounted = WalletScript.new(1000)
+	var session: RefCounted = NormalSessionScript.new()
+	assert_true(session.call("configure", loadout, progression, wallet, RandomSourceScript.new(7), empty_registry))
+	var scene_pool_item := _item(&"scene_pool_fallback", Item.ItemType.RELIC)
+
+	var offers: Array = session.call("regenerate", [scene_pool_item], 6)
+
+	assert_eq(_offer_ids(offers), ["scene_pool_fallback"])
+
+
 func test_restore_rejects_snapshot_that_exceeds_current_capacity() -> void:
 	_relic_capacity = 2
 	var loadout: RefCounted = LoadoutScript.new(Callable(self, "_capacity"))

@@ -45,7 +45,9 @@ func regenerate(candidates: Array, max_offers: int = 6) -> Array:
 		return []
 	var source_candidates: Array = candidates
 	if _content_registry != null:
-		source_candidates = _registry_candidates()
+		var registry_candidates := _registry_candidates()
+		if not registry_candidates.is_empty():
+			source_candidates = registry_candidates
 	var available: Array = []
 	for value: Variant in source_candidates:
 		var candidate := value as Item

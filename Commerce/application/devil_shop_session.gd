@@ -110,7 +110,9 @@ func _regenerate_offers(candidates: Array) -> Array:
 func _generate_offers(candidates: Array) -> Array:
 	var source_candidates: Array = candidates
 	if _content_registry != null:
-		source_candidates = _registry_candidates()
+		var registry_candidates := _registry_candidates()
+		if not registry_candidates.is_empty():
+			source_candidates = registry_candidates
 	var eligible := _eligible_items(source_candidates)
 	var generated: Array = []
 	var stock_count := maxi(0, int(_config.get("stock_count")))

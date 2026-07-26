@@ -237,7 +237,12 @@ func test_upgrade_available_and_unavailable_routes_use_typed_revisions() -> void
 			assert_true(controller.select_upgrade(offer.token, offer.offer_id, candidate.candidate_id))
 			assert_eq(int(scope.progression.call("level_of", item)), 2)
 		else:
+			var balance_before := int(scope.wallet.call("balance"))
 			assert_true(controller.acknowledge_upgrade_unavailable(offer.token, offer.offer_id))
+			assert_eq(
+				int(scope.wallet.call("balance")),
+				balance_before + RunUpgradeService.COMPENSATION_GOLD
+			)
 		assert_eq(controller.current_state().floor_number, 3)
 
 

@@ -131,7 +131,7 @@ func _wire_ui_intents() -> bool:
 		) \
 		and _connect(_normal_shop, &"shop_close_intent", _on_shop_close_intent) \
 		and _connect(_devil_shop, &"shop_close_intent", _on_shop_close_intent) \
-		and _connect(_failure_panel, &"restart_intent", _on_restart_intent)
+		and _connect(_failure_panel, &"terminal_acknowledge_intent", _on_terminal_acknowledge_intent)
 
 
 func _connect(source: Object, signal_name: StringName, callable: Callable) -> bool:
@@ -285,11 +285,6 @@ func _on_upgrade_unavailable_intent(token: RunFlowToken, offer_id: StringName) -
 
 func _on_shop_close_intent(token: RunFlowToken, shop_kind: StringName) -> void:
 	_controller.close_shop(token, shop_kind)
-
-
-func _on_restart_intent(token: RunFlowToken) -> void:
-	if _controller.restart_run(token):
-		_failure_panel.clear_presentation()
 
 
 func _clear_presentations() -> void:

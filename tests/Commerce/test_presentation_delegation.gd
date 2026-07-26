@@ -75,7 +75,9 @@ func test_selling_item_does_not_refresh_shop_offers() -> void:
 	var wallet: RefCounted = scope.get("wallet") as RefCounted
 	var dark_marble: Item = (load("res://Content/data/dark_marble.tres") as Item).duplicate(true) as Item
 	var bomb_marble: Item = (load("res://Content/data/bomb_marble.tres") as Item).duplicate(true) as Item
+	var green_marble: Item = (load("res://Content/data/green_marble.tres") as Item).duplicate(true) as Item
 	assert_true(loadout.call("add", dark_marble))
+	assert_true(loadout.call("add", green_marble))
 
 	var shop_scene: PackedScene = load("res://Commerce/presentation/normal_shop/shop.tscn") as PackedScene
 	var shop: Control = autofree(shop_scene.instantiate()) as Control
@@ -106,6 +108,36 @@ func test_selling_item_does_not_refresh_shop_offers() -> void:
 
 	var shop_container := shop.get("shop_container") as GridContainer
 	assert_eq(shop_container.get_child_count(), 1)
+
+
+func test_selling_last_marble_keeps_shop_state_unchanged() -> void:
+	# 问题来源：右键出售唯一弹珠应被拒绝，但旧失败码会清空商店报价。
+	# 修复方式与边界：唯一的非默认弹珠也不可出售，且失败不改变报价、金币或弹珠持有状态。
+	var scope := _scope(100, 20)
+	var loadout: RefCounted = scope.get("loadout") as RefCounted
+	var progression: RefCounted = scope.get("progression") as RefCounted
+	var wallet: RefCounted = scope.get("wallet") as RefCounted
+	var only_bomb: Item = (load("res://Content/data/bomb_marble.tres") as Item).duplicate(true) as Item
+	var offered_marble: Item = (load("res://Content/data/green_marble.tres") as Item).duplicate(true) as Item
+	assert_true(loadout.call("add", only_bomb))
+
+	var shop_scene: PackedScene = load("res://Commerce/presentation/normal_shop/shop.tscn") as PackedScene
+	var shop: Control = autofree(shop_scene.instantiate()) as Control
+	shop_scene = null
+	assert_true(shop.call("configure", loadout, progression, wallet))
+	shop.set("shop_item_pool", [offered_marble])
+	add_child(shop)
+	shop.call("refresh_shop_inventory")
+	await get_tree().process_frame
+	var offers_before: Array = (shop.get("shop_offers") as Array).duplicate()
+
+	assert_false(shop.call("sell_item", only_bomb))
+
+	var offers_after: Array = shop.get("shop_offers") as Array
+	assert_eq(offers_after.size(), offers_before.size())
+	assert_eq(StringName(offers_after[0].get("offer_id")), StringName(offers_before[0].get("offer_id")))
+	assert_eq(loadout.call("find_owned", only_bomb), only_bomb)
+	assert_eq(int(wallet.call("balance")), 100)
 
 
 func test_full_relic_capacity_keeps_offer_and_shows_relic_full_hint() -> void:

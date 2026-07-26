@@ -11,6 +11,34 @@ const DevilShopConfigScript: GDScript = preload("res://Commerce/domain/devil_sho
 const ShopRefreshResultScript: GDScript = preload("res://Commerce/domain/shop_refresh_result.gd")
 
 
+class EmptyContentRegistry extends Node:
+	func query(_item_type: Item.ItemType) -> Array[Item]:
+		return []
+
+
+func test_open_keeps_config_pool_when_registry_has_no_items() -> void:
+	# 问题来源：打包版恶魔商店无商品，空注册表曾覆盖配置中的已打包商品池。
+	# 修复边界：仅注册表没有遗物时回退；有遗物时仍优先使用注册表货源。
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(100)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var empty_registry: Node = EmptyContentRegistry.new()
+	autofree(empty_registry)
+	var session: RefCounted = DevilShopSessionScript.new()
+	assert_true(session.call("configure", inventory, progression, wallet, health, null, empty_registry))
+	var config := _refresh_config()
+	var config_pool_item := _make_item("devil_config_pool_fallback", Item.ItemType.RELIC, 10)
+
+	var offers: Array = session.call("open", config, [config_pool_item])
+	var offer_item_ids: Array[String] = []
+	for offer: Variant in offers:
+		offer_item_ids.append(String(offer.item.id))
+
+	assert_eq(offers.size(), 1)
+	assert_eq(offer_item_ids, ["devil_config_pool_fallback"])
+
+
 func test_refresh_uses_normal_shop_cost_progression_and_only_debits_gold() -> void:
 	var inventory: RefCounted = FakeInventoryScript.new()
 	var progression: RefCounted = FakeProgressionScript.new()

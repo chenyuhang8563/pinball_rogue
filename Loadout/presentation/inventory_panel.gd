@@ -10,6 +10,7 @@ signal upgrade_unavailable_intent(token: RunFlowToken, offer_id: StringName)
 
 const ItemLevelResolverScript: GDScript = preload("res://Loadout/presentation/item_level_resolver.gd")
 const RarityStyleResolverScript: GDScript = preload("res://UI/shared/rarity_style_resolver.gd")
+const RunUpgradeServiceScript: GDScript = preload("res://Run/application/run_upgrade_service.gd")
 
 @export var toggle_action: StringName = &"toggle_inventory"
 @export var skill_slot_count: int = 1
@@ -91,13 +92,6 @@ func is_open() -> bool:
 
 func close_inventory() -> void:
 	if _upgrade_selection_active:
-		if _active_upgrade_offer != null and _active_upgrade_offer.unavailable \
-				and not _upgrade_intent_sent:
-			_upgrade_intent_sent = true
-			upgrade_unavailable_intent.emit(
-				_active_upgrade_offer.token,
-				_active_upgrade_offer.offer_id
-			)
 		return
 	mode = MODE.OFF
 
@@ -110,6 +104,8 @@ func present_upgrade_offer(offer: UpgradeOffer) -> bool:
 	_upgrade_selection_active = true
 	mode = MODE.ON
 	_set_upgrade_title()
+	if offer.unavailable and _upgrade_dialog != null:
+		_upgrade_dialog.request_upgrade_compensation(RunUpgradeServiceScript.COMPENSATION_GOLD)
 	return true
 
 
@@ -281,6 +277,8 @@ func _setup_upgrade_dialog() -> void:
 	_upgrade_dialog = get_node_or_null("UI/SkillReplaceDialog") as SkillReplaceDialog
 	if _upgrade_dialog != null and not _upgrade_dialog.upgrade_confirmed.is_connected(_on_upgrade_confirmed):
 		_upgrade_dialog.upgrade_confirmed.connect(_on_upgrade_confirmed)
+	if _upgrade_dialog != null and not _upgrade_dialog.upgrade_compensation_confirmed.is_connected(_on_upgrade_compensation_confirmed):
+		_upgrade_dialog.upgrade_compensation_confirmed.connect(_on_upgrade_compensation_confirmed)
 
 
 func _reset_upgrade_dialog() -> void:
@@ -299,6 +297,16 @@ func _on_upgrade_confirmed(item: Item) -> void:
 		_active_upgrade_offer.token,
 		_active_upgrade_offer.offer_id,
 		candidate.candidate_id
+	)
+
+
+func _on_upgrade_compensation_confirmed() -> void:
+	if _active_upgrade_offer == null or not _active_upgrade_offer.unavailable or _upgrade_intent_sent:
+		return
+	_upgrade_intent_sent = true
+	upgrade_unavailable_intent.emit(
+		_active_upgrade_offer.token,
+		_active_upgrade_offer.offer_id
 	)
 
 

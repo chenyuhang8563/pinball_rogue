@@ -26,6 +26,14 @@ func can_add(_item: Item) -> bool:
 	return capacity_available
 
 
+func marbles() -> Array[Item]:
+	var result: Array[Item] = []
+	for item: Item in items:
+		if item.type == Item.ItemType.MARBLE:
+			result.append(item)
+	return result
+
+
 func add(item: Item) -> bool:
 	if add_failure == BEFORE_MUTATION:
 		return false
