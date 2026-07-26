@@ -122,12 +122,22 @@ func _wire_ui_intents() -> bool:
 			&"reward_replacement_intent",
 			_on_reward_replacement_intent
 		) \
+		and _connect(
+			_reward_panel,
+			&"relic_replacement_selection_requested",
+			_on_relic_replacement_selection_requested
+		) \
 		and _connect(_event_panel, &"event_intent", _on_event_intent) \
 		and _connect(_inventory_panel, &"upgrade_intent", _on_upgrade_intent) \
 		and _connect(
 			_inventory_panel,
 			&"upgrade_unavailable_intent",
 			_on_upgrade_unavailable_intent
+		) \
+		and _connect(
+			_inventory_panel,
+			&"relic_replacement_intent",
+			_on_relic_replacement_intent
 		) \
 		and _connect(_normal_shop, &"shop_close_intent", _on_shop_close_intent) \
 		and _connect(_devil_shop, &"shop_close_intent", _on_shop_close_intent) \
@@ -158,6 +168,7 @@ func _on_reward_presented(offer: RewardOffer) -> void:
 
 
 func _on_reward_resolved(result: RewardResult) -> void:
+	_inventory_panel.finish_relic_replacement_selection()
 	_reward_panel.apply_result(result, _controller.current_reward_offer())
 
 
@@ -259,6 +270,21 @@ func _on_reward_replacement_intent(
 		_controller.cancel_reward_replacement(token, replacement_token)
 
 
+func _on_relic_replacement_selection_requested(
+	token: RunFlowToken,
+	replacement_token: StringName
+) -> void:
+	_inventory_panel.present_relic_replacement(token, replacement_token)
+
+
+func _on_relic_replacement_intent(
+	token: RunFlowToken,
+	replacement_token: StringName,
+	replaced_relic: Item
+) -> void:
+	_controller.confirm_reward_replacement(token, replacement_token, replaced_relic)
+
+
 func _on_event_intent(
 	token: RunFlowToken,
 	event_id: StringName,
@@ -296,6 +322,7 @@ func _clear_presentations() -> void:
 		_event_panel.clear_presentation()
 	if _inventory_panel != null and is_instance_valid(_inventory_panel):
 		_inventory_panel.finish_upgrade_selection()
+		_inventory_panel.finish_relic_replacement_selection()
 	if _normal_shop != null and is_instance_valid(_normal_shop) \
 			and _normal_shop.has_method(&"clear_run_presentation"):
 		_normal_shop.call("clear_run_presentation")
@@ -310,6 +337,7 @@ func _clear_transient_presentations() -> void:
 	_reward_panel.clear_presentation()
 	_event_panel.clear_presentation()
 	_inventory_panel.finish_upgrade_selection()
+	_inventory_panel.finish_relic_replacement_selection()
 	if _normal_shop.has_method(&"clear_run_presentation"):
 		_normal_shop.call("clear_run_presentation")
 	_devil_shop.clear_run_presentation()

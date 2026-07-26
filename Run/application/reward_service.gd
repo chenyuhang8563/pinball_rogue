@@ -90,7 +90,7 @@ func configure(
 	_random_source = random_source
 	_content_registry = content_registry
 	_configured = _has_api(_loadout, [
-		&"find_owned", &"can_add", &"add", &"replace_skill", &"current_skill",
+		&"find_owned", &"can_add", &"add", &"replace_skill", &"replace_relic", &"current_skill",
 		&"revision", &"snapshot", &"restore",
 	]) and _has_api(_progression, [
 		&"level_of", &"can_upgrade", &"upgrade_one", &"reset_skill",
@@ -256,27 +256,21 @@ func create_normal_draft(
 			)
 	marbles = _eligible_pool(marbles, Item.ItemType.MARBLE, false)
 	skills = _eligible_pool(skills, Item.ItemType.SKILL, false)
-	var categories: Array[Dictionary] = [{
-		&"kind": &"gold",
-		&"weight": _config.gold_weight,
-		&"items": [],
-	}]
+	var categories: Array[Dictionary] = []
 	if not marbles.is_empty():
 		categories.append({&"kind": &"marble", &"weight": _config.marble_weight, &"items": marbles})
 	if not skills.is_empty():
 		categories.append({&"kind": &"skill", &"weight": _config.skill_weight, &"items": skills})
-	var options: Array[RewardOption] = []
+	# 普通战斗的金币为固定奖励；权重只决定第二个物品奖励的类别。
+	var options: Array[RewardOption] = [_make_gold_option(_normal_gold_amount())]
 	while options.size() < 2 and not categories.is_empty():
 		var category_index := _weighted_category_index(categories)
 		if category_index < 0:
 			category_index = 0
 		var category: Dictionary = categories.pop_at(category_index)
-		if StringName(category[&"kind"]) == &"gold":
-			options.append(_make_gold_option(_normal_gold_amount()))
-		else:
-			var category_items: Array[Item] = category[&"items"]
-			var item := _take_weighted(category_items)
-			options.append(_make_item_option(item, _resolution_for_item(item, false)))
+		var category_items: Array[Item] = category[&"items"]
+		var item := _take_weighted(category_items)
+		options.append(_make_item_option(item, _resolution_for_item(item, false)))
 	return _install_draft(
 		token, BattlePlan.RewardPolicy.NORMAL, source_id,
 		RewardOfferScript.Mode.NORMAL_EXCLUSIVE, options
@@ -349,7 +343,10 @@ func claim(token: RunFlowToken, draft_id: StringName, offer_id: StringName) -> R
 	var state_validation := _validate_option_state(option)
 	if state_validation != RewardResult.Code.GRANTED:
 		return _failure(state_validation, option, _validation_detail)
-	if option.resolution == RewardOptionScript.Resolution.REPLACE_SKILL:
+	if option.resolution in [
+		RewardOptionScript.Resolution.REPLACE_SKILL,
+		RewardOptionScript.Resolution.REPLACE_RELIC,
+	]:
 		return _request_replacement(option)
 	return _commit_option(option)
 
@@ -362,7 +359,11 @@ func settle(token: RunFlowToken, draft_id: StringName, offer_id: StringName) -> 
 	return claim(token, draft_id, offer_id)
 
 
-func confirm_replacement(token: RunFlowToken, replacement_token: StringName) -> RewardResult:
+func confirm_replacement(
+	token: RunFlowToken,
+	replacement_token: StringName,
+	replacement_target: Item = null
+) -> RewardResult:
 	var validation := _validate_replacement(token, replacement_token)
 	if validation != null:
 		return validation
@@ -371,13 +372,27 @@ func confirm_replacement(token: RunFlowToken, replacement_token: StringName) -> 
 	var state_validation := _validate_option_state(option)
 	if state_validation != RewardResult.Code.GRANTED:
 		return _failure(state_validation, option, _validation_detail)
-	var previous_skill := _loadout.call("current_skill") as Item
 	_settling = true
 	var transaction: RefCounted = RewardTransactionScript.new([_loadout, _progression, _wallet])
-	var replacement_steps: Array[Callable] = [
-		Callable(_loadout, "replace_skill").bind(option.item),
-		Callable(_progression, "reset_skill").bind(previous_skill.id),
-	]
+	var replacement_steps: Array[Callable] = []
+	if option.resolution == RewardOptionScript.Resolution.REPLACE_SKILL:
+		var previous_skill := _loadout.call("current_skill") as Item
+		replacement_steps = [
+			Callable(_loadout, "replace_skill").bind(option.item),
+			Callable(_progression, "reset_skill").bind(previous_skill.id),
+		]
+	elif option.resolution == RewardOptionScript.Resolution.REPLACE_RELIC:
+		var previous_relic := _loadout.call("find_owned", replacement_target) as Item
+		if previous_relic == null or previous_relic.type != Item.ItemType.RELIC:
+			_settling = false
+			return _failure(RewardResult.Code.OWNERSHIP_CHANGED, option, "replacement relic is not owned")
+		replacement_steps = [
+			Callable(_loadout, "replace_relic").bind(previous_relic, option.item),
+			Callable(_progression, "reset_item").bind(previous_relic),
+		]
+	else:
+		_settling = false
+		return _failure(RewardResult.Code.REJECTED, option, "replacement resolution is unsupported")
 	var committed := bool(transaction.call("execute", replacement_steps))
 	if not committed:
 		_settling = false
@@ -586,6 +601,11 @@ func _validate_option_state(option: RewardOption) -> RewardResult.Code:
 		var current_skill := _loadout.call("current_skill") as Item
 		if current_skill == null or _identity_key(current_skill) != option.expected_owned_identity:
 			return _invalid_option(RewardResult.Code.OWNERSHIP_CHANGED, "current skill ownership changed")
+	elif option.resolution == RewardOptionScript.Resolution.REPLACE_RELIC:
+		if owned != null:
+			return _invalid_option(RewardResult.Code.OWNERSHIP_CHANGED, "replacement reward is now owned")
+		if bool(_loadout.call("can_add", option.item)):
+			return RewardResult.Code.CAPACITY_CHANGED
 	return RewardResult.Code.GRANTED
 
 
@@ -609,11 +629,15 @@ func _request_replacement(option: RewardOption) -> RewardResult:
 
 
 func _replacement_required_result(option: RewardOption, replacement_token: StringName) -> RewardResult:
+	var is_relic_replacement := option != null \
+		and option.resolution == RewardOptionScript.Resolution.REPLACE_RELIC
 	return RewardResultScript.new(
 		_active_draft.token,
-		RewardResult.Code.SKILL_REPLACEMENT_REQUIRED,
+		RewardResult.Code.RELIC_REPLACEMENT_REQUIRED if is_relic_replacement \
+		else RewardResult.Code.SKILL_REPLACEMENT_REQUIRED,
 		option,
-		"skill slot replacement must be confirmed",
+		"relic slot replacement must be selected" if is_relic_replacement \
+		else "skill slot replacement must be confirmed",
 		_active_draft.draft_id,
 		option.offer_id,
 		replacement_token
@@ -756,6 +780,8 @@ func _resolution_for_item(item: Item, allow_compensation: bool) -> int:
 		return RewardOptionScript.Resolution.REPLACE_SKILL
 	if bool(_loadout.call("can_add", item)):
 		return RewardOptionScript.Resolution.ADD_ITEM
+	if item.type == Item.ItemType.RELIC:
+		return RewardOptionScript.Resolution.REPLACE_RELIC
 	return RewardOptionScript.Resolution.COMPENSATE if allow_compensation else -1
 
 

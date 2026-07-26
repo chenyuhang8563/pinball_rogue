@@ -12,6 +12,7 @@ enum Resolution {
 	UPGRADE_RELIC,
 	COMPENSATE,
 	REPLACE_SKILL,
+	REPLACE_RELIC,
 }
 
 var offer_id: StringName:

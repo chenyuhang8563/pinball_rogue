@@ -54,10 +54,14 @@ func select(token: RunFlowToken, draft_id: StringName, offer_id: StringName) -> 
 	return _service.claim(token, draft_id, offer_id)
 
 
-func confirm_replacement(token: RunFlowToken, replacement_token: StringName) -> RewardResult:
+func confirm_replacement(
+	token: RunFlowToken,
+	replacement_token: StringName,
+	replacement_target: Item = null
+) -> RewardResult:
 	if not _valid_replacement_intent(token, replacement_token):
 		return null
-	return _service.confirm_replacement(token, replacement_token)
+	return _service.confirm_replacement(token, replacement_token, replacement_target)
 
 
 func cancel_replacement(token: RunFlowToken, replacement_token: StringName) -> RewardResult:

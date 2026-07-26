@@ -11,6 +11,10 @@ signal reward_replacement_intent(
 	replacement_token: StringName,
 	confirmed: bool
 )
+signal relic_replacement_selection_requested(
+	token: RunFlowToken,
+	replacement_token: StringName
+)
 
 const RewardTooltipButtonScript: Script = preload("res://Run/presentation/reward_tooltip_button.gd")
 const CoinTexture: Texture2D = preload("res://Assets/Items/Coin.png")
@@ -79,10 +83,15 @@ func present_offer(offer: RewardOffer) -> bool:
 func present_replacement(result: RewardResult) -> bool:
 	if result == null or not result.replacement_required() or result.token == null \
 			or _active_offer == null or result.draft_id != _active_offer.draft_id \
-			or not _active_offer.token.matches(result.token) \
-			or _skill_replace_dialog == null or _loadout == null:
+			or not _active_offer.token.matches(result.token) or _skill_replace_dialog == null:
 		return false
 	var option: RewardOption = result.option
+	if option != null and option.resolution == RewardOption.Resolution.REPLACE_RELIC:
+		_pending_replacement = result
+		_skill_replace_dialog.request_relic_replace(option.item)
+		return true
+	if _loadout == null:
+		return false
 	var current_skill: Item = _loadout.call("current_skill") as Item
 	if option == null or option.item == null or current_skill == null:
 		return false
@@ -132,6 +141,14 @@ func _on_button_pressed(index: int) -> void:
 
 
 func _on_skill_replace_confirmed(_item: Item) -> void:
+	if _pending_replacement != null and _pending_replacement.option != null \
+			and _pending_replacement.option.resolution == RewardOption.Resolution.REPLACE_RELIC:
+		var result: RewardResult = _pending_replacement
+		_pending_replacement = null
+		_intent_pending = true
+		_disable_buttons()
+		relic_replacement_selection_requested.emit(result.token, result.replacement_token)
+		return
 	_emit_replacement_intent(true)
 
 

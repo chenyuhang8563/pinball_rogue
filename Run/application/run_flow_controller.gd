@@ -279,12 +279,16 @@ func select_reward(token: RunFlowToken, draft_id: StringName, offer_id: StringNa
 	return _finish_command(handled)
 
 
-func confirm_reward_replacement(token: RunFlowToken, replacement_token: StringName) -> bool:
+func confirm_reward_replacement(
+	token: RunFlowToken,
+	replacement_token: StringName,
+	replacement_target: Item = null
+) -> bool:
 	if not _begin_command(CONFIRM_REPLACEMENT):
 		return false
 	if not _validate_source(CONFIRM_REPLACEMENT, token, RunState.Phase.REWARD_ACTIVE):
 		return _finish_command(false)
-	var result: RewardResult = _reward_flow.confirm_replacement(token, replacement_token)
+	var result: RewardResult = _reward_flow.confirm_replacement(token, replacement_token, replacement_target)
 	var handled := _handle_reward_result(CONFIRM_REPLACEMENT, result)
 	return _finish_command(handled)
 
@@ -602,7 +606,10 @@ func _on_battle_completed(token: RunFlowToken, battle_id: StringName, plan: Batt
 func _handle_reward_result(command: StringName, result: RewardResult) -> bool:
 	if result == null:
 		return _reject(command, _reward_flow.error_detail())
-	if result.code == RewardResult.Code.SKILL_REPLACEMENT_REQUIRED:
+	if result.code in [
+		RewardResult.Code.SKILL_REPLACEMENT_REQUIRED,
+		RewardResult.Code.RELIC_REPLACEMENT_REQUIRED,
+	]:
 		reward_replacement_requested.emit(result)
 		return true
 	if not result.was_granted():

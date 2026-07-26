@@ -88,6 +88,15 @@ func test_phase7_font_sizes_fallbacks_and_black_style_contracts() -> void:
 	) as Label
 	assert_eq(inventory_title.label_settings.font, composite_12)
 	assert_eq(skill_title.label_settings.font, composite_12)
+	var relic_selection_hint := main.get_node(
+		"InventoryPanel/UI/Panel/MarginContainer/Layout/RelicSelectionHint"
+	) as Label
+	assert_eq(relic_selection_hint.label_settings.font, composite_12)
+	var relic_selection_player := main.get_node("InventoryPanel/RelicSelectionModePlayer") as AnimationPlayer
+	assert_not_null(relic_selection_player)
+	if relic_selection_player != null:
+		assert_true(relic_selection_player.has_animation(&"normal"))
+		assert_true(relic_selection_player.has_animation(&"relic_selection"))
 
 	var charge := main.get_node("CanvasLayer/SkillSlot/ChargeLabel") as Label
 	assert_eq(charge.label_settings.font, composite_10)

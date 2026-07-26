@@ -17,6 +17,138 @@ border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.55, 0.53, 0.47, 1)
 
+[sub_resource type="Animation" id="Animation_f8byy"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("UI/Panel/MarginContainer/Layout/RelicSelectionHint:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [false]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/MarbleBox:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillLabel:modulate")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillBar:modulate")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/RelicBar:modulate")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_jp2uf"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("UI/Panel/MarginContainer/Layout/RelicSelectionHint:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [true]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/MarbleBox:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0.28)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillLabel:modulate")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0.28)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillBar:modulate")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0.28)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/RelicBar:modulate")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_uvg6b"]
+_data = {
+&"normal": SubResource("Animation_f8byy"),
+&"relic_selection": SubResource("Animation_jp2uf")
+}
+
 [node name="InventoryPanel" type="Control" unique_id=600384015 node_paths=PackedStringArray("marble_box_container", "relic_bar_container", "skill_bar_container")]
 process_mode = 3
 layout_direction = 1
@@ -74,6 +206,13 @@ text = "UI_INVENTORY_TITLE"
 label_settings = ExtResource("3_jc538")
 horizontal_alignment = 1
 
+[node name="RelicSelectionHint" type="Label" parent="UI/Panel/MarginContainer/Layout" unique_id=2061552169]
+layout_mode = 2
+text = "UI_RELIC_REPLACEMENT_SELECT"
+label_settings = ExtResource("3_jc538")
+horizontal_alignment = 1
+autowrap_mode = 3
+
 [node name="Content" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout" unique_id=980932436]
 layout_mode = 2
 size_flags_vertical = 3
@@ -123,3 +262,6 @@ grow_horizontal = 2
 grow_vertical = 2
 theme = ExtResource("1_cead4")
 script = ExtResource("8_jp2uf")
+
+[node name="RelicSelectionModePlayer" type="AnimationPlayer" parent="." unique_id=547740773]
+libraries/ = SubResource("AnimationLibrary_uvg6b")

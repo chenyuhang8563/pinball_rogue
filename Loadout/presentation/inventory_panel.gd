@@ -7,6 +7,11 @@ signal upgrade_intent(
 	candidate_id: StringName
 )
 signal upgrade_unavailable_intent(token: RunFlowToken, offer_id: StringName)
+signal relic_replacement_intent(
+	token: RunFlowToken,
+	replacement_token: StringName,
+	replaced_relic: Item
+)
 
 const ItemLevelResolverScript: GDScript = preload("res://Loadout/presentation/item_level_resolver.gd")
 const RarityStyleResolverScript: GDScript = preload("res://UI/shared/rarity_style_resolver.gd")
@@ -31,6 +36,10 @@ var mode: MODE = MODE.OFF:
 var _upgrade_selection_active: bool = false
 var _upgrade_intent_sent: bool = false
 var _active_upgrade_offer: UpgradeOffer = null
+var _relic_replacement_active: bool = false
+var _relic_replacement_intent_sent: bool = false
+var _relic_replacement_token: StringName = &""
+var _relic_replacement_flow_token: RunFlowToken = null
 var _upgrade_dialog: SkillReplaceDialog = null
 var _loadout: RefCounted = null
 var _progression: RefCounted = null
@@ -54,6 +63,10 @@ func unconfigure() -> void:
 	_active_upgrade_offer = null
 	_upgrade_intent_sent = false
 	_upgrade_selection_active = false
+	_relic_replacement_active = false
+	_relic_replacement_intent_sent = false
+	_relic_replacement_token = &""
+	_relic_replacement_flow_token = null
 	_loadout = null
 	_progression = null
 	mode = MODE.OFF
@@ -77,7 +90,7 @@ func _exit_tree() -> void:
 func _input(event: InputEvent) -> void:
 	if not _is_toggle_event(event):
 		return
-	if _upgrade_selection_active:
+	if _selection_active():
 		get_viewport().set_input_as_handled()
 		return
 
@@ -91,7 +104,7 @@ func is_open() -> bool:
 
 
 func close_inventory() -> void:
-	if _upgrade_selection_active:
+	if _selection_active():
 		return
 	mode = MODE.OFF
 
@@ -117,6 +130,28 @@ func finish_upgrade_selection() -> void:
 	mode = MODE.OFF
 
 
+func present_relic_replacement(token: RunFlowToken, replacement_token: StringName) -> bool:
+	if token == null or not token.is_valid() or replacement_token.is_empty() \
+			or _loadout == null or not is_instance_valid(_loadout):
+		return false
+	_relic_replacement_flow_token = token
+	_relic_replacement_token = replacement_token
+	_relic_replacement_intent_sent = false
+	_relic_replacement_active = true
+	mode = MODE.ON
+	return true
+
+
+func finish_relic_replacement_selection() -> void:
+	if not _relic_replacement_active:
+		return
+	_relic_replacement_active = false
+	_relic_replacement_intent_sent = false
+	_relic_replacement_token = &""
+	_relic_replacement_flow_token = null
+	mode = MODE.OFF
+
+
 func refresh_inventory() -> void:
 	if _loadout == null or not is_instance_valid(_loadout):
 		_update_collection_icons(marble_box_container, [])
@@ -139,14 +174,18 @@ func _apply_mode() -> void:
 	if mode == MODE.ON:
 		refresh_inventory()
 		ui_layer.show()
+		_play_relic_selection_mode(_relic_replacement_active)
 		if is_inside_tree():
 			get_tree().paused = true
 	else:
+		_play_relic_selection_mode(false)
 		ui_layer.hide()
 		if is_inside_tree():
 			get_tree().paused = false
 	if _upgrade_selection_active:
 		_set_upgrade_title()
+	elif _relic_replacement_active:
+		_set_relic_replacement_title()
 	else:
 		_apply_text()
 
@@ -165,6 +204,9 @@ func _apply_text() -> void:
 		exit_button.text = tr("UI_EXIT")
 		if not exit_button.pressed.is_connected(close_inventory):
 			exit_button.pressed.connect(close_inventory)
+	var relic_hint := get_node_or_null("UI/Panel/MarginContainer/Layout/RelicSelectionHint") as Label
+	if relic_hint != null:
+		relic_hint.text = tr("UI_RELIC_REPLACEMENT_SELECT")
 
 
 func _ensure_toggle_action() -> void:
@@ -259,12 +301,21 @@ func _connect_slot(slot: Node) -> void:
 
 
 func _on_slot_gui_input(event: InputEvent, slot: Node) -> void:
-	if not _upgrade_selection_active or not event is InputEventMouseButton:
+	if not (_upgrade_selection_active or _relic_replacement_active) or not event is InputEventMouseButton:
 		return
 	var mouse_event := event as InputEventMouseButton
 	if mouse_event.button_index != MOUSE_BUTTON_LEFT or not mouse_event.pressed or not slot.has_meta("item"):
 		return
 	var item: Item = slot.get_meta("item") as Item
+	if _relic_replacement_active:
+		if item == null or item.type != Item.ItemType.RELIC or _relic_replacement_intent_sent:
+			return
+		_relic_replacement_intent_sent = true
+		get_viewport().set_input_as_handled()
+		relic_replacement_intent.emit(
+			_relic_replacement_flow_token, _relic_replacement_token, item
+		)
+		return
 	var candidate: UpgradeCandidate = _candidate_for_item(item)
 	if item == null or candidate == null or _upgrade_intent_sent:
 		return
@@ -324,6 +375,24 @@ func _set_upgrade_title() -> void:
 	var title_label := get_node_or_null("UI/Panel/MarginContainer/Layout/Header/TitleLabel") as Label
 	if title_label != null:
 		title_label.text = tr("UI_UPGRADE_INVENTORY_TITLE")
+
+
+func _set_relic_replacement_title() -> void:
+	var title_label := get_node_or_null("UI/Panel/MarginContainer/Layout/Header/TitleLabel") as Label
+	if title_label != null:
+		title_label.text = tr("UI_RELIC_REPLACEMENT_TITLE")
+
+
+func _play_relic_selection_mode(active: bool) -> void:
+	var player := get_node_or_null("RelicSelectionModePlayer") as AnimationPlayer
+	if player == null:
+		return
+	player.play(&"relic_selection" if active else &"normal")
+	player.advance(0.0)
+
+
+func _selection_active() -> bool:
+	return _upgrade_selection_active or _relic_replacement_active
 
 
 func _get_skill_slot_sources() -> Array[Dictionary]:

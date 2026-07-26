@@ -33,6 +33,15 @@ func request_replace(current_skill: Item, new_skill: Item) -> void:
 	_confirm_button.grab_focus()
 
 
+func request_relic_replace(new_relic: Item) -> void:
+	_pending_skill = new_relic
+	_message_label.text = tr("UI_RELIC_REPLACEMENT_CONFIRM")
+	_confirm_button.text = tr("UI_CONFIRM")
+	_cancel_button.text = tr("UI_CANCEL")
+	_animation_player.play("show_dialog")
+	_confirm_button.grab_focus()
+
+
 func is_request_pending() -> bool:
 	return _pending_skill != null
 

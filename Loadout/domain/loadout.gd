@@ -146,6 +146,22 @@ func replace_skill(item: Item) -> bool:
 	return true
 
 
+func replace_relic(previous_relic: Item, item: Item) -> bool:
+	if previous_relic == null or item == null or previous_relic.type != Item.ItemType.RELIC \
+			or item.type != Item.ItemType.RELIC or contains(item):
+		return false
+	var owned_previous := find_owned(previous_relic)
+	if owned_previous == null:
+		return false
+	var index := _owned_items.find(owned_previous)
+	if index < 0:
+		return false
+	_owned_items[index] = item
+	item_added.emit(item)
+	changed.emit()
+	return true
+
+
 func current_skill() -> Item:
 	for item: Item in _owned_items:
 		if item.type == Item.ItemType.SKILL:
