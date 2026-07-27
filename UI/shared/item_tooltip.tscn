@@ -1,31 +1,103 @@
 [gd_scene format=3 uid="uid://bo3st3gtuqltq"]
 
-[ext_resource type="Script" uid="uid://cbmpx36u44gqt" path="res://UI/shared/item_tooltip.gd" id="1_fy46f"]
-[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_l8xvt"]
-[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="2_lk4ki"]
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_s1eqo"]
+[ext_resource type="Script" uid="uid://cbmpx36u44gqt" path="res://UI/shared/item_tooltip.gd" id="2_k8u7m"]
+[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="3_k8u7m"]
 
-[node name="ItemTooltip" type="PanelContainer" unique_id=361600324]
-mouse_filter = 2
-theme = ExtResource("1_l8xvt")
-script = ExtResource("1_fy46f")
+[sub_resource type="Animation" id="Animation_4s7wn"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("TermPanel:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [false]
+}
 
-[node name="TooltipMargin" type="MarginContainer" parent="." unique_id=242335024]
+[sub_resource type="Animation" id="Animation_7t7hx"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("TermPanel:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_t8oh4"]
+_data = {
+&"hide": SubResource("Animation_4s7wn"),
+&"show": SubResource("Animation_7t7hx")
+}
+
+[node name="ItemTooltip" type="VBoxContainer" unique_id=2712851]
+custom_minimum_size = Vector2(128, 0)
+theme = ExtResource("1_s1eqo")
+theme_override_constants/separation = 2
+script = ExtResource("2_k8u7m")
+
+[node name="MainPanel" type="PanelContainer" parent="." unique_id=445922472]
+layout_mode = 2
+
+[node name="TooltipMargin" type="MarginContainer" parent="MainPanel" unique_id=267329093]
 layout_mode = 2
 theme_override_constants/margin_left = 4
-theme_override_constants/margin_top = 2
+theme_override_constants/margin_top = 3
 theme_override_constants/margin_right = 4
-theme_override_constants/margin_bottom = 2
+theme_override_constants/margin_bottom = 3
 
-[node name="TooltipLayout" type="VBoxContainer" parent="TooltipMargin" unique_id=891858662]
+[node name="TooltipLayout" type="VBoxContainer" parent="MainPanel/TooltipMargin" unique_id=1978499225]
 layout_mode = 2
 theme_override_constants/separation = 2
 
-[node name="TooltipLabel" type="Label" parent="TooltipMargin/TooltipLayout" unique_id=172322631]
+[node name="TooltipLabel" type="Label" parent="MainPanel/TooltipMargin/TooltipLayout" unique_id=140920238]
 layout_mode = 2
-label_settings = ExtResource("2_lk4ki")
+label_settings = ExtResource("3_k8u7m")
 
-[node name="DescriptionLabel" type="Label" parent="TooltipMargin/TooltipLayout" unique_id=2027904439]
+[node name="DescriptionLabel" type="RichTextLabel" parent="MainPanel/TooltipMargin/TooltipLayout" unique_id=768863726]
 custom_minimum_size = Vector2(120, 0)
 layout_mode = 2
-label_settings = ExtResource("2_lk4ki")
-autowrap_mode = 3
+bbcode_enabled = true
+scroll_active = false
+meta_underlined = false
+
+[node name="TermPanel" type="PanelContainer" parent="." unique_id=1032625005]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+
+[node name="TermMargin" type="MarginContainer" parent="TermPanel" unique_id=1363115529]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 3
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 3
+
+[node name="TermLayout" type="VBoxContainer" parent="TermPanel/TermMargin" unique_id=1035003427]
+layout_mode = 2
+theme_override_constants/separation = 2
+
+[node name="TermTitleLabel" type="Label" parent="TermPanel/TermMargin/TermLayout" unique_id=1030311587]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.93, 0.73, 0.34, 1)
+label_settings = ExtResource("3_k8u7m")
+
+[node name="TermDefinitionLabel" type="RichTextLabel" parent="TermPanel/TermMargin/TermLayout" unique_id=1791444606]
+custom_minimum_size = Vector2(120, 0)
+layout_mode = 2
+mouse_filter = 2
+bbcode_enabled = true
+scroll_active = false
+
+[node name="VisibilityPlayer" type="AnimationPlayer" parent="." unique_id=691639619]
+libraries/ = SubResource("AnimationLibrary_t8oh4")
