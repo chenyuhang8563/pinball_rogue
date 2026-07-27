@@ -6,6 +6,7 @@ const DEFAULT_LOCALE: String = "zh_CN"
 const TRANSLATION_CSV_PATHS: PackedStringArray = [
 	"res://translations/skills.csv",
 	"res://translations/game.csv",
+	"res://translations/item_levels.csv",
 ]
 const SETTINGS_SECTION: String = "locale"
 const SETTINGS_KEY_CODE: String = "code"

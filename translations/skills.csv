@@ -16,4 +16,3 @@ ITEM_DASH_TITLE,Dash,冲刺
 ITEM_DASH_DESC,Instantly dash toward the nearest enemy.,立即向最近的敌人冲刺。
 ITEM_MAGIC_MISSILE_TITLE,Magic Missile,魔法飞弹
 ITEM_MAGIC_MISSILE_DESC,"Hold to aim, release to fire.",按住瞄准，释放发射。
-ITEM_BROWN_MARBLE_DESC,Builds echo stacks on hit; full stacks add bonus damage.,命中时积累回响层数；满层后造成额外伤害。
