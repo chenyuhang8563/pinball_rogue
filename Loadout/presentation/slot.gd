@@ -7,11 +7,13 @@ signal purchase_requested(offer_id: StringName)
 
 var _is_affordable: bool = true
 var offer: RefCounted = null
+var _tooltip_level: int = 1
 
 
 ## 将报价数据写入场景中已有节点；布局和显隐由场景动画负责。
 func set_offer(value: RefCounted) -> void:
 	offer = value
+	_tooltip_level = maxi(1, int(value.target_level)) if value != null else 1
 	item = value.item if value != null else null
 	if value == null:
 		_clear_offer_content()
@@ -145,7 +147,7 @@ func _make_custom_tooltip(_for_text: String) -> Control:
 	if item == null:
 		return null
 	var tooltip: ItemTooltip = ItemTooltipScene.instantiate() as ItemTooltip
-	tooltip.set_item(item)
+	tooltip.set_item(item, _tooltip_level)
 	return tooltip
 
 

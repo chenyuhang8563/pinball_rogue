@@ -253,6 +253,8 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 
 		if slot.has_meta("item"):
 			slot.remove_meta("item")
+		if slot.has_method("set_item_tooltip"):
+			slot.call("set_item_tooltip", null, 0)
 		_clear_icon_view(icon_view)
 		RarityStyleResolverScript.apply_to(slot as Control, null)
 
@@ -262,6 +264,8 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 		if item == null:
 			continue
 		slot.set_meta("item", item)
+		if slot.has_method("set_item_tooltip"):
+			slot.call("set_item_tooltip", item, ItemLevelResolverScript.get_inventory_level(item, _progression))
 		RarityStyleResolverScript.apply_to(slot as Control, item)
 		_connect_slot(slot)
 		_set_icon_view_texture(icon_view, item.icon)
@@ -281,6 +285,8 @@ func _update_skill_slots() -> void:
 		_clear_icon_view(icon_view)
 		if slot.has_meta("item"):
 			slot.remove_meta("item")
+		if slot.has_method("set_item_tooltip"):
+			slot.call("set_item_tooltip", null, 0)
 		if index >= skill_sources.size():
 			continue
 		var source: Dictionary = skill_sources[index]
@@ -288,6 +294,8 @@ func _update_skill_slots() -> void:
 		if source.has("item"):
 			var item := source["item"] as Item
 			slot.set_meta("item", item)
+			if slot.has_method("set_item_tooltip"):
+				slot.call("set_item_tooltip", item, ItemLevelResolverScript.get_inventory_level(item, _progression))
 			_set_icon_view_level(icon_view, ItemLevelResolverScript.get_inventory_level(item, _progression))
 			_connect_slot(slot)
 

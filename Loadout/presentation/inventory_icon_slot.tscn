@@ -2,6 +2,8 @@
 
 [ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_8yndi"]
 [ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/shared/item_icon_view.tscn" id="1_item_icon_view"]
+[ext_resource type="Script" uid="uid://cg481ei3ht6nr" path="res://Loadout/presentation/inventory_icon_slot.gd" id="2_1xgqm"]
+[ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/shared/item_icon_view.gd" id="4_pgaym"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -15,13 +17,19 @@ border_color = Color(0.55, 0.53, 0.47, 1)
 custom_minimum_size = Vector2(32, 32)
 size_flags_horizontal = 4
 size_flags_vertical = 4
+tooltip_text = " "
 theme = ExtResource("1_8yndi")
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+script = ExtResource("2_1xgqm")
 
-[node name="Icon" parent="." unique_id=272276996 instance=ExtResource("1_item_icon_view")]
+[node name="Icon" type="Control" parent="." unique_id=272276996 instance=ExtResource("1_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("1_8yndi")
+script = ExtResource("4_pgaym")
