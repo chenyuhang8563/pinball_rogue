@@ -20,6 +20,16 @@ const FROZEN_IMPACT_VELOCITY_HISTORY: int = 3
 ## 感染状态视觉：病绿 tint + 绕身苍蝇。场景延迟加载，贴图/场景缺失时只保留 tint。
 const INFECTION_VISUAL_SCENE_PATH: String = "res://Combat/effects/infection_status_visual/infection_status_visual.tscn"
 const INFECTION_TINT: Color = Color(0.62, 1.0, 0.55, 1.0)
+## 弹珠命中敌人的碰撞音效。
+const MARBLE_HIT_SFX: AudioStream = preload("res://Assets/SFX/marble_hit.wav")
+## 受击晃动：Sprite 沿碰撞轴做短促衰减振荡，幅度小（像素）、总时长短（约 0.16s）。
+const HIT_SHAKE_AMPLITUDE: float = 2.0
+const HIT_SHAKE_STEP_A: float = 0.04
+const HIT_SHAKE_STEP_B: float = 0.05
+const HIT_SHAKE_STEP_C: float = 0.04
+const HIT_SHAKE_STEP_D: float = 0.03
+## 密集命中时碰撞音效 pitch 的随机抖动半范围，避免连续同音产生"机枪感"。
+const MARBLE_HIT_PITCH_JITTER: float = 0.05
 
 @export var health: int = 100:
 	set(value):
@@ -48,6 +58,8 @@ var _pre_step_velocity: Vector2 = Vector2.ZERO
 var _velocity_history: Array[Vector2] = []
 var _velocity_history_cursor: int = 0
 var _infection_visual: Node2D = null
+## 当前受击晃动 tween；重触发前先 kill，避免多条 tween 争用 sprite.position。
+var _hit_shake_tween: Tween
 
 
 func _ready() -> void:
@@ -88,6 +100,7 @@ func _on_body_entered(body: Node) -> void:
 		if not is_alive():
 			return
 	if body.is_in_group("marbles"):
+		_play_marble_hit_sfx()
 		var was_burning: bool = has_buff("fire_burn_debuff")
 		var was_frozen: bool = has_buff("frozen_debuff")
 		# 弹珠接触冻结敌人也属于冻结碰撞，必须在碎冰锤可能解除 Frozen 前分发。
@@ -160,6 +173,7 @@ func apply_damage_packet(packet: DamagePacket) -> void:
 	packet.final_amount = final_damage
 
 	flash_hit_mask(packet.flash_color)
+	play_hit_shake()
 	_show_float_damage_text(final_damage, resolve_floating_style(packet))
 	if effect_manager != null and effect_manager.has_method("on_damage_dealt"):
 		effect_manager.call("on_damage_dealt", self, packet)
@@ -243,6 +257,36 @@ func flash_hit_mask(flash_color: Color) -> void:
 	if hit_flash == null or not hit_flash.has_method("flash"):
 		return
 	hit_flash.call("flash", flash_color)
+
+
+## 受击晃动：沿碰撞轴（碰撞前速度方向）对 Sprite2D 做衰减振荡后归零。
+## 速度为零（非物理来源伤害）时退化为水平晃动；重触发会先终止旧 tween。
+func play_hit_shake() -> void:
+	if sprite == null:
+		return
+	if _hit_shake_tween != null and _hit_shake_tween.is_valid():
+		_hit_shake_tween.kill()
+	var axis: Vector2 = _pre_step_velocity.normalized()
+	if axis == Vector2.ZERO:
+		axis = Vector2.RIGHT
+	var offset: Vector2 = axis * HIT_SHAKE_AMPLITUDE
+	_hit_shake_tween = create_tween()
+	_hit_shake_tween.tween_property(sprite, "position", offset, HIT_SHAKE_STEP_A)
+	_hit_shake_tween.tween_property(sprite, "position", -offset * 0.6, HIT_SHAKE_STEP_B)
+	_hit_shake_tween.tween_property(sprite, "position", offset * 0.3, HIT_SHAKE_STEP_C)
+	_hit_shake_tween.tween_property(sprite, "position", Vector2.ZERO, HIT_SHAKE_STEP_D)
+
+
+## 播放弹珠碰撞音效。AudioManager 缺席（如纯逻辑测试环境）时静默跳过。
+func _play_marble_hit_sfx() -> void:
+	var audio_manager: Node = _get_audio_manager()
+	if audio_manager != null and audio_manager.has_method("play_sfx"):
+		audio_manager.call(
+			"play_sfx",
+			MARBLE_HIT_SFX,
+			0.0,
+			1.0 + randf_range(-MARBLE_HIT_PITCH_JITTER, MARBLE_HIT_PITCH_JITTER)
+		)
 
 
 func set_frost_visual(stacks: int, max_stacks: int, is_frozen: bool) -> void:
@@ -528,6 +572,13 @@ func _get_effect_manager() -> Node:
 	if tree == null:
 		return null
 	return tree.root.get_node_or_null("EffectManager")
+
+
+func _get_audio_manager() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	return tree.root.get_node_or_null("AudioManager")
 
 
 ## Resolves the floating damage text style for a packet. Explicit styles set by
