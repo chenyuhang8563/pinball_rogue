@@ -1,6 +1,8 @@
 extends Panel
 class_name ActiveSkillSlot
 
+const ItemTooltipScene: PackedScene = preload("res://UI/shared/item_tooltip.tscn")
+
 signal skill_pressed
 signal skill_released
 
@@ -9,6 +11,7 @@ signal skill_released
 @onready var _cooldown_progress: TextureProgressBar = $CooldownProgress
 
 var _controller: Node = null
+var _item: Item = null
 var _battle_active: bool = false
 var _blocked_by_panel: bool = false
 
@@ -67,7 +70,22 @@ func _gui_input(event: InputEvent) -> void:
 
 
 func _on_skill_changed(item: Item) -> void:
+	_item = item
 	_icon.texture = item.icon if item != null else null
+
+
+func _make_custom_tooltip(_for_text: String) -> Control:
+	if _item == null:
+		return null
+	var tooltip: ItemTooltip = ItemTooltipScene.instantiate() as ItemTooltip
+	tooltip.set_item(_item, _current_skill_level())
+	return tooltip
+
+
+func _current_skill_level() -> int:
+	if _controller == null or not _controller.has_method("get_item_level"):
+		return 1
+	return maxi(1, int(_controller.call("get_item_level", _item)))
 
 
 func _on_runtime_changed(current: int, maximum: int, progress: float) -> void:

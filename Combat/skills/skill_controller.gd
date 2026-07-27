@@ -49,6 +49,13 @@ func configure(loadout: RefCounted, progression: RefCounted) -> bool:
 	return true
 
 
+func get_item_level(item: Item) -> int:
+	if item == null or _progression == null or not is_instance_valid(_progression) \
+			or not _progression.has_method("level_of"):
+		return 1
+	return maxi(1, int(_progression.call("level_of", item)))
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	_dash_damage_timer = Timer.new()
