@@ -25,7 +25,7 @@ func _ready() -> void:
 	_update_echo_visual()
 
 
-func get_hit_damage(_target: Node) -> int:
+func get_hit_damage(_target: Node, _packet: DamagePacket = null) -> int:
 	var hit_damage: int = damage
 	if echo_stacks >= max_echo_stacks:
 		hit_damage += echo_bonus_damage
