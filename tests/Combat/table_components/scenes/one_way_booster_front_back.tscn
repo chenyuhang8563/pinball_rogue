@@ -1,0 +1,19 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://Combat/table_components/one_way_booster/one_way_booster.tscn" id="1_booster"]
+[ext_resource type="PackedScene" path="res://Combat/marbles/marble.tscn" id="2_marble"]
+[ext_resource type="Script" path="res://tests/Combat/table_components/scenes/environment_component_showcase.gd" id="3_driver"]
+
+[node name="OneWayBoosterFrontBack" type="Node2D"]
+script = ExtResource("3_driver")
+scenario = "booster"
+
+[node name="Booster" parent="." instance=ExtResource("1_booster")]
+position = Vector2(120, 120)
+component_id = &"test_booster"
+
+[node name="FrontHead" parent="." instance=ExtResource("2_marble")]
+position = Vector2(120, 88)
+
+[node name="BackHead" parent="." instance=ExtResource("2_marble")]
+position = Vector2(120, 152)

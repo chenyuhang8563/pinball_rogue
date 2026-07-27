@@ -1,0 +1,24 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://Combat/table_components/portal_pair/portal_pair.tscn" id="1_portal"]
+[ext_resource type="PackedScene" path="res://Combat/marbles/marble.tscn" id="2_marble"]
+[ext_resource type="Script" path="res://tests/Combat/table_components/scenes/environment_component_showcase.gd" id="3_driver"]
+[ext_resource type="Script" path="res://Combat/marbles/marble_chain.gd" id="4_chain"]
+[ext_resource type="Script" path="res://Combat/marbles/marble_chain_registry.gd" id="5_registry"]
+
+[node name="PortalChainTransfer" type="Node2D"]
+script = ExtResource("3_driver")
+scenario = "portal"
+
+[node name="MarbleChainRegistry" type="Node" parent="."]
+script = ExtResource("5_registry")
+
+[node name="MarbleChain" type="Node2D" parent="."]
+script = ExtResource("4_chain")
+
+[node name="PortalPair" parent="." instance=ExtResource("1_portal")]
+position = Vector2(72, 112)
+component_id = &"test_portal_pair"
+
+[node name="Head" parent="MarbleChain" instance=ExtResource("2_marble")]
+position = Vector2(72, 144)

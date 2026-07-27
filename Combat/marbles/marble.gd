@@ -7,6 +7,8 @@
 extends RigidBody2D
 class_name Marble
 
+signal portal_teleport_applied(destination: Vector2, velocity: Vector2)
+
 @export var damage: int = 1
 @export var max_speed := 800.0
 
@@ -31,6 +33,7 @@ var is_head: bool = false
 var init_position: Vector2
 var _dash_active: bool = false
 var _dash_timer: Timer
+var _pending_portal_teleport: Dictionary = {}
 
 
 func _ready() -> void:
@@ -42,9 +45,29 @@ func _ready() -> void:
 
 
 func _integrate_forces(state: PhysicsDirectBodyState2D) -> void:
+	if not _pending_portal_teleport.is_empty():
+		var destination: Vector2 = _pending_portal_teleport[&"destination"] as Vector2
+		var velocity: Vector2 = _pending_portal_teleport[&"velocity"] as Vector2
+		var next_transform := state.transform
+		next_transform.origin = destination
+		state.transform = next_transform
+		state.linear_velocity = velocity
+		state.sleeping = false
+		_pending_portal_teleport.clear()
+		portal_teleport_applied.emit(destination, velocity)
 	var speed_limit: float = get_effective_dash_max_speed() if _dash_active else get_effective_max_speed()
 	if state.linear_velocity.length() > speed_limit:
 		state.linear_velocity = state.linear_velocity.normalized() * speed_limit
+
+
+func queue_portal_teleport(destination: Vector2, velocity: Vector2) -> bool:
+	if not _pending_portal_teleport.is_empty():
+		return false
+	_pending_portal_teleport = {
+		&"destination": destination,
+		&"velocity": velocity,
+	}
+	return true
 
 
 ## 接触伤害。Head 模式下委托给 MarbleChain 聚合所有段；非链模式回退到自身 damage。

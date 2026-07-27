@@ -1,0 +1,16 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://Combat/table_components/slingshot/slingshot.tscn" id="1_slingshot"]
+[ext_resource type="PackedScene" path="res://Combat/marbles/marble.tscn" id="2_marble"]
+[ext_resource type="Script" path="res://tests/Combat/table_components/scenes/environment_component_showcase.gd" id="3_driver"]
+
+[node name="SlingshotReactionCooldown" type="Node2D"]
+script = ExtResource("3_driver")
+scenario = "slingshot"
+
+[node name="Slingshot" parent="." instance=ExtResource("1_slingshot")]
+position = Vector2(120, 120)
+component_id = &"test_slingshot"
+
+[node name="Head" parent="." instance=ExtResource("2_marble")]
+position = Vector2(120, 152)

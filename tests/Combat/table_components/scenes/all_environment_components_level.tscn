@@ -1,0 +1,63 @@
+[gd_scene format=3 uid="uid://ck6taai3rruj6"]
+
+[ext_resource type="PackedScene" path="res://Combat/levels/table_base.tscn" id="1_table_base"]
+[ext_resource type="PackedScene" path="res://Combat/table_components/one_way_booster/one_way_booster.tscn" id="2_booster"]
+[ext_resource type="PackedScene" path="res://Combat/table_components/barrel/barrel.tscn" id="3_barrel"]
+[ext_resource type="PackedScene" path="res://Combat/table_components/slingshot/slingshot.tscn" id="4_slingshot"]
+[ext_resource type="PackedScene" path="res://Combat/table_components/portal_pair/portal_pair.tscn" id="5_portal_pair"]
+[ext_resource type="Script" uid="uid://cs37k3yrgiqdq" path="res://Combat/drops/combat_drop_director.gd" id="6_drop_director"]
+[ext_resource type="PackedScene" uid="uid://d1nyycae6ks4h" path="res://Combat/marbles/marble_chain.tscn" id="7_cibmj"]
+[ext_resource type="PackedScene" uid="uid://bc1a5ngike1g8" path="res://Combat/marbles/marble.tscn" id="8_black_marble"]
+[ext_resource type="Script" uid="uid://c2wq5w8fe5uv4" path="res://tests/Combat/table_components/scenes/all_environment_components_level.gd" id="9_driver"]
+[ext_resource type="Script" uid="uid://bdqxy02skugfq" path="res://Combat/marbles/marble_chain_registry.gd" id="10_registry"]
+
+[node name="AllEnvironmentComponentsLevel" type="Node2D" unique_id=1632788392]
+script = ExtResource("9_driver")
+
+[node name="MarbleChainRegistry" type="Node" parent="."]
+script = ExtResource("10_registry")
+
+[node name="TableBase" parent="." unique_id=411146702 instance=ExtResource("1_table_base")]
+
+[node name="OneWayBooster" parent="TableBase/TableComponents" index="0" unique_id=144314079 instance=ExtResource("2_booster")]
+position = Vector2(182, 99)
+rotation = -1.043072
+component_id = &"sandbox_one_way_booster"
+
+[node name="Barrel" parent="TableBase/TableComponents" index="1" unique_id=1540298431 instance=ExtResource("3_barrel")]
+position = Vector2(120, 100)
+component_id = &"sandbox_barrel"
+
+[node name="Slingshot" parent="TableBase/TableComponents" index="2" unique_id=1985638008 instance=ExtResource("4_slingshot")]
+position = Vector2(190, 154)
+component_id = &"sandbox_slingshot"
+
+[node name="PortalPair" parent="TableBase/TableComponents" index="3" unique_id=654854508 instance=ExtResource("5_portal_pair")]
+position = Vector2(48, 208)
+component_id = &"sandbox_portal_pair"
+
+[node name="EndpointA" parent="TableBase/TableComponents/PortalPair" index="0"]
+position = Vector2(21, -157)
+component_id = &"sandbox_portal_entry_a"
+
+[node name="EndpointB" parent="TableBase/TableComponents/PortalPair" index="1"]
+component_id = &"sandbox_portal_entry_b"
+
+[node name="BlackMarble" parent="TableBase" unique_id=1108828804 instance=ExtResource("8_black_marble")]
+position = Vector2(151, 146)
+
+[node name="Enemies" type="Node2D" parent="." unique_id=212536211]
+
+[node name="CombatDropDirector" type="Node" parent="." unique_id=680010803]
+script = ExtResource("6_drop_director")
+enemy_drop_chance = 100
+
+[node name="GraceTimer" type="Timer" parent="CombatDropDirector" unique_id=1424817823]
+one_shot = true
+
+[node name="MarbleChain" parent="." unique_id=1762869057 node_paths=PackedStringArray("head") instance=ExtResource("7_cibmj")]
+position = Vector2(20, 6)
+head = NodePath("../TableBase/BlackMarble")
+
+[editable path="TableBase"]
+[editable path="TableBase/TableComponents/PortalPair"]

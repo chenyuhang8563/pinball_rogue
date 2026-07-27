@@ -16,10 +16,14 @@
 [ext_resource type="PackedScene" uid="uid://dgob675lfpkcv" path="res://Loadout/presentation/inventory_panel.tscn" id="17_nf7xu"]
 [ext_resource type="Script" uid="uid://bf7et742rbw7a" path="res://Combat/battle/battle_spawner.gd" id="20_spawner"]
 [ext_resource type="Script" uid="uid://c50047c5576eg" path="res://Combat/battle/battle_gateway.gd" id="21_gateway"]
+[ext_resource type="Script" path="res://Combat/marbles/marble_chain_registry.gd" id="23_chain_registry"]
 [ext_resource type="Script" uid="uid://d3dwc01dyf7e7" path="res://Run/application/run_flow_controller.gd" id="22_controller"]
 
 [node name="Main" type="Node2D" unique_id=1204434413]
 script = ExtResource("1_eunhr")
+
+[node name="MarbleChainRegistry" type="Node" parent="."]
+script = ExtResource("23_chain_registry")
 metadata/_edit_horizontal_guides_ = [208.0]
 
 [node name="Marbles" type="Node2D" parent="." unique_id=2013848348]

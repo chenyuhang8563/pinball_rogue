@@ -38,3 +38,15 @@ func _handle_marble_fell(marble: RigidBody2D) -> void:
 
 func _handle_enemy_fell(enemy: Enemy) -> void:
 	enemy.defeat(&"kill_zone")
+
+
+## 非刚体金币保持 collision_layer = 0；由掉落导演显式查询边界，
+## 避免为了超时逻辑改变既有物理层约定。
+func contains_global_point(world_position: Vector2) -> bool:
+	var shape_node := get_node_or_null("CollisionShape2D") as CollisionShape2D
+	if shape_node == null or not shape_node.shape is RectangleShape2D:
+		return false
+	var rectangle := shape_node.shape as RectangleShape2D
+	var local_point := shape_node.to_local(world_position)
+	return absf(local_point.x) <= rectangle.size.x * 0.5 \
+		and absf(local_point.y) <= rectangle.size.y * 0.5

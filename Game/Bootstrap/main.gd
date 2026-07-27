@@ -9,6 +9,7 @@ const DefaultRunFloorConfig: RunFloorConfig = preload("res://Run/data/default_ru
 const DebugGrantServiceScript: GDScript = preload("res://Game/Debug/debug_grant_service.gd")
 
 @onready var marbles: Node2D = $Marbles
+@onready var marble_chain_registry: MarbleChainRegistry = $MarbleChainRegistry
 @onready var skill_controller: SkillController = $SkillController
 @onready var active_skill_slot: ActiveSkillSlot = $CanvasLayer/SkillSlot
 @onready var debug_grant_panel: Control = $DebugCanvasLayer/DebugGrantPanel
@@ -89,6 +90,7 @@ func _spawn_chain() -> void:
 
 	marble_chain = MarbleChain.new()
 	marble_chain.name = "MarbleChain"
+	marble_chain.set_chain_registry(marble_chain_registry)
 	marbles.add_child(marble_chain)
 	marble_chain.build_chain(chain_items, starting_marble_spawn_positions)
 
@@ -353,7 +355,10 @@ func _setup_run_flow_composition(
 		self,
 		reset_battle_callable,
 		release_floating_texts_callable,
-		read_stat_callable
+		read_stat_callable,
+		run_scope.wallet,
+		run_random_source,
+		marble_chain_registry
 	):
 		_dispose_failed_run_flow_composition(created_run_scope)
 		return false
