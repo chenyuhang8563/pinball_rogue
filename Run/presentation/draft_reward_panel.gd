@@ -188,21 +188,32 @@ func _render_offer() -> void:
 		if option.kind == RewardOption.Kind.GOLD:
 			_configure_gold_button(index, option.gold_amount)
 		else:
-			_configure_item_button(index, option.item)
+			_configure_item_button(index, option)
 		button.disabled = false
 		_play_button_visibility(button, true)
 
 
-func _configure_item_button(index: int, item: Item) -> void:
+func _configure_item_button(index: int, option: RewardOption) -> void:
 	var button: Button = _buttons[index]
+	var item := option.item if option != null else null
 	if button.get_script() == RewardTooltipButtonScript:
-		button.call("set_item_tooltip", item)
+		button.call("set_item_tooltip", item, _tooltip_level_for_option(option))
 	if item != null and item.icon != null:
 		button.text = ""
 		_set_button_icon(index, item.icon)
 	else:
 		button.text = _format_item_label(item)
 		_set_button_icon(index, null)
+
+
+func _tooltip_level_for_option(option: RewardOption) -> int:
+	if option == null:
+		return 1
+	if option.resolution == RewardOption.Resolution.UPGRADE_RELIC:
+		return clampi(option.expected_level + 1, 1, 4)
+	if option.resolution == RewardOption.Resolution.COMPENSATE:
+		return clampi(option.expected_level, 1, 4)
+	return 1
 
 
 func _configure_gold_button(index: int, amount: int) -> void:
