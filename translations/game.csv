@@ -1,6 +1,6 @@
 keys,en,zh_CN
 ITEM_FIRE_MARBLE_TITLE,Fire Marble,火焰弹珠
-ITEM_FIRE_MARBLE_DESC,First hit applies 4 burn fuel; later hits add 1. Each second, burn deals damage based on remaining fuel and consumes 1 fuel.,首次命中附着 4 层燃烧燃料；燃烧期间命中追加 1 层。每秒根据剩余燃料层数造成伤害并消耗 1 层燃料。
+ITEM_FIRE_MARBLE_DESC,First hit applies 4 burn fuel; later hits add 1. Each second, burn deals damage based on remaining fuel and consumes 1 fuel.,首次命中附着 4 层燃烧；燃烧期间命中追加 1 层。每秒根据剩余燃料层数造成伤害并消耗 1 层燃烧。
 STATUS_BURN_NAME,Burn,燃烧
 STATUS_BURN_DESC,Each second deals damage based on remaining fuel and consumes 1 fuel; extinguishes at zero.,每秒根据剩余燃料层数造成伤害，并消耗 1 层燃料；燃料归零时熄灭。
 UPGRADE_FIRE_DURATION_4_DESC,Burn fuel cap increased to 15,燃烧燃料上限提升至 15
