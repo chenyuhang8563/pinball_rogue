@@ -21,12 +21,28 @@ const DEFAULT_NODE_ITEM_PATHS: PackedStringArray = [
 	"res://Content/data/fire_bellows.tres",
 	"res://Content/data/poison_culture.tres",
 	"res://Content/data/ice_hammer.tres",
+	"res://Content/data/permafrost.tres",
+	"res://Content/data/cryoclasm.tres",
+	"res://Content/data/carrion.tres",
+	"res://Content/data/parasite.tres",
+	"res://Content/data/pustule.tres",
+	"res://Content/data/venom_knife.tres",
+	"res://Content/data/scorpion_tail.tres",
+	"res://Content/data/witch_hat.tres",
 ]
 const DEFAULT_RELIC_PATHS: PackedStringArray = [
 	"res://Content/data/lightning.tres",
 	"res://Content/data/fire_bellows.tres",
 	"res://Content/data/poison_culture.tres",
 	"res://Content/data/ice_hammer.tres",
+	"res://Content/data/permafrost.tres",
+	"res://Content/data/cryoclasm.tres",
+	"res://Content/data/carrion.tres",
+	"res://Content/data/parasite.tres",
+	"res://Content/data/pustule.tres",
+	"res://Content/data/venom_knife.tres",
+	"res://Content/data/scorpion_tail.tres",
+	"res://Content/data/witch_hat.tres",
 ]
 const DEFAULT_NORMAL_MARBLE_PATHS: PackedStringArray = [
 	"res://Content/data/brown_marble.tres",
@@ -44,6 +60,7 @@ var _progression: Variant = null
 var _wallet: Variant = null
 var _config: BattleRewardConfig = null
 var _random_source: RunRandomSource = null
+var _content_registry: Node = null
 var _configured: bool = false
 var _active_draft: RewardOffer = null
 var _pending_replacement: Dictionary = {}
@@ -59,7 +76,8 @@ func configure(
 	progression: Variant,
 	wallet: Variant,
 	config: BattleRewardConfig,
-	random_source: RunRandomSource
+	random_source: RunRandomSource,
+	content_registry: Node = null
 ) -> bool:
 	if _settling:
 		return false
@@ -70,8 +88,9 @@ func configure(
 	_wallet = wallet
 	_config = config
 	_random_source = random_source
+	_content_registry = content_registry
 	_configured = _has_api(_loadout, [
-		&"find_owned", &"can_add", &"add", &"replace_skill", &"current_skill",
+		&"find_owned", &"can_add", &"add", &"replace_skill", &"replace_relic", &"current_skill",
 		&"revision", &"snapshot", &"restore",
 	]) and _has_api(_progression, [
 		&"level_of", &"can_upgrade", &"upgrade_one", &"reset_skill",
@@ -89,6 +108,81 @@ func active_draft() -> RewardOffer:
 	return _active_draft
 
 
+func snapshot_active() -> Dictionary:
+	if _active_draft == null or _active_draft.consumed:
+		return {}
+	var options: Array[Dictionary] = []
+	for option: RewardOption in _active_draft.options():
+		if option == null or option.consumed:
+			return {}
+		options.append({
+			&"offer_id": option.offer_id,
+			&"kind": int(option.kind),
+			&"item_id": StringName(option.item.id) if option.item != null else &"",
+			&"gold_amount": option.gold_amount,
+			&"item_identity": option.item_identity,
+			&"resolution": int(option.resolution),
+			&"compensation_amount": option.compensation_amount,
+		})
+	return {
+		&"policy": int(_active_draft.policy),
+		&"source_id": _active_draft.source_id,
+		&"draft_id": _active_draft.draft_id,
+		&"mode": int(_active_draft.mode),
+		&"options": options,
+	}
+
+
+func restore_active(token: RunFlowToken, state: Dictionary, content_registry: Node) -> RewardOffer:
+	if not _configured or token == null or not token.is_valid() or content_registry == null \
+			or not content_registry.has_method(&"by_id") or not state.get(&"options") is Array:
+		return null
+	var policy := int(state.get(&"policy", -1))
+	var mode := int(state.get(&"mode", -1))
+	var source_id := StringName(state.get(&"source_id", &""))
+	var draft_id := StringName(state.get(&"draft_id", &""))
+	if policy < BattlePlan.RewardPolicy.NONE or policy > BattlePlan.RewardPolicy.ELITE \
+			or mode < RewardOffer.Mode.NODE_EXCLUSIVE or mode > RewardOffer.Mode.ELITE_CLAIM_ALL \
+			or source_id.is_empty() or draft_id.is_empty():
+		return null
+	var options: Array[RewardOption] = []
+	for raw: Variant in state[&"options"] as Array:
+		if not raw is Dictionary:
+			return null
+		var option_data := raw as Dictionary
+		var kind := int(option_data.get(&"kind", -1))
+		var item: Item = null
+		if kind == RewardOption.Kind.ITEM:
+			item = content_registry.call(&"by_id", StringName(option_data.get(&"item_id", &""))) as Item
+			if item == null:
+				return null
+		elif kind != RewardOption.Kind.GOLD:
+			return null
+		var option: RewardOption = RewardOptionScript.new(
+			StringName(option_data.get(&"offer_id", &"")), kind as RewardOption.Kind, item,
+			int(option_data.get(&"gold_amount", 0)),
+			String(option_data.get(&"item_identity", "")),
+			int(option_data.get(&"resolution", RewardOption.Resolution.CREDIT_GOLD)) as RewardOption.Resolution,
+			int(option_data.get(&"compensation_amount", 0))
+		)
+		if not option.is_valid():
+			return null
+		options.append(option)
+	if options.is_empty():
+		return null
+	var inventory_revision := int(_loadout.call("revision"))
+	var progression_revision := int(_progression.call("revision"))
+	var wallet_revision := int(_wallet.call("revision"))
+	for option: RewardOption in options:
+		_capture_option_state(option, inventory_revision, progression_revision, wallet_revision)
+	_pending_replacement.clear()
+	_active_draft = RewardOfferScript.new(
+		token, policy as BattlePlan.RewardPolicy, source_id, options, draft_id,
+		mode as RewardOffer.Mode, inventory_revision, progression_revision, wallet_revision
+	)
+	return _active_draft
+
+
 func pending_replacement_token() -> StringName:
 	return StringName(_pending_replacement.get(&"token", &""))
 
@@ -102,17 +196,19 @@ func create_node_draft(
 		return null
 	var source_items: Array[Item] = _items_from(candidates)
 	if candidates.is_empty():
-		source_items = _load_items(DEFAULT_NODE_ITEM_PATHS)
+		source_items = _registry_all_items()
+		if source_items.is_empty():
+			source_items = _load_items(DEFAULT_NODE_ITEM_PATHS)
 	var eligible: Array[Item] = []
 	for item: Item in source_items:
 		if _contains_identity(eligible, item):
 			continue
-		var resolution := _resolution_for_item(item, false)
+		var resolution := _eligible_resolution(item, false)
 		if resolution >= 0:
 			eligible.append(item)
 	var options: Array[RewardOption] = []
 	while options.size() < 3 and not eligible.is_empty():
-		var item := _take_random(eligible)
+		var item := _take_weighted(eligible)
 		options.append(_make_item_option(item, _resolution_for_item(item, false)))
 	if options.is_empty():
 		options.append(_make_gold_option(COMPENSATION_GOLD))
@@ -145,38 +241,36 @@ func create_normal_draft(
 	var marbles := _items_from(marble_candidates)
 	var skills := _items_from(skill_candidates)
 	if marble_candidates.is_empty():
-		marbles = _load_items(
-			_config.marble_item_paths if not _config.marble_item_paths.is_empty() \
-			else DEFAULT_NORMAL_MARBLE_PATHS
-		)
+		marbles = _registry_query(Item.ItemType.MARBLE)
+		if marbles.is_empty():
+			marbles = _load_items(
+				_config.marble_item_paths if not _config.marble_item_paths.is_empty() \
+				else DEFAULT_NORMAL_MARBLE_PATHS
+			)
 	if skill_candidates.is_empty():
-		skills = _load_items(
-			_config.skill_item_paths if not _config.skill_item_paths.is_empty() \
-			else DEFAULT_NORMAL_SKILL_PATHS
-		)
+		skills = _registry_query(Item.ItemType.SKILL)
+		if skills.is_empty():
+			skills = _load_items(
+				_config.skill_item_paths if not _config.skill_item_paths.is_empty() \
+				else DEFAULT_NORMAL_SKILL_PATHS
+			)
 	marbles = _eligible_pool(marbles, Item.ItemType.MARBLE, false)
 	skills = _eligible_pool(skills, Item.ItemType.SKILL, false)
-	var categories: Array[Dictionary] = [{
-		&"kind": &"gold",
-		&"weight": _config.gold_weight,
-		&"items": [],
-	}]
+	var categories: Array[Dictionary] = []
 	if not marbles.is_empty():
 		categories.append({&"kind": &"marble", &"weight": _config.marble_weight, &"items": marbles})
 	if not skills.is_empty():
 		categories.append({&"kind": &"skill", &"weight": _config.skill_weight, &"items": skills})
-	var options: Array[RewardOption] = []
+	# 普通战斗的金币为固定奖励；权重只决定第二个物品奖励的类别。
+	var options: Array[RewardOption] = [_make_gold_option(_normal_gold_amount())]
 	while options.size() < 2 and not categories.is_empty():
 		var category_index := _weighted_category_index(categories)
 		if category_index < 0:
 			category_index = 0
 		var category: Dictionary = categories.pop_at(category_index)
-		if StringName(category[&"kind"]) == &"gold":
-			options.append(_make_gold_option(_normal_gold_amount()))
-		else:
-			var category_items: Array[Item] = category[&"items"]
-			var item := _take_random(category_items)
-			options.append(_make_item_option(item, _resolution_for_item(item, false)))
+		var category_items: Array[Item] = category[&"items"]
+		var item := _take_weighted(category_items)
+		options.append(_make_item_option(item, _resolution_for_item(item, false)))
 	return _install_draft(
 		token, BattlePlan.RewardPolicy.NORMAL, source_id,
 		RewardOfferScript.Mode.NORMAL_EXCLUSIVE, options
@@ -210,11 +304,13 @@ func create_elite_draft(
 		return null
 	var relics := _items_from(relic_candidates)
 	if relic_candidates.is_empty():
-		relics = _load_items(DEFAULT_RELIC_PATHS)
+		relics = _registry_query(Item.ItemType.RELIC)
+		if relics.is_empty():
+			relics = _load_items(DEFAULT_RELIC_PATHS)
 	relics = _eligible_pool(relics, Item.ItemType.RELIC, true)
 	var options: Array[RewardOption] = []
 	if not relics.is_empty():
-		var relic := _take_random(relics)
+		var relic := _take_weighted(relics)
 		options.append(_make_item_option(relic, _resolution_for_item(relic, true)))
 	options.append(_make_gold_option(_random_source.range_int(ELITE_GOLD_MIN, ELITE_GOLD_MAX)))
 	return _install_draft(
@@ -247,7 +343,10 @@ func claim(token: RunFlowToken, draft_id: StringName, offer_id: StringName) -> R
 	var state_validation := _validate_option_state(option)
 	if state_validation != RewardResult.Code.GRANTED:
 		return _failure(state_validation, option, _validation_detail)
-	if option.resolution == RewardOptionScript.Resolution.REPLACE_SKILL:
+	if option.resolution in [
+		RewardOptionScript.Resolution.REPLACE_SKILL,
+		RewardOptionScript.Resolution.REPLACE_RELIC,
+	]:
 		return _request_replacement(option)
 	return _commit_option(option)
 
@@ -260,7 +359,11 @@ func settle(token: RunFlowToken, draft_id: StringName, offer_id: StringName) -> 
 	return claim(token, draft_id, offer_id)
 
 
-func confirm_replacement(token: RunFlowToken, replacement_token: StringName) -> RewardResult:
+func confirm_replacement(
+	token: RunFlowToken,
+	replacement_token: StringName,
+	replacement_target: Item = null
+) -> RewardResult:
 	var validation := _validate_replacement(token, replacement_token)
 	if validation != null:
 		return validation
@@ -269,13 +372,27 @@ func confirm_replacement(token: RunFlowToken, replacement_token: StringName) -> 
 	var state_validation := _validate_option_state(option)
 	if state_validation != RewardResult.Code.GRANTED:
 		return _failure(state_validation, option, _validation_detail)
-	var previous_skill := _loadout.call("current_skill") as Item
 	_settling = true
 	var transaction: RefCounted = RewardTransactionScript.new([_loadout, _progression, _wallet])
-	var replacement_steps: Array[Callable] = [
-		Callable(_loadout, "replace_skill").bind(option.item),
-		Callable(_progression, "reset_skill").bind(previous_skill.id),
-	]
+	var replacement_steps: Array[Callable] = []
+	if option.resolution == RewardOptionScript.Resolution.REPLACE_SKILL:
+		var previous_skill := _loadout.call("current_skill") as Item
+		replacement_steps = [
+			Callable(_loadout, "replace_skill").bind(option.item),
+			Callable(_progression, "reset_skill").bind(previous_skill.id),
+		]
+	elif option.resolution == RewardOptionScript.Resolution.REPLACE_RELIC:
+		var previous_relic := _loadout.call("find_owned", replacement_target) as Item
+		if previous_relic == null or previous_relic.type != Item.ItemType.RELIC:
+			_settling = false
+			return _failure(RewardResult.Code.OWNERSHIP_CHANGED, option, "replacement relic is not owned")
+		replacement_steps = [
+			Callable(_loadout, "replace_relic").bind(previous_relic, option.item),
+			Callable(_progression, "reset_item").bind(previous_relic),
+		]
+	else:
+		_settling = false
+		return _failure(RewardResult.Code.REJECTED, option, "replacement resolution is unsupported")
 	var committed := bool(transaction.call("execute", replacement_steps))
 	if not committed:
 		_settling = false
@@ -484,6 +601,11 @@ func _validate_option_state(option: RewardOption) -> RewardResult.Code:
 		var current_skill := _loadout.call("current_skill") as Item
 		if current_skill == null or _identity_key(current_skill) != option.expected_owned_identity:
 			return _invalid_option(RewardResult.Code.OWNERSHIP_CHANGED, "current skill ownership changed")
+	elif option.resolution == RewardOptionScript.Resolution.REPLACE_RELIC:
+		if owned != null:
+			return _invalid_option(RewardResult.Code.OWNERSHIP_CHANGED, "replacement reward is now owned")
+		if bool(_loadout.call("can_add", option.item)):
+			return RewardResult.Code.CAPACITY_CHANGED
 	return RewardResult.Code.GRANTED
 
 
@@ -507,11 +629,15 @@ func _request_replacement(option: RewardOption) -> RewardResult:
 
 
 func _replacement_required_result(option: RewardOption, replacement_token: StringName) -> RewardResult:
+	var is_relic_replacement := option != null \
+		and option.resolution == RewardOptionScript.Resolution.REPLACE_RELIC
 	return RewardResultScript.new(
 		_active_draft.token,
-		RewardResult.Code.SKILL_REPLACEMENT_REQUIRED,
+		RewardResult.Code.RELIC_REPLACEMENT_REQUIRED if is_relic_replacement \
+		else RewardResult.Code.SKILL_REPLACEMENT_REQUIRED,
 		option,
-		"skill slot replacement must be confirmed",
+		"relic slot replacement must be selected" if is_relic_replacement \
+		else "skill slot replacement must be confirmed",
 		_active_draft.draft_id,
 		option.offer_id,
 		replacement_token
@@ -654,6 +780,8 @@ func _resolution_for_item(item: Item, allow_compensation: bool) -> int:
 		return RewardOptionScript.Resolution.REPLACE_SKILL
 	if bool(_loadout.call("can_add", item)):
 		return RewardOptionScript.Resolution.ADD_ITEM
+	if item.type == Item.ItemType.RELIC:
+		return RewardOptionScript.Resolution.REPLACE_RELIC
 	return RewardOptionScript.Resolution.COMPENSATE if allow_compensation else -1
 
 
@@ -662,9 +790,15 @@ func _eligible_pool(items: Array[Item], expected_type: Item.ItemType, allow_comp
 	for item: Item in items:
 		if item == null or item.type != expected_type or _contains_identity(result, item):
 			continue
-		if _resolution_for_item(item, allow_compensation) >= 0:
+		if _eligible_resolution(item, allow_compensation) >= 0:
 			result.append(item)
 	return result
+
+
+func _eligible_resolution(item: Item, allow_compensation: bool) -> int:
+	if item == null or item.weight <= 0.0 or not _requirements_met(item):
+		return -1
+	return _resolution_for_item(item, allow_compensation)
 
 
 func _weighted_category_index(categories: Array[Dictionary]) -> int:
@@ -687,6 +821,29 @@ func _take_random(items: Array[Item]) -> Item:
 	return items.pop_at(clampi(index, 0, items.size() - 1))
 
 
+func _take_weighted(items: Array[Item]) -> Item:
+	if items.is_empty():
+		return null
+	var weights := PackedFloat64Array()
+	var first_weight := -1.0
+	var equal_positive_weights := true
+	for item: Item in items:
+		var weight := maxf(0.0, item.weight) if item != null else 0.0
+		weights.append(weight)
+		if first_weight < 0.0:
+			first_weight = weight
+		elif not is_equal_approx(first_weight, weight):
+			equal_positive_weights = false
+	# Preserve the old deterministic explicit-candidate contract while registry
+	# pools use their authored float weights.
+	if equal_positive_weights and first_weight > 0.0:
+		return _take_random(items)
+	var index := _random_source.weighted_index_float(weights)
+	if index < 0:
+		return null
+	return items.pop_at(index)
+
+
 func _items_from(values: Array) -> Array[Item]:
 	var result: Array[Item] = []
 	for value: Variant in values:
@@ -705,6 +862,43 @@ func _load_items(paths: PackedStringArray) -> Array[Item]:
 	return result
 
 
+func _registry_all_items() -> Array[Item]:
+	if _content_registry == null or not is_instance_valid(_content_registry) \
+			or not _content_registry.has_method(&"query"):
+		return []
+	var result: Array[Item] = []
+	for item_type: Item.ItemType in [
+		Item.ItemType.MARBLE, Item.ItemType.RELIC, Item.ItemType.SKILL,
+	]:
+		result.append_array(_registry_query(item_type))
+	return result
+
+
+func _registry_query(item_type: Item.ItemType) -> Array[Item]:
+	if _content_registry == null or not is_instance_valid(_content_registry) \
+			or not _content_registry.has_method(&"query"):
+		return []
+	return _items_from(_content_registry.call(&"query", item_type) as Array)
+
+
+func _requirements_met(item: Item) -> bool:
+	if item == null or item.requires_tags.is_empty():
+		return true
+	var owned_tags: Array[StringName] = []
+	if _loadout != null and _loadout.has_method(&"owned_items"):
+		for value: Variant in _loadout.call(&"owned_items") as Array:
+			var owned := value as Item
+			if owned == null:
+				continue
+			for tag: StringName in owned.tags:
+				if not owned_tags.has(tag):
+					owned_tags.append(tag)
+	for required: StringName in item.requires_tags:
+		if not owned_tags.has(required):
+			return false
+	return true
+
+
 func _contains_identity(items: Array[Item], candidate: Item) -> bool:
 	var key := _identity_key(candidate)
 	for item: Item in items:
@@ -720,13 +914,16 @@ func _identity_key(item: Item) -> String:
 		return "type:%d:marble:%d" % [int(item.type), int(item.marble_type)]
 	if not item.id.is_empty():
 		return "type:%d:id:%s" % [int(item.type), item.id]
-	return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
+	if not item.resource_path.is_empty():
+		return "type:%d:path:%s" % [int(item.type), item.resource_path]
+	if item.effect_type != Item.EffectType.NONE:
+		return "type:%d:effect:%d" % [int(item.type), int(item.effect_type)]
+	return "type:%d:anonymous:%s:%d" % [int(item.type), item.title, int(item.rarity)]
 
 
 func _matches_expected_owned(owned: Item, option: RewardOption) -> bool:
-	# Loadout revision already includes instance identity. Settlement follows the
-	# domain identity contract so relic candidates always resolve to the owned
-	# instance returned by Loadout.find_owned().
+	# Revisions are stable across processes. Settlement still resolves the
+	# currently owned instance and compares it to the saved semantic identity.
 	return owned != null and _identity_key(owned) == option.expected_owned_identity
 
 

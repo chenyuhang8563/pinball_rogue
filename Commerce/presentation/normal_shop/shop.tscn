@@ -19,6 +19,11 @@
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://Loadout/presentation/skill_replace_dialog.tscn" id="13_b5trs"]
 [ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="15_16e15"]
 [ext_resource type="StyleBox" uid="uid://bxbadmo7oui7u" path="res://Themes/black_panel.tres" id="17_6qmg5"]
+[ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/shared/item_icon_view.gd" id="19_m6wq7"]
+[ext_resource type="Script" uid="uid://dyflbtf0gphq1" path="res://Loadout/presentation/skill_replace_dialog.gd" id="21_6dpvd"]
+[ext_resource type="Texture2D" uid="uid://dmbp7c0eawt0a" path="res://Assets/UI/normal_shop_refresh.png" id="21_mce8x"]
+[ext_resource type="Theme" uid="uid://dmoevauujrn3r" path="res://Themes/normal_shop_refresh_button.tres" id="21_p5iek"]
+[ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="22_m6wq7"]
 
 [node name="Shop" type="Control" unique_id=395620655 node_paths=PackedStringArray("shop_container", "marble_box_container", "relic_bar_container")]
 process_mode = 3
@@ -32,7 +37,13 @@ marble_box_container = NodePath("UI/Panel/CollectionRows/MarbleBox")
 relic_bar_container = NodePath("UI/Panel/CollectionRows/RelicBar")
 
 [node name="UI" type="CanvasLayer" parent="." unique_id=1475380502]
-visible = false
+
+[node name="ShopBackdrop" type="ColorRect" parent="UI" unique_id=1358013445]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+color = Color(0.035, 0.035, 0.055, 1)
 
 [node name="Panel" type="Panel" parent="UI" unique_id=1521898696]
 anchors_preset = 15
@@ -84,13 +95,17 @@ theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 columns = 3
 
-[node name="CollectionRows" parent="UI/Panel" unique_id=1783459460 instance=ExtResource("5_inventory")]
+[node name="CollectionRows" type="VBoxContainer" parent="UI/Panel" unique_id=1783459460 instance=ExtResource("5_inventory")]
 layout_mode = 1
 anchors_preset = 12
-offset_left = 0.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
 offset_top = -104.0
-offset_right = 0.0
-offset_bottom = 0.0
+grow_horizontal = 2
+grow_vertical = 0
+theme = ExtResource("1_16e15")
+theme_override_constants/separation = 4
 
 [node name="SkillBox" type="HBoxContainer" parent="UI/Panel/CollectionRows" unique_id=230630312]
 layout_mode = 2
@@ -101,10 +116,63 @@ custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 theme_override_styles/panel = ExtResource("17_6qmg5")
 
-[node name="Icon" parent="UI/Panel/CollectionRows/SkillBox/SkillSlot" unique_id=299050868 instance=ExtResource("11_eu4ty")]
-layout_mode = 0
+[node name="Icon" type="Control" parent="UI/Panel/CollectionRows/SkillBox/SkillSlot" unique_id=299050868 instance=ExtResource("11_eu4ty")]
+custom_minimum_size = Vector2(32, 32)
+anchors_preset = 0
 offset_right = 32.0
 offset_bottom = 32.0
+mouse_filter = 2
+theme = ExtResource("1_16e15")
+script = ExtResource("19_m6wq7")
 
-[node name="SkillReplaceDialog" parent="UI/Panel" unique_id=1955345262 instance=ExtResource("13_b5trs")]
+[node name="SkillReplaceDialog" type="Control" parent="UI/Panel" unique_id=1955345262 instance=ExtResource("13_b5trs")]
+process_mode = 3
+visible = false
 layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_16e15")
+script = ExtResource("21_6dpvd")
+
+[node name="ShopStatus" type="Label" parent="UI/Panel" unique_id=1208888835]
+layout_mode = 0
+offset_left = 8.0
+offset_top = 199.0
+offset_right = 232.0
+offset_bottom = 215.0
+label_settings = ExtResource("22_m6wq7")
+horizontal_alignment = 1
+
+[node name="ShopStatusTimer" type="Timer" parent="UI/Panel" unique_id=1309216606]
+process_mode = 3
+wait_time = 3.0
+one_shot = true
+
+[node name="RefreshButton" type="Button" parent="UI/Panel" unique_id=941890694]
+layout_mode = 1
+offset_left = 188.0
+offset_top = 212.0
+offset_right = 212.0
+offset_bottom = 236.0
+theme = ExtResource("21_p5iek")
+theme_override_fonts/font = ExtResource("15_16e15")
+theme_override_font_sizes/font_size = 12
+icon = ExtResource("21_mce8x")
+icon_alignment = 1
+expand_icon = true
+
+[node name="RefreshCost" type="Label" parent="UI/Panel" unique_id=1845078751]
+layout_mode = 0
+offset_left = 137.0
+offset_top = 235.0
+offset_right = 266.0
+offset_bottom = 251.0
+text = "UI_SHOP_REFRESH_FREE"
+label_settings = ExtResource("22_m6wq7")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[connection signal="timeout" from="UI/Panel/ShopStatusTimer" to="." method="_on_shop_status_timer_timeout"]

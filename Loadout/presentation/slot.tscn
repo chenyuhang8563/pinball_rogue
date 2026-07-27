@@ -1,7 +1,7 @@
 [gd_scene format=3 uid="uid://vbkihvbi1c5"]
 
 [ext_resource type="Script" uid="uid://drrrejutacxaw" path="res://Loadout/presentation/slot.gd" id="1_fmai1"]
-[ext_resource type="PackedScene" path="res://UI/shared/item_icon_view.tscn" id="2_item_icon_view"]
+[ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/shared/item_icon_view.tscn" id="2_item_icon_view"]
 [ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="4_86f5q"]
 [ext_resource type="Texture2D" uid="uid://wkfame4pvlqx" path="res://Assets/UI/level_up.png" id="4_enfuk"]
 
@@ -117,6 +117,18 @@ tracks/5/keys = {
 "update": 1,
 "values": [true]
 }
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("LevelUp:visible")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [true]
+}
 
 [sub_resource type="Animation" id="Animation_enfuk"]
 length = 0.001
@@ -192,11 +204,39 @@ tracks/5/keys = {
 "update": 1,
 "values": [false]
 }
+tracks/6/type = "value"
+tracks/6/imported = false
+tracks/6/enabled = true
+tracks/6/path = NodePath("LevelUp:visible")
+tracks/6/interp = 1
+tracks/6/loop_wrap = true
+tracks/6/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_n0d25"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("LevelUp:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [true]
+}
 
 [sub_resource type="AnimationLibrary" id="AnimationLibrary_3jdf7"]
 _data = {
 &"discounted": SubResource("Animation_86f5q"),
-&"regular": SubResource("Animation_enfuk")
+&"regular": SubResource("Animation_enfuk"),
+&"upgrade": SubResource("Animation_n0d25")
 }
 
 [node name="Slot" type="Panel" unique_id=89857366]
@@ -215,7 +255,6 @@ script = ExtResource("1_fmai1")
 
 [node name="Icon" parent="." unique_id=132030406 instance=ExtResource("2_item_icon_view")]
 layout_mode = 0
-anchors_preset = 0
 offset_left = 20.0
 offset_right = 52.0
 offset_bottom = 32.0

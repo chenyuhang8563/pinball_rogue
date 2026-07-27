@@ -58,8 +58,9 @@ func test_poison_tick_reaches_poison_culture_via_typed_event() -> void:
 	assert_false(neighbor.has_buff("poison_debuff"))
 
 	# Drive several poison ticks through the BuffHost; each tick emits the typed
-	# event the host forwards to EffectManager.on_poison_tick.
-	for i: int in range(5):
+	# event the host forwards to EffectManager.on_poison_tick. Three ticks reach
+	# poison_culture's spread threshold while the 5s poison is still alive.
+	for i: int in range(3):
 		source.buff_host._process(1.1)
 
 	assert_true(source.has_buff("poison_debuff"), "poison still active during the test")
@@ -72,9 +73,8 @@ func test_poison_tick_reaches_poison_culture_via_typed_event() -> void:
 func _configure_poison_culture() -> void:
 	_loadout = LoadoutScript.new()
 	var relic := Item.new()
-	relic.id = "poison_culture_relic"
+	relic.id = "poison_culture"
 	relic.type = Item.ItemType.RELIC
-	relic.effect_type = Item.EffectType.POISON_CULTURE
 	assert_true(_loadout.call("add", relic))
 	_progression = ProgressionScript.new(_loadout)
 	_effect_manager = get_node_or_null("/root/EffectManager")

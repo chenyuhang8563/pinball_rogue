@@ -40,6 +40,13 @@ func reset() -> void:
 	_error_detail = ""
 
 
+func restore_choice_wave_index(value: int) -> bool:
+	if value < 0:
+		return false
+	_choice_wave_index = value
+	return true
+
+
 func error_detail() -> String:
 	return _error_detail
 

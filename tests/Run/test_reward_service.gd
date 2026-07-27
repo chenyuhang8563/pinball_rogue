@@ -85,7 +85,8 @@ func test_node_draft_is_three_stable_identity_offers_and_filters_owned_or_full_i
 		assert_false(identities.has(option.item_identity))
 		identities.append(option.item_identity)
 	assert_false(identities.any(func(value: String) -> bool: return value.contains("marble:0")))
-	assert_false(identities.any(func(value: String) -> bool: return value.contains("blocked-relic")))
+	assert_true(identities.any(func(value: String) -> bool: return value.contains("blocked-relic")))
+	assert_eq(_item_offer(draft).resolution, RewardOption.Resolution.REPLACE_RELIC)
 
 
 func test_node_draft_falls_back_to_compensation_when_every_candidate_is_ineligible() -> void:
@@ -99,12 +100,11 @@ func test_node_draft_falls_back_to_compensation_when_every_candidate_is_ineligib
 	)
 
 	assert_eq(draft.options().size(), 1)
-	assert_eq(draft.options()[0].kind, RewardOption.Kind.GOLD)
-	assert_eq(draft.options()[0].gold_amount, RewardServiceScript.COMPENSATION_GOLD)
+	assert_eq(draft.options()[0].kind, RewardOption.Kind.ITEM)
+	assert_eq(draft.options()[0].resolution, RewardOption.Resolution.REPLACE_RELIC)
 
 
 func test_normal_draft_uses_configured_category_weights_and_builds_two_exclusive_offers() -> void:
-	_config.gold_weight = 0
 	_config.marble_weight = 100
 	_config.skill_weight = 0
 	_config.gold_min = 17
@@ -123,10 +123,33 @@ func test_normal_draft_uses_configured_category_weights_and_builds_two_exclusive
 
 	assert_eq(draft.mode, RewardOffer.Mode.NORMAL_EXCLUSIVE)
 	assert_eq(draft.options().size(), 2)
-	assert_eq(draft.options()[0].item.type, Item.ItemType.MARBLE)
-	assert_eq(_random.weighted_calls[0], PackedInt32Array([0, 100, 0]))
-	assert_eq(draft.options()[1].kind, RewardOption.Kind.GOLD)
-	assert_eq(draft.options()[1].gold_amount, 17)
+	assert_eq(draft.options()[0].kind, RewardOption.Kind.GOLD)
+	assert_eq(draft.options()[0].gold_amount, 17)
+	assert_eq(_random.weighted_calls[0], PackedInt32Array([100, 0]))
+	assert_eq(draft.options()[1].item.type, Item.ItemType.MARBLE)
+
+
+func test_normal_draft_always_includes_gold_even_when_item_weights_are_higher() -> void:
+	# 问题来源：玩家反馈普通战斗会出现两个物品奖励，消耗了应有的金币选择。
+	# 修复方式：金币作为普通奖励的固定选项，第二个选项才从物品类别按权重抽取。
+	# 边界：物品权重大于金币时，仍必须保留一个金币选项。
+	_config.marble_weight = 100
+	_config.skill_weight = 100
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout)
+	var wallet: RefCounted = WalletScript.new()
+	var service: RefCounted = _service(loadout, progression, wallet)
+
+	var draft: RewardOffer = service.create_normal_draft(
+		_token,
+		&"normal-gold-guarantee",
+		[_item("brown", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BROWN)],
+		[_item("dash", Item.ItemType.SKILL)]
+	)
+
+	assert_eq(draft.options().size(), 2)
+	assert_not_null(_gold_offer(draft), "normal rewards must always include gold")
+	assert_not_null(_item_offer(draft), "normal rewards retain one item choice")
 
 
 func test_duplicate_relic_upgrades_owned_instance_then_full_level_compensates() -> void:
@@ -164,6 +187,43 @@ func test_duplicate_relic_upgrades_owned_instance_then_full_level_compensates() 
 	assert_eq(compensated.granted_gold, RewardServiceScript.COMPENSATION_GOLD)
 	assert_eq(wallet.call("balance"), RewardServiceScript.COMPENSATION_GOLD)
 	assert_eq(progression.call("level_of", owned), 4)
+
+
+func test_full_relic_slots_request_selection_without_consuming_then_replace_selected_relic() -> void:
+	# 问题来源：玩家在遗物栏满时领取不同遗物，报价会被消耗但新遗物不会进入物品栏。
+	# 修复方式：将满槽的不同遗物保留为待确认报价，确认所选旧遗物后原子替换。
+	# 边界：取消不得消耗报价；确认只能替换当前持有的指定遗物。
+	var loadout: RefCounted = LoadoutScript.new(func(item_type: Item.ItemType, fallback: int) -> int:
+		return 1 if item_type == Item.ItemType.RELIC else fallback
+	)
+	var progression: RefCounted = ProgressionScript.new(loadout)
+	var wallet: RefCounted = WalletScript.new()
+	var old_relic := _item("old-relic", Item.ItemType.RELIC)
+	var new_relic := _item("new-relic", Item.ItemType.RELIC)
+	assert_true(loadout.call("add", old_relic))
+	var service: RefCounted = _service(loadout, progression, wallet)
+	var draft: RewardOffer = service.create_elite_draft(_token, &"relic-replacement", [new_relic])
+	var relic_offer := _item_offer(draft)
+
+	var required: RewardResult = service.claim(_token, draft.draft_id, relic_offer.offer_id)
+
+	assert_true(required.replacement_required(), "a full relic slot must request a replacement")
+	assert_false(relic_offer.consumed)
+	assert_false(draft.consumed)
+	assert_eq(loadout.call("find_owned", old_relic), old_relic)
+	if not required.replacement_required():
+		return
+	var cancelled: RewardResult = service.cancel_replacement(_token, required.replacement_token)
+	assert_eq(cancelled.code, RewardResult.Code.DECLINED)
+	assert_false(relic_offer.consumed)
+
+	var required_again: RewardResult = service.claim(_token, draft.draft_id, relic_offer.offer_id)
+	var confirmed: RewardResult = service.confirm_replacement(
+		_token, required_again.replacement_token, old_relic
+	)
+	assert_true(confirmed.was_granted())
+	assert_eq(loadout.call("find_owned", old_relic), null)
+	assert_eq(loadout.call("find_owned", new_relic), new_relic)
 
 
 func test_skill_replacement_cancel_is_non_consuming_and_confirm_atomically_resets_old_skill() -> void:

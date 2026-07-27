@@ -237,7 +237,12 @@ func test_upgrade_available_and_unavailable_routes_use_typed_revisions() -> void
 			assert_true(controller.select_upgrade(offer.token, offer.offer_id, candidate.candidate_id))
 			assert_eq(int(scope.progression.call("level_of", item)), 2)
 		else:
+			var balance_before := int(scope.wallet.call("balance"))
 			assert_true(controller.acknowledge_upgrade_unavailable(offer.token, offer.offer_id))
+			assert_eq(
+				int(scope.wallet.call("balance")),
+				balance_before + RunUpgradeService.COMPENSATION_GOLD
+			)
 		assert_eq(controller.current_state().floor_number, 3)
 
 
@@ -335,6 +340,66 @@ func test_reentrant_external_command_is_rejected_but_sync_completion_is_ordered(
 	assert_eq(controller.current_state().phase, RunState.Phase.REWARD_ACTIVE)
 
 
+func test_checkpoint_restore_replays_each_supported_phase_with_same_payload() -> void:
+	var registry := get_tree().root.get_node_or_null(^"ContentRegistry")
+
+	var battle_source := _fixture()
+	var battle_controller := battle_source.controller as RunFlowController
+	assert_true(battle_controller.start_run())
+	var battle_checkpoint := battle_controller.snapshot()
+	var battle_target := _fixture()
+	assert_true((battle_target.controller as RunFlowController).restore(battle_checkpoint, registry))
+	assert_eq((battle_target.controller as RunFlowController).current_state().phase, RunState.Phase.BATTLE_ACTIVE)
+	assert_eq((battle_target.gateway as FakeGateway).started_plans[0].battle_id, (battle_source.gateway as FakeGateway).started_plans[0].battle_id)
+
+	(battle_source.gateway as FakeGateway).complete_active()
+	var reward_checkpoint := battle_controller.snapshot()
+	var reward_signature := _reward_signature(battle_controller.current_reward_offer())
+	var reward_target := _fixture()
+	assert_true((reward_target.controller as RunFlowController).restore(reward_checkpoint, registry))
+	assert_eq(_reward_signature((reward_target.controller as RunFlowController).current_reward_offer()), reward_signature)
+
+	var node_source := _fixture()
+	_reach_floor_two_choices(node_source)
+	var node_controller := node_source.controller as RunFlowController
+	var node_signature := _node_signature(node_controller.current_node_offer())
+	var node_target := _fixture()
+	assert_true((node_target.controller as RunFlowController).restore(node_controller.snapshot(), registry))
+	assert_eq(_node_signature((node_target.controller as RunFlowController).current_node_offer()), node_signature)
+
+	var event_source := _fixture(RunNodeOption.Kind.EVENT)
+	_reach_floor_two_choices(event_source)
+	var event_controller := event_source.controller as RunFlowController
+	(event_source.random as ControlledRandom).push_range(1)
+	var event_choice := _choice(event_controller.current_node_offer(), RunNodeOption.Kind.EVENT)
+	assert_true(event_controller.select_node(event_controller.current_node_offer().token, event_controller.current_node_offer().offer_id, event_choice.option_id))
+	var event_target := _fixture(RunNodeOption.Kind.EVENT)
+	assert_true((event_target.controller as RunFlowController).restore(event_controller.snapshot(), registry))
+	assert_eq((event_target.controller as RunFlowController).current_event().event_id, event_controller.current_event().event_id)
+
+	var upgrade_source := _fixture(RunNodeOption.Kind.UPGRADE)
+	var dark := registry.call(&"by_id", &"dark_marble") as Item
+	assert_true((upgrade_source.scope as RunScope).loadout.call("add", dark))
+	_reach_floor_two_choices(upgrade_source)
+	var upgrade_controller := upgrade_source.controller as RunFlowController
+	var upgrade_choice := _choice(upgrade_controller.current_node_offer(), RunNodeOption.Kind.UPGRADE)
+	assert_true(upgrade_controller.select_node(upgrade_controller.current_node_offer().token, upgrade_controller.current_node_offer().offer_id, upgrade_choice.option_id))
+	var upgrade_target := _fixture(RunNodeOption.Kind.UPGRADE)
+	assert_true((upgrade_target.scope as RunScope).loadout.call("add", dark))
+	assert_true((upgrade_target.controller as RunFlowController).restore(upgrade_controller.snapshot(), registry))
+	assert_eq(_upgrade_signature((upgrade_target.controller as RunFlowController).current_upgrade_offer()), _upgrade_signature(upgrade_controller.current_upgrade_offer()))
+
+	for shop_kind: int in [RunNodeOption.Kind.SHOP, RunNodeOption.Kind.DEVIL_SHOP]:
+		var shop_source := _fixture(shop_kind)
+		_reach_floor_two_choices(shop_source)
+		var shop_controller := shop_source.controller as RunFlowController
+		var shop_choice := _choice(shop_controller.current_node_offer(), shop_kind as RunNodeOption.Kind)
+		assert_true(shop_controller.select_node(shop_controller.current_node_offer().token, shop_controller.current_node_offer().offer_id, shop_choice.option_id))
+		var shop_target := _fixture(shop_kind)
+		assert_true((shop_target.controller as RunFlowController).restore(shop_controller.snapshot(), registry))
+		assert_eq((shop_target.controller as RunFlowController).current_state().phase, shop_controller.current_state().phase)
+
+
 func _fixture(
 	guaranteed_kind: int = -1,
 	boss_floor: int = 6,
@@ -411,6 +476,33 @@ func _choice(offer: RunNodeOffer, kind: RunNodeOption.Kind) -> RunNodeChoice:
 		if choice.kind == kind:
 			return choice
 	return null
+
+
+func _reward_signature(offer: RewardOffer) -> Array[String]:
+	var result: Array[String] = []
+	for option: RewardOption in offer.options():
+		result.append("%s|%d|%s|%d" % [
+			option.offer_id, int(option.kind), option.item.id if option.item != null else "",
+			option.gold_amount,
+		])
+	return result
+
+
+func _node_signature(offer: RunNodeOffer) -> Array[String]:
+	var result: Array[String] = []
+	for choice: RunNodeChoice in offer.choices():
+		result.append("%s|%d|%s|%s" % [
+			choice.option_id, int(choice.kind), choice.kind_id,
+			choice.battle_plan.battle_id if choice.battle_plan != null else &"",
+		])
+	return result
+
+
+func _upgrade_signature(offer: UpgradeOffer) -> Array[String]:
+	var result: Array[String] = []
+	for candidate: UpgradeCandidate in offer.candidates():
+		result.append("%s|%s|%d" % [candidate.candidate_id, candidate.item.id, candidate.expected_level])
+	return result
 
 
 func _marble(id: String) -> Item:

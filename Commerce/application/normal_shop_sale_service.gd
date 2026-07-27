@@ -14,7 +14,7 @@ func configure(inventory_adapter: Variant, progression_adapter: Variant, wallet_
 	_inventory = inventory_adapter
 	_progression = progression_adapter
 	_wallet = wallet_adapter
-	_configured = _has_api(_inventory, [&"find_owned", &"remove"]) \
+	_configured = _has_api(_inventory, [&"find_owned", &"marbles", &"remove"]) \
 		and _has_api(_progression, [&"reset_item"]) \
 		and _has_api(_wallet, [&"balance", &"quote_sell_price", &"credit"])
 	return _configured
@@ -30,6 +30,8 @@ func sell(item: Item) -> RefCounted:
 	var owned: Item = _inventory.call("find_owned", item) as Item
 	if owned == null:
 		return _failure(PurchaseResultScript.Code.OWNERSHIP_CHANGED, item, "sale item is no longer owned")
+	if owned.type == Item.ItemType.MARBLE and (_inventory.call("marbles") as Array).size() <= 1:
+		return _failure(PurchaseResultScript.Code.LAST_MARBLE, owned, "the last marble cannot be sold")
 	if owned.type == Item.ItemType.MARBLE and not _progression.has_method("reset_item"):
 		return _failure(PurchaseResultScript.Code.NOT_CONFIGURED, owned, "marble progression cannot be reset")
 	var sell_price := maxi(0, int(_wallet.call("quote_sell_price", owned)))

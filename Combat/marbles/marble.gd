@@ -22,7 +22,8 @@ enum MARBLE_TYPE {
 	BOMB,
 	GREEN,
 	BLUE,
-	FIRE
+	FIRE,
+	ASSASSIN
 }
 
 @export var marble_type: MARBLE_TYPE = MARBLE_TYPE.DEFAULT
@@ -71,10 +72,10 @@ func queue_portal_teleport(destination: Vector2, velocity: Vector2) -> bool:
 
 
 ## 接触伤害。Head 模式下委托给 MarbleChain 聚合所有段；非链模式回退到自身 damage。
-func get_hit_damage(_target: Node) -> int:
+func get_hit_damage(_target: Node, packet: DamagePacket = null) -> int:
 	var parent_node: Node = get_parent()
 	if parent_node is MarbleChain:
-		return (parent_node as MarbleChain).get_total_damage(_target)
+		return (parent_node as MarbleChain).get_total_damage(_target, packet)
 	return damage
 
 

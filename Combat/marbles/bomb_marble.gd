@@ -3,6 +3,8 @@
 extends Marble
 class_name BombMarble
 
+const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
+
 @export var explosion_radius: float = 50.0
 @export var explosion_damage: int = 5
 
@@ -13,7 +15,7 @@ func _ready() -> void:
 	super()
 	body_entered.connect(_on_body_entered)
 
-func get_hit_damage(_target: Node) -> int:
+func get_hit_damage(_target: Node, _packet: DamagePacket = null) -> int:
 	return roundi(_get_stat_float("explosion_damage", float(explosion_damage)))
 
 func _on_body_entered(body: Node) -> void:
@@ -38,8 +40,13 @@ func _damage_enemies_in_radius(explosion_center: Vector2) -> void:
 		var enemy_node: Node2D = enemy as Node2D
 		if enemy_node.global_position.distance_to(explosion_center) > effective_radius:
 			continue
-		if enemy_node.has_method("take_damage"):
-			enemy_node.take_damage(effective_damage)
+		if enemy_node.has_method("apply_damage_packet"):
+			var packet: DamagePacket = DamagePacketScript.new(&"bomb", float(effective_damage), &"physical")
+			packet.is_marble = true
+			packet.target = enemy_node
+			enemy_node.call("apply_damage_packet", packet)
+		elif enemy_node.has_method("take_damage"):
+			enemy_node.call("take_damage", roundi(float(effective_damage) * _get_stat_float("damage_multiplier", 1.0)))
 
 func _spawn_explosion_effect(explosion_center: Vector2) -> void:
 	var scene: Node = Engine.get_main_loop().current_scene

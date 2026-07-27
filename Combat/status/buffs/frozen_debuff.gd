@@ -8,7 +8,7 @@ const DEFAULT_DURATION: float = 4.0
 func _init() -> void:
 	id = "frozen_debuff"
 	display_name = "Frozen"
-	description = "Turns the enemy into a pushable ice block for a short time."
+	description = "Turns the enemy into a pushable ice block for a short time. Each collision costs it 1 HP."
 	duration = DEFAULT_DURATION
 	stackable = false
 	max_stacks = 1

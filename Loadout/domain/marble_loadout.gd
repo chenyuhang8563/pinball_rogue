@@ -70,7 +70,7 @@ func restore(state: Dictionary) -> bool:
 func revision() -> int:
 	var identities: Array[String] = []
 	for item: Item in _chain_items:
-		identities.append("%s@%d" % [_identity_key(item), item.get_instance_id()])
+		identities.append(_identity_key(item))
 	return identities.hash()
 
 

@@ -7,6 +7,7 @@ extends Node
 
 const BUFF_DEFS: Dictionary = {
 	"poison_debuff": preload("res://Combat/status/buffs/poison_debuff.gd"),
+	"infection_debuff": preload("res://Combat/status/buffs/infection_debuff.gd"),
 	"frost_debuff": preload("res://Combat/status/buffs/frost_debuff.gd"),
 	"frozen_debuff": preload("res://Combat/status/buffs/frozen_debuff.gd"),
 	"fire_burn_debuff": preload("res://Combat/status/buffs/fire_burn_debuff.gd"),

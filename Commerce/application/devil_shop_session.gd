@@ -5,12 +5,17 @@ const DevilShopPricingScript: GDScript = preload("res://Commerce/domain/devil_sh
 const ItemIdentityScript: GDScript = preload("res://Commerce/domain/item_identity.gd")
 const PurchasePlanScript: GDScript = preload("res://Commerce/application/purchase_plan.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
+const ShopRefreshResultScript: GDScript = preload("res://Commerce/domain/shop_refresh_result.gd")
+
+const REFRESH_COST_STEP: int = 10
 
 var _inventory: Variant = null
 var _progression: Variant = null
 var _wallet: Variant = null
 var _health: Variant = null
 var _config: Resource = null
+var _random_source: RunRandomSource = null
+var _content_registry: Node = null
 var _configured: bool = false
 var _offers: Dictionary = {}
 var _offer_order: Array[StringName] = []
@@ -19,18 +24,24 @@ var _payments: Dictionary = {}
 var _skill_replacement_authorizations: Dictionary = {}
 var _version: int = 0
 var _nonce: int = 0
+var _successful_refresh_count: int = 0
+var _restored_visit_pending: bool = false
 
 
 func configure(
 	inventory_adapter: Variant,
 	progression_adapter: Variant,
 	wallet_adapter: Variant,
-	health_adapter: Variant
+	health_adapter: Variant,
+	random_source: RunRandomSource = null,
+	content_registry: Node = null
 ) -> bool:
 	_inventory = inventory_adapter
 	_progression = progression_adapter
 	_wallet = wallet_adapter
 	_health = health_adapter
+	_random_source = random_source if random_source != null else RunRandomSource.new()
+	_content_registry = content_registry
 	_configured = _has_api(_inventory, [&"find_owned", &"can_add", &"add", &"replace_skill", &"current_skill", &"revision"]) \
 		and _has_api(_progression, [&"level_of", &"can_upgrade", &"upgrade_one", &"reset_skill", &"revision"]) \
 		and _has_api(_wallet, [&"balance", &"can_debit", &"debit", &"revision"]) \
@@ -42,12 +53,80 @@ func open(config: Resource, candidates: Array) -> Array:
 	_config = config
 	if not _configured or _config == null:
 		return []
-	var eligible := _eligible_items(candidates)
+	if _restored_visit_pending:
+		_restored_visit_pending = false
+		return get_offers()
+	return _regenerate_offers(candidates)
+
+
+## Starts a fresh devil-shop visit. Refresh pricing is scoped to the current visit.
+func begin_visit() -> void:
+	if _restored_visit_pending:
+		return
+	_successful_refresh_count = 0
+
+
+func next_refresh_cost() -> int:
+	return _successful_refresh_count * REFRESH_COST_STEP
+
+
+## Replaces every devil-shop offer after charging the next visit-scoped gold price.
+func refresh(candidates: Array) -> RefCounted:
+	var cost := next_refresh_cost()
+	var balance_before := int(_wallet.call("balance")) if _configured else 0
+	if not _configured or _config == null:
+		return ShopRefreshResultScript.failure(
+			ShopRefreshResultScript.Code.NOT_CONFIGURED, cost, balance_before, balance_before
+		)
+	if candidates.is_empty():
+		return ShopRefreshResultScript.failure(
+			ShopRefreshResultScript.Code.EMPTY_CANDIDATES, cost, balance_before, balance_before
+		)
+	var generated_offers := _generate_offers(candidates)
+	if generated_offers.is_empty():
+		return ShopRefreshResultScript.failure(
+			ShopRefreshResultScript.Code.EMPTY_CANDIDATES, cost, balance_before, balance_before
+		)
+	if cost > 0:
+		if not bool(_wallet.call("can_debit", cost)):
+			return ShopRefreshResultScript.failure(
+				ShopRefreshResultScript.Code.INSUFFICIENT_FUNDS, cost, balance_before, balance_before
+			)
+		var wallet_snapshot: Dictionary = _wallet.call("snapshot") as Dictionary
+		if not bool(_wallet.call("debit", cost)):
+			var rollback_completed := bool(_wallet.call("restore", wallet_snapshot))
+			return ShopRefreshResultScript.failure(
+				ShopRefreshResultScript.Code.PAYMENT_FAILED,
+				cost,
+				balance_before,
+				int(_wallet.call("balance")),
+				rollback_completed
+			)
+	var refreshed_offers := _install_offers(generated_offers)
+	_successful_refresh_count += 1
+	return ShopRefreshResultScript.success(
+		cost, balance_before, int(_wallet.call("balance")), refreshed_offers
+	)
+
+
+func _regenerate_offers(candidates: Array) -> Array:
+	return _install_offers(_generate_offers(candidates))
+
+
+func _generate_offers(candidates: Array) -> Array:
+	var source_candidates: Array = candidates
+	if _content_registry != null:
+		var registry_candidates := _registry_candidates()
+		if not registry_candidates.is_empty():
+			source_candidates = registry_candidates
+	var eligible := _eligible_items(source_candidates)
 	var generated: Array = []
 	var stock_count := maxi(0, int(_config.get("stock_count")))
 	var multipliers: Dictionary = _config.get("level_price_multipliers") as Dictionary
 	while generated.size() < stock_count and not eligible.is_empty():
-		var item: Item = eligible.pop_at(randi_range(0, eligible.size() - 1)) as Item
+		var item: Item = _take_weighted_item(eligible)
+		if item == null:
+			break
 		var owned: Item = _inventory.call("find_owned", item) as Item
 		var current_level := int(_progression.call("level_of", owned)) if owned != null else 0
 		var target_level := _pick_target_level(current_level)
@@ -58,7 +137,7 @@ func open(config: Resource, candidates: Array) -> Array:
 		generated.append(CommerceOfferScript.new(
 			&"", 0, item, ItemIdentityScript.key(item), target_level, price, full_price, owned != null
 		))
-	return _install_offers(generated)
+	return generated
 
 
 func replace_offers(offers: Array) -> Array:
@@ -81,9 +160,116 @@ func get_offers() -> Array:
 	return result
 
 
+func snapshot() -> Dictionary:
+	var values: Array[Dictionary] = []
+	for offer_id: StringName in _offer_order:
+		var offer: Variant = _offers.get(offer_id)
+		if offer == null or offer.consumed or offer.item == null or offer.item.id.is_empty():
+			return {}
+		values.append({
+			&"offer_id": offer.offer_id,
+			&"snapshot_version": offer.snapshot_version,
+			&"item_id": StringName(offer.item.id),
+			&"target_level": offer.target_level,
+			&"price": offer.price,
+			&"original_price": offer.original_price,
+			&"is_upgrade": offer.is_upgrade,
+		})
+	return {
+		&"version": _version,
+		&"nonce": _nonce,
+		&"current_index": _current_index,
+		&"successful_refresh_count": _successful_refresh_count,
+		&"offers": values,
+	}
+
+
+func restore(state: Dictionary) -> bool:
+	if not _configured or _content_registry == null or not _content_registry.has_method(&"by_id") \
+			or not state.get(&"offers") is Array:
+		return false
+	var version := int(state.get(&"version", 0))
+	var nonce := int(state.get(&"nonce", 0))
+	var restored: Dictionary = {}
+	var order: Array[StringName] = []
+	for raw: Variant in state[&"offers"] as Array:
+		if not raw is Dictionary:
+			return false
+		var data := raw as Dictionary
+		var offer_id := StringName(data.get(&"offer_id", &""))
+		var item := _content_registry.call(&"by_id", StringName(data.get(&"item_id", &""))) as Item
+		var target_level := int(data.get(&"target_level", 0))
+		var price := int(data.get(&"price", -1))
+		var original_price := int(data.get(&"original_price", -1))
+		if offer_id.is_empty() or restored.has(offer_id) or item == null \
+				or target_level < 1 or target_level > 4 or price < 0 or original_price < price:
+			return false
+		var offer: RefCounted = CommerceOfferScript.new(
+			offer_id, version, item, ItemIdentityScript.key(item), target_level, price,
+			original_price, bool(data.get(&"is_upgrade", false)), false,
+			int(_inventory.call("revision")), int(_progression.call("revision")),
+			int(_wallet.call("revision")), int(_health.call("revision"))
+		)
+		restored[offer_id] = offer
+		order.append(offer_id)
+	if order.is_empty():
+		return false
+	var current_index := int(state.get(&"current_index", 0))
+	if current_index < 0 or current_index >= order.size():
+		return false
+	_offers = restored
+	_offer_order = order
+	_current_index = current_index
+	_payments.clear()
+	_skill_replacement_authorizations.clear()
+	_version = version
+	_nonce = nonce
+	_successful_refresh_count = maxi(0, int(state.get(&"successful_refresh_count", 0)))
+	_restored_visit_pending = true
+	return true
+
+
 func get_current_offer() -> RefCounted:
 	var offer: Variant = _current_internal()
 	return offer.duplicate_view() if offer != null else null
+
+
+func get_optimal_payment(offer_id: StringName) -> Dictionary:
+	if not _configured or _config == null:
+		return {}
+	var offer: Variant = _offers.get(offer_id)
+	if offer == null or offer != _current_internal():
+		return {}
+	var validation_code := _validate_offer(offer, false)
+	if validation_code != PurchaseResultScript.Code.SUCCESS:
+		return {}
+	var price: int = int(offer.price)
+	var available_gold: int = maxi(0, int(_wallet.call("balance")))
+	var gold: int = mini(price, available_gold)
+	var remaining_value: int = price - gold
+	var health_value: int = maxi(1, int(_config.get("health_to_gold")))
+	var available_health: int = maxi(
+		0,
+		int(_health.call("current")) - int(_config.get("minimum_remaining_health"))
+	)
+	var health: int = mini(available_health, ceili(float(remaining_value) / float(health_value)))
+	return {
+		&"gold": gold,
+		&"health": health,
+		&"is_sufficient": _payment_value(gold, health) >= offer.price,
+	}
+
+
+func select_optimal_payment(offer_id: StringName) -> Dictionary:
+	var payment := get_optimal_payment(offer_id)
+	if payment.is_empty():
+		return {}
+	_payments.erase(offer_id)
+	if bool(payment[&"is_sufficient"]):
+		var result := select_payment(offer_id, int(payment[&"gold"]), int(payment[&"health"]))
+		if int(result.get("code")) != PurchaseResultScript.Code.SUCCESS:
+			return {}
+	return payment
 
 
 func select_payment(offer_id: StringName, gold: int, health: int) -> RefCounted:
@@ -207,7 +393,8 @@ func _eligible_items(candidates: Array) -> Array:
 	var result: Array = []
 	for value: Variant in candidates:
 		var candidate := value as Item
-		if not _is_purchasable(candidate) or _contains_identity(result, candidate):
+		if not _is_purchasable(candidate) or candidate.weight <= 0.0 \
+				or not _requirements_met(candidate) or _contains_identity(result, candidate):
 			continue
 		var owned: Item = _inventory.call("find_owned", candidate) as Item
 		if owned != null:
@@ -225,20 +412,16 @@ func _eligible_items(candidates: Array) -> Array:
 func _pick_target_level(current_level: int) -> int:
 	var weights: Dictionary = _config.get("level_weights") as Dictionary
 	var choices: Array[int] = []
-	var total_weight := 0
+	var choice_weights := PackedFloat64Array()
 	for level: int in [2, 3, 4]:
-		var weight := int(weights.get(level, 1))
+		var weight := maxf(0.0, float(weights.get(level, 1)))
 		if level > current_level and weight > 0:
 			choices.append(level)
-			total_weight += weight
-	if choices.is_empty() or total_weight <= 0:
+			choice_weights.append(weight)
+	if choices.is_empty():
 		return 0
-	var roll := randi_range(1, total_weight)
-	for level: int in choices:
-		roll -= int(weights.get(level, 1))
-		if roll <= 0:
-			return level
-	return choices.back()
+	var index := _random_source.weighted_index_float(choice_weights)
+	return choices[index] if index >= 0 else 0
 
 
 func _copy_external_offer(value: Variant) -> RefCounted:
@@ -397,6 +580,44 @@ func _contains_identity(items: Array, candidate: Item) -> bool:
 		if ItemIdentityScript.same(item, candidate):
 			return true
 	return false
+
+
+func _take_weighted_item(items: Array) -> Item:
+	if items.is_empty():
+		return null
+	var weights := PackedFloat64Array()
+	for value: Variant in items:
+		var item := value as Item
+		weights.append(maxf(0.0, item.weight) if item != null else 0.0)
+	var index := _random_source.weighted_index_float(weights)
+	if index < 0:
+		return null
+	return items.pop_at(index) as Item
+
+
+func _registry_candidates() -> Array:
+	if _content_registry == null or not is_instance_valid(_content_registry) \
+			or not _content_registry.has_method(&"query"):
+		return []
+	return _content_registry.call(&"query", Item.ItemType.RELIC) as Array
+
+
+func _requirements_met(item: Item) -> bool:
+	if item == null or item.requires_tags.is_empty():
+		return true
+	var owned_tags: Array[StringName] = []
+	if _inventory != null and _inventory.has_method(&"owned_items"):
+		for value: Variant in _inventory.call(&"owned_items") as Array:
+			var owned := value as Item
+			if owned == null:
+				continue
+			for tag: StringName in owned.tags:
+				if not owned_tags.has(tag):
+					owned_tags.append(tag)
+	for required: StringName in item.requires_tags:
+		if not owned_tags.has(required):
+			return false
+	return true
 
 
 func _is_purchasable(item: Item) -> bool:

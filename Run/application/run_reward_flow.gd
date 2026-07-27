@@ -54,10 +54,14 @@ func select(token: RunFlowToken, draft_id: StringName, offer_id: StringName) -> 
 	return _service.claim(token, draft_id, offer_id)
 
 
-func confirm_replacement(token: RunFlowToken, replacement_token: StringName) -> RewardResult:
+func confirm_replacement(
+	token: RunFlowToken,
+	replacement_token: StringName,
+	replacement_target: Item = null
+) -> RewardResult:
 	if not _valid_replacement_intent(token, replacement_token):
 		return null
-	return _service.confirm_replacement(token, replacement_token)
+	return _service.confirm_replacement(token, replacement_token, replacement_target)
 
 
 func cancel_replacement(token: RunFlowToken, replacement_token: StringName) -> RewardResult:
@@ -72,6 +76,22 @@ func pending_replacement_token() -> StringName:
 
 func completed() -> bool:
 	return _active != null and _active.completed
+
+
+func snapshot_active() -> Dictionary:
+	return _service.snapshot_active() if _service != null else {}
+
+
+func restore_active(
+	token: RunFlowToken,
+	state: Dictionary,
+	content_registry: Node
+) -> RewardOffer:
+	_error_detail = ""
+	_active = _service.restore_active(token, state, content_registry) if _service != null else null
+	if _active == null:
+		_error_detail = "saved reward draft is invalid"
+	return _active
 
 
 func clear() -> bool:

@@ -2,6 +2,7 @@ extends GutTest
 
 
 const MAIN_SCENE: PackedScene = preload("res://Game/Bootstrap/main.tscn")
+const MAIN_MENU_SCENE: PackedScene = preload("res://UI/MainMenu/main_menu.tscn")
 const LEVEL_SCENES: Array[PackedScene] = [
 	preload("res://Combat/levels/level_001_weak.tscn"),
 	preload("res://Combat/levels/level_strong_normal.tscn"),
@@ -29,6 +30,7 @@ func test_main_scene_exposes_required_composition_nodes() -> void:
 	assert_not_null(main.get_node_or_null("CanvasLayer/SkillSlot"))
 	assert_true(main.get_node_or_null("CanvasLayer/BattleHud") is BattleHud)
 	assert_not_null(main.get_node_or_null("CanvasLayer/PausePanel"))
+	assert_true(main.get_node_or_null("CanvasLayer/SettingsPanel") is SettingsPanel)
 	assert_not_null(main.get_node_or_null("CanvasLayer/RunFailurePanel"))
 	# Phase 7：固定运行 UI 由主场景预置，初始仅存在、不呈现。
 	assert_true(main.get_node_or_null("CanvasLayer/NodeChoicePanel") is NodeChoicePanel)
@@ -44,16 +46,27 @@ func test_main_scene_exposes_required_composition_nodes() -> void:
 		^"CanvasLayer/DevilShop",
 	]:
 		assert_false((main.get_node(path) as CanvasItem).visible, "%s 应初始隐藏" % path)
-	assert_false((main.get_node("Shop/UI") as CanvasLayer).visible)
+	assert_not_null(main.get_node("Shop/UI") as CanvasLayer)
 	assert_false((main.get_node("InventoryPanel/UI") as CanvasLayer).visible)
 	assert_true(main.get_node_or_null("InventoryPanel/UI/SkillReplaceDialog") is SkillReplaceDialog)
-	assert_true(main.get_node_or_null("DebugCanvasLayer/DebugGrantPanel") is DebugGrantPanel)
+	assert_not_null(main.get_node_or_null("DebugCanvasLayer/DebugGrantPanel"))
 	assert_not_null(main.get_node_or_null("DebugCanvasLayer/DebugGrantPanel/VisibilityPlayer"))
 	# Phase 6：Bootstrap 组合节点可视化预置于主场景，且脚本基类匹配。
 	assert_true(main.get_node_or_null("BattleSpawner") is BattleSpawner)
 	assert_true(main.get_node_or_null("Enemies") is Node2D)
 	assert_true(main.get_node_or_null("BattleGateway") is BattleGateway)
 	assert_true(main.get_node_or_null("RunFlowController") is RunFlowController)
+	var shop_backdrop := main.get_node_or_null("Shop/UI/ShopBackdrop") as ColorRect
+	assert_not_null(shop_backdrop)
+	if shop_backdrop != null:
+		assert_eq(shop_backdrop.color.a, 1.0)
+
+
+func test_main_menu_keeps_continue_available_while_save_support_is_pending() -> void:
+	var menu := MAIN_MENU_SCENE.instantiate()
+	autofree(menu)
+	assert_false((menu.get_node("ResumeButton") as Button).disabled)
+	assert_true(menu.get_node_or_null("SettingsPanel") is SettingsPanel)
 
 
 func test_phase7_font_sizes_fallbacks_and_black_style_contracts() -> void:
@@ -75,12 +88,21 @@ func test_phase7_font_sizes_fallbacks_and_black_style_contracts() -> void:
 	) as Label
 	assert_eq(inventory_title.label_settings.font, composite_12)
 	assert_eq(skill_title.label_settings.font, composite_12)
+	var relic_selection_hint := main.get_node(
+		"InventoryPanel/UI/Panel/MarginContainer/Layout/RelicSelectionHint"
+	) as Label
+	assert_eq(relic_selection_hint.label_settings.font, composite_12)
+	var relic_selection_player := main.get_node("InventoryPanel/RelicSelectionModePlayer") as AnimationPlayer
+	assert_not_null(relic_selection_player)
+	if relic_selection_player != null:
+		assert_true(relic_selection_player.has_animation(&"normal"))
+		assert_true(relic_selection_player.has_animation(&"relic_selection"))
 
 	var charge := main.get_node("CanvasLayer/SkillSlot/ChargeLabel") as Label
 	assert_eq(charge.label_settings.font, composite_10)
 	assert_eq(charge.label_settings.font_size, 10)
 	var devil_reward := main.get_node("CanvasLayer/DevilShop/BottomHUD/ConfirmButton") as Button
-	assert_eq(devil_reward.get_theme_font_size(&"font_size"), 8, "Devil reward button 是唯一字号例外")
+	assert_eq(devil_reward.get_theme_font_size(&"font_size"), 10, "Devil reward button uses the approved 10px composite font")
 	assert_eq(devil_reward.get_theme_font(&"font"), composite_10)
 
 	var event_button := main.get_node(

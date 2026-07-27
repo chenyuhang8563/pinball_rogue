@@ -1,0 +1,36 @@
+[gd_scene format=3 uid="uid://c0t37ll5k53xr"]
+
+[ext_resource type="Texture2D" uid="uid://b4fdkrbi1rrnm" path="res://Assets/Monsters/fly-Sheet.png" id="1_nse80"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h30h0"]
+atlas = ExtResource("1_nse80")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vqyax"]
+atlas = ExtResource("1_nse80")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_pvmxx"]
+animations = [{
+"frames": [],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h30h0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vqyax")
+}],
+"loop": true,
+"name": &"fly",
+"speed": 8.0
+}]
+
+[node name="PlagueFlySprite" type="AnimatedSprite2D" unique_id=651562127]
+texture_filter = 1
+sprite_frames = SubResource("SpriteFrames_pvmxx")
+animation = &"fly"
+autoplay = "fly"

@@ -1,7 +1,7 @@
 extends Control
 class_name RunFailurePanel
 
-signal restart_intent(token: RunFlowToken)
+signal terminal_acknowledge_intent(token: RunFlowToken)
 
 var _failure_token: RunFlowToken = null
 
@@ -45,7 +45,7 @@ func clear_presentation() -> void:
 
 func _on_confirm_pressed() -> void:
 	if _failure_token != null:
-		restart_intent.emit(_failure_token)
+		terminal_acknowledge_intent.emit(_failure_token)
 
 
 func _connect_localization() -> void:

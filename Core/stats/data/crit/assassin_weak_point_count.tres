@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatDef" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Core/stats/stat_def.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+id = "assassin_weak_point_count"
+display_name = "Assassin Weak Point Count"
+category = "crit"
+base_value = 0.0
+min_value = 0.0
+max_value = 4.0
+integer = true

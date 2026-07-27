@@ -20,6 +20,7 @@ var item: Item
 var previous_level: int
 var current_level: int
 var detail: String
+var granted_gold: int
 
 
 func _init(
@@ -30,7 +31,8 @@ func _init(
 	value_item: Item = null,
 	value_previous_level: int = 0,
 	value_current_level: int = 0,
-	value_detail: String = ""
+	value_detail: String = "",
+	value_granted_gold: int = 0
 ) -> void:
 	token = value_token
 	code = value_code
@@ -40,6 +42,7 @@ func _init(
 	previous_level = value_previous_level
 	current_level = value_current_level
 	detail = value_detail
+	granted_gold = value_granted_gold
 
 
 func succeeded() -> bool:

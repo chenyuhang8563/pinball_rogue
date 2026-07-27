@@ -1,14 +1,22 @@
 keys,en,zh_CN
 ITEM_FIRE_MARBLE_TITLE,Fire Marble,火焰弹珠
-ITEM_FIRE_MARBLE_DESC,Applies a burning debuff that deals decreasing damage every second.,命中敌人施加燃烧，每秒造成递减伤害。
-UPGRADE_FIRE_DURATION_4_DESC,Burn lasts 4 seconds,燃烧持续 4 秒
-UPGRADE_FIRE_DURATION_5_DESC,Burn lasts 5 seconds,燃烧持续 5 秒
-UPGRADE_FIRE_AWAKEN_DESC,Awaken: Ember spread transfers remaining burn to the nearest enemy,觉醒：将剩余燃烧传给最近的敌人
+ITEM_FIRE_MARBLE_DESC,First hit applies 4 burn fuel; later hits add 1. Each second, burn deals damage based on remaining fuel and consumes 1 fuel.,首次命中附着 4 层燃烧；燃烧期间命中追加 1 层。每秒根据剩余燃料层数造成伤害并消耗 1 层燃烧。
+STATUS_BURN_NAME,Burn,燃烧
+STATUS_BURN_DESC,Each second deals damage based on remaining fuel and consumes 1 fuel; extinguishes at zero.,每秒根据剩余燃料层数造成伤害，并消耗 1 层燃料；燃料归零时熄灭。
+UPGRADE_FIRE_DURATION_4_DESC,Burn fuel cap increased to 15,燃烧燃料上限提升至 15
+UPGRADE_FIRE_DURATION_5_DESC,Burn fuel cap increased to 20 and deals 3 damage per fuel,燃烧燃料上限提升至 20，且每燃料造成 3 点伤害
+UPGRADE_FIRE_AWAKEN_DESC,Awaken: retains the level III burn damage,觉醒：保留 III 级燃烧伤害
 UI_INVENTORY_TITLE,Inventory,物品栏
 UI_SKILLS_TITLE,Skills,技能
 UI_EXIT,Exit,退出
 UI_SHOP_TITLE,Shop,商店
+UI_SHOP_MARBLE_FULL,"Marble slots full. Right-click a marble below to sell.",弹珠槽已满，右键下方弹珠出售
+UI_SHOP_RELIC_FULL,"Relic slots full. Right-click a relic below to sell.",遗物槽已满，右键下方遗物出售
+UI_SHOP_REFRESH_FREE,Free,免费
+UI_SHOP_REFRESH_COST,Refresh: %d Gold,刷新：%d 金币
+UI_SHOP_REFRESH_INSUFFICIENT,Not enough Gold to refresh.,金币不足，无法刷新
 UI_OK,OK,确定
+UI_BACK,Back,返回
 UI_LANGUAGE_CHINESE,中文,中文
 UI_LANGUAGE_ENGLISH,English,English
 UI_CHOOSE_NEXT_NODE_TITLE,Choose Next Node,选择下个节点
@@ -19,7 +27,11 @@ UI_UPGRADE_MARBLE_DESC,Choose one marble to upgrade.,选择一个弹珠进行升
 UI_UPGRADE_INVENTORY_TITLE,Choose an Item to Upgrade,选择一个物品升级
 UI_UPGRADE_ITEM_CONFIRM,Upgrade %s?,确认升级 %s？
 UI_UPGRADE_ITEM_UNAVAILABLE,%s is already at maximum level.,%s 已达到最高等级，无法升级。
+UI_UPGRADE_ALL_MAX_COMPENSATION,"No items can be upgraded. You will receive %d Gold. Confirm?",无法升级，将给予金币（%d），是否确认？
 UI_RELIC_TYPE,Relic,遗物
+UI_RELIC_REPLACEMENT_CONFIRM,Relic slots are full. Replace a relic?,遗物槽已满，是否更换遗物？
+UI_RELIC_REPLACEMENT_TITLE,Replace Relic,更换遗物
+UI_RELIC_REPLACEMENT_SELECT,Choose one relic to replace.,请选择一件遗物进行更换。
 UI_MARBLE_TYPE,Marble,弹珠
 UI_EMPTY,Empty,空
 UI_INVENTORY_FULL_GOLD_TOOLTIP,Inventory full: take +%d Gold,物品栏已满：获得 +%d 金币
@@ -58,7 +70,7 @@ ITEM_DARK_MARBLE_DESC,Default dark marble.,默认暗影弹珠。
 ITEM_BLUE_MARBLE_TITLE,Blue Marble,冰霜弹珠
 ITEM_BLUE_MARBLE_DESC,Adds frost to enemies on hit.,命中敌人时施加冰霜。
 ITEM_GREEN_MARBLE_TITLE,Green Marble,毒液弹珠
-ITEM_GREEN_MARBLE_DESC,Poisons enemies for 10 seconds.,使敌人中毒 10 秒。
+ITEM_GREEN_MARBLE_DESC,Poisons enemies and refreshes a shared 5 second timer on each hit.,命中敌人施加中毒，每次命中刷新共享的 5 秒计时。
 ITEM_BROWN_MARBLE_TITLE,Brown Marble,大地弹珠
 ITEM_BROWN_MARBLE_DESC,Higher damage with more collisions.,碰撞次数越多，伤害越高。
 ITEM_BOMB_MARBLE_TITLE,Bomb Marble,炸弹弹珠
@@ -66,20 +78,36 @@ ITEM_BOMB_MARBLE_DESC,Explodes on hit and damages nearby enemies.,命中时爆�
 ITEM_LIGHTNING_TITLE,Lightning,闪电链
 ITEM_LIGHTNING_DESC,Releases a chain of lightning,释放一道闪电链。
 ITEM_FIRE_BELLOWS_TITLE,Bellows Core,风箱核心
-ITEM_FIRE_BELLOWS_DESC,Hits on burning enemies accelerate a burn tick.,命中燃烧中的敌人会加速一次燃烧结算。
+ITEM_FIRE_BELLOWS_DESC,Every few hits on a burning enemy grants it 1 extra fuel.,每隔几次命中燃烧中的敌人会额外施加 1 燃料。
 ITEM_POISON_CULTURE_TITLE,Plague,瘟疫培养皿
 ITEM_POISON_CULTURE_DESC,Every third poison tick spreads poison to nearby enemies.,每三次中毒跳伤会把中毒传播给附近敌人。
 ITEM_ICE_HAMMER_TITLE,Icebreaker Hammer,碎冰锤
 ITEM_ICE_HAMMER_DESC,Hitting a frozen enemy shatters it and damages nearby enemies.,命中冻结的敌人会将其碎冰并伤害附近敌人。
+ITEM_PERMAFROST_TITLE,Permafrost,永冻
+ITEM_PERMAFROST_DESC,Frozen duration +1/+2/+3s. Awakened: each collision while frozen adds 2.5s.,冻结持续时间+1/+2/+3秒。觉醒：冻结状态每次碰撞额外+2.5秒。
+ITEM_CRYOCLASM_TITLE,Cryoclasm,冰爆
+ITEM_CRYOCLASM_DESC,"Frozen enemies shatter when touched by the marble, a wall, or another enemy, clearing freeze and frost and firing a fan of homing ice shards at distinct enemies.","冻结敌人碰到弹珠、墙体或其他敌人时碎裂，解除冻结与冰霜，并沿运动方向扇区射出追踪冰碎片攻击不同敌人。"
+ITEM_CARRION_TITLE,Carrion,死蝇
+ITEM_CARRION_DESC,Plague flies linger longer; awakened flies bite harder.,瘟疫苍蝇停留更久；觉醒后苍蝇叮咬伤害更高。
+ITEM_PARASITE_TITLE,Parasite,寄生
+ITEM_PARASITE_DESC,Friendly plague flies layer poison on enemies they bite.,友方瘟疫苍蝇叮咬敌人时会为其叠加中毒。
+ITEM_PUSTULE_TITLE,Plague Blister,疫疱
+ITEM_PUSTULE_DESC,"Infected enemies burst on death, releasing extra plague flies.",感染的敌人死亡时爆裂，额外释放瘟疫苍蝇。
+ITEM_VENOM_KNIFE_TITLE,Venom Knife,淬毒短刃
+ITEM_VENOM_KNIFE_DESC,Your poison applications add extra stacks.,施加中毒时额外叠加毒层。
+ITEM_SCORPION_TAIL_TITLE,Scorpion Tail,蝎尾针
+ITEM_SCORPION_TAIL_DESC,Each poison layer deals more damage every tick.,每层中毒在每次跳伤时造成更多伤害。
+ITEM_WITCH_HAT_TITLE,Witch Hat,巫毒帽
+ITEM_WITCH_HAT_DESC,Poison can build to higher stack counts.,中毒可叠加至更高层数。
 UPGRADE_DARK_DAMAGE_2_DESC,Damage 2,伤害 2
 UPGRADE_DARK_DAMAGE_3_DESC,Damage 3,伤害 3
 UPGRADE_DARK_AWAKEN_DESC,Awaken: Damage 4,觉醒：伤害 4
 UPGRADE_BOMB_DAMAGE_5_DESC,Explosion damage 5,爆炸伤害 5
 UPGRADE_BOMB_DAMAGE_8_DESC,Explosion damage 8,爆炸伤害 8
 UPGRADE_BOMB_AWAKEN_DESC,"Awaken: radius 100, effect x4","觉醒：半径 100，效果 x4"
-UPGRADE_GREEN_POISON_2_DESC,Poison 2 per tick,每跳中毒 2
-UPGRADE_GREEN_POISON_4_DESC,Poison 4 per tick,每跳中毒 4
-UPGRADE_GREEN_AWAKEN_DESC,Awaken: Poison 4 every 0.5s,觉醒：每 0.5 秒中毒 4
+UPGRADE_GREEN_POISON_2_DESC,Poison cap increased to 15,毒上限提升至 15
+UPGRADE_GREEN_POISON_4_DESC,Poison cap increased to 20,毒上限提升至 20
+UPGRADE_GREEN_AWAKEN_DESC,Awaken: apply 2 poison per hit,觉醒：每次命中施加 2 层毒
 UPGRADE_BROWN_ECHO_2_DESC,Echo damage 2,回响伤害 2
 UPGRADE_BROWN_ECHO_4_DESC,Echo damage 4,回响伤害 4
 UPGRADE_BROWN_AWAKEN_DESC,"Awaken: Echo 8, 15s, spend 1 stack","觉醒：回响 8，15 秒，消耗 1 层"
@@ -90,6 +118,8 @@ STAT_BASE_DAMAGE,Base Damage,基础伤害
 STAT_ARMOR,Armor,护甲
 STAT_CRIT_RATE,Crit Rate,暴击率
 STAT_CRIT_DAMAGE,Crit Damage,暴击伤害
+FLOATING_CRIT_TAG,Crit,暴击
+FLOATING_PERFECT_TAG,Perfect,完美
 STAT_MOVE_SPEED,Move Speed,移动速度
 STAT_MAX_HEALTH,Max Health,最大生命值
 STAT_RUN_HEALTH,Run Health,旅程生命值
@@ -108,3 +138,26 @@ DEVIL_SHOP_GOLD_CHIPS,Gold: %d,金币：%d
 DEVIL_SHOP_HEALTH_CHIPS,Health: %d,生命：%d
 DEVIL_SHOP_PAYMENT_VALUE,Value: %d,价值：%d
 DEVIL_SHOP_PRICE,Price: %d,价格：%d
+ITEM_ASSASSIN_MARBLE_TITLE,Assassin Marble,刺客弹珠
+ITEM_ASSASSIN_MARBLE_DESC,Reveals enemy weak points; strike from the marked side to crit.,揭示敌人方位破绽，从标记方向命中造成暴击。
+UPGRADE_ASSASSIN_DAMAGE_2_DESC,Assassin segment damage increased to 2,刺客段伤害提升至 2
+UPGRADE_ASSASSIN_DAMAGE_3_DESC,Assassin segment damage increased to 3,刺客段伤害提升至 3
+UPGRADE_ASSASSIN_AWAKEN_DESC,Awaken: reveal two weak points at once,觉醒：同时揭示两个破绽
+ITEM_ASSASSINS_WHETSTONE_TITLE,Assassin's Whetstone,刺客磨刀石
+ITEM_ASSASSINS_WHETSTONE_DESC,Expand weak-point tolerance. Awaken for perfect cuts.,扩大破绽容差；觉醒后可触发完美切入。
+ITEM_FORTUNA_DICE_TITLE,Fortuna's Dice,福尔图娜的骰子
+ITEM_FORTUNA_DICE_DESC,Each immediate damage instance rolls a damage multiplier.,每次即时伤害独立掷出伤害倍率。
+ITEM_MANY_FACED_PRISM_TITLE,Many-Faced Prism,千面棱镜
+ITEM_MANY_FACED_PRISM_DESC,Base weak-point crits create a temporary prism weak point.,命中基础破绽后生成临时棱镜破绽。
+ITEM_SCARLET_THREAD_TITLE,Scarlet Thread,猩红丝线
+ITEM_SCARLET_THREAD_DESC,Critical hits cut nearby enemies with scarlet threads.,暴击会以猩红丝线切割附近敌人。
+ITEM_EXECUTION_DECREE_TITLE,Execution Decree,处刑敕令
+ITEM_EXECUTION_DECREE_DESC,Non-critical immediate hits arm a guaranteed execution crit.,非暴击即时伤害累积进度，武装下一次处刑暴击。
+ITEM_ACCELERANT_TITLE,Accelerant,助燃剂
+ITEM_ACCELERANT_DESC,"Hits on burning enemies add extra fuel, but fuel evaporates twice as fast.",命中燃烧敌人时额外施加燃料，但燃料挥发速度加倍。
+ITEM_CREMATION_TITLE,Cremation,火葬
+ITEM_CREMATION_DESC,"Marble hits on high-fuel enemies detonate, dealing fire shockwave damage to nearby enemies.",弹珠命中高燃料敌人时引爆，对周围敌人造成火焰冲击波。
+ITEM_THERMAL_SHOCK_TITLE,Thermal Shock,热冲击
+ITEM_THERMAL_SHOCK_DESC,"When burn and freeze coexist, shatter for fixed damage and remove both statuses.",燃烧与冻结共存时发生碎裂，造成固定伤害并解除两种状态。
+ITEM_MIASMA_TITLE,Miasma,瘴气
+ITEM_MIASMA_DESC,"When burn and poison coexist, detonate toxic fog for area damage and clear poison.",燃烧与感染共存时发生毒雾爆燃，造成范围伤害并清除感染。

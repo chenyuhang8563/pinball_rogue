@@ -1,0 +1,15 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Combat/effects/scarlet_thread/scarlet_thread_effect.gd" id="1_script"]
+
+[node name="ScarletThreadEffect" type="Node2D"]
+z_index = 90
+script = ExtResource("1_script")
+
+[node name="Line2D" type="Line2D" parent="."]
+width = 2.0
+default_color = Color(1, 0.22, 0.3, 1)
+
+[node name="GlowLine2D" type="Line2D" parent="."]
+width = 5.0
+default_color = Color(0.82, 0.02, 0.08, 0.55)

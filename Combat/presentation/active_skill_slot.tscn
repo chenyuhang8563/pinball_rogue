@@ -6,7 +6,7 @@
 [ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="3_pgcsl"]
 
 [sub_resource type="Gradient" id="Gradient_dphl4"]
-colors = PackedColorArray(0.08, 0.12, 0.3, 0, 0.35, 0.55, 1, 0.5)
+colors = PackedColorArray(0.04, 0.04, 0.05, 0, 0.03, 0.03, 0.04, 0.58)
 
 [sub_resource type="GradientTexture2D" id="GradientTexture2D_4pigi"]
 gradient = SubResource("Gradient_dphl4")

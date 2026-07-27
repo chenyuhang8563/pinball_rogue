@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Item" format=3]
+
+[ext_resource type="Texture2D" path="res://Assets/Items/ice.png" id="1_icon"]
+[ext_resource type="Script" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "thermal_shock"
+title = "ITEM_THERMAL_SHOCK_TITLE"
+icon = ExtResource("1_icon")
+price = 30
+description = "ITEM_THERMAL_SHOCK_DESC"
+effect_type = 18
+type = 2
+rarity = 2
+tags = Array[StringName]([&"relic", &"fire", &"frost", &"bridge"])
+weight = 30.0
+requires_tags = Array[StringName]([&"fire", &"frost"])

@@ -8,7 +8,7 @@ const FROST_DEBUFF_ID: String = "frost_debuff"
 const FROZEN_DEBUFF_ID: String = "frozen_debuff"
 
 
-static func apply_frost_to_enemy(enemy: Node) -> int:
+static func apply_frost_to_enemy(enemy: Node, packet: DamagePacket = null) -> int:
 	if enemy == null:
 		return 0
 	if enemy.has_method("has_buff") and bool(enemy.call("has_buff", FROZEN_DEBUFF_ID)):
@@ -20,7 +20,7 @@ static func apply_frost_to_enemy(enemy: Node) -> int:
 	var stacks_after_hit: int = mini(current_stacks + stack_gain, FrostDebuff.MAX_FROST_STACKS)
 	var frost_debuff: BuffDef = Marble.make_buff(FROST_DEBUFF_ID)
 	if frost_debuff != null:
-		enemy.call("add_buff", frost_debuff, stack_gain)
+		enemy.call("add_buff", frost_debuff, stack_gain, packet)
 	return stacks_after_hit
 
 
@@ -35,9 +35,9 @@ func _ready() -> void:
 	super()
 
 
-func get_hit_damage(target: Node) -> int:
-	var stacks_after_hit: int = apply_frost_to_enemy(target)
-	return super(target) + get_frost_bonus_damage(stacks_after_hit)
+func get_hit_damage(target: Node, packet: DamagePacket = null) -> int:
+	var stacks_after_hit: int = apply_frost_to_enemy(target, packet)
+	return super(target, packet) + get_frost_bonus_damage(stacks_after_hit)
 
 
 static func _get_enemy_frost_stacks(enemy: Node) -> int:

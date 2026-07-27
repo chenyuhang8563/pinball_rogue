@@ -14,6 +14,24 @@ enum EffectType {
 	FIRE_BELLOWS,
 	POISON_CULTURE,
 	ICE_HAMMER,
+	ASSASSIN_MARBLE,
+	ASSASSINS_WHETSTONE,
+	FORTUNA_DICE,
+	MANY_FACED_PRISM,
+	SCARLET_THREAD,
+	EXECUTION_DECREE,
+	ACCELERANT,
+	CREMATION,
+	THERMAL_SHOCK,
+	MIASMA,
+	# --- 瘟疫流派遗物 ---
+	CARRION,
+	PARASITE,
+	PUSTULE,
+	# --- 通用毒系遗物（不依赖瘟疫苍蝇） ---
+	VENOM_KNIFE,
+	SCORPION_TAIL,
+	WITCH_HAT,
 }
 
 enum ItemType {
@@ -23,6 +41,14 @@ enum ItemType {
 	SKILL,
 }
 
+enum Rarity {
+	COMMON,
+	UNCOMMON,
+	RARE,
+	BOSS,
+	CURSE,
+}
+
 @export var id: String = ""
 @export var title: String
 @export var icon: Texture2D
@@ -30,6 +56,10 @@ enum ItemType {
 @export var description: String = ""
 @export var effect_type: EffectType = EffectType.NONE
 @export var type: ItemType = ItemType.NONE
+@export var rarity: Rarity = Rarity.COMMON
+@export var tags: Array[StringName] = []
+@export var weight: float = 1.0
+@export var requires_tags: Array[StringName] = []
 @export var marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT
 @export var marble_segment_damage: int = 1
 @export var skill_definition: SkillDefinition

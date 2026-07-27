@@ -12,4 +12,7 @@ price = 20
 description = "ITEM_LIGHTNING_DESC"
 effect_type = 1
 type = 2
+rarity = 1
+tags = Array[StringName]([&"relic", &"lightning", &"producer"])
+weight = 60
 metadata/_custom_type_script = "uid://cbxvjrptlxvsm"

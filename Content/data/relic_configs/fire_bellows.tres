@@ -5,7 +5,9 @@
 [resource]
 script = ExtResource("1_config")
 max_level = 3
-level_values = [4, 3, 2]
+level_values = [1, 2, 3]
 extra = {
-"awakened_preserve": true
+"awakened_preserve": true,
+"awakened_bonus": 1,
+"search_radius": 150.0
 }

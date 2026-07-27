@@ -7,6 +7,7 @@ const DefaultBattleRewardConfig: BattleRewardConfig = preload(
 )
 const DefaultRunFloorConfig: RunFloorConfig = preload("res://Run/data/default_run_floor_config.tres")
 const DebugGrantServiceScript: GDScript = preload("res://Game/Debug/debug_grant_service.gd")
+const MAIN_MENU_SCENE: String = "res://UI/MainMenu/main_menu.tscn"
 
 @onready var marbles: Node2D = $Marbles
 @onready var marble_chain_registry: MarbleChainRegistry = $MarbleChainRegistry
@@ -34,6 +35,7 @@ var event_resolver: EventResolver = null
 var battle_plan_factory: BattlePlanFactory = null
 var run_flow_controller: RunFlowController = null
 var run_random_source: RunRandomSource = null
+var content_registry: Node = null
 var battle_reward_config: BattleRewardConfig = null
 var run_floor_config: RunFloorConfig = null
 var run_ui_adapter: RunFlowUIAdapter = null
@@ -48,10 +50,13 @@ var normal_shop: Control = null
 var battle_hud: BattleHud = null
 var inventory_panel: InventoryPanel = null
 var run_failure_panel: RunFailurePanel = null
+var pause_panel: PausePanel = null
+var settings_panel: SettingsPanel = null
 var debug_grant_service: RefCounted = null
 var _active_skill_blocking_panels: Array[Node] = []
 var _gateway_marble_fell_callable: Callable = Callable()
 var _run_flow_composition_configured: bool = false
+var _restoring_checkpoint: bool = false
 
 
 func _ready() -> void:
@@ -111,6 +116,10 @@ func _on_accepted_marble_fell(_token: RunFlowToken, body: RigidBody2D) -> void:
 		return
 	# 确认掉落的确实是 Head
 	if body == marble_chain.head:
+		# 本发边界事件：拥有临时投射物的遗物可在此自行清理。
+		var effect_manager: Node = _get_autoload_node(&"EffectManager")
+		if effect_manager != null and effect_manager.has_method("on_ball_lost"):
+			effect_manager.call("on_ball_lost")
 		if skill_controller != null:
 			skill_controller.cancel_active_skill("head_fell")
 		marble_chain.queue_free()
@@ -322,7 +331,12 @@ func _setup_run_flow_composition(
 		func() -> Node: return RunFlowController.new(),
 		func(node: Node) -> bool: return node is RunFlowController
 	) as RunFlowController
-	run_random_source = RunRandomSource.new()
+	run_random_source = component_overrides.get(&"run_random_source") as RunRandomSource
+	if run_random_source == null:
+		run_random_source = RunRandomSource.new()
+	content_registry = component_overrides.get(&"content_registry") as Node
+	if content_registry == null:
+		content_registry = _get_autoload_node(&"ContentRegistry")
 	reset_battle_callable = Callable(self, "reset_battle_state")
 	release_floating_texts_callable = Callable(self, "_release_all_floating_texts")
 	read_stat_callable = Callable(self, "_read_stat")
@@ -330,7 +344,7 @@ func _setup_run_flow_composition(
 	run_floor_config = DefaultRunFloorConfig
 
 	if battle_spawner == null or base_enemies == null or battle_gateway == null \
-			or run_flow_controller == null:
+			or run_flow_controller == null or not _is_valid_content_registry(content_registry):
 		_dispose_failed_run_flow_composition(created_run_scope)
 		return false
 	battle_spawner.enemy_container = base_enemies
@@ -342,7 +356,8 @@ func _setup_run_flow_composition(
 		run_scope.progression,
 		run_scope.wallet,
 		battle_reward_config,
-		run_random_source
+		run_random_source,
+		content_registry
 	):
 		_dispose_failed_run_flow_composition(created_run_scope)
 		return false
@@ -402,6 +417,8 @@ func _dispose_run_flow_composition() -> void:
 	battle_hud = null
 	inventory_panel = null
 	run_failure_panel = null
+	pause_panel = null
+	settings_panel = null
 
 	if run_flow_controller != null and is_instance_valid(run_flow_controller):
 		if run_flow_controller.is_inside_tree():
@@ -437,6 +454,7 @@ func _dispose_run_flow_composition() -> void:
 	battle_reward_config = null
 	run_floor_config = null
 	run_random_source = null
+	content_registry = null
 	reset_battle_callable = Callable()
 	release_floating_texts_callable = Callable()
 	read_stat_callable = Callable()
@@ -510,6 +528,7 @@ func _has_valid_run_flow_composition() -> bool:
 		and battle_plan_factory != null \
 		and run_flow_controller != null and is_instance_valid(run_flow_controller) \
 		and run_random_source != null \
+		and _is_valid_content_registry(content_registry) \
 		and reset_battle_callable.is_valid() \
 		and release_floating_texts_callable.is_valid() \
 		and read_stat_callable.is_valid()
@@ -574,17 +593,20 @@ func _setup_run_flow(
 	battle_hud = ui_layer.get_node_or_null("BattleHud") as BattleHud
 	run_failure_panel = ui_layer.get_node_or_null("RunFailurePanel") as RunFailurePanel
 	inventory_panel = get_node_or_null("InventoryPanel") as InventoryPanel
-	var pause_panel: Node = ui_layer.get_node_or_null("PausePanel")
+	pause_panel = ui_layer.get_node_or_null("PausePanel") as PausePanel
+	settings_panel = ui_layer.get_node_or_null("SettingsPanel") as SettingsPanel
 	if node_choice_panel == null or draft_reward_panel == null or run_event_panel == null \
 			or devil_shop == null or normal_shop == null or battle_hud == null \
 			or run_failure_panel == null or inventory_panel == null \
-			or pause_panel == null or active_skill_slot == null:
+			or pause_panel == null or settings_panel == null or active_skill_slot == null:
 		return _rollback_run_flow_startup()
 
 	if not bool(normal_shop.call("configure", run_scope.loadout, run_scope.progression, run_scope.wallet)) \
 			or not devil_shop.configure(run_scope.loadout, run_scope.progression, run_scope.wallet, run_scope.health) \
 			or not draft_reward_panel.configure(run_scope.loadout) \
 			or not run_event_panel.configure(run_scope.wallet):
+		return _rollback_run_flow_startup()
+	if not _configure_shop_content_sources():
 		return _rollback_run_flow_startup()
 
 	if inventory_panel == null or battle_hud == null \
@@ -612,9 +634,58 @@ func _setup_run_flow(
 	_sync_battle_hud_gold()
 	_connect_wallet_changed()
 	_connect_once(run_flow_controller, &"run_failed", Callable(self, "_on_run_failed"))
-	if not run_flow_controller.start_run():
+	_connect_once(run_flow_controller, &"run_completed", Callable(self, "_on_run_completed"))
+	_connect_once(run_flow_controller, &"terminal_acknowledged", Callable(self, "_on_terminal_acknowledged"))
+	_connect_checkpoint_signals()
+	_connect_once(pause_panel, &"settings_requested", Callable(self, "_on_pause_settings_requested"))
+	_connect_once(settings_panel, &"continue_requested", Callable(self, "_on_settings_continue_requested"))
+	_connect_once(settings_panel, &"back_requested", Callable(self, "_on_settings_back_requested"))
+	_connect_once(settings_panel, &"exit_requested", Callable(self, "_on_settings_exit_requested"))
+	var repository := _get_autoload_node(&"RunSaveRepository")
+	var intent := RunSaveStore.StartIntent.NEW_RUN
+	if repository != null:
+		intent = int(repository.call("consume_start_intent")) as RunSaveStore.StartIntent
+		if intent == RunSaveStore.StartIntent.NONE:
+			intent = RunSaveStore.StartIntent.NEW_RUN
+	if intent == RunSaveStore.StartIntent.CONTINUE_RUN:
+		var save_data := repository.call("load_save") as RunSaveData if repository != null else null
+		if save_data == null or not _restore_checkpoint(save_data.checkpoint):
+			return _rollback_run_flow_startup()
+	elif not run_flow_controller.start_run():
 		return _rollback_run_flow_startup()
 	return true
+
+
+func _configure_shop_content_sources() -> bool:
+	if normal_shop == null or devil_shop == null or run_scope == null \
+			or run_random_source == null or not _is_valid_content_registry(content_registry):
+		return false
+	var normal_session := normal_shop.get("normal_shop_session") as RefCounted
+	var devil_session := devil_shop.get("devil_shop_session") as RefCounted
+	if normal_session == null or devil_session == null:
+		return false
+	return bool(normal_session.call(
+		"configure",
+		run_scope.loadout,
+		run_scope.progression,
+		run_scope.wallet,
+		run_random_source,
+		content_registry
+	)) and bool(devil_session.call(
+		"configure",
+		run_scope.loadout,
+		run_scope.progression,
+		run_scope.wallet,
+		run_scope.health,
+		run_random_source,
+		content_registry
+	))
+
+
+func _is_valid_content_registry(registry: Node) -> bool:
+	return registry != null and is_instance_valid(registry) \
+		and registry.has_method(&"is_valid") and bool(registry.call(&"is_valid")) \
+		and registry.has_method(&"all_items") and registry.has_method(&"query")
 
 
 func _rollback_run_flow_startup() -> bool:
@@ -631,6 +702,7 @@ func _connect_active_skill_panel_blockers() -> void:
 	for panel_path: NodePath in [
 		^"DebugCanvasLayer/DebugGrantPanel",
 		^"CanvasLayer/PausePanel",
+		^"CanvasLayer/SettingsPanel",
 		^"CanvasLayer/RunFailurePanel",
 		^"CanvasLayer/NodeChoicePanel",
 		^"CanvasLayer/DraftRewardPanel",
@@ -674,12 +746,169 @@ func _sync_active_skill_panel_blocker() -> void:
 
 
 func _on_run_failed(_token: RunFlowToken, _reason: StringName) -> void:
+	_delete_run_save()
 	if skill_controller != null:
 		skill_controller.cancel_active_skill("run_failed")
 		skill_controller.clear_projectiles()
 	if marble_chain != null and is_instance_valid(marble_chain):
 		marble_chain.queue_free()
 	marble_chain = null
+
+
+func _on_run_completed(_token: RunFlowToken) -> void:
+	_delete_run_save()
+
+
+func _connect_checkpoint_signals() -> void:
+	_connect_once(run_flow_controller, &"battle_started", Callable(self, "_on_battle_checkpoint"))
+	_connect_once(run_flow_controller, &"node_options_presented", Callable(self, "_on_node_checkpoint"))
+	_connect_once(run_flow_controller, &"reward_presented", Callable(self, "_on_reward_checkpoint"))
+	_connect_once(run_flow_controller, &"event_presented", Callable(self, "_on_event_checkpoint"))
+	_connect_once(run_flow_controller, &"upgrade_presented", Callable(self, "_on_upgrade_checkpoint"))
+	_connect_once(run_flow_controller, &"shop_opened", Callable(self, "_on_shop_checkpoint"))
+
+
+func _on_battle_checkpoint(_token: RunFlowToken, _plan: BattlePlan) -> void:
+	_write_checkpoint()
+
+
+func _on_node_checkpoint(_offer: RunNodeOffer) -> void:
+	_write_checkpoint()
+
+
+func _on_reward_checkpoint(_offer: RewardOffer) -> void:
+	_write_checkpoint()
+
+
+func _on_event_checkpoint(_presentation: EventPresentation) -> void:
+	_write_checkpoint()
+
+
+func _on_upgrade_checkpoint(_offer: UpgradeOffer) -> void:
+	_write_checkpoint()
+
+
+func _on_shop_checkpoint(_token: RunFlowToken, _shop_kind: StringName) -> void:
+	_write_checkpoint()
+
+
+func _write_checkpoint() -> bool:
+	if _restoring_checkpoint or run_scope == null or run_random_source == null \
+			or run_flow_controller == null:
+		return false
+	var scope_state := run_scope.snapshot()
+	var flow_state := run_flow_controller.snapshot()
+	if scope_state.is_empty() or flow_state.is_empty():
+		return false
+	var state_data := flow_state.get(&"state", {}) as Dictionary
+	var phase := int(state_data.get(&"phase", RunState.Phase.IDLE))
+	var payload := flow_state.get(&"payload", {}) as Dictionary
+	if phase == RunState.Phase.NORMAL_SHOP_ACTIVE:
+		var session := normal_shop.get("normal_shop_session") as RefCounted
+		payload[&"shop_session"] = session.call("snapshot") if session != null else {}
+	elif phase == RunState.Phase.DEVIL_SHOP_ACTIVE:
+		var session := devil_shop.get("devil_shop_session") as RefCounted
+		payload[&"shop_session"] = session.call("snapshot") if session != null else {}
+	if phase in [RunState.Phase.NORMAL_SHOP_ACTIVE, RunState.Phase.DEVIL_SHOP_ACTIVE] \
+			and (payload.get(&"shop_session", {}) as Dictionary).is_empty():
+		return false
+	flow_state[&"payload"] = payload
+	var content_ids: Array[StringName] = []
+	for value: Variant in scope_state[&"owned_item_ids"] as Array:
+		_append_unique_id(content_ids, StringName(value))
+	_collect_content_ids(flow_state, content_ids)
+	var repository := _get_autoload_node(&"RunSaveRepository")
+	return repository != null and bool(repository.call("write_checkpoint", {
+		&"scope": scope_state,
+		&"random": run_random_source.snapshot(),
+		&"flow": flow_state,
+		&"content_ids": content_ids,
+	}))
+
+
+func _restore_checkpoint(checkpoint: Dictionary) -> bool:
+	if not checkpoint.get(&"scope") is Dictionary or not checkpoint.get(&"random") is Dictionary \
+			or not checkpoint.get(&"flow") is Dictionary:
+		return false
+	_restoring_checkpoint = true
+	var restored := run_scope.restore(checkpoint[&"scope"] as Dictionary, content_registry) \
+		and run_random_source.restore(checkpoint[&"random"] as Dictionary)
+	if restored:
+		var flow_state := checkpoint[&"flow"] as Dictionary
+		var state_data := flow_state.get(&"state", {}) as Dictionary
+		var payload := flow_state.get(&"payload", {}) as Dictionary
+		var phase := int(state_data.get(&"phase", RunState.Phase.IDLE))
+		if phase == RunState.Phase.NORMAL_SHOP_ACTIVE:
+			var session := normal_shop.get("normal_shop_session") as RefCounted
+			restored = session != null and bool(session.call("restore", payload.get(&"shop_session", {})))
+		elif phase == RunState.Phase.DEVIL_SHOP_ACTIVE:
+			var session := devil_shop.get("devil_shop_session") as RefCounted
+			restored = session != null and bool(session.call("restore", payload.get(&"shop_session", {})))
+	if restored:
+		restored = run_flow_controller.restore(checkpoint[&"flow"] as Dictionary, content_registry)
+	_restoring_checkpoint = false
+	if restored:
+		_sync_battle_hud_gold()
+		_spawn_chain()
+	return restored
+
+
+func _collect_content_ids(value: Variant, result: Array[StringName]) -> void:
+	if value is Dictionary:
+		var dictionary := value as Dictionary
+		for key: Variant in dictionary:
+			if StringName(key) == &"item_id":
+				_append_unique_id(result, StringName(dictionary[key]))
+			else:
+				_collect_content_ids(dictionary[key], result)
+	elif value is Array:
+		for element: Variant in value as Array:
+			_collect_content_ids(element, result)
+
+
+func _append_unique_id(values: Array[StringName], item_id: StringName) -> void:
+	if not item_id.is_empty() and not values.has(item_id):
+		values.append(item_id)
+
+
+func _delete_run_save() -> void:
+	var repository := _get_autoload_node(&"RunSaveRepository")
+	if repository != null:
+		repository.call("delete_save")
+
+
+func _on_terminal_acknowledged(_token: RunFlowToken, _phase: RunState.Phase) -> void:
+	get_tree().paused = false
+	call_deferred(&"_return_to_main_menu")
+
+
+func _return_to_main_menu() -> void:
+	get_tree().change_scene_to_file(MAIN_MENU_SCENE)
+
+
+func _on_pause_settings_requested() -> void:
+	if pause_panel == null or settings_panel == null:
+		return
+	pause_panel.hide_for_settings()
+	settings_panel.present(true)
+
+
+func _on_settings_continue_requested() -> void:
+	if settings_panel != null:
+		settings_panel.dismiss()
+	if pause_panel != null:
+		pause_panel.close_pause()
+
+
+func _on_settings_back_requested() -> void:
+	if settings_panel != null:
+		settings_panel.dismiss()
+	if pause_panel != null:
+		pause_panel.reopen_from_settings()
+
+
+func _on_settings_exit_requested() -> void:
+	get_tree().quit()
 
 
 func _sync_battle_hud_gold() -> void:

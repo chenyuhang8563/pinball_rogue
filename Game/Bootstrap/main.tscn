@@ -1,23 +1,50 @@
 [gd_scene format=3 uid="uid://cbbk5l2e1na0y"]
 
 [ext_resource type="Script" uid="uid://bsino3h1ad0fx" path="res://Game/Bootstrap/main.gd" id="1_eunhr"]
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="3_sfxvq"]
 [ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="4_0gq1e"]
+[ext_resource type="Script" uid="uid://chim3ilwxgpw0" path="res://Combat/presentation/battle_hud.gd" id="4_o6133"]
+[ext_resource type="Script" uid="uid://dttqxe5m3lg7o" path="res://Run/presentation/pause_panel.gd" id="6_bdbmf"]
 [ext_resource type="PackedScene" uid="uid://d3qrynyba4t0p" path="res://Combat/presentation/active_skill_slot.tscn" id="6_qac2q"]
 [ext_resource type="PackedScene" uid="uid://dswyin2csgpeb" path="res://Run/presentation/node_choice_panel.tscn" id="7_0gq1e"]
 [ext_resource type="Script" uid="uid://5h58at066d5s" path="res://Combat/skills/skill_controller.gd" id="8_f3gf5"]
 [ext_resource type="PackedScene" uid="uid://dic0ihi3nvfwv" path="res://Run/presentation/run_failure_panel.tscn" id="8_rix8b"]
 [ext_resource type="PackedScene" uid="uid://dry577g502x3m" path="res://Run/presentation/draft_reward_panel.tscn" id="8_wbdht"]
+[ext_resource type="StyleBox" uid="uid://bxbadmo7oui7u" path="res://Themes/black_panel.tres" id="9_1pcom"]
 [ext_resource type="PackedScene" uid="uid://8sb7obwvywf4" path="res://Run/presentation/run_event_panel.tscn" id="9_puekb"]
+[ext_resource type="Script" uid="uid://bdw7uutgq4qwi" path="res://Combat/presentation/active_skill_slot.gd" id="10_imm5d"]
 [ext_resource type="PackedScene" uid="uid://d14mlptotnpp8" path="res://Commerce/presentation/devil_shop/devil_shop.tscn" id="10_xi84t"]
 [ext_resource type="PackedScene" uid="uid://bbpoxb65e2l6d" path="res://Combat/presentation/battle_hud.tscn" id="11_health"]
+[ext_resource type="Script" uid="uid://w70j7g05bq8a" path="res://Run/presentation/run_failure_panel.gd" id="12_1far5"]
 [ext_resource type="PackedScene" uid="uid://bfiq2ule5s2x8" path="res://Run/presentation/pause_panel.tscn" id="12_pause"]
+[ext_resource type="Script" uid="uid://ccdngv3yeudy5" path="res://Run/presentation/node_choice_panel.gd" id="14_u0wxe"]
 [ext_resource type="PackedScene" uid="uid://btv3xval8rmxu" path="res://Game/Debug/debug_grant_panel.tscn" id="14_uhr2j"]
+[ext_resource type="Script" uid="uid://py1m8dh3ltnk" path="res://Run/presentation/draft_reward_panel.gd" id="16_bx4g1"]
 [ext_resource type="PackedScene" uid="uid://fjioorpo70mx" path="res://Commerce/presentation/normal_shop/shop.tscn" id="16_j4inf"]
 [ext_resource type="PackedScene" uid="uid://dgob675lfpkcv" path="res://Loadout/presentation/inventory_panel.tscn" id="17_nf7xu"]
+[ext_resource type="Script" uid="uid://stua304o6pbg" path="res://Run/presentation/run_event_panel.gd" id="18_ijvwn"]
+[ext_resource type="Script" uid="uid://crtevcl2xn060" path="res://Commerce/presentation/devil_shop/devil_shop.gd" id="20_4kh2p"]
 [ext_resource type="Script" uid="uid://bf7et742rbw7a" path="res://Combat/battle/battle_spawner.gd" id="20_spawner"]
+[ext_resource type="Resource" path="res://Commerce/data/default_devil_shop_config.tres" id="21_15spr"]
 [ext_resource type="Script" uid="uid://c50047c5576eg" path="res://Combat/battle/battle_gateway.gd" id="21_gateway"]
-[ext_resource type="Script" path="res://Combat/marbles/marble_chain_registry.gd" id="23_chain_registry"]
+[ext_resource type="PackedScene" uid="uid://dgsquy0q41jr3" path="res://Run/presentation/settings_panel.tscn" id="22_6ugon"]
+[ext_resource type="Script" uid="uid://bdqxy02skugfq" path="res://Combat/marbles/marble_chain_registry.gd" id="23_chain_registry"]
 [ext_resource type="Script" uid="uid://d3dwc01dyf7e7" path="res://Run/application/run_flow_controller.gd" id="22_controller"]
+[ext_resource type="Script" path="res://Run/presentation/settings_panel.gd" id="23_eu0ny"]
+[ext_resource type="Script" uid="uid://vl6bftv8lv6" path="res://Game/Debug/debug_grant_panel.gd" id="29_yxlys"]
+[ext_resource type="Script" uid="uid://buhl2nbgd233p" path="res://Commerce/presentation/normal_shop/shop.gd" id="31_2dnnv"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="32_33s01"]
+[ext_resource type="Resource" uid="uid://y6hstamuojv7" path="res://Content/data/lightning.tres" id="33_omc2i"]
+[ext_resource type="Resource" uid="uid://bncjg26lqnokw" path="res://Content/data/bomb_marble.tres" id="34_unmj2"]
+[ext_resource type="Resource" uid="uid://q7t1651xon8y" path="res://Content/data/brown_marble.tres" id="35_haju2"]
+[ext_resource type="Resource" uid="uid://c2jbto0wkkqhs" path="res://Content/data/green_marble.tres" id="36_kmnqs"]
+[ext_resource type="Resource" uid="uid://c100pjp7ilvk2" path="res://Content/data/blue_marble.tres" id="37_t2ihd"]
+[ext_resource type="Resource" path="res://Content/data/magic_missile_skill.tres" id="38_dncdc"]
+[ext_resource type="Resource" uid="uid://djc10yo52gqep" path="res://Content/data/fire_marble.tres" id="39_p4cie"]
+[ext_resource type="Resource" uid="uid://gnhhl1ufmvmr" path="res://Content/data/fire_bellows.tres" id="40_8sg4e"]
+[ext_resource type="Resource" uid="uid://bbr7jeko8e7qe" path="res://Content/data/poison_culture.tres" id="41_e0pmg"]
+[ext_resource type="Resource" uid="uid://bo4qentxbit4m" path="res://Content/data/ice_hammer.tres" id="42_1pfvk"]
+[ext_resource type="Script" uid="uid://bjfai71a1nsp2" path="res://Loadout/presentation/inventory_panel.gd" id="44_bhn2q"]
 
 [node name="Main" type="Node2D" unique_id=1204434413]
 script = ExtResource("1_eunhr")
@@ -30,30 +57,121 @@ metadata/_edit_horizontal_guides_ = [208.0]
 
 [node name="CanvasLayer" type="CanvasLayer" parent="." unique_id=1475341812]
 
-[node name="BattleHud" parent="CanvasLayer" unique_id=1820331821 instance=ExtResource("11_health")]
+[node name="BattleHud" type="Control" parent="CanvasLayer" unique_id=1820331821 instance=ExtResource("11_health")]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 0
+offset_right = 54.0
+offset_bottom = 46.0
+mouse_filter = 2
+theme = ExtResource("3_sfxvq")
+script = ExtResource("4_o6133")
 
-[node name="PausePanel" parent="CanvasLayer" unique_id=1639927173 instance=ExtResource("12_pause")]
+[node name="PausePanel" type="Control" parent="CanvasLayer" unique_id=1639927173 instance=ExtResource("12_pause")]
+process_mode = 3
+visible = false
+layout_direction = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+theme = ExtResource("3_sfxvq")
+script = ExtResource("6_bdbmf")
 
 [node name="Label" type="Label" parent="CanvasLayer" unique_id=1125416496]
 offset_right = 40.0
 offset_bottom = 23.0
 label_settings = ExtResource("4_0gq1e")
 
-[node name="SkillSlot" parent="CanvasLayer" unique_id=1931073303 instance=ExtResource("6_qac2q")]
+[node name="SkillSlot" type="Panel" parent="CanvasLayer" unique_id=1931073303 instance=ExtResource("6_qac2q")]
+visible = false
+custom_minimum_size = Vector2(32, 32)
 offset_left = 200.0
 offset_top = 272.0
 offset_right = 232.0
 offset_bottom = 304.0
+theme = ExtResource("3_sfxvq")
+theme_override_styles/panel = ExtResource("9_1pcom")
+script = ExtResource("10_imm5d")
 
-[node name="RunFailurePanel" parent="CanvasLayer" unique_id=564021983 instance=ExtResource("8_rix8b")]
+[node name="RunFailurePanel" type="Control" parent="CanvasLayer" unique_id=564021983 instance=ExtResource("8_rix8b")]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_sfxvq")
+script = ExtResource("12_1far5")
 
-[node name="NodeChoicePanel" parent="CanvasLayer" unique_id=1365636953 instance=ExtResource("7_0gq1e")]
+[node name="NodeChoicePanel" type="Control" parent="CanvasLayer" unique_id=1365636953 instance=ExtResource("7_0gq1e")]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_sfxvq")
+script = ExtResource("14_u0wxe")
 
-[node name="DraftRewardPanel" parent="CanvasLayer" unique_id=1712510819 instance=ExtResource("8_wbdht")]
+[node name="DraftRewardPanel" type="Control" parent="CanvasLayer" unique_id=1712510819 instance=ExtResource("8_wbdht")]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_sfxvq")
+script = ExtResource("16_bx4g1")
 
-[node name="RunEventPanel" parent="CanvasLayer" unique_id=1407412393 instance=ExtResource("9_puekb")]
+[node name="RunEventPanel" type="Control" parent="CanvasLayer" unique_id=1407412393 instance=ExtResource("9_puekb")]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_sfxvq")
+script = ExtResource("18_ijvwn")
 
-[node name="DevilShop" parent="CanvasLayer" unique_id=1521257330 instance=ExtResource("10_xi84t")]
+[node name="DevilShop" type="Control" parent="CanvasLayer" unique_id=1521257330 instance=ExtResource("10_xi84t")]
+process_mode = 3
+visible = false
+z_index = 100
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_sfxvq")
+script = ExtResource("20_4kh2p")
+config = ExtResource("21_15spr")
+
+[node name="SettingsPanel" type="Control" parent="CanvasLayer" unique_id=493196483 instance=ExtResource("22_6ugon")]
+process_mode = 3
+visible = false
+layout_direction = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 1
+theme = ExtResource("3_sfxvq")
+script = ExtResource("23_eu0ny")
 
 [node name="SkillController" type="Node" parent="." unique_id=1382697519]
 script = ExtResource("8_f3gf5")
@@ -72,8 +190,40 @@ script = ExtResource("22_controller")
 [node name="DebugCanvasLayer" type="CanvasLayer" parent="." unique_id=423046981]
 layer = 20
 
-[node name="DebugGrantPanel" parent="DebugCanvasLayer" unique_id=719130094 instance=ExtResource("14_uhr2j")]
+[node name="DebugGrantPanel" type="Control" parent="DebugCanvasLayer" unique_id=719130094 instance=ExtResource("14_uhr2j")]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_sfxvq")
+script = ExtResource("29_yxlys")
 
-[node name="Shop" parent="." unique_id=395620655 instance=ExtResource("16_j4inf")]
+[node name="Shop" type="Control" parent="." unique_id=395620655 node_paths=PackedStringArray("shop_container", "marble_box_container", "relic_bar_container") instance=ExtResource("16_j4inf")]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 0
+theme = ExtResource("3_sfxvq")
+script = ExtResource("31_2dnnv")
+shop_item_pool = Array[ExtResource("32_33s01")]([ExtResource("33_omc2i"), ExtResource("34_unmj2"), ExtResource("35_haju2"), ExtResource("36_kmnqs"), ExtResource("37_t2ihd"), ExtResource("38_dncdc"), ExtResource("39_p4cie"), ExtResource("40_8sg4e"), ExtResource("41_e0pmg"), ExtResource("42_1pfvk")])
+shop_container = NodePath("UI/Panel/ScrollContainer/ShopInventory")
+marble_box_container = NodePath("UI/Panel/CollectionRows/MarbleBox")
+relic_bar_container = NodePath("UI/Panel/CollectionRows/RelicBar")
 
-[node name="InventoryPanel" parent="." unique_id=600384015 instance=ExtResource("17_nf7xu")]
+[node name="InventoryPanel" type="Control" parent="." unique_id=600384015 node_paths=PackedStringArray("marble_box_container", "relic_bar_container", "skill_bar_container") instance=ExtResource("17_nf7xu")]
+process_mode = 3
+layout_direction = 1
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("3_sfxvq")
+script = ExtResource("44_bhn2q")
+marble_box_container = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/MarbleBox")
+relic_bar_container = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/RelicBar")
+skill_bar_container = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillBar")

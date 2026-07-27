@@ -58,6 +58,17 @@ func before_each() -> void:
 	FailingRunFlowController.configure_calls = 0
 	TrackingRunFlowController.configure_calls = 0
 	TrackingRunFlowController.start_calls = 0
+	var repository := get_tree().root.get_node_or_null(^"RunSaveRepository")
+	if repository != null:
+		repository.call("set_paths_for_test", "user://saves/test_main_run_flow.tres")
+		repository.call("delete_save")
+
+
+func after_each() -> void:
+	var repository := get_tree().root.get_node_or_null(^"RunSaveRepository")
+	if repository != null:
+		repository.call("delete_save")
+		repository.call("reset_paths")
 
 
 func test_p3a_composition_shares_scope_random_configs_and_main_runtime_ports_without_start() -> void:
@@ -268,7 +279,7 @@ func test_dispose_then_second_run_reuses_preplaced_ui_without_old_bindings() -> 
 	upgrade_dialog.call("_on_confirm_pressed")
 	assert_signal_not_emitted(upgrade_dialog, &"confirmed")
 	assert_signal_not_emitted(upgrade_dialog, &"upgrade_confirmed")
-	assert_signal_not_emitted(upgrade_dialog, &"upgrade_notice_dismissed")
+	assert_signal_not_emitted(upgrade_dialog, &"upgrade_compensation_confirmed")
 	assert_true(main.call(
 		"_setup_run_flow", stats, effect_manager,
 		{&"run_flow_controller": TrackingRunFlowController.new()}
@@ -417,6 +428,17 @@ func test_dispose_then_resetup_recreates_dynamic_bootstrap_slots() -> void:
 	assert_true(main.get_node_or_null("Enemies") is Node2D)
 	assert_true(main.get_node_or_null("BattleGateway") is BattleGateway)
 	assert_true(main.get_node_or_null("RunFlowController") is RunFlowController)
+
+
+func test_terminal_acknowledgement_defers_main_menu_transition_until_signal_dispatch_finishes() -> void:
+	# 问题来源：Boss 结算确认时在 terminal_acknowledged 信号栈中同步换场景，
+	# 释放了仍被锁定的 RunFlowController。修复：延后菜单切换；FAILED 与 COMPLETED 共用此路径。
+	var source: String = FileAccess.get_file_as_string("res://Game/Bootstrap/main.gd")
+	assert_string_contains(
+		source,
+		"call_deferred(&\"_return_to_main_menu\")",
+		"终局确认必须在信号派发结束后才发起主菜单场景切换"
+	)
 
 
 func _assert_composition_cleared(main: Node) -> void:

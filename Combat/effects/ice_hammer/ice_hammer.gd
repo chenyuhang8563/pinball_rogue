@@ -1,6 +1,8 @@
 extends RefCounted
 class_name IceHammerEffect
 
+const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
+
 const FROST_DEBUFF_ID: String = "frost_debuff"
 const DEFAULT_CONFIG: RelicLevelConfig = preload("res://Content/data/relic_configs/ice_hammer.tres")
 
@@ -29,7 +31,7 @@ func is_awakened() -> bool:
 	return _awakened
 
 
-func on_enemy_hit_resolved(enemy: Node2D, _was_burning: bool, was_frozen: bool) -> void:
+func on_enemy_hit_resolved(enemy: Node2D, _was_burning: bool, was_frozen: bool, _packet: DamagePacket = null) -> void:
 	if enemy == null or not was_frozen:
 		return
 	if enemy.has_method("is_alive") and not bool(enemy.call("is_alive")):
@@ -49,7 +51,12 @@ func _shatter(center_enemy: Node2D) -> void:
 			continue
 		if target.has_method("is_alive") and not bool(target.call("is_alive")):
 			continue
-		if target.has_method("take_damage"):
+		if target.has_method("apply_damage_packet"):
+			var packet: DamagePacket = DamagePacketScript.new(&"relic_ice", float(_config.get_value(_level)), &"frost")
+			packet.is_relic = true
+			packet.target = target
+			target.call("apply_damage_packet", packet)
+		elif target.has_method("take_damage"):
 			target.call("take_damage", _config.get_value(_level))
 		if target.has_method("is_alive") and not bool(target.call("is_alive")):
 			continue

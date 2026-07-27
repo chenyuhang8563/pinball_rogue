@@ -1,0 +1,20 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" uid="uid://5u0k16edxtu2" path="res://Combat/presentation/floating_text.gd" id="1_hux8f"]
+[ext_resource type="FontFile" uid="uid://dx2bt2txwbbfp" path="res://Assets/Fonts/quaver.ttf" id="2_lsm2a"]
+
+[node name="PoisonFloatingText" type="Node2D"]
+z_index = 100
+script = ExtResource("1_hux8f")
+
+[node name="Label" type="Label" parent="."]
+custom_minimum_size = Vector2(40, 16)
+offset_left = -20.0
+offset_top = -8.0
+offset_right = 20.0
+offset_bottom = 15.0
+theme_override_colors/font_color = Color(0.2, 1, 0.2, 1)
+theme_override_fonts/font = ExtResource("2_lsm2a")
+text = "99"
+horizontal_alignment = 1
+vertical_alignment = 1

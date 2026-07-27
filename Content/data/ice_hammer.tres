@@ -12,3 +12,7 @@ price = 20
 description = "ITEM_ICE_HAMMER_DESC"
 effect_type = 9
 type = 2
+rarity = 1
+tags = Array[StringName]([&"relic", &"frost", &"aoe"])
+weight = 60.0
+requires_tags = Array[StringName]([&"frost"])

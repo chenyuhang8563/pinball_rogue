@@ -5,6 +5,7 @@ const FakeProgressionScript: GDScript = preload("res://tests/Commerce/fake_progr
 const FakeWalletScript: GDScript = preload("res://tests/Commerce/fake_wallet_adapter.gd")
 const SaleServiceScript: GDScript = preload("res://Commerce/application/normal_shop_sale_service.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
+const LoadoutScript: GDScript = preload("res://Loadout/domain/loadout.gd")
 
 
 func test_selling_marble_removes_it_resets_growth_and_credits_quote() -> void:
@@ -12,7 +13,10 @@ func test_selling_marble_removes_it_resets_growth_and_credits_quote() -> void:
 	var progression: RefCounted = FakeProgressionScript.new()
 	var wallet: RefCounted = FakeWalletScript.new(10)
 	var marble := _make_item("sold_marble", Item.ItemType.MARBLE, 31)
+	var remaining_marble := _make_item("remaining_marble", Item.ItemType.MARBLE, 10)
+	remaining_marble.marble_type = Marble.MARBLE_TYPE.BOMB
 	assert_true(inventory.add(marble))
+	assert_true(inventory.add(remaining_marble))
 	progression.set_level(marble, 4)
 	var service: RefCounted = _sale_service(inventory, progression, wallet)
 
@@ -25,6 +29,25 @@ func test_selling_marble_removes_it_resets_growth_and_credits_quote() -> void:
 	assert_null(inventory.find_owned(marble))
 	assert_eq(progression.level_of(marble), 1)
 	assert_eq(wallet.amount, 25)
+
+
+func test_selling_last_marble_is_rejected_without_mutation() -> void:
+	# 问题来源：商店右键可卖掉全部弹珠，战斗无法构建有效弹珠链。
+	# 修复方式与边界：出售服务必须保留至少一颗；仅有一颗非默认弹珠时同样不可出售。
+	var inventory: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(10)
+	var only_marble := _make_item("only_bomb_marble", Item.ItemType.MARBLE, 30)
+	only_marble.marble_type = Marble.MARBLE_TYPE.BOMB
+	assert_true(inventory.call("add", only_marble))
+	var service: RefCounted = _sale_service(inventory, progression, wallet)
+	var before := _state(inventory, progression, wallet)
+
+	var result: RefCounted = service.call("sell", only_marble)
+
+	assert_eq(result.code, PurchaseResultScript.Code.LAST_MARBLE)
+	assert_false(result.committed)
+	assert_eq(_state(inventory, progression, wallet), before)
 
 
 func test_missing_sale_capability_rejects_configuration_without_mutation() -> void:
@@ -114,7 +137,10 @@ func _sale_fixture(item_id: String) -> Dictionary:
 	var progression: RefCounted = FakeProgressionScript.new()
 	var wallet: RefCounted = FakeWalletScript.new(10)
 	var marble := _make_item(item_id, Item.ItemType.MARBLE, 30)
+	var remaining_marble := _make_item("%s_remaining" % item_id, Item.ItemType.MARBLE, 10)
+	remaining_marble.marble_type = Marble.MARBLE_TYPE.BOMB
 	assert_true(inventory.add(marble))
+	assert_true(inventory.add(remaining_marble))
 	progression.set_level(marble, 3)
 	return {
 		&"inventory": inventory,

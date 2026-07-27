@@ -78,6 +78,21 @@ func create_crossroads_plan(floor_number: int) -> BattlePlan:
 	return result.plan
 
 
+func snapshot_active() -> Dictionary:
+	if _active == null or _active.consumed or _active.phase != EventPresentation.Phase.CHOICE:
+		return {}
+	return {&"event_id": _active.event_id}
+
+
+func restore_active(token: RunFlowToken, state: Dictionary) -> EventPresentation:
+	_error_detail = ""
+	var event_id := StringName(state.get(&"event_id", &""))
+	_active = _resolver.restore_active(token, event_id) if _resolver != null else null
+	if _active == null:
+		_error_detail = "saved event presentation is invalid"
+	return _active
+
+
 func clear() -> bool:
 	_active = null
 	return _resolver != null and _resolver.clear_active()

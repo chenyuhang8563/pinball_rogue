@@ -215,6 +215,132 @@ func is_terminal() -> bool:
 	return _phase == Phase.FAILED or _phase == Phase.COMPLETED
 
 
+func snapshot() -> Dictionary:
+	return {
+		&"phase": int(_phase),
+		&"run_id": _run_id,
+		&"floor_number": _floor_number,
+		&"node_id": _node_id,
+		&"node_kind": _node_kind,
+		&"phase_id": _phase_id,
+		&"battle_plan": serialize_battle_plan(_battle_plan),
+	}
+
+
+func restore(value: Dictionary) -> bool:
+	for key: StringName in [
+		&"phase", &"run_id", &"floor_number", &"node_id", &"node_kind", &"phase_id", &"battle_plan",
+	]:
+		if not value.has(key):
+			return false
+	var restored_phase := int(value[&"phase"])
+	var restored_run_id := int(value[&"run_id"])
+	var restored_floor := int(value[&"floor_number"])
+	var restored_node := int(value[&"node_id"])
+	var restored_phase_id := int(value[&"phase_id"])
+	if restored_phase < Phase.CHOOSING_NODE or restored_phase > Phase.DEVIL_SHOP_ACTIVE \
+			or restored_run_id <= 0 or restored_floor <= 0 or restored_node <= 0 \
+			or restored_phase_id <= 0:
+		return false
+	var plan := deserialize_battle_plan(value[&"battle_plan"] as Dictionary)
+	if restored_phase == Phase.BATTLE_ACTIVE:
+		if plan == null:
+			return false
+	elif plan != null and restored_phase != Phase.REWARD_ACTIVE:
+		return false
+	_phase = restored_phase as Phase
+	_run_id = restored_run_id
+	_floor_number = restored_floor
+	_node_id = restored_node
+	_node_kind = StringName(value[&"node_kind"])
+	_phase_id = restored_phase_id
+	if plan != null:
+		_set_battle(plan)
+	else:
+		_clear_battle()
+	return true
+
+
+static func serialize_battle_plan(plan: BattlePlan) -> Dictionary:
+	if plan == null or not plan.is_valid():
+		return {}
+	var entries: Array[Dictionary] = []
+	for entry: BattleGroupDef.EnemyEntry in plan.group.enemy_entries:
+		if entry == null or entry.scene == null or entry.scene.resource_path.is_empty():
+			return {}
+		entries.append({
+			&"scene_path": entry.scene.resource_path,
+			&"position": entry.position,
+			&"health": entry.health,
+		})
+	return {
+		&"battle_id": plan.battle_id,
+		&"origin": int(plan.origin),
+		&"reward_policy": int(plan.reward_policy),
+		&"group": {
+			&"id": plan.group.id,
+			&"title": plan.group.title,
+			&"kind": int(plan.group.kind),
+			&"level_def_path": plan.group.level_def.resource_path \
+				if plan.group.level_def != null else "",
+			&"enemy_entries": entries,
+		},
+	}
+
+
+static func deserialize_battle_plan(value: Dictionary) -> BattlePlan:
+	if value.is_empty():
+		return null
+	for key: StringName in [&"battle_id", &"origin", &"reward_policy", &"group"]:
+		if not value.has(key):
+			return null
+	if not value[&"group"] is Dictionary:
+		return null
+	var group_data := value[&"group"] as Dictionary
+	for key: StringName in [&"id", &"title", &"kind", &"level_def_path", &"enemy_entries"]:
+		if not group_data.has(key):
+			return null
+	var origin := int(value[&"origin"])
+	var reward := int(value[&"reward_policy"])
+	var kind := int(group_data[&"kind"])
+	if origin < BattlePlan.Origin.RUN_START or origin > BattlePlan.Origin.BOSS \
+			or reward < BattlePlan.RewardPolicy.NONE or reward > BattlePlan.RewardPolicy.ELITE \
+			or kind < BattleGroupDef.Kind.WEAK_NORMAL or kind > BattleGroupDef.Kind.BOSS \
+			or not group_data[&"enemy_entries"] is Array:
+		return null
+	var entries: Array[BattleGroupDef.EnemyEntry] = []
+	for raw: Variant in group_data[&"enemy_entries"] as Array:
+		if not raw is Dictionary:
+			return null
+		var entry_data := raw as Dictionary
+		var scene_path := String(entry_data.get(&"scene_path", ""))
+		var scene := load(scene_path) as PackedScene
+		var health := int(entry_data.get(&"health", 0))
+		if scene == null or health <= 0 or not entry_data.get(&"position") is Vector2:
+			return null
+		var entry := BattleGroupDef.EnemyEntry.new()
+		entry.scene = scene
+		entry.position = entry_data[&"position"] as Vector2
+		entry.health = health
+		entries.append(entry)
+	if entries.is_empty():
+		return null
+	var group := BattleGroupDef.new()
+	group.id = String(group_data[&"id"])
+	group.title = String(group_data[&"title"])
+	group.kind = kind as BattleGroupDef.Kind
+	var level_path := String(group_data[&"level_def_path"])
+	group.level_def = load(level_path) as Resource if not level_path.is_empty() else null
+	if not level_path.is_empty() and group.level_def == null:
+		return null
+	group.enemy_entries = entries
+	var plan := BattlePlan.new(
+		StringName(value[&"battle_id"]), group, origin as BattlePlan.Origin,
+		reward as BattlePlan.RewardPolicy
+	)
+	return plan if plan.is_valid() else null
+
+
 func _transition(next_phase: Phase) -> bool:
 	if _run_id <= 0 or is_terminal():
 		return false

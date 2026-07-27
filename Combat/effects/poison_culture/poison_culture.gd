@@ -3,6 +3,7 @@ class_name PoisonCultureEffect
 
 const POISON_DEBUFF_ID: String = "poison_debuff"
 const DEFAULT_CONFIG: RelicLevelConfig = preload("res://Content/data/relic_configs/poison_culture.tres")
+const MAX_SPREAD_DISTANCE: float = 160.0
 
 var _config: RelicLevelConfig = DEFAULT_CONFIG
 var _level: int = 1
@@ -30,7 +31,7 @@ func is_awakened() -> bool:
 	return _awakened
 
 
-func on_poison_tick(enemy: Node2D) -> void:
+func on_poison_tick(enemy: Node2D, stacks: int = 1) -> void:
 	if enemy == null or not is_instance_valid(enemy):
 		return
 	_prune_tick_counts()
@@ -41,17 +42,19 @@ func on_poison_tick(enemy: Node2D) -> void:
 		_tick_counts[enemy_id] = entry
 		return
 	_tick_counts.erase(enemy_id)
-	_spread_poison(enemy)
+	_spread_poison(enemy, clampi(stacks, 1, PoisonDebuff.MAX_POISON_STACKS))
 
 
-func _spread_poison(source: Node2D) -> void:
+func _spread_poison(source: Node2D, stacks: int) -> void:
 	var candidates: Array[Node2D] = []
 	for candidate: Node in source.get_tree().get_nodes_in_group("enemies"):
 		if candidate == source or not candidate is Node2D or not is_instance_valid(candidate):
 			continue
 		if candidate.has_method("is_alive") and not bool(candidate.call("is_alive")):
 			continue
-		if not _awakened and candidate.has_method("has_buff") and bool(candidate.call("has_buff", "poison_debuff")):
+		if source.global_position.distance_to((candidate as Node2D).global_position) > MAX_SPREAD_DISTANCE:
+			continue
+		if not _awakened and candidate.has_method("has_buff") and bool(candidate.call("has_buff", POISON_DEBUFF_ID)):
 			continue
 		candidates.append(candidate as Node2D)
 	candidates.sort_custom(func(a: Node2D, b: Node2D) -> bool:
@@ -66,7 +69,7 @@ func _spread_poison(source: Node2D) -> void:
 		if target.has_method("add_buff"):
 			var poison: BuffDef = _make_buff(POISON_DEBUFF_ID)
 			if poison != null:
-				target.call("add_buff", poison)
+				target.call("add_buff", poison, stacks)
 
 
 func _prune_tick_counts() -> void:

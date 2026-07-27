@@ -4,21 +4,24 @@ class_name RunUpgradeService
 const UpgradeCandidateScript: GDScript = preload("res://Run/domain/upgrade_candidate.gd")
 const UpgradeOfferScript: GDScript = preload("res://Run/domain/upgrade_offer.gd")
 const UpgradeResultScript: GDScript = preload("res://Run/domain/upgrade_result.gd")
+const COMPENSATION_GOLD: int = 30
 
 var _loadout: RefCounted = null
 var _progression: RefCounted = null
+var _wallet: RefCounted = null
 var _active: UpgradeOffer = null
 var _error_detail: String = ""
 var _settling: bool = false
 
 
-func configure(loadout: RefCounted, progression: RefCounted) -> bool:
+func configure(loadout: RefCounted, progression: RefCounted, wallet: RefCounted) -> bool:
 	_loadout = loadout
 	_progression = progression
+	_wallet = wallet
 	_active = null
 	return _has_api(_loadout, [&"find_owned", &"revision"]) and _has_api(_progression, [
 		&"upgradable_owned_items", &"level_of", &"can_upgrade", &"upgrade_one", &"revision",
-	])
+	]) and _has_api(_wallet, [&"credit", &"balance"])
 
 
 func active_offer() -> UpgradeOffer:
@@ -117,10 +120,15 @@ func acknowledge_unavailable(token: RunFlowToken, offer_id: StringName) -> Upgra
 	_error_detail = ""
 	if not _valid_offer(token, offer_id, true):
 		return null
+	if not bool(_wallet.call("credit", COMPENSATION_GOLD)):
+		return _result_failure(
+			token, UpgradeResult.Code.COMMIT_FAILED, offer_id, &"",
+			"unavailable upgrade compensation could not be credited"
+		)
 	_active.call("_consume")
 	_active = null
 	return UpgradeResultScript.new(
-		token, UpgradeResult.Code.UNAVAILABLE_ACKNOWLEDGED, offer_id
+		token, UpgradeResult.Code.UNAVAILABLE_ACKNOWLEDGED, offer_id, &"", null, 0, 0, "", COMPENSATION_GOLD
 	)
 
 

@@ -15,11 +15,20 @@
 ## Verification
 
 - Use GUT as the test evidence. Do not use startup checks or standalone scripts as proof that tests passed.
-- Reliable local GUT invocation on this machine:
+- 只运行与本次改动直接相关的 GUT 测试文件或测试目录；不要运行完整 GUT 测试套件。仅当用户明确要求全量测试时，才可使用下方的全量命令。
+- 本机定向 GUT 调用示例：
 
 ```powershell
-cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe -d -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gdir=res://tests -ginclude_subdirs -gexit -glog=1 -gconfig="
+cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe --headless -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gtest=res://tests/Combat/status/test_phase0b_status_layers.gd -gexit -glog=2 -gdisable_colors -gconfig="
 ```
+
+- 全量 GUT 命令（仅限用户明确要求时使用）：
+
+```powershell
+cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe --headless -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gdir=res://tests -ginclude_subdirs -gexit -glog=2 -gdisable_colors -gconfig="
+```
+
+- 命令行 GUT 默认不使用 `-d`，避免解析错误进入交互式 `debug>` 而阻塞；需要断点调试时使用 Godot 编辑器中的 GUT 面板。
 
 - 不要为了 TDD 人为编写“因为缺失某个实现而预期失败”的 GUT 测试；这类失败没有验证价值。
 - 只有在测试可正常执行时才运行 GUT：GUT 失败时 Godot 可能卡死且不产生有效输出，应先通过静态检查或代码审阅定位并消除该风险。

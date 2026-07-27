@@ -4,22 +4,37 @@ const CommerceOfferScript: GDScript = preload("res://Commerce/domain/commerce_of
 const ItemIdentityScript: GDScript = preload("res://Commerce/domain/item_identity.gd")
 const PurchasePlanScript: GDScript = preload("res://Commerce/application/purchase_plan.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
+const ShopRefreshResultScript: GDScript = preload("res://Commerce/domain/shop_refresh_result.gd")
+
+const REFRESH_COST_STEP: int = 10
 
 var _inventory: Variant = null
 var _progression: Variant = null
 var _wallet: Variant = null
+var _random_source: RunRandomSource = null
+var _content_registry: Node = null
 var _configured: bool = false
 var _offers: Dictionary = {}
 var _offer_order: Array[StringName] = []
 var _skill_replacement_authorizations: Dictionary = {}
 var _version: int = 0
 var _nonce: int = 0
+var _successful_refresh_count: int = 0
+var _restored_visit_pending: bool = false
 
 
-func configure(inventory_adapter: Variant, progression_adapter: Variant, wallet_adapter: Variant) -> bool:
+func configure(
+	inventory_adapter: Variant,
+	progression_adapter: Variant,
+	wallet_adapter: Variant,
+	random_source: RunRandomSource = null,
+	content_registry: Node = null
+) -> bool:
 	_inventory = inventory_adapter
 	_progression = progression_adapter
 	_wallet = wallet_adapter
+	_random_source = random_source if random_source != null else RunRandomSource.new()
+	_content_registry = content_registry
 	_configured = _has_api(_inventory, [&"find_owned", &"can_add", &"add", &"replace_skill", &"current_skill", &"revision"]) \
 		and _has_api(_progression, [&"level_of", &"can_upgrade", &"upgrade_one", &"reset_skill", &"revision"]) \
 		and _has_api(_wallet, [&"balance", &"quote_price", &"can_debit", &"debit", &"revision"])
@@ -29,10 +44,19 @@ func configure(inventory_adapter: Variant, progression_adapter: Variant, wallet_
 func regenerate(candidates: Array, max_offers: int = 6) -> Array:
 	if not _configured:
 		return []
+	if _restored_visit_pending:
+		_restored_visit_pending = false
+		return get_offers()
+	var source_candidates: Array = candidates
+	if _content_registry != null:
+		var registry_candidates := _registry_candidates()
+		if not registry_candidates.is_empty():
+			source_candidates = registry_candidates
 	var available: Array = []
-	for value: Variant in candidates:
+	for value: Variant in source_candidates:
 		var candidate := value as Item
-		if not _is_purchasable(candidate) or _contains_identity(available, candidate):
+		if not _is_purchasable(candidate) or candidate.weight <= 0.0 \
+				or not _requirements_met(candidate) or _contains_identity(available, candidate):
 			continue
 		var owned: Item = _inventory.call("find_owned", candidate) as Item
 		if owned == null:
@@ -48,16 +72,61 @@ func regenerate(candidates: Array, max_offers: int = 6) -> Array:
 			if offer.item.type == item_type:
 				category.append(offer)
 		if not category.is_empty() and selected.size() < maxi(0, max_offers):
-			selected.append(category.pick_random())
+			selected.append(_take_weighted_offer(category))
 	var remaining: Array = []
 	for offer: Variant in available:
 		if not selected.has(offer):
 			remaining.append(offer)
 	var target_count := mini(maxi(0, max_offers), available.size())
 	while selected.size() < target_count and not remaining.is_empty():
-		selected.append(remaining.pop_at(randi_range(0, remaining.size() - 1)))
-	selected.shuffle()
+		selected.append(_take_weighted_offer(remaining))
+	_random_source.shuffle(selected)
 	return _install_offers(selected)
+
+
+## Starts a fresh normal-shop visit. Refresh pricing is scoped to the current visit.
+func begin_visit() -> void:
+	if _restored_visit_pending:
+		return
+	_successful_refresh_count = 0
+
+
+func next_refresh_cost() -> int:
+	return _successful_refresh_count * REFRESH_COST_STEP
+
+
+## Replaces every offer after charging the next visit-scoped refresh price.
+func refresh(candidates: Array, max_offers: int = 6) -> RefCounted:
+	var cost := next_refresh_cost()
+	var balance_before := int(_wallet.call("balance")) if _configured else 0
+	if not _configured:
+		return ShopRefreshResultScript.failure(
+			ShopRefreshResultScript.Code.NOT_CONFIGURED, cost, balance_before, balance_before
+		)
+	if candidates.is_empty():
+		return ShopRefreshResultScript.failure(
+			ShopRefreshResultScript.Code.EMPTY_CANDIDATES, cost, balance_before, balance_before
+		)
+	if cost > 0:
+		if not bool(_wallet.call("can_debit", cost)):
+			return ShopRefreshResultScript.failure(
+				ShopRefreshResultScript.Code.INSUFFICIENT_FUNDS, cost, balance_before, balance_before
+			)
+		var wallet_snapshot: Dictionary = _wallet.call("snapshot") as Dictionary
+		if not bool(_wallet.call("debit", cost)):
+			var rollback_completed := bool(_wallet.call("restore", wallet_snapshot))
+			return ShopRefreshResultScript.failure(
+				ShopRefreshResultScript.Code.PAYMENT_FAILED,
+				cost,
+				balance_before,
+				int(_wallet.call("balance")),
+				rollback_completed
+			)
+	var refreshed_offers := regenerate(candidates, max_offers)
+	_successful_refresh_count += 1
+	return ShopRefreshResultScript.success(
+		cost, balance_before, int(_wallet.call("balance")), refreshed_offers
+	)
 
 
 func replace_offers(offers: Array) -> Array:
@@ -78,6 +147,69 @@ func get_offers() -> Array:
 		if offer != null:
 			result.append(offer.duplicate_view())
 	return result
+
+
+func snapshot() -> Dictionary:
+	var values: Array[Dictionary] = []
+	for offer_id: StringName in _offer_order:
+		var offer: Variant = _offers.get(offer_id)
+		if offer == null or offer.consumed or offer.item == null or offer.item.id.is_empty():
+			return {}
+		values.append({
+			&"offer_id": offer.offer_id,
+			&"snapshot_version": offer.snapshot_version,
+			&"item_id": StringName(offer.item.id),
+			&"target_level": offer.target_level,
+			&"price": offer.price,
+			&"original_price": offer.original_price,
+			&"is_upgrade": offer.is_upgrade,
+		})
+	return {
+		&"version": _version,
+		&"nonce": _nonce,
+		&"successful_refresh_count": _successful_refresh_count,
+		&"offers": values,
+	}
+
+
+func restore(state: Dictionary) -> bool:
+	if not _configured or _content_registry == null or not _content_registry.has_method(&"by_id") \
+			or not state.get(&"offers") is Array:
+		return false
+	var version := int(state.get(&"version", 0))
+	var nonce := int(state.get(&"nonce", 0))
+	var restored: Dictionary = {}
+	var order: Array[StringName] = []
+	for raw: Variant in state[&"offers"] as Array:
+		if not raw is Dictionary:
+			return false
+		var data := raw as Dictionary
+		var offer_id := StringName(data.get(&"offer_id", &""))
+		var item := _content_registry.call(&"by_id", StringName(data.get(&"item_id", &""))) as Item
+		var target_level := int(data.get(&"target_level", 0))
+		var price := int(data.get(&"price", -1))
+		var original_price := int(data.get(&"original_price", -1))
+		if offer_id.is_empty() or restored.has(offer_id) or item == null \
+				or target_level < 1 or target_level > 4 or price < 0 or original_price < price:
+			return false
+		var offer: RefCounted = CommerceOfferScript.new(
+			offer_id, version, item, ItemIdentityScript.key(item), target_level, price,
+			original_price, bool(data.get(&"is_upgrade", false)), false,
+			int(_inventory.call("revision")), int(_progression.call("revision")),
+			int(_wallet.call("revision"))
+		)
+		restored[offer_id] = offer
+		order.append(offer_id)
+	if order.is_empty():
+		return false
+	_offers = restored
+	_offer_order = order
+	_skill_replacement_authorizations.clear()
+	_version = version
+	_nonce = nonce
+	_successful_refresh_count = maxi(0, int(state.get(&"successful_refresh_count", 0)))
+	_restored_visit_pending = true
+	return true
 
 
 func purchase(offer_id: StringName) -> RefCounted:
@@ -293,6 +425,48 @@ func _contains_identity(offers: Array, candidate: Item) -> bool:
 		if ItemIdentityScript.same(offer.item, candidate):
 			return true
 	return false
+
+
+func _take_weighted_offer(offers: Array) -> Variant:
+	if offers.is_empty():
+		return null
+	var weights := PackedFloat64Array()
+	for offer: Variant in offers:
+		weights.append(maxf(0.0, float(offer.item.weight)))
+	var index := _random_source.weighted_index_float(weights)
+	if index < 0:
+		return null
+	return offers.pop_at(index)
+
+
+func _registry_candidates() -> Array:
+	if _content_registry == null or not is_instance_valid(_content_registry) \
+			or not _content_registry.has_method(&"query"):
+		return []
+	var result: Array = []
+	for item_type: Item.ItemType in [
+		Item.ItemType.RELIC, Item.ItemType.MARBLE, Item.ItemType.SKILL,
+	]:
+		result.append_array(_content_registry.call(&"query", item_type) as Array)
+	return result
+
+
+func _requirements_met(item: Item) -> bool:
+	if item == null or item.requires_tags.is_empty():
+		return true
+	var owned_tags: Array[StringName] = []
+	if _inventory != null and _inventory.has_method(&"owned_items"):
+		for value: Variant in _inventory.call(&"owned_items") as Array:
+			var owned := value as Item
+			if owned == null:
+				continue
+			for tag: StringName in owned.tags:
+				if not owned_tags.has(tag):
+					owned_tags.append(tag)
+	for required: StringName in item.requires_tags:
+		if not owned_tags.has(required):
+			return false
+	return true
 
 
 func _is_purchasable(item: Item) -> bool:

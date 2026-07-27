@@ -1,0 +1,12 @@
+[gd_resource type="Resource" script_class="RelicLevelConfig" load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Combat/effects/relic_level_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+max_level = 3
+level_values = [20, 35, 50]
+extra = {
+"radius": 60.0,
+"awakened_bonus": 15
+}

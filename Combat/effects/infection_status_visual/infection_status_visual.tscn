@@ -1,0 +1,53 @@
+[gd_scene format=3 uid="uid://bpdxlmcvcepba"]
+
+[ext_resource type="Script" uid="uid://h4nqaerfnyf8" path="res://Combat/effects/infection_status_visual/infection_status_visual.gd" id="1_0kurs"]
+[ext_resource type="PackedScene" uid="uid://c0t37ll5k53xr" path="res://Combat/effects/plague_fly/plague_fly_sprite.tscn" id="2_apwrp"]
+[ext_resource type="Texture2D" uid="uid://b4fdkrbi1rrnm" path="res://Assets/Monsters/fly-Sheet.png" id="3_gsc84"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h30h0"]
+atlas = ExtResource("3_gsc84")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vqyax"]
+atlas = ExtResource("3_gsc84")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_pvmxx"]
+animations = [{
+"frames": [],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h30h0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vqyax")
+}],
+"loop": true,
+"name": &"fly",
+"speed": 8.0
+}]
+
+[node name="InfectionStatusVisual" type="Node2D" unique_id=1149857186]
+script = ExtResource("1_0kurs")
+
+[node name="Orbit" type="Node2D" parent="." unique_id=1218412602]
+
+[node name="FlyA" type="AnimatedSprite2D" parent="Orbit" unique_id=651562127 instance=ExtResource("2_apwrp")]
+texture_filter = 1
+position = Vector2(18, 0)
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_pvmxx")
+animation = &"fly"
+autoplay = "fly"
+
+[node name="FlyB" type="AnimatedSprite2D" parent="Orbit" unique_id=751381188 instance=ExtResource("2_apwrp")]
+texture_filter = 1
+position = Vector2(-18, 0)
+scale = Vector2(0.5, 0.5)
+sprite_frames = SubResource("SpriteFrames_pvmxx")
+animation = &"fly"
+autoplay = "fly"

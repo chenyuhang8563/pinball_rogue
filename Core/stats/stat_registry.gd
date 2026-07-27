@@ -15,18 +15,28 @@ const DARK_MARBLE_DAMAGE: String = "dark_marble_damage"
 const BLUE_FROST_DURATION: String = "blue_frost_duration"
 const BLUE_FROST_BONUS_DAMAGE_ENABLED: String = "blue_frost_bonus_damage_enabled"
 const BLUE_FROST_STACKS_PER_HIT: String = "blue_frost_stacks_per_hit"
-const POISON_DAMAGE_PER_TICK: String = "poison_damage_per_tick"
+const POISON_DAMAGE_PER_LAYER: String = "poison_damage_per_layer"
+const POISON_MAX_STACKS: String = "poison_max_stacks"
+const POISON_STACKS_PER_HIT: String = "poison_stacks_per_hit"
 const POISON_TICK_SECONDS: String = "poison_tick_seconds"
 const ECHO_TIMEOUT: String = "echo_timeout"
 const EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
-const FIRE_BURN_DURATION: String = "fire_burn_duration"
-const FIRE_EMBER_SPREAD_ENABLED: String = "fire_ember_spread_enabled"
+const FIRE_BURN_MAX_STACKS: String = "fire_burn_max_stacks"
+const FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
+const FIRE_BURN_TICK_SECONDS: String = "fire_burn_tick_seconds"
 
 const DAMAGE_MULTIPLIER: String = "damage_multiplier"
 const FINAL_DAMAGE: String = "final_damage"
 const DAMAGE_RECEIVED: String = "damage_received"
 const CRIT_RATE: String = "crit_rate"
 const CRIT_DAMAGE: String = "crit_damage"
+const WEAK_POINT_CRIT_MULTIPLIER: String = "weak_point_crit_multiplier"
+const PERFECT_CRIT_MULTIPLIER: String = "perfect_crit_multiplier"
+const WEAK_POINT_TOLERANCE_DEG: String = "weak_point_tolerance_deg"
+const PERFECT_CRIT_WINDOW_DEG: String = "perfect_crit_window_deg"
+const PERFECT_CRIT_ENABLED: String = "perfect_crit_enabled"
+const ASSASSIN_WEAK_POINT_COUNT: String = "assassin_weak_point_count"
+const ASSASSIN_SEGMENT_DAMAGE: String = "assassin_segment_damage"
 const ARMOR: String = "armor"
 const ARMOR_PENETRATION: String = "armor_penetration"
 
@@ -66,17 +76,27 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Core/stats/data/marble/blue_frost_duration.tres",
 	"res://Core/stats/data/marble/blue_frost_bonus_damage_enabled.tres",
 	"res://Core/stats/data/marble/blue_frost_stacks_per_hit.tres",
-	"res://Core/stats/data/marble/poison_damage_per_tick.tres",
+	"res://Core/stats/data/marble/poison_damage_per_layer.tres",
+	"res://Core/stats/data/marble/poison_max_stacks.tres",
+	"res://Core/stats/data/marble/poison_stacks_per_hit.tres",
 	"res://Core/stats/data/marble/poison_tick_seconds.tres",
 	"res://Core/stats/data/marble/echo_timeout.tres",
 	"res://Core/stats/data/marble/explosion_effect_scale.tres",
-	"res://Core/stats/data/marble/fire_burn_duration.tres",
-	"res://Core/stats/data/marble/fire_ember_spread_enabled.tres",
+	"res://Core/stats/data/marble/fire_burn_max_stacks.tres",
+	"res://Core/stats/data/marble/fire_burn_damage_per_layer.tres",
+	"res://Core/stats/data/marble/fire_burn_tick_seconds.tres",
 	"res://Core/stats/data/combat/damage_multiplier.tres",
 	"res://Core/stats/data/combat/final_damage.tres",
 	"res://Core/stats/data/combat/damage_received.tres",
 	"res://Core/stats/data/combat/crit_rate.tres",
 	"res://Core/stats/data/combat/crit_damage.tres",
+	"res://Core/stats/data/crit/weak_point_crit_multiplier.tres",
+	"res://Core/stats/data/crit/perfect_crit_multiplier.tres",
+	"res://Core/stats/data/crit/weak_point_tolerance_deg.tres",
+	"res://Core/stats/data/crit/perfect_crit_window_deg.tres",
+	"res://Core/stats/data/crit/perfect_crit_enabled.tres",
+	"res://Core/stats/data/crit/assassin_weak_point_count.tres",
+	"res://Core/stats/data/crit/assassin_segment_damage.tres",
 	"res://Core/stats/data/combat/armor.tres",
 	"res://Core/stats/data/combat/armor_penetration.tres",
 	"res://Core/stats/data/enemy/max_health.tres",

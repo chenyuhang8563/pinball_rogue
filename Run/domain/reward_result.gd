@@ -16,6 +16,7 @@ enum Code {
 	LEVEL_CHANGED,
 	CAPACITY_CHANGED,
 	SKILL_REPLACEMENT_REQUIRED,
+	RELIC_REPLACEMENT_REQUIRED,
 	INVALID_REPLACEMENT_TOKEN,
 	COMMIT_FAILED,
 	ROLLBACK_FAILED,
@@ -95,4 +96,5 @@ func was_granted() -> bool:
 
 
 func replacement_required() -> bool:
-	return _code == Code.SKILL_REPLACEMENT_REQUIRED and not _replacement_token.is_empty()
+	return _code in [Code.SKILL_REPLACEMENT_REQUIRED, Code.RELIC_REPLACEMENT_REQUIRED] \
+		and not _replacement_token.is_empty()

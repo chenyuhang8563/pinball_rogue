@@ -1,0 +1,17 @@
+[gd_resource type="Resource" script_class="Item" load_steps=3 format=3]
+
+[ext_resource type="Texture2D" path="res://Assets/Items/execution_decree.png" id="1_icon"]
+[ext_resource type="Script" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "execution_decree"
+title = "ITEM_EXECUTION_DECREE_TITLE"
+icon = ExtResource("1_icon")
+price = 50
+description = "ITEM_EXECUTION_DECREE_DESC"
+effect_type = 15
+type = 2
+rarity = 3
+tags = Array[StringName]([&"relic", &"crit_source"])
+weight = 25.0

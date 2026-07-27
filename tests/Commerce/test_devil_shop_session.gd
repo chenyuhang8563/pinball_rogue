@@ -8,6 +8,173 @@ const DevilShopSessionScript: GDScript = preload("res://Commerce/application/dev
 const CommerceOfferScript: GDScript = preload("res://Commerce/domain/commerce_offer.gd")
 const PurchaseResultScript: GDScript = preload("res://Commerce/domain/purchase_result.gd")
 const DevilShopConfigScript: GDScript = preload("res://Commerce/domain/devil_shop_config.gd")
+const ShopRefreshResultScript: GDScript = preload("res://Commerce/domain/shop_refresh_result.gd")
+
+
+class EmptyContentRegistry extends Node:
+	func query(_item_type: Item.ItemType) -> Array[Item]:
+		return []
+
+
+func test_open_keeps_config_pool_when_registry_has_no_items() -> void:
+	# 问题来源：打包版恶魔商店无商品，空注册表曾覆盖配置中的已打包商品池。
+	# 修复边界：仅注册表没有遗物时回退；有遗物时仍优先使用注册表货源。
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(100)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var empty_registry: Node = EmptyContentRegistry.new()
+	autofree(empty_registry)
+	var session: RefCounted = DevilShopSessionScript.new()
+	assert_true(session.call("configure", inventory, progression, wallet, health, null, empty_registry))
+	var config := _refresh_config()
+	var config_pool_item := _make_item("devil_config_pool_fallback", Item.ItemType.RELIC, 10)
+
+	var offers: Array = session.call("open", config, [config_pool_item])
+	var offer_item_ids: Array[String] = []
+	for offer: Variant in offers:
+		offer_item_ids.append(String(offer.item.id))
+
+	assert_eq(offers.size(), 1)
+	assert_eq(offer_item_ids, ["devil_config_pool_fallback"])
+
+
+func test_refresh_uses_normal_shop_cost_progression_and_only_debits_gold() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(50)
+	var health: RefCounted = FakeHealthScript.new(9)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var candidate := _make_item("refresh_price", Item.ItemType.RELIC, 10)
+	var config := _refresh_config()
+
+	session.call("begin_visit")
+	session.call("open", config, [candidate])
+	assert_eq(session.call("next_refresh_cost"), 0)
+	var first: RefCounted = session.call("refresh", [candidate])
+	assert_eq(first.code, ShopRefreshResultScript.Code.SUCCESS)
+	assert_true(first.committed)
+	assert_eq(first.cost, 0)
+	assert_eq(wallet.amount, 50)
+	assert_eq(health.amount, 9)
+	assert_eq(session.call("next_refresh_cost"), 10)
+
+	var second: RefCounted = session.call("refresh", [candidate])
+	assert_eq(second.code, ShopRefreshResultScript.Code.SUCCESS)
+	assert_eq(second.cost, 10)
+	assert_eq(wallet.amount, 40)
+	assert_eq(health.amount, 9)
+	assert_eq(session.call("next_refresh_cost"), 20)
+
+
+func test_refresh_insufficient_gold_preserves_offers_health_and_price() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new()
+	var health: RefCounted = FakeHealthScript.new(7)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var candidate := _make_item("refresh_insufficient", Item.ItemType.RELIC, 10)
+	var config := _refresh_config()
+
+	session.call("begin_visit")
+	session.call("open", config, [candidate])
+	assert_true((session.call("refresh", [candidate]) as RefCounted).committed)
+	var offers_before: Array = session.call("get_offers")
+	var result: RefCounted = session.call("refresh", [candidate])
+	var offers_after: Array = session.call("get_offers")
+
+	assert_eq(result.code, ShopRefreshResultScript.Code.INSUFFICIENT_FUNDS)
+	assert_false(result.committed)
+	assert_eq(wallet.amount, 0)
+	assert_eq(health.amount, 7)
+	assert_eq(session.call("next_refresh_cost"), 10)
+	assert_eq(offers_after[0].offer_id, offers_before[0].offer_id)
+
+
+func test_begin_visit_resets_devil_refresh_price_to_free() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(20)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var candidate := _make_item("refresh_visit_reset", Item.ItemType.RELIC, 10)
+	var config := _refresh_config()
+
+	session.call("begin_visit")
+	session.call("open", config, [candidate])
+	assert_true((session.call("refresh", [candidate]) as RefCounted).committed)
+	assert_eq(session.call("next_refresh_cost"), 10)
+	session.call("begin_visit")
+	assert_eq(session.call("next_refresh_cost"), 0)
+
+
+func test_empty_devil_refresh_pool_does_not_charge_or_advance_price() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(20)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var config := _refresh_config()
+
+	session.call("begin_visit")
+	session.call("open", config, [])
+	var result: RefCounted = session.call("refresh", [])
+
+	assert_eq(result.code, ShopRefreshResultScript.Code.EMPTY_CANDIDATES)
+	assert_false(result.committed)
+	assert_eq(wallet.amount, 20)
+	assert_eq(health.amount, 10)
+	assert_eq(session.call("next_refresh_cost"), 0)
+
+
+func test_internal_offer_regeneration_does_not_reset_devil_refresh_price() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(20)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var candidate := _make_item("refresh_internal_regeneration", Item.ItemType.RELIC, 10)
+	var config := _refresh_config()
+
+	session.call("begin_visit")
+	session.call("open", config, [candidate])
+	assert_true((session.call("refresh", [candidate]) as RefCounted).committed)
+	assert_eq(session.call("next_refresh_cost"), 10)
+	session.call("open", config, [candidate])
+	assert_eq(session.call("next_refresh_cost"), 10)
+
+
+func test_refresh_with_no_eligible_offers_preserves_wallet_and_current_offer() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(20)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var candidate := _make_item("refresh_eligible", Item.ItemType.RELIC, 10)
+	var invalid_candidate := _make_item("refresh_ineligible", Item.ItemType.RELIC, 10)
+	invalid_candidate.weight = 0.0
+	var config := _refresh_config()
+
+	session.call("begin_visit")
+	session.call("open", config, [candidate])
+	assert_true((session.call("refresh", [candidate]) as RefCounted).committed)
+	var offers_before: Array = session.call("get_offers")
+	var result: RefCounted = session.call("refresh", [invalid_candidate])
+	var offers_after: Array = session.call("get_offers")
+
+	assert_eq(result.code, ShopRefreshResultScript.Code.EMPTY_CANDIDATES)
+	assert_false(result.committed)
+	assert_eq(wallet.amount, 20)
+	assert_eq(health.amount, 10)
+	assert_eq(session.call("next_refresh_cost"), 10)
+	assert_eq(offers_after[0].offer_id, offers_before[0].offer_id)
+
+
+func _refresh_config() -> Resource:
+	var config := _config()
+	config.set("stock_count", 1)
+	config.set("level_weights", {2: 1, 3: 0, 4: 0})
+	return config
 
 
 func test_overpay_debits_full_selected_gold_and_health_at_minimum_boundary() -> void:
@@ -106,6 +273,57 @@ func test_capacity_change_rejects_payment_selection_without_state_change() -> vo
 
 	assert_eq(result.code, PurchaseResultScript.Code.CAPACITY_CHANGED)
 	assert_eq(_state(inventory, progression, wallet, health), before)
+
+
+func test_optimal_payment_prioritizes_gold_and_uses_minimum_health_chips() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(12)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var offer: RefCounted = _install_offer(
+		session, _make_item("optimal_payment", Item.ItemType.RELIC, 20), 2, 20, false
+	)
+
+	var payment: Dictionary = session.call("get_optimal_payment", offer.offer_id) as Dictionary
+
+	assert_eq(payment[&"gold"], 12)
+	assert_eq(payment[&"health"], 2, "8 remaining value should use two 5-value health chips")
+	assert_true(payment[&"is_sufficient"], "health payment may exceed the quote")
+
+
+func test_optimal_payment_uses_only_gold_when_it_covers_the_quote() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(50)
+	var health: RefCounted = FakeHealthScript.new(10)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var offer: RefCounted = _install_offer(
+		session, _make_item("gold_only_payment", Item.ItemType.RELIC, 20), 2, 20, false
+	)
+
+	var payment: Dictionary = session.call("get_optimal_payment", offer.offer_id) as Dictionary
+
+	assert_eq(payment[&"gold"], 20)
+	assert_eq(payment[&"health"], 0)
+	assert_true(payment[&"is_sufficient"])
+
+
+func test_optimal_payment_fills_available_resources_when_total_is_insufficient() -> void:
+	var inventory: RefCounted = FakeInventoryScript.new()
+	var progression: RefCounted = FakeProgressionScript.new()
+	var wallet: RefCounted = FakeWalletScript.new(4)
+	var health: RefCounted = FakeHealthScript.new(2)
+	var session: RefCounted = _devil_session(inventory, progression, wallet, health)
+	var offer: RefCounted = _install_offer(
+		session, _make_item("partial_payment", Item.ItemType.RELIC, 20), 2, 20, false
+	)
+
+	var payment: Dictionary = session.call("get_optimal_payment", offer.offer_id) as Dictionary
+
+	assert_eq(payment[&"gold"], 4)
+	assert_eq(payment[&"health"], 1, "minimum remaining health must stay intact")
+	assert_false(payment[&"is_sufficient"])
 
 
 func test_repeated_settlement_after_success_does_not_change_state() -> void:

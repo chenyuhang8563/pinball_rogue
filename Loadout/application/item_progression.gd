@@ -15,15 +15,17 @@ const STAT_DARK_MARBLE_DAMAGE: String = "dark_marble_damage"
 const STAT_BLUE_FROST_DURATION: String = "blue_frost_duration"
 const STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED: String = "blue_frost_bonus_damage_enabled"
 const STAT_BLUE_FROST_STACKS_PER_HIT: String = "blue_frost_stacks_per_hit"
-const STAT_FIRE_BURN_DURATION: String = "fire_burn_duration"
-const STAT_FIRE_EMBER_SPREAD_ENABLED: String = "fire_ember_spread_enabled"
-const STAT_POISON_DAMAGE_PER_TICK: String = "poison_damage_per_tick"
-const STAT_POISON_TICK_SECONDS: String = "poison_tick_seconds"
+const STAT_POISON_MAX_STACKS: String = "poison_max_stacks"
+const STAT_POISON_STACKS_PER_HIT: String = "poison_stacks_per_hit"
+const STAT_FIRE_BURN_MAX_STACKS: String = "fire_burn_max_stacks"
+const STAT_FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
 const STAT_ECHO_TIMEOUT: String = "echo_timeout"
 const STAT_EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
 const STAT_EXPLOSION_DAMAGE: String = "explosion_damage"
 const STAT_EXPLOSION_RADIUS: String = "explosion_radius"
 const STAT_ECHO_BONUS_DAMAGE: String = "echo_bonus_damage"
+const STAT_ASSASSIN_SEGMENT_DAMAGE: String = "assassin_segment_damage"
+const STAT_ASSASSIN_WEAK_POINT_COUNT: String = "assassin_weak_point_count"
 
 const UPGRADE_VALUES: Dictionary = {
 	Marble.MARBLE_TYPE.DEFAULT: {
@@ -49,8 +51,9 @@ const UPGRADE_VALUES: Dictionary = {
 	},
 	Marble.MARBLE_TYPE.GREEN: {
 		"title": "ITEM_GREEN_MARBLE_TITLE",
-		"stat": STAT_POISON_DAMAGE_PER_TICK,
-		"values": [2.0, 4.0, 4.0],
+		"stat": STAT_POISON_MAX_STACKS,
+		"values": [10.0, 15.0, 20.0],
+		"awakened_value": 20.0,
 		"descriptions": [
 			"UPGRADE_GREEN_POISON_2_DESC",
 			"UPGRADE_GREEN_POISON_4_DESC",
@@ -79,12 +82,24 @@ const UPGRADE_VALUES: Dictionary = {
 	},
 	Marble.MARBLE_TYPE.FIRE: {
 		"title": "ITEM_FIRE_MARBLE_TITLE",
-		"stat": STAT_FIRE_BURN_DURATION,
-		"values": [3.0, 4.0, 5.0],
+		"stat": STAT_FIRE_BURN_MAX_STACKS,
+		"values": [10.0, 15.0, 20.0],
+		"awakened_value": 20.0,
 		"descriptions": [
 			"UPGRADE_FIRE_DURATION_4_DESC",
 			"UPGRADE_FIRE_DURATION_5_DESC",
 			"UPGRADE_FIRE_AWAKEN_DESC",
+		],
+	},
+	Marble.MARBLE_TYPE.ASSASSIN: {
+		"title": "ITEM_ASSASSIN_MARBLE_TITLE",
+		"stat": STAT_ASSASSIN_SEGMENT_DAMAGE,
+		"values": [1.0, 2.0, 3.0],
+		"awakened_value": 3.0,
+		"descriptions": [
+			"UPGRADE_ASSASSIN_DAMAGE_2_DESC",
+			"UPGRADE_ASSASSIN_DAMAGE_3_DESC",
+			"UPGRADE_ASSASSIN_AWAKEN_DESC",
 		],
 	},
 }
@@ -116,6 +131,28 @@ var _skill_levels: Dictionary = {}
 func _init(loadout: RefCounted = null, stat_system: Object = null) -> void:
 	_loadout = loadout
 	_stat_system = stat_system
+	_connect_loadout_signals()
+
+
+## Assassin weak-point presence depends on the live chain (an owned marble that is
+## not slotted must not reveal weak points), so re-sync whenever the marble loadout
+## changes. Awakening state is tracked locally and handled in _sync_stat_modifiers.
+func _connect_loadout_signals() -> void:
+	if _loadout != null and is_instance_valid(_loadout) \
+			and _loadout.has_signal("marble_loadout_changed") \
+			and not _loadout.is_connected("marble_loadout_changed", _on_loadout_marble_changed):
+		_loadout.connect("marble_loadout_changed", _on_loadout_marble_changed)
+
+
+func _disconnect_loadout_signals() -> void:
+	if _loadout != null and is_instance_valid(_loadout) \
+			and _loadout.has_signal("marble_loadout_changed") \
+			and _loadout.is_connected("marble_loadout_changed", _on_loadout_marble_changed):
+		_loadout.disconnect("marble_loadout_changed", _on_loadout_marble_changed)
+
+
+func _on_loadout_marble_changed(_items: Array[Item]) -> void:
+	_sync_stat_modifiers()
 
 
 func level_of(item: Item) -> int:
@@ -222,6 +259,8 @@ func restore(state: Dictionary) -> bool:
 	]:
 		if not state.has(field) or not state[field] is Dictionary:
 			return false
+	if not _valid_snapshot(state):
+		return false
 	_marble_levels = (state[&"marble_levels"] as Dictionary).duplicate(true)
 	_marble_awakened = (state[&"marble_awakened"] as Dictionary).duplicate(true)
 	_relic_levels = (state[&"relic_levels"] as Dictionary).duplicate(true)
@@ -229,6 +268,48 @@ func restore(state: Dictionary) -> bool:
 	_skill_levels = (state[&"skill_levels"] as Dictionary).duplicate(true)
 	_sync_stat_modifiers()
 	return revision() == int(state.get(&"revision", revision()))
+
+
+func _valid_snapshot(state: Dictionary) -> bool:
+	if not _loadout_available():
+		return false
+	var owned_marbles: Dictionary[int, bool] = {}
+	var owned_relics: Dictionary[String, bool] = {}
+	for item: Item in _loadout.call("owned_items") as Array[Item]:
+		match item.type:
+			Item.ItemType.MARBLE:
+				owned_marbles[int(item.marble_type)] = true
+			Item.ItemType.RELIC:
+				owned_relics[_relic_key(item)] = true
+			Item.ItemType.SKILL:
+				pass
+	for key: Variant in (state[&"marble_levels"] as Dictionary):
+		if not key is int or not owned_marbles.has(int(key)) \
+				or not (state[&"marble_levels"] as Dictionary)[key] is int \
+				or int((state[&"marble_levels"] as Dictionary)[key]) < 1 \
+				or int((state[&"marble_levels"] as Dictionary)[key]) > MAX_LEVEL:
+			return false
+	for key: Variant in (state[&"marble_awakened"] as Dictionary):
+		if not key is int or not owned_marbles.has(int(key)) \
+				or not (state[&"marble_awakened"] as Dictionary)[key] is bool:
+			return false
+	for key: Variant in (state[&"relic_levels"] as Dictionary):
+		if not key is String or not owned_relics.has(String(key)) \
+				or not (state[&"relic_levels"] as Dictionary)[key] is int \
+				or int((state[&"relic_levels"] as Dictionary)[key]) < 1 \
+				or int((state[&"relic_levels"] as Dictionary)[key]) > MAX_LEVEL:
+			return false
+	for key: Variant in (state[&"relic_awakened"] as Dictionary):
+		if not key is String or not owned_relics.has(String(key)) \
+				or not (state[&"relic_awakened"] as Dictionary)[key] is bool:
+			return false
+	for key: Variant in (state[&"skill_levels"] as Dictionary):
+		if not key is String or not SKILL_LEVELS.has(String(key)) \
+				or not (state[&"skill_levels"] as Dictionary)[key] is int \
+				or int((state[&"skill_levels"] as Dictionary)[key]) < 1 \
+				or int((state[&"skill_levels"] as Dictionary)[key]) > AWAKENED_LEVEL:
+			return false
+	return true
 
 
 func revision() -> int:
@@ -276,6 +357,7 @@ func get_skill_values(skill_id: String) -> Dictionary:
 
 
 func dispose() -> void:
+	_disconnect_loadout_signals()
 	_clear_upgrade_modifiers()
 	_loadout = null
 	_stat_system = null
@@ -288,8 +370,8 @@ func _sync_stat_modifiers() -> void:
 	if _stat_system.has_method("register_entity"):
 		_stat_system.call("register_entity", STAT_ENTITY_MARBLE_CHAIN, [
 			STAT_DARK_MARBLE_DAMAGE,
-			STAT_POISON_DAMAGE_PER_TICK,
-			STAT_POISON_TICK_SECONDS,
+			STAT_POISON_MAX_STACKS,
+			STAT_POISON_STACKS_PER_HIT,
 			STAT_ECHO_TIMEOUT,
 			STAT_EXPLOSION_EFFECT_SCALE,
 			STAT_EXPLOSION_DAMAGE,
@@ -298,8 +380,10 @@ func _sync_stat_modifiers() -> void:
 			STAT_BLUE_FROST_DURATION,
 			STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED,
 			STAT_BLUE_FROST_STACKS_PER_HIT,
-			STAT_FIRE_BURN_DURATION,
-			STAT_FIRE_EMBER_SPREAD_ENABLED,
+			STAT_FIRE_BURN_MAX_STACKS,
+			STAT_FIRE_BURN_DAMAGE_PER_LAYER,
+			STAT_ASSASSIN_SEGMENT_DAMAGE,
+			STAT_ASSASSIN_WEAK_POINT_COUNT,
 		])
 	var types_to_sync: Array[int] = []
 	for raw_type: Variant in _marble_levels.keys():
@@ -312,6 +396,7 @@ func _sync_stat_modifiers() -> void:
 			types_to_sync.append(marble_type)
 	for raw_type: int in types_to_sync:
 		_apply_level_modifiers(raw_type as Marble.MARBLE_TYPE)
+	_apply_assassin_weak_point_count()
 
 
 func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
@@ -330,7 +415,7 @@ func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
 		_add_override_modifier(STAT_EXPLOSION_RADIUS, 100.0)
 		_add_override_modifier(STAT_EXPLOSION_EFFECT_SCALE, 4.0)
 	elif marble_type == Marble.MARBLE_TYPE.GREEN and awakened:
-		_add_override_modifier(STAT_POISON_TICK_SECONDS, 0.5)
+		_add_override_modifier(STAT_POISON_STACKS_PER_HIT, 2.0)
 	elif marble_type == Marble.MARBLE_TYPE.BROWN and awakened:
 		_add_override_modifier(STAT_ECHO_TIMEOUT, 15.0)
 	elif marble_type == Marble.MARBLE_TYPE.BLUE:
@@ -338,8 +423,26 @@ func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
 			_add_override_modifier(STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED, 1.0)
 		if awakened:
 			_add_override_modifier(STAT_BLUE_FROST_STACKS_PER_HIT, 2.0)
-	elif marble_type == Marble.MARBLE_TYPE.FIRE and awakened:
-		_add_override_modifier(STAT_FIRE_EMBER_SPREAD_ENABLED, 1.0)
+	elif marble_type == Marble.MARBLE_TYPE.FIRE:
+		if stored_level >= 3:
+			_add_override_modifier(STAT_FIRE_BURN_DAMAGE_PER_LAYER, 3.0)
+
+
+## Assassin weak-point presence reflects the live chain: 0 when no assassin marble
+## is slotted, 1 when present, 2 when present and awakened. Written as an OVERRIDE
+## modifier on the marble_chain entity so WeakPointHost reads it directly.
+func _apply_assassin_weak_point_count() -> void:
+	var count: int = 0
+	if _loadout_available() and _loadout.has_method("get_chain_items"):
+		var in_field: bool = false
+		for item: Item in _loadout.call("get_chain_items") as Array[Item]:
+			if item != null and int(item.marble_type) == int(Marble.MARBLE_TYPE.ASSASSIN):
+				in_field = true
+				break
+		if in_field:
+			var awakened: bool = bool(_marble_awakened.get(int(Marble.MARBLE_TYPE.ASSASSIN), false))
+			count = 2 if awakened else 1
+	_add_override_modifier(STAT_ASSASSIN_WEAK_POINT_COUNT, float(count))
 
 
 func _add_override_modifier(stat_id: String, value: float) -> void:

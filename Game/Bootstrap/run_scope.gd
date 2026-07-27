@@ -66,6 +66,94 @@ func reset() -> bool:
 	return reset_for_run()
 
 
+func snapshot() -> Dictionary:
+	if not is_initialized():
+		return {}
+	var owned_ids: Array[StringName] = []
+	for value: Variant in loadout.call("owned_items") as Array:
+		var item := value as Item
+		if item == null or item.id.is_empty():
+			return {}
+		owned_ids.append(StringName(item.id))
+	var chain_ids: Array[StringName] = []
+	for value: Variant in loadout.call("get_chain_items") as Array:
+		var item := value as Item
+		if item == null or item.id.is_empty():
+			return {}
+		chain_ids.append(StringName(item.id))
+	return {
+		&"owned_item_ids": owned_ids,
+		&"chain_item_ids": chain_ids,
+		&"progression": progression.call("snapshot"),
+		&"wallet": wallet.call("snapshot"),
+		&"health": health.call("snapshot"),
+	}
+
+
+func restore(state: Dictionary, content_registry: Node) -> bool:
+	if not is_initialized() or content_registry == null or not content_registry.has_method(&"by_id"):
+		return false
+	for key: StringName in [
+		&"owned_item_ids", &"chain_item_ids", &"progression", &"wallet", &"health",
+	]:
+		if not state.has(key):
+			return false
+	if not state[&"owned_item_ids"] is Array or not state[&"chain_item_ids"] is Array \
+			or not state[&"progression"] is Dictionary or not state[&"wallet"] is Dictionary \
+			or not state[&"health"] is Dictionary:
+		return false
+	var owned: Array[Item] = []
+	var by_id: Dictionary[StringName, Item] = {}
+	for value: Variant in state[&"owned_item_ids"] as Array:
+		var item_id := StringName(value)
+		var item := content_registry.call(&"by_id", item_id) as Item
+		if item == null or item.id.is_empty() or by_id.has(item_id):
+			return false
+		owned.append(item)
+		by_id[item_id] = item
+	var chain: Array[Item] = []
+	for value: Variant in state[&"chain_item_ids"] as Array:
+		var item_id := StringName(value)
+		var item: Item = by_id.get(item_id)
+		if item == null or item.type != Item.ItemType.MARBLE or chain.has(item):
+			return false
+		chain.append(item)
+	var previous := snapshot()
+	var loadout_state := {
+		&"owned_items": owned,
+		&"marble_loadout": {&"items": chain},
+	}
+	if bool(loadout.call("restore", loadout_state)) \
+			and bool(progression.call("restore", state[&"progression"] as Dictionary)) \
+			and bool(wallet.call("restore", state[&"wallet"] as Dictionary)) \
+			and bool(health.call("restore", state[&"health"] as Dictionary)):
+		return true
+	_restore_unchecked(previous, content_registry)
+	return false
+
+
+func _restore_unchecked(state: Dictionary, content_registry: Node) -> void:
+	if state.is_empty():
+		return
+	var owned: Array[Item] = []
+	var by_id: Dictionary[StringName, Item] = {}
+	for value: Variant in state.get(&"owned_item_ids", []) as Array:
+		var item_id := StringName(value)
+		var item := content_registry.call(&"by_id", item_id) as Item
+		if item != null:
+			owned.append(item)
+			by_id[item_id] = item
+	var chain: Array[Item] = []
+	for value: Variant in state.get(&"chain_item_ids", []) as Array:
+		var item: Item = by_id.get(StringName(value))
+		if item != null:
+			chain.append(item)
+	loadout.call("restore", {&"owned_items": owned, &"marble_loadout": {&"items": chain}})
+	progression.call("restore", state.get(&"progression", {}))
+	wallet.call("restore", state.get(&"wallet", {}))
+	health.call("restore", state.get(&"health", {}))
+
+
 ## Permanently releases this scope. A disposed RunScope cannot be initialized again.
 func dispose() -> void:
 	if _disposed:

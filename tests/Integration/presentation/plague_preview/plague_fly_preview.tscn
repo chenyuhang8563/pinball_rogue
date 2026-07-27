@@ -1,0 +1,45 @@
+[gd_scene format=3 uid="uid://51b0g7faqgtr"]
+
+[ext_resource type="PackedScene" uid="uid://c0t37ll5k53xr" path="res://Combat/effects/plague_fly/plague_fly_sprite.tscn" id="1_2rsx2"]
+[ext_resource type="Script" path="res://tests/Integration/presentation/plague_preview/preview_capture.gd" id="1_cw3re"]
+[ext_resource type="Texture2D" uid="uid://b4fdkrbi1rrnm" path="res://Assets/Monsters/fly-Sheet.png" id="2_cw3re"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_h30h0"]
+atlas = ExtResource("2_cw3re")
+region = Rect2(0, 0, 32, 32)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_vqyax"]
+atlas = ExtResource("2_cw3re")
+region = Rect2(32, 0, 32, 32)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_pvmxx"]
+animations = [{
+"frames": [],
+"loop": true,
+"name": &"default",
+"speed": 5.0
+}, {
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_h30h0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_vqyax")
+}],
+"loop": true,
+"name": &"fly",
+"speed": 8.0
+}]
+
+[node name="PlagueFlyPreview" type="Node2D" unique_id=1596655873]
+script = ExtResource("1_cw3re")
+output_file = "E:/Projects/pinball_rogue/.codex/hud_screenshots/plague_fly_preview.png"
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=2017749142]
+
+[node name="Fly" type="AnimatedSprite2D" parent="." unique_id=651562127 instance=ExtResource("1_2rsx2")]
+texture_filter = 1
+scale = Vector2(6, 6)
+sprite_frames = SubResource("SpriteFrames_pvmxx")
+animation = &"fly"
+autoplay = "fly"

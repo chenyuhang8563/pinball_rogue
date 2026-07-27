@@ -77,6 +77,16 @@ func test_snapshot_restore_recovers_ownership_order_skill_signals_and_revision()
 	assert_signal_emit_count(loadout, "changed", 1)
 
 
+func test_default_relic_capacity_accepts_five_and_rejects_the_sixth() -> void:
+	# Regression source: Phase 0c raises the baseline relic capacity from 3 to 5.
+	# Boundary: the sixth unique relic is rejected without changing owned state.
+	var loadout: RefCounted = LoadoutScript.new()
+	for index: int in range(5):
+		assert_true(loadout.call("add", _item("relic_%d" % index, Item.ItemType.RELIC)))
+	assert_false(loadout.call("add", _item("relic_6", Item.ItemType.RELIC)))
+	assert_eq((loadout.call("relics") as Array).size(), 5)
+
+
 func _capacity(item_type: Item.ItemType, fallback: int) -> int:
 	if item_type == Item.ItemType.MARBLE:
 		return marble_capacity

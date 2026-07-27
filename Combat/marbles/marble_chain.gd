@@ -25,8 +25,10 @@ class_name MarbleChain
 
 signal chain_collision(collider: Node, collision_type: String)
 
-const StatContextScript: GDScript = preload("res://Core/stats/stat_context.gd")
 const FireMarbleScript: GDScript = preload("res://Combat/marbles/fire_marble.gd")
+const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
+const HEAD_MAX_ECHO_STACKS: int = 3
+const HEAD_ECHO_TIMEOUT: float = 5.0
 
 # ---- 导出调参 ----
 
@@ -54,6 +56,8 @@ var body: Array[ChainSegment] = []
 ## Body 段容器。
 var _body_container: Node2D
 var _registry: MarbleChainRegistry = null
+var _head_echo_stacks: int = 0
+var _head_echo_timer: Timer = null
 
 
 # ---- 轨迹数据 ----
@@ -140,7 +144,7 @@ func build_chain(items: Array[Item], spawn_positions: Array[Vector2]) -> void:
 	add_child(_body_container)
 
 	# Head
-	head = _create_head(_get_spawn_position(spawn_positions, 0))
+	head = _create_head(items[0], _get_spawn_position(spawn_positions, 0))
 	add_child(head)
 
 	# Body 段
@@ -176,6 +180,7 @@ func _prime_trail_from_spawn_positions(spawn_positions: Array[Vector2]) -> void:
 func _clear_chain() -> void:
 	_unregister_from_registry()
 	_head_disconnect_signals()
+	_clear_head_echo_stacks()
 
 	if head != null and is_instance_valid(head):
 		head.queue_free()
@@ -195,11 +200,15 @@ func _clear_chain() -> void:
 
 
 ## 创建 Head（唯一 RigidBody2D）。
-func _create_head(spawn_pos: Vector2) -> Marble:
+func _create_head(item: Item, spawn_pos: Vector2) -> Marble:
 	var instance: Node = _head_scene.instantiate()
 	var marble: Marble = instance as Marble
 	marble.global_position = spawn_pos
-	marble.marble_type = Marble.MARBLE_TYPE.DEFAULT
+	marble.marble_type = item.marble_type
+	marble.damage = item.marble_segment_damage
+	var sprite_node: Sprite2D = marble.get_node_or_null("Sprite2D") as Sprite2D
+	if sprite_node != null and item.icon != null:
+		sprite_node.texture = item.icon
 	marble.is_head = true
 	return marble
 
@@ -246,14 +255,17 @@ func _on_head_body_entered(collided_body: Node) -> void:
 	else:
 		# 棕色弹珠：碰非敌（墙/挡板等）叠回声
 		_try_add_echo()
+		var effect_manager: Node = _get_autoload_node(&"EffectManager")
+		if effect_manager != null and effect_manager.has_method("on_surface_bounce"):
+			var surface_type: StringName = &"flipper" if collided_body.is_in_group("flipper") else &"wall"
+			effect_manager.call("on_surface_bounce", surface_type, {})
 
 
 # ---- 炸弹逻辑 ----
 
 ## 若链中存在 BOMB 段，执行爆炸。
 func _try_trigger_bomb() -> void:
-	var bomb_segment: ChainSegment = _find_segment(Marble.MARBLE_TYPE.BOMB)
-	if bomb_segment == null:
+	if not _contains_marble_type(Marble.MARBLE_TYPE.BOMB):
 		return
 
 	var explosion_center: Vector2 = head.global_position
@@ -268,10 +280,20 @@ func _find_segment(marble_type: Marble.MARBLE_TYPE) -> ChainSegment:
 	return null
 
 
+func _contains_marble_type(marble_type: Marble.MARBLE_TYPE) -> bool:
+	if head != null and is_instance_valid(head) and head.marble_type == marble_type:
+		return true
+	return _find_segment(marble_type) != null
+
+
 func _damage_enemies_in_radius(center: Vector2) -> void:
 	var explosion_radius: float = _get_stat_float("explosion_radius", 100.0)
 	var explosion_damage: int = roundi(_get_stat_float("explosion_damage", 5.0))
+	var effect_manager: Node = _get_autoload_node(&"EffectManager")
+	if effect_manager != null and effect_manager.has_method("on_explosion"):
+		effect_manager.call("on_explosion", center, explosion_radius)
 
+	var targets: Array[Node2D] = []
 	for enemy: Node in get_tree().get_nodes_in_group("enemies"):
 		if enemy == null or not is_instance_valid(enemy):
 			continue
@@ -280,9 +302,25 @@ func _damage_enemies_in_radius(center: Vector2) -> void:
 		var enemy_node: Node2D = enemy as Node2D
 		if enemy_node.global_position.distance_to(center) > explosion_radius:
 			continue
-		if enemy_node.has_method("take_damage"):
+		targets.append(enemy_node)
+	var event_id: int = DamagePacket.next_event_id()
+	var main_target: Node2D = null
+	for target: Node2D in targets:
+		if main_target == null or target.global_position.distance_squared_to(center) < main_target.global_position.distance_squared_to(center):
+			main_target = target
+	for enemy_node: Node2D in targets:
+		if enemy_node.has_method("apply_damage_packet"):
+			var packet: DamagePacket = DamagePacketScript.new(&"bomb", float(explosion_damage), &"physical")
+			packet.is_marble = true
+			packet.target = enemy_node
+			packet.event_id = event_id
+			packet.is_event_main = enemy_node == main_target
+			enemy_node.call("apply_damage_packet", packet)
+		elif enemy_node.has_method("take_damage"):
+			# Compatibility for non-Enemy test doubles. Real enemies use the packet
+			# path above and retain the old multiplier-before-armor result.
 			var direct_damage := roundi(float(explosion_damage) * _get_stat_float("damage_multiplier", 1.0))
-			enemy_node.take_damage(direct_damage)
+			enemy_node.call("take_damage", direct_damage)
 
 
 func _spawn_explosion_effect(center: Vector2) -> void:
@@ -300,45 +338,122 @@ func _spawn_explosion_effect(center: Vector2) -> void:
 
 ## 若链中存在 BROWN 段，为其叠加一层回声。
 func _try_add_echo() -> void:
+	if head != null and is_instance_valid(head) and head.marble_type == Marble.MARBLE_TYPE.BROWN:
+		_add_head_echo_stack()
+		return
 	var brown_segment: ChainSegment = _find_segment(Marble.MARBLE_TYPE.BROWN)
 	if brown_segment == null:
 		return
 	brown_segment.add_echo_stack()
 
 
+func _add_head_echo_stack() -> void:
+	_head_echo_stacks = mini(_head_echo_stacks + 1, HEAD_MAX_ECHO_STACKS)
+	_ensure_head_echo_timer()
+	_head_echo_timer.start(_get_stat_float("echo_timeout", HEAD_ECHO_TIMEOUT))
+	_update_head_echo_visual()
+
+
+func _get_head_echo_damage() -> int:
+	if head == null or not is_instance_valid(head) \
+			or head.marble_type != Marble.MARBLE_TYPE.BROWN \
+			or _head_echo_stacks < HEAD_MAX_ECHO_STACKS:
+		return 0
+	var bonus := roundi(_get_stat_float("echo_bonus_damage", 2.0))
+	if bonus <= 0:
+		return 0
+	if _get_stat_float("echo_timeout", HEAD_ECHO_TIMEOUT) >= 15.0:
+		_head_echo_stacks = maxi(0, _head_echo_stacks - 1)
+		if _head_echo_stacks > 0 and _head_echo_timer != null and is_instance_valid(_head_echo_timer):
+			_head_echo_timer.start(_get_stat_float("echo_timeout", HEAD_ECHO_TIMEOUT))
+		_update_head_echo_visual()
+	else:
+		_clear_head_echo_stacks()
+	return bonus
+
+
+func _ensure_head_echo_timer() -> void:
+	if _head_echo_timer != null and is_instance_valid(_head_echo_timer):
+		return
+	_head_echo_timer = Timer.new()
+	_head_echo_timer.one_shot = true
+	_head_echo_timer.timeout.connect(_clear_head_echo_stacks)
+	add_child(_head_echo_timer)
+
+
+func _clear_head_echo_stacks() -> void:
+	_head_echo_stacks = 0
+	if _head_echo_timer != null and is_instance_valid(_head_echo_timer):
+		_head_echo_timer.stop()
+	_update_head_echo_visual()
+
+
+func _update_head_echo_visual() -> void:
+	if head == null or not is_instance_valid(head):
+		return
+	var sprite: Sprite2D = head.get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		return
+	if head.marble_type != Marble.MARBLE_TYPE.BROWN:
+		sprite.modulate = Color.WHITE
+		return
+	var charge_ratio := float(_head_echo_stacks) / float(HEAD_MAX_ECHO_STACKS)
+	sprite.modulate = Color(1.0, 1.0 + charge_ratio * 0.25, 1.0 - charge_ratio * 0.2)
+
+
 # ---- 伤害聚合 ----
 
 ## 敌人碰撞时调用此方法，聚合 Head 基础伤害 + 所有 Body 段贡献。
-func get_total_damage(target: Node) -> int:
+func get_total_damage(target: Node, packet: DamagePacket = null) -> int:
 	var total: int = 0
 
 	if head != null and is_instance_valid(head):
-		total += roundi(_get_stat_float("dark_marble_damage", float(head.damage)))
+		total += _head_contact_damage()
+		total += _apply_hit_effect(head.marble_type, target, packet)
+		total += _get_head_echo_damage()
 
 	for seg: ChainSegment in body:
 		if seg == null or not is_instance_valid(seg):
 			continue
-		if seg.segment_type == Marble.MARBLE_TYPE.GREEN:
-			GreenMarble.apply_poison_to_enemy(target)
-		elif seg.segment_type == Marble.MARBLE_TYPE.BLUE:
-			var stacks_after_hit: int = BlueMarble.apply_frost_to_enemy(target)
-			total += BlueMarble.get_frost_bonus_damage(stacks_after_hit)
-		elif seg.segment_type == Marble.MARBLE_TYPE.FIRE:
-			FireMarbleScript.apply_burn_to_enemy(target)
-		total += seg.damage
+		total += _apply_hit_effect(seg.segment_type, target, packet)
+		total += _segment_contact_damage(seg)
 		total += seg.get_echo_damage()
 
-	var stat_system: Node = _get_autoload_node(&"StatSystem")
-	if stat_system == null or not stat_system.has_method("get_stat"):
-		return total
+	return total
 
-	var context: RefCounted = StatContextScript.new(
-		"marble_chain",
-		target.name if target != null else "",
-		"marble_hit",
-		{"base_damage": total}
-	)
-	return int(stat_system.call("get_stat", "final_damage", "marble_chain", context))
+
+func _head_contact_damage() -> int:
+	if head == null or not is_instance_valid(head):
+		return 0
+	if head.marble_type == Marble.MARBLE_TYPE.DEFAULT:
+		return roundi(_get_stat_float("dark_marble_damage", float(head.damage)))
+	if head.marble_type == Marble.MARBLE_TYPE.ASSASSIN:
+		return roundi(_get_stat_float("assassin_segment_damage", float(head.damage)))
+	return head.damage
+
+
+func _apply_hit_effect(
+	marble_type: Marble.MARBLE_TYPE,
+	target: Node,
+	packet: DamagePacket
+) -> int:
+	match marble_type:
+		Marble.MARBLE_TYPE.GREEN:
+			GreenMarble.apply_poison_to_enemy(target, packet)
+		Marble.MARBLE_TYPE.BLUE:
+			var stacks_after_hit: int = BlueMarble.apply_frost_to_enemy(target, packet)
+			return BlueMarble.get_frost_bonus_damage(stacks_after_hit)
+		Marble.MARBLE_TYPE.FIRE:
+			FireMarbleScript.apply_burn_to_enemy(target, packet)
+	return 0
+
+
+## Assassin segment damage grows with the assassin_weak_point progression stat; the
+## crit itself is resolved on the enemy side, so here it is just contact damage.
+func _segment_contact_damage(seg: ChainSegment) -> int:
+	if seg.segment_type == Marble.MARBLE_TYPE.ASSASSIN:
+		return roundi(_get_stat_float("assassin_segment_damage", float(seg.damage)))
+	return seg.damage
 
 
 func _get_autoload_node(node_name: StringName) -> Node:

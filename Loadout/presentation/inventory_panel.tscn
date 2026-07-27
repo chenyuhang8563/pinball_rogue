@@ -4,9 +4,10 @@
 [ext_resource type="Script" uid="uid://bjfai71a1nsp2" path="res://Loadout/presentation/inventory_panel.gd" id="1_inventory_panel"]
 [ext_resource type="PackedScene" uid="uid://bx6h7a1u1u7xb" path="res://Loadout/presentation/inventory_scene/inventory.tscn" id="2_collection_rows"]
 [ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="3_jc538"]
-[ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="4_cead4"]
 [ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/shared/item_icon_view.tscn" id="4_item_icon_view"]
+[ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/shared/item_icon_view.gd" id="6_f8byy"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://Loadout/presentation/skill_replace_dialog.tscn" id="7_cead4"]
+[ext_resource type="Script" uid="uid://dyflbtf0gphq1" path="res://Loadout/presentation/skill_replace_dialog.gd" id="8_jp2uf"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -15,6 +16,138 @@ border_width_top = 1
 border_width_right = 1
 border_width_bottom = 1
 border_color = Color(0.55, 0.53, 0.47, 1)
+
+[sub_resource type="Animation" id="Animation_f8byy"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("UI/Panel/MarginContainer/Layout/RelicSelectionHint:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [false]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/MarbleBox:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillLabel:modulate")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillBar:modulate")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/RelicBar:modulate")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_jp2uf"]
+length = 0.01
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("UI/Panel/MarginContainer/Layout/RelicSelectionHint:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [true]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/MarbleBox:modulate")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0.28)]
+}
+tracks/2/type = "value"
+tracks/2/imported = false
+tracks/2/enabled = true
+tracks/2/path = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillLabel:modulate")
+tracks/2/interp = 1
+tracks/2/loop_wrap = true
+tracks/2/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0.28)]
+}
+tracks/3/type = "value"
+tracks/3/imported = false
+tracks/3/enabled = true
+tracks/3/path = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillBar:modulate")
+tracks/3/interp = 1
+tracks/3/loop_wrap = true
+tracks/3/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 0.28)]
+}
+tracks/4/type = "value"
+tracks/4/imported = false
+tracks/4/enabled = true
+tracks/4/path = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/RelicBar:modulate")
+tracks/4/interp = 1
+tracks/4/loop_wrap = true
+tracks/4/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_uvg6b"]
+_data = {
+&"normal": SubResource("Animation_f8byy"),
+&"relic_selection": SubResource("Animation_jp2uf")
+}
 
 [node name="InventoryPanel" type="Control" unique_id=600384015 node_paths=PackedStringArray("marble_box_container", "relic_bar_container", "skill_bar_container")]
 process_mode = 3
@@ -73,20 +206,22 @@ text = "UI_INVENTORY_TITLE"
 label_settings = ExtResource("3_jc538")
 horizontal_alignment = 1
 
-[node name="ExitButton" type="Button" parent="UI/Panel/MarginContainer/Layout/Header" unique_id=1745584153]
-custom_minimum_size = Vector2(48, 24)
+[node name="RelicSelectionHint" type="Label" parent="UI/Panel/MarginContainer/Layout" unique_id=2061552169]
 layout_mode = 2
-theme_override_fonts/font = ExtResource("4_cead4")
-theme_override_font_sizes/font_size = 12
-text = "UI_EXIT"
+text = "UI_RELIC_REPLACEMENT_SELECT"
+label_settings = ExtResource("3_jc538")
+horizontal_alignment = 1
+autowrap_mode = 3
 
 [node name="Content" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout" unique_id=980932436]
 layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="CollectionRows" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=1594412291 instance=ExtResource("2_collection_rows")]
+[node name="CollectionRows" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=1594412291 instance=ExtResource("2_collection_rows")]
 layout_mode = 2
+theme = ExtResource("1_cead4")
+theme_override_constants/separation = 4
 
 [node name="SkillLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=324016682]
 layout_mode = 2
@@ -104,12 +239,29 @@ size_flags_horizontal = 4
 size_flags_vertical = 4
 theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
 
-[node name="Icon" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot1" unique_id=1818088685 instance=ExtResource("4_item_icon_view")]
+[node name="Icon" type="Control" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot1" unique_id=1818088685 instance=ExtResource("4_item_icon_view")]
+custom_minimum_size = Vector2(32, 32)
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+mouse_filter = 2
+theme = ExtResource("1_cead4")
+script = ExtResource("6_f8byy")
 
-[node name="SkillReplaceDialog" parent="UI" unique_id=1955345262 instance=ExtResource("7_cead4")]
+[node name="SkillReplaceDialog" type="Control" parent="UI" unique_id=1955345262 instance=ExtResource("7_cead4")]
+process_mode = 3
+visible = false
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme = ExtResource("1_cead4")
+script = ExtResource("8_jp2uf")
+
+[node name="RelicSelectionModePlayer" type="AnimationPlayer" parent="." unique_id=547740773]
+libraries/ = SubResource("AnimationLibrary_uvg6b")
