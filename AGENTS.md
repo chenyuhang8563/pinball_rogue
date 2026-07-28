@@ -5,8 +5,8 @@
 
 ## Godot
 
-- Project uses Godot 4.6.1.
-- Godot executable: `C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe`.
+- Project uses Godot 4.7.1.
+- Godot executable: `C:\Users\16085\Desktop\Godot_v4.7.1-stable_win64.exe`.
 - `godot` is not on `PATH`.
 - AI/Agent 在新增或移动/重命名 `.gd`、`.gdshader`、`.tscn`、`.tres` 或资源文件后，必须执行 `cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe --headless --import --path E:\Projects\pinball_rogue"` 更新导入与 UID 缓存。
 - Prefer the running editor plus Hastur tools when live inspection or screenshots are needed.

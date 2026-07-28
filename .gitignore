@@ -37,3 +37,7 @@ prompts
 
 # temp files
 .temp
+
+# gdmcp ignores
+.gdmcp
+addons/godot_mcp
