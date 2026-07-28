@@ -43,7 +43,6 @@ func test_tooltip_selects_level_text_and_formats_hoverable_term() -> void:
 	translation.add_message("ITEM_FIRE_MARBLE_DESC_LV3", "Burn deals [damage_fire]3[/damage_fire] damage.")
 	translation.add_message("TERM_BURN_NAME", "Burn")
 	translation.add_message("TERM_BURN_DESC", "Definition")
-	translation.add_message("UI_TOOLTIP_TERMS_TITLE", "Terms")
 	TranslationServer.add_translation(translation)
 	var previous_locale := TranslationServer.get_locale()
 	TranslationServer.set_locale("en")
@@ -58,11 +57,35 @@ func test_tooltip_selects_level_text_and_formats_hoverable_term() -> void:
 	assert_string_contains(description.text, "#ef6a4c")
 	assert_true((tooltip.get_node("TermPanel") as Control).visible)
 	var term_definition := tooltip.get_node("TermPanel/TermMargin/TermLayout/TermDefinitionLabel") as RichTextLabel
-	assert_ne(term_definition.text, "")
+	assert_string_contains(term_definition.text, "[color=#cead4a]%s[/color]\n%s" % [tr("TERM_BURN_NAME"), tr("TERM_BURN_DESC")])
 	tooltip.set_text("Plain item", "Deal 3 damage.")
 	assert_false((tooltip.get_node("TermPanel") as Control).visible)
-	assert_eq((tooltip.get_node("TermPanel/TermMargin/TermLayout/TermTitleLabel") as Label).text, "")
 	assert_eq(term_definition.text, "")
+	TranslationServer.set_locale(previous_locale)
+	TranslationServer.remove_translation(translation)
+
+
+func test_term_card_lists_each_term_name_then_brief_in_order() -> void:
+	var translation := Translation.new()
+	translation.locale = "en"
+	translation.add_message("TERM_BURN_NAME", "Burn")
+	translation.add_message("TERM_BURN_DESC", "Burn brief")
+	translation.add_message("TERM_CRIT_NAME", "Crit")
+	translation.add_message("TERM_CRIT_DESC", "Crit brief")
+	TranslationServer.add_translation(translation)
+	var previous_locale := TranslationServer.get_locale()
+	TranslationServer.set_locale("en")
+	var tooltip: ItemTooltip = add_child_autofree(ItemTooltipScene.instantiate()) as ItemTooltip
+	tooltip.set_text("Multi", "Applies Burn and Crit.")
+	assert_true((tooltip.get_node("TermPanel") as Control).visible)
+	var term_definition := tooltip.get_node("TermPanel/TermMargin/TermLayout/TermDefinitionLabel") as RichTextLabel
+	# 每个术语：名称（术语色）独占一行作小标题，下一行写简介
+	var burn_block := "[color=#cead4a]%s[/color]\n%s" % [tr("TERM_BURN_NAME"), tr("TERM_BURN_DESC")]
+	var crit_block := "[color=#cead4a]%s[/color]\n%s" % [tr("TERM_CRIT_NAME"), tr("TERM_CRIT_DESC")]
+	assert_string_contains(term_definition.text, burn_block)
+	assert_string_contains(term_definition.text, crit_block)
+	# 多个术语按出现顺序依次向下堆叠
+	assert_true(term_definition.text.find(burn_block) < term_definition.text.find(crit_block))
 	TranslationServer.set_locale(previous_locale)
 	TranslationServer.remove_translation(translation)
 

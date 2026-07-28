@@ -37,7 +37,6 @@ const _BodyLabelSettings: LabelSettings = preload("res://Themes/Fonts/text_10.tr
 
 var _title_label: Label
 var _description_label: RichTextLabel
-var _term_title_label: Label
 var _term_definition_label: RichTextLabel
 var _term_card_player: AnimationPlayer
 
@@ -66,7 +65,6 @@ func _bind_nodes() -> void:
 		return
 	_title_label = get_node_or_null("MainPanel/TooltipMargin/TooltipLayout/TooltipLabel") as Label
 	_description_label = get_node_or_null("MainPanel/TooltipMargin/TooltipLayout/DescriptionLabel") as RichTextLabel
-	_term_title_label = get_node_or_null("TermPanel/TermMargin/TermLayout/TermTitleLabel") as Label
 	_term_definition_label = get_node_or_null("TermPanel/TermMargin/TermLayout/TermDefinitionLabel") as RichTextLabel
 	_term_card_player = get_node_or_null("VisibilityPlayer") as AnimationPlayer
 
@@ -101,22 +99,24 @@ func _format_description(value: String) -> String:
 	return formatted
 
 
+## 术语卡：每个术语一块——术语名称（术语色，作小标题）独占一行，下一行写简介；
+## 多个术语按出现顺序用换行依次向下堆叠。整段仍交给 _set_rtl_text 预算高度，
+## 名称行的颜色标签不影响排版高度。
 func _populate_term_card(description: String) -> void:
 	var term_ids := _term_ids_in(description)
 	if term_ids.is_empty():
-		if _term_title_label != null:
-			_term_title_label.text = ""
-		if _term_definition_label != null:
-			_term_definition_label.text = ""
+		_set_rtl_text(_term_definition_label, "")
 		_set_term_card_visible(false)
 		return
-	if _term_title_label != null:
-		_term_title_label.text = tr("UI_TOOLTIP_TERMS_TITLE")
 	_set_term_card_visible(true)
-	var lines := PackedStringArray()
+	var blocks := PackedStringArray()
 	for term_id: String in term_ids:
-		lines.append("%s：%s" % [tr("TERM_%s_NAME" % term_id), tr("TERM_%s_DESC" % term_id)])
-	_set_rtl_text(_term_definition_label, "\n".join(lines))
+		blocks.append("[color=%s]%s[/color]\n%s" % [
+			TERM_COLOR,
+			tr("TERM_%s_NAME" % term_id),
+			tr("TERM_%s_DESC" % term_id),
+		])
+	_set_rtl_text(_term_definition_label, "\n".join(blocks))
 
 
 func _set_term_card_visible(should_show: bool) -> void:
