@@ -239,7 +239,6 @@ func create_normal_draft(
 	if not _can_draft(token, source_id):
 		return null
 	var marbles := _items_from(marble_candidates)
-	var skills := _items_from(skill_candidates)
 	if marble_candidates.is_empty():
 		marbles = _registry_query(Item.ItemType.MARBLE)
 		if marbles.is_empty():
@@ -247,33 +246,15 @@ func create_normal_draft(
 				_config.marble_item_paths if not _config.marble_item_paths.is_empty() \
 				else DEFAULT_NORMAL_MARBLE_PATHS
 			)
-	if skill_candidates.is_empty():
-		skills = _registry_query(Item.ItemType.SKILL)
-		if skills.is_empty():
-			skills = _load_items(
-				_config.skill_item_paths if not _config.skill_item_paths.is_empty() \
-				else DEFAULT_NORMAL_SKILL_PATHS
-			)
 	marbles = _eligible_pool(marbles, Item.ItemType.MARBLE, false)
-	skills = _eligible_pool(skills, Item.ItemType.SKILL, false)
-	var categories: Array[Dictionary] = []
-	if not marbles.is_empty():
-		categories.append({&"kind": &"marble", &"weight": _config.marble_weight, &"items": marbles})
-	if not skills.is_empty():
-		categories.append({&"kind": &"skill", &"weight": _config.skill_weight, &"items": skills})
-	# 普通战斗的金币为固定奖励；权重只决定第二个物品奖励的类别。
+	# 普通战斗固定给金币，并从至多三个可领取弹珠中选择一个。
 	var options: Array[RewardOption] = [_make_gold_option(_normal_gold_amount())]
-	while options.size() < 2 and not categories.is_empty():
-		var category_index := _weighted_category_index(categories)
-		if category_index < 0:
-			category_index = 0
-		var category: Dictionary = categories.pop_at(category_index)
-		var category_items: Array[Item] = category[&"items"]
-		var item := _take_weighted(category_items)
+	while options.size() < 4 and not marbles.is_empty():
+		var item := _take_weighted(marbles)
 		options.append(_make_item_option(item, _resolution_for_item(item, false)))
 	return _install_draft(
 		token, BattlePlan.RewardPolicy.NORMAL, source_id,
-		RewardOfferScript.Mode.NORMAL_EXCLUSIVE, options
+		RewardOfferScript.Mode.NORMAL_CLAIM_ALL_MARBLE_CHOICE, options
 	)
 
 
@@ -308,11 +289,22 @@ func create_elite_draft(
 		if relics.is_empty():
 			relics = _load_items(DEFAULT_RELIC_PATHS)
 	relics = _eligible_pool(relics, Item.ItemType.RELIC, true)
-	var options: Array[RewardOption] = []
+	var marbles := _registry_query(Item.ItemType.MARBLE)
+	if marbles.is_empty():
+		marbles = _load_items(
+			_config.marble_item_paths if not _config.marble_item_paths.is_empty() \
+			else DEFAULT_NORMAL_MARBLE_PATHS
+		)
+	marbles = _eligible_pool(marbles, Item.ItemType.MARBLE, false)
+	var options: Array[RewardOption] = [_make_gold_option(
+		_random_source.range_int(ELITE_GOLD_MIN, ELITE_GOLD_MAX)
+	)]
+	while options.size() < 4 and not marbles.is_empty():
+		var marble := _take_weighted(marbles)
+		options.append(_make_item_option(marble, _resolution_for_item(marble, false)))
 	if not relics.is_empty():
 		var relic := _take_weighted(relics)
 		options.append(_make_item_option(relic, _resolution_for_item(relic, true)))
-	options.append(_make_gold_option(_random_source.range_int(ELITE_GOLD_MIN, ELITE_GOLD_MAX)))
 	return _install_draft(
 		token, BattlePlan.RewardPolicy.ELITE, source_id,
 		RewardOfferScript.Mode.ELITE_CLAIM_ALL, options
@@ -691,9 +683,14 @@ func _commit_option(option: RewardOption) -> RewardResult:
 
 func _finalize_success(option: RewardOption, granted_gold: int) -> RewardResult:
 	option.call("_mark_consumed")
+	if _is_marble_choice(option):
+		for candidate: RewardOption in _active_draft.remaining_options():
+			if candidate.kind == RewardOptionScript.Kind.ITEM and candidate.item != null \
+					and candidate.item.type == Item.ItemType.MARBLE:
+				candidate.call("_mark_consumed")
 	_pending_replacement.clear()
 	var just_completed := false
-	if _active_draft.mode != RewardOfferScript.Mode.ELITE_CLAIM_ALL:
+	if not _is_claim_all_draft():
 		_active_draft.call("_mark_completed")
 		just_completed = true
 	else:
@@ -718,6 +715,19 @@ func _finalize_success(option: RewardOption, granted_gold: int) -> RewardResult:
 		draft_completed.emit(_active_draft.draft_id)
 	_settling = false
 	return result
+
+
+func _is_claim_all_draft() -> bool:
+	return _active_draft != null and _active_draft.mode in [
+		RewardOfferScript.Mode.NORMAL_CLAIM_ALL_MARBLE_CHOICE,
+		RewardOfferScript.Mode.ELITE_CLAIM_ALL,
+	]
+
+
+func _is_marble_choice(option: RewardOption) -> bool:
+	return _is_claim_all_draft() and option != null \
+		and option.kind == RewardOptionScript.Kind.ITEM and option.item != null \
+		and option.item.type == Item.ItemType.MARBLE
 
 
 func _refresh_remaining_elite_revisions() -> void:

@@ -104,7 +104,7 @@ func test_node_draft_falls_back_to_compensation_when_every_candidate_is_ineligib
 	assert_eq(draft.options()[0].resolution, RewardOption.Resolution.REPLACE_RELIC)
 
 
-func test_normal_draft_uses_configured_category_weights_and_builds_two_exclusive_offers() -> void:
+func test_normal_draft_builds_fixed_gold_and_three_unique_marble_choices() -> void:
 	_config.marble_weight = 100
 	_config.skill_weight = 0
 	_config.gold_min = 17
@@ -117,16 +117,25 @@ func test_normal_draft_uses_configured_category_weights_and_builds_two_exclusive
 	var draft: RewardOffer = service.create_normal_draft(
 		_token,
 		&"normal-battle",
-		[_item("brown", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BROWN)],
+		[
+			_item("brown", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BROWN),
+			_item("green", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.GREEN),
+			_item("bomb", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BOMB),
+		],
 		[_item("dash", Item.ItemType.SKILL)]
 	)
 
-	assert_eq(draft.mode, RewardOffer.Mode.NORMAL_EXCLUSIVE)
-	assert_eq(draft.options().size(), 2)
+	assert_eq(draft.mode, RewardOffer.Mode.NORMAL_CLAIM_ALL_MARBLE_CHOICE)
+	assert_eq(draft.options().size(), 4)
 	assert_eq(draft.options()[0].kind, RewardOption.Kind.GOLD)
 	assert_eq(draft.options()[0].gold_amount, 17)
-	assert_eq(_random.weighted_calls[0], PackedInt32Array([100, 0]))
-	assert_eq(draft.options()[1].item.type, Item.ItemType.MARBLE)
+	var marble_ids: Array[String] = []
+	for option: RewardOption in draft.options():
+		if option.kind == RewardOption.Kind.ITEM:
+			assert_eq(option.item.type, Item.ItemType.MARBLE)
+			assert_false(marble_ids.has(option.item.id))
+			marble_ids.append(option.item.id)
+	assert_eq(marble_ids.size(), 3)
 
 
 func test_normal_draft_always_includes_gold_even_when_item_weights_are_higher() -> void:
@@ -147,7 +156,7 @@ func test_normal_draft_always_includes_gold_even_when_item_weights_are_higher() 
 		[_item("dash", Item.ItemType.SKILL)]
 	)
 
-	assert_eq(draft.options().size(), 2)
+	assert_eq(draft.options().size(), 2, "explicit one-marble fixture exposes one selectable marble")
 	assert_not_null(_gold_offer(draft), "normal rewards must always include gold")
 	assert_not_null(_item_offer(draft), "normal rewards retain one item choice")
 
@@ -163,7 +172,7 @@ func test_duplicate_relic_upgrades_owned_instance_then_full_level_compensates() 
 
 	for expected_level: int in [2, 3, 4]:
 		var draft: RewardOffer = service.create_elite_draft(_token, &"elite", [candidate])
-		var item_offer := _item_offer(draft)
+		var item_offer := _relic_offer(draft)
 		assert_eq(item_offer.resolution, RewardOption.Resolution.UPGRADE_RELIC)
 		var result: RewardResult = service.claim(_token, draft.draft_id, item_offer.offer_id)
 		assert_true(result.was_granted())
@@ -173,7 +182,7 @@ func test_duplicate_relic_upgrades_owned_instance_then_full_level_compensates() 
 		assert_true(service.clear_active())
 
 	var full_draft: RewardOffer = service.create_elite_draft(_token, &"elite-full", [candidate])
-	var compensation := _item_offer(full_draft)
+	var compensation := _relic_offer(full_draft)
 	assert_eq(compensation.resolution, RewardOption.Resolution.COMPENSATE)
 	assert_eq(loadout.call("find_owned", compensation.item), owned)
 	assert_eq(compensation.item_identity, "type:%d:id:growth-relic" % Item.ItemType.RELIC)
@@ -203,7 +212,7 @@ func test_full_relic_slots_request_selection_without_consuming_then_replace_sele
 	assert_true(loadout.call("add", old_relic))
 	var service: RefCounted = _service(loadout, progression, wallet)
 	var draft: RewardOffer = service.create_elite_draft(_token, &"relic-replacement", [new_relic])
-	var relic_offer := _item_offer(draft)
+	var relic_offer := _relic_offer(draft)
 
 	var required: RewardResult = service.claim(_token, draft.draft_id, relic_offer.offer_id)
 
@@ -240,7 +249,7 @@ func test_skill_replacement_cancel_is_non_consuming_and_confirm_atomically_reset
 	assert_true(progression.call("upgrade_one", old_skill))
 	assert_eq(progression.call("level_of", old_skill), 3)
 	var service: RefCounted = _service(loadout, progression, wallet)
-	var draft: RewardOffer = service.create_normal_draft(_token, &"skill", [], [new_skill])
+	var draft: RewardOffer = service.create_node_draft(_token, &"skill", [new_skill])
 	var skill_offer := _item_offer(draft)
 
 	var required: RewardResult = service.claim(_token, draft.draft_id, skill_offer.offer_id)
@@ -270,7 +279,7 @@ func test_claim_rejects_illegal_stale_and_consumed_intents_with_typed_codes() ->
 	var wallet: RefCounted = WalletScript.new()
 	var service: RefCounted = _service(loadout, progression, wallet)
 	var draft: RewardOffer = service.create_normal_draft(_token, &"normal")
-	assert_eq(draft.options().size(), 2, "default production pools preserve normal two-choice mode")
+	assert_eq(draft.options().size(), 4, "default production pools provide gold plus three marble choices")
 	var gold := draft.options()[0]
 
 	assert_eq(
@@ -293,6 +302,7 @@ func test_claim_rejects_illegal_stale_and_consumed_intents_with_typed_codes() ->
 	fresh = service.create_normal_draft(_token, &"normal-fresh")
 	var fresh_gold := fresh.options()[0]
 	assert_true(service.claim(_token, fresh.draft_id, fresh_gold.offer_id).was_granted())
+	assert_true(service.claim(_token, fresh.draft_id, _item_offer(fresh).offer_id).was_granted())
 	assert_eq(
 		service.claim(_token, fresh.draft_id, fresh_gold.offer_id).code,
 		RewardResult.Code.DRAFT_CONSUMED
@@ -310,10 +320,11 @@ func test_elite_refreshes_all_remaining_revisions_in_both_claim_orders_and_only_
 	var first: RewardOffer = service.create_elite_draft(
 		_token, &"item-then-gold", [_item("first-relic", Item.ItemType.RELIC)]
 	)
-	var first_item := _item_offer(first)
+	var first_item := _relic_offer(first)
 	var first_gold := _gold_offer(first)
 	assert_true(service.claim(_token, first.draft_id, first_item.offer_id).was_granted())
 	assert_true(service.claim(_token, first.draft_id, first_gold.offer_id).was_granted())
+	assert_true(_claim_first_marble(service, first).was_granted())
 	assert_true(first.completed)
 	assert_eq(completed_ids.count(first.draft_id), 1)
 	assert_eq(service.claim(_token, first.draft_id, first_gold.offer_id).code, RewardResult.Code.DRAFT_CONSUMED)
@@ -323,7 +334,8 @@ func test_elite_refreshes_all_remaining_revisions_in_both_claim_orders_and_only_
 		_token, &"gold-then-item", [_item("second-relic", Item.ItemType.RELIC)]
 	)
 	assert_true(service.claim(_token, second.draft_id, _gold_offer(second).offer_id).was_granted())
-	assert_true(service.claim(_token, second.draft_id, _item_offer(second).offer_id).was_granted())
+	assert_true(service.claim(_token, second.draft_id, _relic_offer(second).offer_id).was_granted())
+	assert_true(_claim_first_marble(service, second).was_granted())
 	assert_true(second.completed)
 
 	var third: RewardOffer = service.create_elite_draft(
@@ -332,7 +344,7 @@ func test_elite_refreshes_all_remaining_revisions_in_both_claim_orders_and_only_
 	assert_true(service.claim(_token, third.draft_id, _gold_offer(third).offer_id).was_granted())
 	assert_true(wallet.call("credit", 1), "mutation after the most recent service claim must stale the remainder")
 	assert_eq(
-		service.claim(_token, third.draft_id, _item_offer(third).offer_id).code,
+		service.claim(_token, third.draft_id, _relic_offer(third).offer_id).code,
 		RewardResult.Code.STALE_DRAFT
 	)
 
@@ -404,11 +416,27 @@ func _item_offer(draft: RewardOffer) -> RewardOption:
 	return null
 
 
+func _relic_offer(draft: RewardOffer) -> RewardOption:
+	for option: RewardOption in draft.options():
+		if option.kind == RewardOption.Kind.ITEM and option.item != null \
+				and option.item.type == Item.ItemType.RELIC:
+			return option
+	return null
+
+
 func _gold_offer(draft: RewardOffer) -> RewardOption:
 	for option: RewardOption in draft.options():
 		if option.kind == RewardOption.Kind.GOLD:
 			return option
 	return null
+
+
+func _claim_first_marble(service: RewardService, draft: RewardOffer) -> RewardResult:
+	for option: RewardOption in draft.remaining_options():
+		if option.kind == RewardOption.Kind.ITEM and option.item != null \
+				and option.item.type == Item.ItemType.MARBLE:
+			return service.claim(_token, draft.draft_id, option.offer_id)
+	return RewardResult.new(_token, RewardResult.Code.REJECTED)
 
 
 func _node_capacity(item_type: Item.ItemType, fallback: int) -> int:

@@ -22,6 +22,7 @@ UI_LANGUAGE_ENGLISH,English,English
 UI_CHOOSE_NEXT_NODE_TITLE,Choose Next Node,选择下个节点
 UI_DRAFT_REWARD_TITLE,Draft Reward,选择奖励
 UI_BATTLE_REWARD_TITLE,Battle Reward,战斗奖励
+UI_REWARD_CHOOSE_MARBLE,Choose a Marble,选择一个弹珠
 UI_UPGRADE_MARBLE_TITLE,Upgrade Marble,升级弹珠
 UI_UPGRADE_MARBLE_DESC,Choose one marble to upgrade.,选择一个弹珠进行升级。
 UI_UPGRADE_INVENTORY_TITLE,Choose an Item to Upgrade,选择一个物品升级

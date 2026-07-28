@@ -3,7 +3,7 @@ class_name RewardOffer
 
 enum Mode {
 	NODE_EXCLUSIVE,
-	NORMAL_EXCLUSIVE,
+	NORMAL_CLAIM_ALL_MARBLE_CHOICE,
 	ELITE_CLAIM_ALL,
 }
 

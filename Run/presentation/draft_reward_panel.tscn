@@ -2,158 +2,11 @@
 
 [ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_cj858"]
 [ext_resource type="Script" uid="uid://py1m8dh3ltnk" path="res://Run/presentation/draft_reward_panel.gd" id="1_script"]
-[ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="3_cj858"]
-[ext_resource type="Script" uid="uid://chd50r6caxc7i" path="res://Run/presentation/reward_tooltip_button.gd" id="3_rm7wo"]
-[ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="4_s5edj"]
+[ext_resource type="Texture2D" uid="uid://dq8mb6w3k55t4" path="res://Assets/UI/next_floor.png" id="4_45m0g"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://Loadout/presentation/skill_replace_dialog.tscn" id="5_s5edj"]
-
-[sub_resource type="Animation" id="Animation_cj858"]
-length = 0.01
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:visible")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [false]
-}
-
-[sub_resource type="Animation" id="Animation_s5edj"]
-length = 0.01
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:visible")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [true]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_v0yo2"]
-_data = {
-&"hide": SubResource("Animation_cj858"),
-&"show": SubResource("Animation_s5edj")
-}
-
-[sub_resource type="Animation" id="Animation_2tcpg"]
-length = 0.01
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:visible")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [false]
-}
-
-[sub_resource type="Animation" id="Animation_s5u47"]
-length = 0.01
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:visible")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [true]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_mc3cr"]
-_data = {
-&"hide": SubResource("Animation_2tcpg"),
-&"show": SubResource("Animation_s5u47")
-}
-
-[sub_resource type="Animation" id="Animation_y2gvp"]
-length = 0.01
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:visible")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [false]
-}
-
-[sub_resource type="Animation" id="Animation_wcv15"]
-length = 0.01
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:visible")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [true]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_otcn3"]
-_data = {
-&"hide": SubResource("Animation_y2gvp"),
-&"show": SubResource("Animation_wcv15")
-}
-
-[sub_resource type="Animation" id="Animation_5clmg"]
-length = 0.01
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:visible")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [false]
-}
-
-[sub_resource type="Animation" id="Animation_2spb8"]
-length = 0.01
-tracks/0/type = "value"
-tracks/0/imported = false
-tracks/0/enabled = true
-tracks/0/path = NodePath(".:visible")
-tracks/0/interp = 1
-tracks/0/loop_wrap = true
-tracks/0/keys = {
-"times": PackedFloat32Array(0),
-"transitions": PackedFloat32Array(1),
-"update": 1,
-"values": [true]
-}
-
-[sub_resource type="AnimationLibrary" id="AnimationLibrary_g5rau"]
-_data = {
-&"hide": SubResource("Animation_5clmg"),
-&"show": SubResource("Animation_2spb8")
-}
 
 [node name="DraftRewardPanel" type="Control" unique_id=1712510819]
 process_mode = 3
-visible = false
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
@@ -163,59 +16,109 @@ grow_vertical = 2
 theme = ExtResource("1_cj858")
 script = ExtResource("1_script")
 
-[node name="Backdrop" type="ColorRect" parent="." unique_id=1022379337]
+[node name="SkillReplaceDialog" parent="." unique_id=1955345262 instance=ExtResource("5_s5edj")]
+layout_mode = 1
+
+[node name="Backdrop" type="ColorRect" parent="." unique_id=506662534]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0, 0, 0, 0.55)
+color = Color(0, 0, 0, 0.54901963)
 
-[node name="Center" type="CenterContainer" parent="." unique_id=1475400197]
+[node name="Center" type="CenterContainer" parent="." unique_id=1617586441]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
 
-[node name="Panel" type="PanelContainer" parent="Center" unique_id=1208718852]
-custom_minimum_size = Vector2(150, 98)
+[node name="Panel" type="PanelContainer" parent="Center" unique_id=1930535142]
+custom_minimum_size = Vector2(210, 160)
 layout_mode = 2
 
-[node name="MarginContainer" type="MarginContainer" parent="Center/Panel" unique_id=2116562550]
+[node name="Margin" type="MarginContainer" parent="Center/Panel" unique_id=838949732]
+layout_mode = 2
+theme_override_constants/margin_left = 10
+theme_override_constants/margin_top = 10
+theme_override_constants/margin_right = 10
+theme_override_constants/margin_bottom = 10
+
+[node name="Layout" type="VBoxContainer" parent="Center/Panel/Margin" unique_id=1350598180]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="TitleLabel" type="Label" parent="Center/Panel/Margin/Layout" unique_id=462336636]
+layout_mode = 2
+text = "拿走战利品！"
+horizontal_alignment = 1
+
+[node name="RewardRows" type="VBoxContainer" parent="Center/Panel/Margin/Layout" unique_id=694103905]
+layout_mode = 2
+theme_override_constants/separation = 4
+
+[node name="GoldRewardButton" type="Button" parent="Center/Panel/Margin/Layout/RewardRows" unique_id=159349541]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+
+[node name="MarbleRewardButton" type="Button" parent="Center/Panel/Margin/Layout/RewardRows" unique_id=730656156]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+
+[node name="RelicRewardButton" type="Button" parent="Center/Panel/Margin/Layout/RewardRows" unique_id=1206415543]
+custom_minimum_size = Vector2(0, 28)
+layout_mode = 2
+
+[node name="MarbleSelection" type="Control" parent="." unique_id=1437091157]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="DismissButton" type="Button" parent="MarbleSelection" unique_id=332038687]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+
+[node name="Center" type="CenterContainer" parent="MarbleSelection" unique_id=242419059]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="Panel" type="PanelContainer" parent="MarbleSelection/Center" unique_id=2060913547]
+custom_minimum_size = Vector2(224, 204)
+layout_mode = 2
+
+[node name="Margin" type="MarginContainer" parent="MarbleSelection/Center/Panel" unique_id=1800633812]
 layout_mode = 2
 theme_override_constants/margin_left = 8
 theme_override_constants/margin_top = 8
 theme_override_constants/margin_right = 8
 theme_override_constants/margin_bottom = 8
 
-[node name="Layout" type="VBoxContainer" parent="Center/Panel/MarginContainer" unique_id=450261744]
-layout_mode = 2
-theme_override_constants/separation = 8
-
-[node name="TitleLabel" type="Label" parent="Center/Panel/MarginContainer/Layout" unique_id=285227628]
-layout_mode = 2
-label_settings = ExtResource("3_cj858")
-horizontal_alignment = 1
-
-[node name="ButtonRow" type="HBoxContainer" parent="Center/Panel/MarginContainer/Layout" unique_id=53161417]
+[node name="Layout" type="VBoxContainer" parent="MarbleSelection/Center/Panel/Margin" unique_id=497148872]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="RewardButton1" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=690716721]
-custom_minimum_size = Vector2(32, 32)
+[node name="TitleLabel" type="Label" parent="MarbleSelection/Center/Panel/Margin/Layout" unique_id=2114959609]
 layout_mode = 2
-tooltip_text = " "
-theme = ExtResource("1_cj858")
-theme_override_fonts/font = ExtResource("4_s5edj")
-theme_override_font_sizes/font_size = 12
-autowrap_mode = 3
-script = ExtResource("3_rm7wo")
+text = "选择你的弹珠！"
+horizontal_alignment = 1
 
-[node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton1" unique_id=1255265588]
-custom_minimum_size = Vector2(32, 32)
+[node name="CardRow" type="HBoxContainer" parent="MarbleSelection/Center/Panel/Margin/Layout" unique_id=774911315]
+layout_mode = 2
+
+[node name="MarbleCard1" type="Button" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow" unique_id=528954729]
+custom_minimum_size = Vector2(66, 148)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Content" type="VBoxContainer" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard1" unique_id=1117767726]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -223,24 +126,32 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Icon" type="TextureRect" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard1/Content" unique_id=1184761519]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="VisibilityPlayer" type="AnimationPlayer" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton1" unique_id=1928681146]
-libraries/ = SubResource("AnimationLibrary_v0yo2")
-
-[node name="RewardButton2" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1279436893]
-custom_minimum_size = Vector2(32, 32)
+[node name="TitleLabel" type="Label" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard1/Content" unique_id=561624879]
 layout_mode = 2
-tooltip_text = " "
-theme = ExtResource("1_cj858")
-theme_override_fonts/font = ExtResource("4_s5edj")
-theme_override_font_sizes/font_size = 12
-autowrap_mode = 3
-script = ExtResource("3_rm7wo")
+horizontal_alignment = 1
 
-[node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton2" unique_id=1276198212]
-custom_minimum_size = Vector2(32, 32)
+[node name="DescriptionLabel" type="RichTextLabel" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard1/Content" unique_id=1914147739]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 1
+bbcode_enabled = true
+horizontal_alignment = 1
+
+[node name="MarbleCard2" type="Button" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow" unique_id=853328583]
+custom_minimum_size = Vector2(66, 148)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Content" type="VBoxContainer" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard2" unique_id=2016841384]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -248,24 +159,32 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Icon" type="TextureRect" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard2/Content" unique_id=2127582522]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="VisibilityPlayer" type="AnimationPlayer" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton2" unique_id=307983574]
-libraries/ = SubResource("AnimationLibrary_mc3cr")
-
-[node name="RewardButton3" type="Button" parent="Center/Panel/MarginContainer/Layout/ButtonRow" unique_id=1556859133]
-custom_minimum_size = Vector2(32, 32)
+[node name="TitleLabel" type="Label" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard2/Content" unique_id=900339303]
 layout_mode = 2
-tooltip_text = " "
-theme = ExtResource("1_cj858")
-theme_override_fonts/font = ExtResource("4_s5edj")
-theme_override_font_sizes/font_size = 12
-autowrap_mode = 3
-script = ExtResource("3_rm7wo")
+horizontal_alignment = 1
 
-[node name="ItemIcon" type="TextureRect" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton3" unique_id=128082564]
-custom_minimum_size = Vector2(32, 32)
+[node name="DescriptionLabel" type="RichTextLabel" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard2/Content" unique_id=301805878]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 1
+bbcode_enabled = true
+horizontal_alignment = 1
+
+[node name="MarbleCard3" type="Button" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow" unique_id=728842676]
+custom_minimum_size = Vector2(66, 148)
+layout_mode = 2
+size_flags_horizontal = 3
+
+[node name="Content" type="VBoxContainer" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard3" unique_id=763397209]
 layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
@@ -273,14 +192,37 @@ anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
 mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="Icon" type="TextureRect" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard3/Content" unique_id=323287802]
+custom_minimum_size = Vector2(24, 24)
+layout_mode = 2
+mouse_filter = 2
 expand_mode = 1
 stretch_mode = 5
 
-[node name="VisibilityPlayer" type="AnimationPlayer" parent="Center/Panel/MarginContainer/Layout/ButtonRow/RewardButton3" unique_id=1820413166]
-libraries/ = SubResource("AnimationLibrary_otcn3")
+[node name="TitleLabel" type="Label" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard3/Content" unique_id=376390782]
+layout_mode = 2
+horizontal_alignment = 1
 
-[node name="SkillReplaceDialog" parent="." unique_id=1955345262 instance=ExtResource("5_s5edj")]
-layout_mode = 1
+[node name="DescriptionLabel" type="RichTextLabel" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard3/Content" unique_id=1434180604]
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 1
+bbcode_enabled = true
+horizontal_alignment = 1
 
-[node name="VisibilityPlayer" type="AnimationPlayer" parent="." unique_id=2035463672]
-libraries/ = SubResource("AnimationLibrary_g5rau")
+[node name="BackButton" type="Button" parent="MarbleSelection/Center/Panel/Margin/Layout" unique_id=1548085798]
+custom_minimum_size = Vector2(0, 18)
+layout_mode = 2
+text = "返回"
+
+[node name="VisibilityPlayer" type="AnimationPlayer" parent="." unique_id=1643085209]
+
+[node name="NextFloor" type="Button" parent="." unique_id=815518881]
+layout_mode = 0
+offset_left = 194.0
+offset_top = 272.0
+offset_right = 234.0
+offset_bottom = 312.0
+icon = ExtResource("4_45m0g")

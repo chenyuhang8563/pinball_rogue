@@ -12,6 +12,7 @@ signal battle_completed(token: RunFlowToken, battle_id: StringName, plan: Battle
 signal battle_start_failed(token: RunFlowToken, plan: BattlePlan)
 signal reward_presented(offer: RewardOffer)
 signal reward_resolved(result: RewardResult)
+signal reward_ready_to_advance(token: RunFlowToken, draft_id: StringName)
 signal reward_replacement_requested(result: RewardResult)
 signal event_presented(presentation: EventPresentation)
 signal event_resolved(resolution: EventResolution)
@@ -40,6 +41,7 @@ const SKIP_CURRENT_BATTLE: StringName = &"skip_current_battle"
 const BATTLE_COMPLETE: StringName = &"battle_complete"
 const MARBLE_FALL: StringName = &"marble_fall"
 const SELECT_REWARD: StringName = &"select_reward"
+const ACKNOWLEDGE_REWARD: StringName = &"reward_acknowledge"
 const CONFIRM_REPLACEMENT: StringName = &"confirm_reward_replacement"
 const CANCEL_REPLACEMENT: StringName = &"cancel_reward_replacement"
 const EVENT_INTENT: StringName = &"event_intent"
@@ -277,6 +279,19 @@ func select_reward(token: RunFlowToken, draft_id: StringName, offer_id: StringNa
 	var result: RewardResult = _reward_flow.select(token, draft_id, offer_id)
 	var handled := _handle_reward_result(SELECT_REWARD, result)
 	return _finish_command(handled)
+
+
+func acknowledge_reward(token: RunFlowToken, draft_id: StringName) -> bool:
+	if not _begin_command(ACKNOWLEDGE_REWARD):
+		return false
+	if not _validate_source(ACKNOWLEDGE_REWARD, token, RunState.Phase.REWARD_ACTIVE):
+		return _finish_command(false)
+	var offer := _reward_flow.active_offer()
+	if offer == null or offer.draft_id != draft_id:
+		return _finish_rejected(ACKNOWLEDGE_REWARD, "reward draft does not match active reward")
+	if not _reward_flow.clear():
+		return _fail_run(&"reward_clear_failed")
+	return _finish_command(_advance_flow())
 
 
 func confirm_reward_replacement(
@@ -617,9 +632,8 @@ func _handle_reward_result(command: StringName, result: RewardResult) -> bool:
 	reward_resolved.emit(result)
 	if not _reward_flow.completed():
 		return true
-	if not _reward_flow.clear():
-		return _fail_run(&"reward_clear_failed")
-	return _advance_flow()
+	reward_ready_to_advance.emit(result.token, result.draft_id)
+	return true
 
 
 func _resolve_event(

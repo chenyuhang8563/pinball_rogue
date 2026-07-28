@@ -326,14 +326,14 @@ func test_reward_panel_emits_typed_identity_once_without_settling_reward() -> vo
 		&"normal-battle",
 		[option] as Array[RewardOption],
 		&"draft-identity",
-		RewardOffer.Mode.NORMAL_EXCLUSIVE
+		RewardOffer.Mode.NORMAL_CLAIM_ALL_MARBLE_CHOICE
 	)
 	assert_true(panel.configure(ReadOnlyLoadout.new()))
 	assert_true(panel.present_offer(offer))
 	watch_signals(panel)
 
-	panel.call("_on_button_pressed", 0)
-	panel.call("_on_button_pressed", 0)
+	panel.call("_on_gold_pressed")
+	panel.call("_on_gold_pressed")
 	assert_signal_emit_count(panel, "reward_intent", 1)
 	assert_signal_emitted_with_parameters(panel, "reward_intent", [
 		token,

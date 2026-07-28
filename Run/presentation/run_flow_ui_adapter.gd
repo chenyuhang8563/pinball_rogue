@@ -90,6 +90,7 @@ func _wire_controller_presentations() -> bool:
 	return _connect(_controller, &"node_options_presented", _on_node_options_presented) \
 		and _connect(_controller, &"reward_presented", _on_reward_presented) \
 		and _connect(_controller, &"reward_resolved", _on_reward_resolved) \
+		and _connect(_controller, &"reward_ready_to_advance", _on_reward_ready_to_advance) \
 		and _connect(
 			_controller,
 			&"reward_replacement_requested",
@@ -117,6 +118,7 @@ func _wire_ui_intents() -> bool:
 			_on_terminal_acknowledge_intent
 		) \
 		and _connect(_reward_panel, &"reward_intent", _on_reward_intent) \
+		and _connect(_reward_panel, &"reward_continue_intent", _on_reward_continue_intent) \
 		and _connect(
 			_reward_panel,
 			&"reward_replacement_intent",
@@ -160,6 +162,7 @@ func _connect(source: Object, signal_name: StringName, callable: Callable) -> bo
 
 
 func _on_node_options_presented(offer: RunNodeOffer) -> void:
+	_reward_panel.clear_presentation()
 	_node_choice_panel.present_offer(offer)
 
 
@@ -170,6 +173,10 @@ func _on_reward_presented(offer: RewardOffer) -> void:
 func _on_reward_resolved(result: RewardResult) -> void:
 	_inventory_panel.finish_relic_replacement_selection()
 	_reward_panel.apply_result(result, _controller.current_reward_offer())
+
+
+func _on_reward_ready_to_advance(token: RunFlowToken, draft_id: StringName) -> void:
+	_reward_panel.present_ready_to_advance(token, draft_id)
 
 
 func _on_reward_replacement_requested(result: RewardResult) -> void:
@@ -257,6 +264,10 @@ func _on_reward_intent(
 	offer_id: StringName
 ) -> void:
 	_controller.select_reward(token, draft_id, offer_id)
+
+
+func _on_reward_continue_intent(token: RunFlowToken, draft_id: StringName) -> void:
+	_controller.acknowledge_reward(token, draft_id)
 
 
 func _on_reward_replacement_intent(

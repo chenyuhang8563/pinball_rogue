@@ -128,6 +128,23 @@ func test_normal_and_elite_battles_route_by_plan_reward_policy() -> void:
 	assert_eq(controller.current_state().floor_number, 3)
 
 
+func test_acknowledge_reward_discards_unclaimed_rewards_and_advances() -> void:
+	var fixture := _fixture()
+	var controller := fixture.controller as RunFlowController
+	var gateway := fixture.gateway as FakeGateway
+
+	assert_true(controller.start_run())
+	gateway.complete_active()
+	var offer := controller.current_reward_offer()
+	assert_not_null(offer)
+	assert_false(offer.completed)
+
+	assert_true(controller.acknowledge_reward(offer.token, offer.draft_id))
+	assert_null(controller.current_reward_offer())
+	assert_eq(controller.current_state().phase, RunState.Phase.CHOOSING_NODE)
+	assert_eq(controller.current_state().floor_number, 2)
+
+
 func test_skip_current_battle_routes_through_normal_reward_once() -> void:
 	var fixture := _fixture()
 	var controller := fixture.controller as RunFlowController
@@ -218,6 +235,10 @@ func test_upgrade_available_and_unavailable_routes_use_typed_revisions() -> void
 			item = _marble("upgrade-dark")
 			assert_true(bool(scope.loadout.call("add", item)))
 		_reach_floor_two_choices(fixture)
+		if not has_candidate:
+			for marble: Item in scope.loadout.call("marbles") as Array:
+				while bool(scope.progression.call("can_upgrade", marble)):
+					assert_true(bool(scope.progression.call("upgrade_one", marble)))
 		var choice := _choice(controller.current_node_offer(), RunNodeOption.Kind.UPGRADE)
 		var selected := controller.select_node(
 			controller.current_node_offer().token,
@@ -386,6 +407,9 @@ func test_checkpoint_restore_replays_each_supported_phase_with_same_payload() ->
 	assert_true(upgrade_controller.select_node(upgrade_controller.current_node_offer().token, upgrade_controller.current_node_offer().offer_id, upgrade_choice.option_id))
 	var upgrade_target := _fixture(RunNodeOption.Kind.UPGRADE)
 	assert_true((upgrade_target.scope as RunScope).loadout.call("add", dark))
+	for marble: Item in (upgrade_source.scope as RunScope).loadout.call("marbles") as Array:
+		if (upgrade_target.scope as RunScope).loadout.call("find_owned", marble) == null:
+			assert_true((upgrade_target.scope as RunScope).loadout.call("add", marble))
 	assert_true((upgrade_target.controller as RunFlowController).restore(upgrade_controller.snapshot(), registry))
 	assert_eq(_upgrade_signature((upgrade_target.controller as RunFlowController).current_upgrade_offer()), _upgrade_signature(upgrade_controller.current_upgrade_offer()))
 
@@ -453,10 +477,20 @@ func _reach_floor_two_choices(fixture: Dictionary) -> void:
 
 func _claim_one_reward(controller: RunFlowController) -> bool:
 	var offer := controller.current_reward_offer()
-	if offer == null or offer.remaining_options().is_empty():
+	if offer == null:
 		return false
-	var option := offer.remaining_options()[0]
-	return controller.select_reward(offer.token, offer.draft_id, option.offer_id)
+	for option: RewardOption in offer.remaining_options():
+		if option.kind == RewardOption.Kind.GOLD and not controller.select_reward(
+			offer.token, offer.draft_id, option.offer_id
+		):
+			return false
+	for option: RewardOption in offer.remaining_options():
+		if option.kind == RewardOption.Kind.ITEM and option.item != null \
+				and option.item.type == Item.ItemType.MARBLE:
+			if not controller.select_reward(offer.token, offer.draft_id, option.offer_id):
+				return false
+			break
+	return controller.acknowledge_reward(offer.token, offer.draft_id)
 
 
 func _claim_all_rewards(controller: RunFlowController) -> bool:
@@ -468,7 +502,7 @@ func _claim_all_rewards(controller: RunFlowController) -> bool:
 			offer.token, offer.draft_id, option.offer_id
 		):
 			return false
-	return true
+	return controller.acknowledge_reward(offer.token, offer.draft_id)
 
 
 func _choice(offer: RunNodeOffer, kind: RunNodeOption.Kind) -> RunNodeChoice:
