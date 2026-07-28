@@ -1,0 +1,26 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="Script" path="res://tests/Combat/table_components/scenes/all_environment_components_battle.gd" id="1_driver"]
+[ext_resource type="Script" path="res://Combat/battle/battle_spawner.gd" id="2_spawner"]
+[ext_resource type="Script" path="res://Combat/battle/battle_gateway.gd" id="3_gateway"]
+[ext_resource type="Script" path="res://Combat/marbles/marble_chain_registry.gd" id="4_registry"]
+[ext_resource type="Script" path="res://Combat/marbles/marble_chain.gd" id="5_chain"]
+
+[node name="AllEnvironmentComponentsBattle" type="Node2D"]
+script = ExtResource("1_driver")
+
+[node name="LevelParent" type="Node2D" parent="."]
+
+[node name="BaseEnemies" type="Node2D" parent="."]
+
+[node name="BattleSpawner" type="Node" parent="."]
+script = ExtResource("2_spawner")
+
+[node name="BattleGateway" type="Node" parent="."]
+script = ExtResource("3_gateway")
+
+[node name="MarbleChainRegistry" type="Node" parent="."]
+script = ExtResource("4_registry")
+
+[node name="MarbleChain" type="Node2D" parent="."]
+script = ExtResource("5_chain")

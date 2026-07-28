@@ -1,0 +1,52 @@
+[gd_scene load_steps=8 format=3]
+
+[ext_resource type="Script" path="res://Combat/table_components/barrel/barrel.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Barrel/Barrel Sprite.png" id="2_texture"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_barrel"]
+bounce = 0.15
+
+[sub_resource type="RectangleShape2D" id="RectangleShape_barrel"]
+size = Vector2(24, 28)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape_sensor"]
+size = Vector2(30, 34)
+
+[sub_resource type="Animation" id="Animation_break"]
+resource_name = "break"
+length = 0.1
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Sprite2D:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {"times": PackedFloat32Array(0), "transitions": PackedFloat32Array(1), "update": 1, "values": [false]}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_break"]
+_data = {"break": SubResource("Animation_break")}
+
+[node name="Barrel" type="StaticBody2D" groups=["table_component"]]
+collision_layer = 1
+collision_mask = 2
+physics_material_override = SubResource("PhysicsMaterial_barrel")
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_texture")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("RectangleShape_barrel")
+
+[node name="ImpactSensor" type="Area2D" parent="."]
+collision_layer = 0
+collision_mask = 2
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="ImpactSensor"]
+shape = SubResource("RectangleShape_sensor")
+
+[node name="BreakAnimation" type="AnimationPlayer" parent="."]
+libraries = {"": SubResource("AnimationLibrary_break")}
+
+[node name="DropAnchor" type="Marker2D" parent="."]
+position = Vector2(0, -12)

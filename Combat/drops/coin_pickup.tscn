@@ -1,0 +1,55 @@
+[gd_scene load_steps=13 format=3]
+
+[ext_resource type="Script" path="res://Combat/drops/coin_pickup.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Items/Coin props/Coin_spin1.png" id="2_coin_1"]
+[ext_resource type="Texture2D" path="res://Assets/Items/Coin props/Coin_spin2.png" id="3_coin_2"]
+[ext_resource type="Texture2D" path="res://Assets/Items/Coin props/Coin_spin3.png" id="4_coin_3"]
+[ext_resource type="Texture2D" path="res://Assets/Items/Coin props/Coin_spin4.png" id="5_coin_4"]
+[ext_resource type="Texture2D" path="res://Assets/Items/Coin props/Coin_spin5.png" id="6_coin_5"]
+[ext_resource type="Texture2D" path="res://Assets/Items/Coin props/Coin_spin6.png" id="7_coin_6"]
+[ext_resource type="Texture2D" path="res://Assets/Items/Coin props/Coin_spin7.png" id="8_coin_7"]
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_coin"]
+animations = [{
+"frames": [{"duration": 1.0, "texture": ExtResource("2_coin_1")}, {"duration": 1.0, "texture": ExtResource("3_coin_2")}, {"duration": 1.0, "texture": ExtResource("4_coin_3")}, {"duration": 1.0, "texture": ExtResource("5_coin_4")}, {"duration": 1.0, "texture": ExtResource("6_coin_5")}, {"duration": 1.0, "texture": ExtResource("7_coin_6")}, {"duration": 1.0, "texture": ExtResource("8_coin_7")}],
+"loop": true,
+"name": &"idle",
+"speed": 6.0
+}]
+
+[sub_resource type="CircleShape2D" id="CircleShape_coin"]
+radius = 8.0
+
+[sub_resource type="Animation" id="Animation_land"]
+resource_name = "land"
+length = 0.12
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("AnimatedSprite2D:scale")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {"times": PackedFloat32Array(0, 0.06, 0.12), "transitions": PackedFloat32Array(1, 1, 1), "update": 0, "values": [Vector2(1, 1), Vector2(1.25, 0.75), Vector2(1, 1)]}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_coin"]
+_data = {"land": SubResource("Animation_land")}
+
+[node name="CoinPickup" type="Area2D" groups=["coin_pickups"]]
+collision_layer = 0
+collision_mask = 2
+monitoring = false
+script = ExtResource("1_script")
+
+[node name="AnimatedSprite2D" type="AnimatedSprite2D" parent="."]
+sprite_frames = SubResource("SpriteFrames_coin")
+animation = &"idle"
+autoplay = "idle"
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape_coin")
+
+[node name="AnimationPlayer" type="AnimationPlayer" parent="."]
+libraries = {"": SubResource("AnimationLibrary_coin")}
+
+[node name="LifetimeTimer" type="Timer" parent="."]
+one_shot = true

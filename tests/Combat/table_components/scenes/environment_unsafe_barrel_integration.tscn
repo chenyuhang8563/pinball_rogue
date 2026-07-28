@@ -1,0 +1,23 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://Combat/levels/table_base.tscn" id="1_table_base"]
+[ext_resource type="Script" path="res://Combat/drops/combat_drop_director.gd" id="2_director"]
+[ext_resource type="PackedScene" path="res://Combat/table_components/barrel/barrel.tscn" id="3_barrel"]
+
+[node name="EnvironmentUnsafeBarrelIntegration" type="Node2D"]
+
+[node name="TableBase" parent="." instance=ExtResource("1_table_base")]
+
+[editable path="TableBase"]
+
+[node name="UnsafeBarrel" parent="TableBase/TableComponents" instance=ExtResource("3_barrel")]
+position = Vector2(120, 292)
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="CombatDropDirector" type="Node" parent="."]
+script = ExtResource("2_director")
+enemy_drop_chance = 100
+
+[node name="GraceTimer" type="Timer" parent="CombatDropDirector"]
+one_shot = true

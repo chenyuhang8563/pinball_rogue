@@ -22,6 +22,9 @@ var _level_parent: Node = null
 var _reset_battle: Callable = Callable()
 var _release_floating_texts: Callable = Callable()
 var _read_stat: Callable = Callable()
+var _run_wallet: RefCounted = null
+var _run_random_source: RefCounted = null
+var _marble_chain_registry: MarbleChainRegistry = null
 
 var _active_plan: BattlePlan = null
 var _active_token: RunFlowToken = null
@@ -34,7 +37,10 @@ func configure(
 	level_parent: Node,
 	reset_battle: Callable,
 	release_floating_texts: Callable = Callable(),
-	read_stat: Callable = Callable()
+	read_stat: Callable = Callable(),
+	run_wallet: RefCounted = null,
+	run_random_source: RefCounted = null,
+	marble_chain_registry: MarbleChainRegistry = null
 ) -> bool:
 	dispose()
 	if spawner == null or not is_instance_valid(spawner):
@@ -51,6 +57,9 @@ func configure(
 	_reset_battle = reset_battle
 	_release_floating_texts = release_floating_texts
 	_read_stat = read_stat
+	_run_wallet = run_wallet
+	_run_random_source = run_random_source
+	_marble_chain_registry = marble_chain_registry
 	_set_spawner_enemy_container(_enemy_container)
 
 	_session = BattleSession.new()
@@ -83,6 +92,14 @@ func start(plan: BattlePlan, token: RunFlowToken) -> bool:
 	if kill_zone == null or not kill_zone.has_signal(&"marble_fell"):
 		_rollback_start(false)
 		return false
+	if not _validate_level_component_safety(active_level_scene, kill_zone):
+		_rollback_start(false)
+		return false
+	var drop_director := active_level_scene.find_child(
+		"CombatDropDirector", true, false
+	) as CombatDropDirector
+	if drop_director != null:
+		drop_director.configure_kill_zone(kill_zone)
 
 	# The active level may contain editor preview enemies. The typed batch is the
 	# only runtime owner, so clear the switched container before opening Session.
@@ -139,6 +156,12 @@ func _activate_level_for(group: BattleGroupDef) -> bool:
 	_level_parent.add_child(scene)
 	active_level_scene = scene
 	_apply_bounceless_wall_material(scene)
+	if not _validate_level_component_ids(scene):
+		_clear_active_level_scene()
+		_restore_base_enemy_container()
+		return false
+	_configure_level_drop_director(scene)
+	_configure_level_portals(scene)
 
 	var next_container: Node2D = scene.get_node_or_null(
 		ACTIVE_ENEMY_CONTAINER_PATH
@@ -197,6 +220,9 @@ func _clear_configuration() -> void:
 	_reset_battle = Callable()
 	_release_floating_texts = Callable()
 	_read_stat = Callable()
+	_run_wallet = null
+	_run_random_source = null
+	_marble_chain_registry = null
 	_configured = false
 
 
@@ -248,6 +274,88 @@ func _apply_bounceless_wall_material(level_scene: Node) -> void:
 func _release_floating_texts_now() -> void:
 	if _release_floating_texts.is_valid():
 		_release_floating_texts.call()
+
+
+func _configure_level_drop_director(level_scene: Node) -> void:
+	_session.configure_loot_settlement_gate()
+	if _run_wallet == null or _run_random_source == null:
+		return
+	var director := level_scene.find_child("CombatDropDirector", true, false) as CombatDropDirector
+	var drops := level_scene.find_child("CombatDrops", true, false) as Node2D
+	if director == null or drops == null:
+		return
+	var anchors: Array[Marker2D] = []
+	for anchor: Node in level_scene.get_tree().get_nodes_in_group(&"coin_drop_anchors"):
+		if anchor is Marker2D and level_scene.is_ancestor_of(anchor):
+			anchors.append(anchor as Marker2D)
+	if director.configure(_session, drops, _run_wallet, _run_random_source, anchors):
+		_session.configure_loot_settlement_gate(director.settlement_gate())
+
+
+func _configure_level_portals(level_scene: Node) -> void:
+	if _marble_chain_registry == null or not is_instance_valid(_marble_chain_registry):
+		return
+	var controllers_by_pair: Dictionary[StringName, PortalPairController] = {}
+	for controller: Node in level_scene.get_tree().get_nodes_in_group(&"table_component"):
+		if not controller is PortalPairController or not level_scene.is_ancestor_of(controller):
+			continue
+		var pair_controller := controller as PortalPairController
+		if not pair_controller.configure(_marble_chain_registry, MarbleTeleportService.new()):
+			continue
+		var pair_id := pair_controller.configured_pair_id()
+		if controllers_by_pair.has(pair_id):
+			var reason := "Duplicate portal pair_id: %s" % pair_id
+			pair_controller.disable_with_validation_error(reason)
+			var existing: PortalPairController = controllers_by_pair[pair_id] as PortalPairController
+			if existing != null:
+				existing.disable_with_validation_error(reason)
+			continue
+		controllers_by_pair[pair_id] = pair_controller
+
+
+func _validate_level_component_ids(level_scene: Node) -> bool:
+	var component_ids: Dictionary[StringName, Node] = {}
+	for component: Node in level_scene.get_tree().get_nodes_in_group(&"table_component"):
+		if not level_scene.is_ancestor_of(component):
+			continue
+		var component_id: StringName = component.get("component_id") as StringName
+		if component_id == &"":
+			continue
+		if component_ids.has(component_id):
+			push_error("Duplicate table component_id: %s" % component_id)
+			return false
+		component_ids[component_id] = component
+	return true
+
+
+func _validate_level_component_safety(level_scene: Node, kill_zone: Node) -> bool:
+	if level_scene == null or kill_zone == null or not kill_zone.has_method(&"contains_global_point"):
+		return false
+	for node: Node in level_scene.find_children("*", "Barrel", true, false):
+		var barrel := node as Barrel
+		if barrel == null or barrel.drop_anchor == null \
+				or bool(kill_zone.call(&"contains_global_point", barrel.drop_anchor.global_position)):
+			push_error("Barrel DropAnchor is missing or inside the kill zone: %s" % node.get_path())
+			return false
+	_disable_unsafe_portal_pairs(level_scene, kill_zone)
+	return true
+
+
+func _disable_unsafe_portal_pairs(level_scene: Node, kill_zone: Node) -> void:
+	var disabled_pairs: Dictionary[int, bool] = {}
+	for node: Node in level_scene.find_children("*", "PortalEndpoint", true, false):
+		var endpoint := node as PortalEndpoint
+		if endpoint == null or endpoint.portal_anchor == null:
+			continue
+		if not bool(kill_zone.call(&"contains_global_point", endpoint.anchor_position())):
+			continue
+		var pair_controller := endpoint.get_parent() as PortalPairController
+		if pair_controller == null or disabled_pairs.has(pair_controller.get_instance_id()):
+			continue
+		disabled_pairs[pair_controller.get_instance_id()] = true
+		pair_controller.disable_with_validation_error(
+			"Portal exit is inside the kill zone: %s" % endpoint.get_path()
+		)
 
 
 func _on_session_completed(

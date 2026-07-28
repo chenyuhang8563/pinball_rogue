@@ -23,6 +23,22 @@ absorbent = true
 
 [node name="TableBase" type="Node2D"]
 
+[node name="TableComponents" type="Node2D" parent="."]
+
+[node name="CombatDrops" type="Node2D" parent="."]
+
+[node name="CoinDropAnchors" type="Node2D" parent="."]
+
+[node name="AnchorLeft" type="Marker2D" parent="CoinDropAnchors" groups=["coin_drop_anchors"]]
+position = Vector2(72, 144)
+
+[node name="AnchorCenter" type="Marker2D" parent="CoinDropAnchors" groups=["coin_drop_anchors"]]
+position = Vector2(120, 128)
+
+[node name="AnchorRight" type="Marker2D" parent="CoinDropAnchors" groups=["coin_drop_anchors"]]
+position = Vector2(168, 144)
+
+
 [node name="WallSprite" type="Sprite2D" parent="."]
 position = Vector2(120, 160)
 texture = ExtResource("1_walls")

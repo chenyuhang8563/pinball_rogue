@@ -28,6 +28,7 @@
 [ext_resource type="Resource" path="res://Commerce/data/default_devil_shop_config.tres" id="21_15spr"]
 [ext_resource type="Script" uid="uid://c50047c5576eg" path="res://Combat/battle/battle_gateway.gd" id="21_gateway"]
 [ext_resource type="PackedScene" uid="uid://dgsquy0q41jr3" path="res://Run/presentation/settings_panel.tscn" id="22_6ugon"]
+[ext_resource type="Script" uid="uid://bdqxy02skugfq" path="res://Combat/marbles/marble_chain_registry.gd" id="23_chain_registry"]
 [ext_resource type="Script" uid="uid://d3dwc01dyf7e7" path="res://Run/application/run_flow_controller.gd" id="22_controller"]
 [ext_resource type="Script" path="res://Run/presentation/settings_panel.gd" id="23_eu0ny"]
 [ext_resource type="Script" uid="uid://vl6bftv8lv6" path="res://Game/Debug/debug_grant_panel.gd" id="29_yxlys"]
@@ -47,6 +48,9 @@
 
 [node name="Main" type="Node2D" unique_id=1204434413]
 script = ExtResource("1_eunhr")
+
+[node name="MarbleChainRegistry" type="Node" parent="."]
+script = ExtResource("23_chain_registry")
 metadata/_edit_horizontal_guides_ = [208.0]
 
 [node name="Marbles" type="Node2D" parent="." unique_id=2013848348]

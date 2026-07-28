@@ -1,0 +1,72 @@
+[gd_scene format=3 uid="uid://okn5a2nqkvby"]
+
+[ext_resource type="Texture2D" uid="uid://cpcxh3typ0iyp" path="res://Assets/Portal/PORTAL BLUE-Sheet.png" id="1_portal_texture"]
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portal_0"]
+atlas = ExtResource("1_portal_texture")
+region = Rect2(0, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portal_1"]
+atlas = ExtResource("1_portal_texture")
+region = Rect2(64, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portal_2"]
+atlas = ExtResource("1_portal_texture")
+region = Rect2(128, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portal_3"]
+atlas = ExtResource("1_portal_texture")
+region = Rect2(192, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portal_4"]
+atlas = ExtResource("1_portal_texture")
+region = Rect2(256, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portal_5"]
+atlas = ExtResource("1_portal_texture")
+region = Rect2(320, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portal_6"]
+atlas = ExtResource("1_portal_texture")
+region = Rect2(384, 0, 64, 64)
+
+[sub_resource type="AtlasTexture" id="AtlasTexture_portal_7"]
+atlas = ExtResource("1_portal_texture")
+region = Rect2(448, 0, 64, 64)
+
+[sub_resource type="SpriteFrames" id="SpriteFrames_portal"]
+animations = [{
+"frames": [{
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portal_0")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portal_1")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portal_2")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portal_3")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portal_4")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portal_5")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portal_6")
+}, {
+"duration": 1.0,
+"texture": SubResource("AtlasTexture_portal_7")
+}],
+"loop": true,
+"name": &"idle",
+"speed": 12.0
+}]
+
+[node name="PortalVisual" type="AnimatedSprite2D" unique_id=1463372914]
+sprite_frames = SubResource("SpriteFrames_portal")
+animation = &"idle"
+autoplay = "idle"

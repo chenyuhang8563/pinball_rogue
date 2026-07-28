@@ -1,6 +1,6 @@
 [gd_scene format=3 uid="uid://d1nyycae6ks4h"]
 
-[ext_resource type="Script" uid="uid://dfguwylgcn2md" path="res://Combat/marbles/marble_chain.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://damatkbnksca3" path="res://Combat/marbles/marble_chain.gd" id="1_script"]
 
 [node name="MarbleChain" type="Node2D" unique_id=1762869057]
 script = ExtResource("1_script")

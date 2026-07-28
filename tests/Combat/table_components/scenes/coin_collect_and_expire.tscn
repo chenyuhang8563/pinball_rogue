@@ -1,0 +1,18 @@
+[gd_scene load_steps=4 format=3]
+
+[ext_resource type="PackedScene" path="res://Combat/drops/coin_pickup.tscn" id="1_coin"]
+[ext_resource type="PackedScene" path="res://Combat/marbles/marble.tscn" id="2_marble"]
+[ext_resource type="Script" path="res://tests/Combat/table_components/scenes/environment_component_showcase.gd" id="3_driver"]
+
+[node name="CoinCollectAndExpire" type="Node2D"]
+script = ExtResource("3_driver")
+scenario = "coins"
+
+[node name="CollectibleCoin" parent="." instance=ExtResource("1_coin")]
+position = Vector2(96, 112)
+
+[node name="ExpiringCoin" parent="." instance=ExtResource("1_coin")]
+position = Vector2(144, 112)
+
+[node name="Head" parent="." instance=ExtResource("2_marble")]
+position = Vector2(96, 152)

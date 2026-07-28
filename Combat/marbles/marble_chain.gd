@@ -48,13 +48,14 @@ const TRAIL_MULTIPLIER: int = 3
 # ---- 链成员 ----
 
 ## 头部弹珠——链中唯一的 RigidBody2D。
-var head: Marble = null
+@export var head: Marble = null
 
 ## Body 段数组，从尾到头排列：body[0] = TAIL, body[-1] = NECK。
 var body: Array[ChainSegment] = []
 
 ## Body 段容器。
 var _body_container: Node2D
+var _registry: MarbleChainRegistry = null
 var _head_echo_stacks: int = 0
 var _head_echo_timer: Timer = null
 
@@ -77,8 +78,54 @@ var _head_scene: PackedScene = preload("res://Combat/marbles/marble.tscn")
 var _segment_scene: PackedScene = preload("res://Combat/marbles/chain_segment.tscn")
 
 
+func _ready() -> void:
+	# 支持纯场景搭建：head 通过 @export 在编辑器中绑定（未调用 build_chain()）时，
+	# 在这里完成 Head 接管，让场景里连好的弹珠链开箱即用。
+	if head == null or not is_instance_valid(head):
+		return
+	head.is_head = true
+	_prime_trail_from_spawn_positions([head.global_position])
+	_head_connect_signals()
+	_register_with_registry()
+
+
 func _exit_tree() -> void:
+	_unregister_from_registry()
 	_head_disconnect_signals()
+
+
+func set_chain_registry(registry: MarbleChainRegistry) -> void:
+	_unregister_from_registry()
+	_registry = registry
+	_register_with_registry()
+
+
+## 接管关卡中预放置的 Head，并使其成为该链唯一的物理头部。
+func adopt_scene_head(scene_head: Marble) -> bool:
+	if scene_head == null or not is_instance_valid(scene_head):
+		return false
+	_unregister_from_registry()
+	_head_disconnect_signals()
+	if head != null and head != scene_head and is_instance_valid(head):
+		head.queue_free()
+	head = scene_head
+	if head.get_parent() == null:
+		add_child(head)
+	elif head.get_parent() != self:
+		head.reparent(self, true)
+	head.is_head = true
+	_chain_length = 1
+	for segment: ChainSegment in body:
+		if segment != null and is_instance_valid(segment):
+			segment.queue_free()
+	body.clear()
+	if _body_container != null and is_instance_valid(_body_container):
+		_body_container.queue_free()
+	_body_container = null
+	_prime_trail_from_spawn_positions([head.global_position])
+	_head_connect_signals()
+	_register_with_registry()
+	return true
 
 
 # ---- 链构建 ----
@@ -112,6 +159,7 @@ func build_chain(items: Array[Item], spawn_positions: Array[Vector2]) -> void:
 
 	# 连接 Head 的碰撞信号
 	_head_connect_signals()
+	_register_with_registry()
 
 
 func _get_spawn_position(spawn_positions: Array[Vector2], index: int) -> Vector2:
@@ -130,6 +178,7 @@ func _prime_trail_from_spawn_positions(spawn_positions: Array[Vector2]) -> void:
 
 ## 销毁旧链内容。
 func _clear_chain() -> void:
+	_unregister_from_registry()
 	_head_disconnect_signals()
 	_clear_head_echo_stacks()
 
@@ -474,6 +523,33 @@ func _update_body_segments() -> void:
 
 		seg.global_position = seg.global_position.lerp(point["pos"], body_follow_lerp)
 		seg.rotation = lerp_angle(seg.rotation, point["rot"], body_follow_lerp)
+
+
+func reset_after_teleport(destination: Vector2, exit_forward: Vector2) -> void:
+	if head == null or not is_instance_valid(head):
+		return
+	_trail.clear()
+	for index: int in range(_chain_length * 2):
+		_trail.append({
+			"pos": destination - exit_forward * trail_sample_spacing * index,
+			"rot": exit_forward.angle(),
+		})
+	for index: int in range(body.size()):
+		var segment: ChainSegment = body[index]
+		if segment == null or not is_instance_valid(segment):
+			continue
+		segment.global_position = destination - exit_forward * trail_point_spacing * (index + 1)
+		segment.rotation = exit_forward.angle()
+
+
+func _register_with_registry() -> void:
+	if _registry != null and is_instance_valid(_registry) and head != null:
+		_registry.register_chain(self)
+
+
+func _unregister_from_registry() -> void:
+	if _registry != null and is_instance_valid(_registry):
+		_registry.unregister_chain(self)
 
 
 ## 沿轨迹缓冲区查找距离为 target_distance 的点（从头开始累计距离）。

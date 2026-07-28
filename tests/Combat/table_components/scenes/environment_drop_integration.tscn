@@ -1,0 +1,17 @@
+[gd_scene load_steps=3 format=3]
+
+[ext_resource type="PackedScene" path="res://Combat/levels/table_base.tscn" id="1_table_base"]
+[ext_resource type="Script" path="res://Combat/drops/combat_drop_director.gd" id="2_director"]
+
+[node name="EnvironmentDropIntegration" type="Node2D"]
+
+[node name="TableBase" parent="." instance=ExtResource("1_table_base")]
+
+[node name="Enemies" type="Node2D" parent="."]
+
+[node name="CombatDropDirector" type="Node" parent="."]
+script = ExtResource("2_director")
+enemy_drop_chance = 100
+
+[node name="GraceTimer" type="Timer" parent="CombatDropDirector"]
+one_shot = true

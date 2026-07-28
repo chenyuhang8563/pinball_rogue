@@ -1,0 +1,31 @@
+[gd_scene load_steps=6 format=3]
+
+[ext_resource type="PackedScene" path="res://Combat/table_components/barrel/barrel.tscn" id="1_barrel"]
+[ext_resource type="PackedScene" path="res://Combat/drops/coin_pickup.tscn" id="2_coin"]
+[ext_resource type="PackedScene" path="res://Combat/marbles/marble.tscn" id="3_marble"]
+[ext_resource type="Script" path="res://tests/Combat/table_components/scenes/environment_component_showcase.gd" id="4_driver"]
+[ext_resource type="Script" path="res://Combat/drops/combat_drop_director.gd" id="5_director"]
+
+[node name="BarrelBreakAndDrop" type="Node2D"]
+script = ExtResource("4_driver")
+scenario = "barrel"
+showcase_start_delay_seconds = 2.0
+preserve_barrel_loot_for_capture = true
+
+[node name="CombatDrops" type="Node2D" parent="."]
+
+[node name="CombatDropDirector" type="Node" parent="."]
+script = ExtResource("5_director")
+
+[node name="GraceTimer" type="Timer" parent="CombatDropDirector"]
+one_shot = true
+
+[node name="Barrel" parent="." instance=ExtResource("1_barrel")]
+position = Vector2(120, 120)
+component_id = &"test_barrel"
+
+[node name="DroppedCoin" parent="." instance=ExtResource("2_coin")]
+position = Vector2(120, 84)
+
+[node name="Head" parent="." instance=ExtResource("3_marble")]
+position = Vector2(120, 72)

@@ -1,0 +1,60 @@
+[gd_scene format=3 uid="uid://btm661j6imcei"]
+
+[ext_resource type="Script" uid="uid://5yscs1vpfufh" path="res://Combat/table_components/portal_pair/portal_pair_controller.gd" id="1_controller"]
+[ext_resource type="Script" uid="uid://cgwmddufcvb2o" path="res://Combat/table_components/portal_pair/portal_endpoint.gd" id="2_endpoint"]
+[ext_resource type="PackedScene" uid="uid://okn5a2nqkvby" path="res://Combat/table_components/portal_pair/portal_visual.tscn" id="3_visual"]
+
+[sub_resource type="CapsuleShape2D" id="CapsuleShape2D_o4bch"]
+radius = 11.0
+height = 42.0
+
+[sub_resource type="CircleShape2D" id="CircleShape_safety"]
+radius = 16.0
+
+[node name="PortalPair" type="Node2D" unique_id=1223791674 groups=["table_component"]]
+script = ExtResource("1_controller")
+
+[node name="EndpointA" type="Area2D" parent="." unique_id=2117525053]
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("2_endpoint")
+pair_id = &"portal_pair"
+
+[node name="Visual" parent="EndpointA" unique_id=405365358 instance=ExtResource("3_visual")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="EndpointA" unique_id=717847524]
+position = Vector2(-4, 1)
+shape = SubResource("CapsuleShape2D_o4bch")
+
+[node name="PortalAnchor" type="Marker2D" parent="EndpointA" unique_id=1044722306]
+
+[node name="SafetySensor" type="Area2D" parent="EndpointA" unique_id=1724052502]
+position = Vector2(0, -32)
+collision_layer = 0
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="EndpointA/SafetySensor" unique_id=730107530]
+shape = SubResource("CircleShape_safety")
+
+[node name="EndpointB" type="Area2D" parent="." unique_id=1769691901]
+position = Vector2(96, 0)
+collision_layer = 0
+collision_mask = 2
+script = ExtResource("2_endpoint")
+pair_id = &"portal_pair"
+
+[node name="Visual" parent="EndpointB" unique_id=1712558984 instance=ExtResource("3_visual")]
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="EndpointB" unique_id=713469367]
+position = Vector2(-4, 1)
+shape = SubResource("CapsuleShape2D_o4bch")
+
+[node name="PortalAnchor" type="Marker2D" parent="EndpointB" unique_id=1668223954]
+
+[node name="SafetySensor" type="Area2D" parent="EndpointB" unique_id=1094998132]
+position = Vector2(0, -32)
+collision_layer = 0
+collision_mask = 3
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="EndpointB/SafetySensor" unique_id=777253293]
+shape = SubResource("CircleShape_safety")

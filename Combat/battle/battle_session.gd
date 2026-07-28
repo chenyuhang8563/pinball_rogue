@@ -30,6 +30,8 @@ var _enemy_callbacks: Dictionary[int, Callable] = {}
 var _accepted_marble_instance_ids: Dictionary[int, bool] = {}
 var _spawner_connected: bool = false
 var _kill_zone_callback: Callable = Callable()
+var _loot_gate: LootSettlementGate = LootSettlementGate.new()
+var _loot_settled_callback: Callable = Callable()
 var _disposed: bool = false
 var _start_call_in_progress: bool = false
 
@@ -39,6 +41,17 @@ func configure(spawner: BattleSpawner) -> bool:
 		return false
 	clear()
 	_spawner = spawner
+	return true
+
+
+func configure_loot_settlement_gate(gate: LootSettlementGate = null) -> bool:
+	if _disposed:
+		return false
+	_disconnect_loot_gate()
+	_loot_gate = gate if gate != null else LootSettlementGate.new()
+	_loot_settled_callback = Callable(self, "_on_loot_settled")
+	if not _loot_gate.settled.is_connected(_loot_settled_callback):
+		_loot_gate.settled.connect(_loot_settled_callback)
 	return true
 
 
@@ -111,6 +124,8 @@ func dispose() -> void:
 	if _disposed:
 		return
 	clear()
+	_disconnect_loot_gate()
+	_loot_gate = null
 	_spawner = null
 	_disposed = true
 
@@ -261,7 +276,8 @@ func _on_raw_marble_fell(
 
 
 func _try_complete() -> bool:
-	if _batch_state != BatchState.SEALED or not _live_enemies.is_empty():
+	if _batch_state != BatchState.SEALED or not _live_enemies.is_empty() \
+			or _loot_gate != null and not _loot_gate.is_settled():
 		return false
 	var token: RunFlowToken = _active_token
 	var plan: BattlePlan = _active_plan
@@ -271,6 +287,20 @@ func _try_complete() -> bool:
 	_reset_active_identity(false)
 	completed.emit(token, plan.battle_id, plan)
 	return true
+
+
+func _on_loot_settled() -> void:
+	if _disposed or _start_call_in_progress:
+		return
+	if _try_complete():
+		_disconnect_session_sources()
+
+
+func _disconnect_loot_gate() -> void:
+	if _loot_gate != null and _loot_settled_callback.is_valid() \
+			and _loot_gate.settled.is_connected(_loot_settled_callback):
+		_loot_gate.settled.disconnect(_loot_settled_callback)
+	_loot_settled_callback = Callable()
 
 
 func _connect_spawner() -> void:
