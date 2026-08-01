@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Item" format=3]
+
+[ext_resource type="Texture2D" path="res://Assets/Items/Icon50.png" id="1_icon"]
+[ext_resource type="Script" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "lightning_marble"
+title = "ITEM_LIGHTNING_MARBLE_TITLE"
+icon = ExtResource("1_icon")
+price = 25
+description = "ITEM_LIGHTNING_MARBLE_DESC"
+effect_type = 26
+type = 1
+tags = Array[StringName]([&"marble", &"lightning", &"lightning_marble", &"producer"])
+weight = 100.0
+marble_type = 7
+marble_segment_damage = 1

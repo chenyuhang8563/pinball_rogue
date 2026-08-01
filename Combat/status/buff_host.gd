@@ -94,6 +94,20 @@ func get_buff_remaining_time(buff_id: String) -> float:
 	return active_buff.remaining_time if active_buff != null else 0.0
 
 
+## Refreshes a timed buff without adding stacks. This is distinct from
+## reapplication at a stack cap: callers can preserve the capped count while
+## still honoring a design rule that an application refreshes the shared timer.
+func refresh_buff(buff_id: String) -> bool:
+	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
+	if active_buff == null or active_buff.is_permanent():
+		return false
+	active_buff.remaining_time = active_buff.definition.duration
+	active_buff.state["stacks"] = active_buff.stacks
+	active_buff.state["remaining_time"] = active_buff.remaining_time
+	active_buff.definition.on_apply(_host, active_buff.state)
+	return true
+
+
 func append_buff_duration(buff_id: String, duration_to_append: float, max_duration: float = -1.0) -> bool:
 	var active_buff: ActiveBuff = _active_buffs.get(buff_id) as ActiveBuff
 	if active_buff == null or active_buff.is_permanent() or duration_to_append <= 0.0:
@@ -150,6 +164,7 @@ func _process_active_buffs(delta: float) -> void:
 			continue
 
 		active_buff.state["stacks"] = active_buff.stacks
+		active_buff.state["remaining_time"] = active_buff.remaining_time
 		active_buff.definition.on_process(_host, active_buff.state, delta)
 		if active_buff.is_permanent():
 			continue

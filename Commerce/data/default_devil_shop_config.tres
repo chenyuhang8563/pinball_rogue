@@ -1,7 +1,10 @@
-[gd_resource type="Resource" script_class="DevilShopConfig" load_steps=10 format=3]
+[gd_resource type="Resource" script_class="DevilShopConfig" format=3]
 
 [ext_resource type="Script" path="res://Commerce/domain/devil_shop_config.gd" id="1"]
 [ext_resource type="Resource" path="res://Content/data/lightning.tres" id="2"]
+[ext_resource type="Resource" path="res://Content/data/leyden_jar.tres" id="2_leyden"]
+[ext_resource type="Resource" path="res://Content/data/arc_relay.tres" id="2_relay"]
+[ext_resource type="Resource" path="res://Content/data/thunderstorm.tres" id="2_storm"]
 [ext_resource type="Resource" path="res://Content/data/bomb_marble.tres" id="3"]
 [ext_resource type="Resource" path="res://Content/data/brown_marble.tres" id="4"]
 [ext_resource type="Resource" path="res://Content/data/green_marble.tres" id="5"]
@@ -11,7 +14,7 @@
 
 [resource]
 script = ExtResource("1")
-item_pool = Array[Resource]([ExtResource("2"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8")])
+item_pool = Array[Resource]([ExtResource("2"), ExtResource("2_leyden"), ExtResource("2_relay"), ExtResource("2_storm"), ExtResource("3"), ExtResource("4"), ExtResource("5"), ExtResource("6"), ExtResource("7"), ExtResource("8")])
 stock_count = 3
 health_to_gold = 5
 minimum_remaining_health = 1

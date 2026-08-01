@@ -8,8 +8,8 @@ const InventoryIconSlotScript: GDScript = preload("res://Loadout/presentation/in
 const RewardOptionScript: GDScript = preload("res://Run/domain/reward_option.gd")
 
 const ITEM_IDS: Array[String] = [
-	"dark_marble", "bomb_marble", "brown_marble", "blue_marble", "green_marble", "fire_marble", "assassin_marble",
-	"lightning", "fire_bellows", "accelerant", "cremation", "poison_culture", "ice_hammer", "permafrost", "cryoclasm",
+	"dark_marble", "bomb_marble", "brown_marble", "blue_marble", "green_marble", "fire_marble", "assassin_marble", "lightning_marble",
+	"lightning", "leyden_jar", "arc_relay", "thunderstorm", "fire_bellows", "accelerant", "cremation", "poison_culture", "ice_hammer", "permafrost", "cryoclasm",
 	"carrion", "parasite", "pustule", "venom_knife", "scorpion_tail", "witch_hat", "assassins_whetstone", "fortuna_dice",
 	"many_faced_prism", "scarlet_thread", "execution_decree", "thermal_shock", "miasma", "dash", "magic_missile",
 ]

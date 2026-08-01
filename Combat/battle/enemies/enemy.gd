@@ -8,6 +8,7 @@ const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.
 const DamagePipelineScript: GDScript = preload("res://Combat/damage/damage_pipeline.gd")
 const FrostStatusVisualScene: PackedScene = preload("res://Combat/effects/frost_status_visual/frost_status_visual.tscn")
 const FireStatusVisualScene: PackedScene = preload("res://Combat/effects/fire_status_visual/fire_status_visual.tscn")
+const ArcStatusVisualScene: PackedScene = preload("res://Combat/effects/arc_status_visual/arc_status_visual.tscn")
 const META_FROST_TO_FROZEN_TRANSITION: StringName = &"frost_to_frozen_transition"
 ## 伤害飘字在敌怪上方生成时，X 轴随机偏移的半范围（像素）。
 ## 实际偏移范围为 [-FLOAT_DAMAGE_X_SPREAD_HALF, FLOAT_DAMAGE_X_SPREAD_HALF]，
@@ -51,6 +52,7 @@ var _entity_id: String = ""
 var _death_emitted: bool = false
 var _frost_visual: Node2D = null
 var _fire_visual: Node2D = null
+var _arc_visual: Node2D = null
 ## 本物理步开始时的速度快照（在 _integrate_forces 记录）。body_entered 触发时
 ## linear_velocity 可能已是反弹后的值，冻结体碰撞判定必须使用碰撞前速度。
 var _pre_step_velocity: Vector2 = Vector2.ZERO
@@ -229,6 +231,10 @@ func append_buff_duration(buff_id: String, duration_to_append: float, max_durati
 	return buff_host != null and buff_host.append_buff_duration(buff_id, duration_to_append, max_duration)
 
 
+func refresh_buff(buff_id: String) -> bool:
+	return buff_host != null and buff_host.refresh_buff(buff_id)
+
+
 ## Buff 通过宿主门面报告离散 tick；BuffHost 负责 typed 事件发射，使 buff 脚本
 ## 完全不依赖 Effect 域。
 func notify_buff_ticked(buff_id: String) -> void:
@@ -365,6 +371,21 @@ func clear_fire_status_visual() -> void:
 	if _fire_visual != null and is_instance_valid(_fire_visual):
 		_fire_visual.queue_free()
 	_fire_visual = null
+
+
+func set_arc_visual(stacks: int, remaining_time: float) -> void:
+	if _arc_visual == null or not is_instance_valid(_arc_visual):
+		_arc_visual = ArcStatusVisualScene.instantiate() as Node2D
+		_arc_visual.name = "ArcStatusVisual"
+		add_child(_arc_visual)
+	if _arc_visual != null and _arc_visual.has_method("set_arc_state"):
+		_arc_visual.call("set_arc_state", stacks, remaining_time)
+
+
+func clear_arc_visual() -> void:
+	if _arc_visual != null and is_instance_valid(_arc_visual):
+		_arc_visual.queue_free()
+	_arc_visual = null
 
 
 ## Toggles the infection look: a sickly-green tint on the body plus orbiting flies.

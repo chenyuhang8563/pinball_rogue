@@ -5,6 +5,9 @@ extends Node
 ## no other copy of this table exists.
 const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	&"lightning": preload("res://Combat/effects/lightning_effect/lightning.gd"),
+	&"leyden_jar": preload("res://Combat/effects/leyden_jar/leyden_jar.gd"),
+	&"arc_relay": preload("res://Combat/effects/arc_relay/arc_relay.gd"),
+	&"thunderstorm": preload("res://Combat/effects/thunderstorm/thunderstorm.gd"),
 	&"fire_bellows": preload("res://Combat/effects/fire_bellows/fire_bellows.gd"),
 	&"accelerant": preload("res://Combat/effects/accelerant/accelerant.gd"),
 	&"poison_culture": preload("res://Combat/effects/poison_culture/poison_culture.gd"),

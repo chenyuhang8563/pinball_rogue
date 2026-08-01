@@ -1,5 +1,7 @@
 extends Node
 
+const LightningArchetypeRuntimeScript: GDScript = preload("res://Combat/lightning/lightning_archetype_runtime.gd")
+
 ## Core plague spawn constants. Flies are the green-marble payoff (not a relic), so
 ## they always release on an infected death; relics (carrion/pustule) layer on top.
 const FLY_SCENE_PATH: String = "res://Combat/effects/plague_fly/plague_fly.tscn"
@@ -11,6 +13,7 @@ const EXTRA_FLY_SCATTER_RADIUS: float = 12.0
 var _active_effects: Dictionary = {}
 var _loadout: RefCounted = null
 var _progression: RefCounted = null
+var _lightning_runtime: LightningArchetypeRuntime = null
 
 
 func configure(loadout: RefCounted, progression: RefCounted) -> bool:
@@ -20,12 +23,15 @@ func configure(loadout: RefCounted, progression: RefCounted) -> bool:
 	_disconnect_port_signals()
 	_loadout = loadout
 	_progression = progression
+	_ensure_lightning_runtime()
+	_lightning_runtime.reset_shot()
 	_connect_port_signals()
 	_sync_active_effects()
 	return true
 
 
 func _ready() -> void:
+	_ensure_lightning_runtime()
 	_connect_port_signals()
 	_sync_active_effects()
 
@@ -39,6 +45,8 @@ func on_enemy_hit_by_marble(enemy: Node2D, packet: DamagePacket = null) -> void:
 
 
 func on_enemy_hit_resolved(enemy: Node2D, was_burning: bool, was_frozen: bool, packet: DamagePacket = null) -> void:
+	if _lightning_runtime != null:
+		_lightning_runtime.on_enemy_hit_resolved(enemy, packet)
 	_dispatch("on_enemy_hit_resolved", [enemy, was_burning, was_frozen, packet])
 
 
@@ -55,6 +63,8 @@ func modify_damage_packet(enemy: Node2D, packet: DamagePacket) -> void:
 
 
 func on_enemy_defeated(enemy: Node2D, packet: DamagePacket) -> void:
+	if _lightning_runtime != null:
+		_lightning_runtime.on_enemy_defeated(enemy, packet)
 	_dispatch("on_enemy_defeated", [enemy, packet])
 	_spawn_plague_flies(enemy)
 
@@ -84,6 +94,8 @@ func on_frozen_body_impact(
 ## 本发边界事件：Head 落入 KillZone、本发结束时由 Main 分发（每发一次）。
 ## 有存活投射物的 Effect 可在本发结束时自行清理。无参数：清理范围由各 Effect 自持。
 func on_ball_lost() -> void:
+	if _lightning_runtime != null:
+		_lightning_runtime.reset_shot()
 	_dispatch("on_ball_lost", [])
 
 
@@ -224,6 +236,13 @@ func _fly_damage_bonus() -> int:
 
 func _get_active_effect(item_id: StringName) -> Variant:
 	return _active_effects.get(item_id, null)
+
+
+func _ensure_lightning_runtime() -> void:
+	if _lightning_runtime == null:
+		_lightning_runtime = LightningArchetypeRuntimeScript.new() as LightningArchetypeRuntime
+	if _lightning_runtime != null:
+		_lightning_runtime.configure(Callable(self, "_get_active_effect"))
 
 
 func _connect_port_signals() -> void:

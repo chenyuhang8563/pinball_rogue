@@ -38,6 +38,10 @@ var event_id: int = 0
 var is_event_main: bool = true
 # Direction of the consumed weak point, used by prism generation to avoid it.
 var crit_direction: int = -1
+## Source-owned snapshots that must survive the synchronous damage pipeline.
+## Consumers must namespace their keys and treat values as immutable after the
+## packet's base hit begins resolving.
+var metadata: Dictionary = {}
 
 static var _next_event_id: int = 1
 

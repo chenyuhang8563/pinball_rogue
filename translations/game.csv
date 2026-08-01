@@ -3,6 +3,8 @@ ITEM_FIRE_MARBLE_TITLE,Fire Marble,火焰弹珠
 ITEM_FIRE_MARBLE_DESC,First hit applies 4 burn fuel; later hits add 1. Each second, burn deals damage based on remaining fuel and consumes 1 fuel.,首次命中附着 4 层燃烧；燃烧期间命中追加 1 层。每秒根据剩余燃料层数造成伤害并消耗 1 层燃烧。
 STATUS_BURN_NAME,Burn,燃烧
 STATUS_BURN_DESC,Each second deals damage based on remaining fuel and consumes 1 fuel; extinguishes at zero.,每秒根据剩余燃料层数造成伤害，并消耗 1 层燃料；燃料归零时熄灭。
+STATUS_ARC_NAME,Arc,电弧
+STATUS_ARC_DESC,"Stacks for 5 seconds; Lightning Marble repeat hits discharge stored Arc.",持续 5 秒并可叠层；闪电弹珠复击时释放已储存的电弧。
 UPGRADE_FIRE_DURATION_4_DESC,Burn fuel cap increased to 15,燃烧燃料上限提升至 15
 UPGRADE_FIRE_DURATION_5_DESC,Burn fuel cap increased to 20 and deals 3 damage per fuel,燃烧燃料上限提升至 20，且每燃料造成 3 点伤害
 UPGRADE_FIRE_AWAKEN_DESC,Awaken: retains the level III burn damage,觉醒：保留 III 级燃烧伤害
@@ -76,8 +78,19 @@ ITEM_BROWN_MARBLE_TITLE,Brown Marble,大地弹珠
 ITEM_BROWN_MARBLE_DESC,Higher damage with more collisions.,碰撞次数越多，伤害越高。
 ITEM_BOMB_MARBLE_TITLE,Bomb Marble,炸弹弹珠
 ITEM_BOMB_MARBLE_DESC,Explodes on hit and damages nearby enemies.,命中时爆炸，伤害附近敌人。
-ITEM_LIGHTNING_TITLE,Lightning,闪电链
-ITEM_LIGHTNING_DESC,Releases a chain of lightning,释放一道闪电链。
+ITEM_LIGHTNING_TITLE,Lightning Chain,闪电链
+ITEM_LIGHTNING_DESC,Repeat discharges branch to nearby enemies and apply Arc.,复击放电向附近敌人分叉并施加电弧。
+ITEM_LIGHTNING_MARBLE_TITLE,Lightning Marble,闪电弹珠
+ITEM_LIGHTNING_MARBLE_DESC,First hits apply Arc; repeat hits discharge stored Arc for lightning damage.,首击施加电弧；复击释放已储存电弧并造成雷电伤害。
+ITEM_LEYDEN_JAR_TITLE,Leyden Jar,莱顿瓶
+ITEM_LEYDEN_JAR_DESC,Raises the Arc stack cap; awakening breaks through fully charged targets.,提高电弧层数上限；觉醒后可击穿满层目标。
+ITEM_ARC_RELAY_TITLE,Arc Relay,续弧继电器
+ITEM_ARC_RELAY_DESC,Charged enemies relay Arc to nearby targets when defeated.,带有电弧的敌人死亡时向附近目标续弧。
+ITEM_THUNDERSTORM_TITLE,Thunderstorm Core,雷暴核心
+ITEM_THUNDERSTORM_DESC,Enough direct discharges in one shot call lightning onto charged enemies.,单发内完成足够多次直接复击后，对带电敌人落雷。
+UPGRADE_LIGHTNING_DAMAGE_3_DESC,Repeat discharge damage increased to 3 per Arc stack,复击放电提升至每层电弧 3 点伤害
+UPGRADE_LIGHTNING_DAMAGE_4_DESC,Repeat discharge damage increased to 4 per Arc stack,复击放电提升至每层电弧 4 点伤害
+UPGRADE_LIGHTNING_AWAKEN_DESC,Awaken: repeat hits apply 2 Arc stacks after discharge,觉醒：复击放电后施加 2 层电弧
 ITEM_FIRE_BELLOWS_TITLE,Bellows Core,风箱核心
 ITEM_FIRE_BELLOWS_DESC,Every few hits on a burning enemy grants it 1 extra fuel.,每隔几次命中燃烧中的敌人会额外施加 1 燃料。
 ITEM_POISON_CULTURE_TITLE,Plague,瘟疫培养皿

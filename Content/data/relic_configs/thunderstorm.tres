@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="RelicLevelConfig" format=3]
+
+[ext_resource type="Script" path="res://Combat/effects/relic_level_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+level_values = Array[int]([6, 9, 12])
+extra = {
+"second_round_damage": 6,
+"second_round_delay": 0.2,
+"target_counts": [3, 4, 5],
+"thresholds": [6, 5, 4]
+}

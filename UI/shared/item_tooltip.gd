@@ -12,6 +12,7 @@ const DAMAGE_COLORS := {
 const TERM_DATA := {
 	"BURN": ["燃烧", "Burn"],
 	"LIGHTNING_CHAIN": ["闪电链", "Lightning Chain"],
+	"ARC": ["电弧", "Arc"],
 	"ECHO": ["回响", "Echo"],
 	"POISON": ["中毒", "Poison"],
 	"INFECTION": ["感染", "Infection"],
@@ -25,7 +26,7 @@ const TERM_DATA := {
 	"EXPLOSION": ["爆炸", "Explosion"],
 }
 const TERM_REPLACEMENT_ORDER: Array[String] = [
-	"PERFECT_CRIT", "LIGHTNING_CHAIN", "WEAK_POINT", "INFECTION", "EXPLOSION",
+	"PERFECT_CRIT", "LIGHTNING_CHAIN", "WEAK_POINT", "INFECTION", "EXPLOSION", "ARC",
 	"FROZEN", "FROST", "PLAGUE", "POISON", "BURN", "ECHO", "FLY", "CRIT",
 ]
 

@@ -17,7 +17,11 @@ const DEFAULT_NODE_ITEM_PATHS: PackedStringArray = [
 	"res://Content/data/green_marble.tres",
 	"res://Content/data/bomb_marble.tres",
 	"res://Content/data/fire_marble.tres",
+	"res://Content/data/lightning_marble.tres",
 	"res://Content/data/lightning.tres",
+	"res://Content/data/leyden_jar.tres",
+	"res://Content/data/arc_relay.tres",
+	"res://Content/data/thunderstorm.tres",
 	"res://Content/data/fire_bellows.tres",
 	"res://Content/data/poison_culture.tres",
 	"res://Content/data/ice_hammer.tres",
@@ -32,6 +36,9 @@ const DEFAULT_NODE_ITEM_PATHS: PackedStringArray = [
 ]
 const DEFAULT_RELIC_PATHS: PackedStringArray = [
 	"res://Content/data/lightning.tres",
+	"res://Content/data/leyden_jar.tres",
+	"res://Content/data/arc_relay.tres",
+	"res://Content/data/thunderstorm.tres",
 	"res://Content/data/fire_bellows.tres",
 	"res://Content/data/poison_culture.tres",
 	"res://Content/data/ice_hammer.tres",
@@ -49,6 +56,7 @@ const DEFAULT_NORMAL_MARBLE_PATHS: PackedStringArray = [
 	"res://Content/data/green_marble.tres",
 	"res://Content/data/bomb_marble.tres",
 	"res://Content/data/fire_marble.tres",
+	"res://Content/data/lightning_marble.tres",
 ]
 const DEFAULT_NORMAL_SKILL_PATHS: PackedStringArray = [
 	"res://Content/data/dash_skill.tres",

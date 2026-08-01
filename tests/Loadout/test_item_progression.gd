@@ -169,6 +169,23 @@ func test_fire_marble_growth_publishes_cap_and_damage_without_changing_hit_fuel(
 	assert_true((stats.get("modifiers") as Array).is_empty())
 
 
+func test_lightning_marble_growth_publishes_discharge_damage_and_awakened_stacks() -> void:
+	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout, stats)
+	var lightning := _item("lightning_marble", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.LIGHTNING)
+	assert_true(loadout.call("add", lightning))
+
+	assert_true(progression.call("upgrade_one", lightning))
+	assert_eq(stats.call("modifier_value", "lightning_discharge_damage_per_stack"), 3.0)
+	assert_null(stats.call("modifier_value", "lightning_repeat_arc_stacks"))
+	assert_true(progression.call("upgrade_one", lightning))
+	assert_eq(stats.call("modifier_value", "lightning_discharge_damage_per_stack"), 4.0)
+	assert_true(progression.call("upgrade_one", lightning))
+	assert_eq(stats.call("modifier_value", "lightning_discharge_damage_per_stack"), 4.0)
+	assert_eq(stats.call("modifier_value", "lightning_repeat_arc_stacks"), 2.0)
+
+
 func _item(id: String, type: Item.ItemType, marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT) -> Item:
 	var result := Item.new()
 	result.id = id

@@ -4,7 +4,9 @@
 
 [resource]
 script = ExtResource("1_config")
-level_values = Array[int]([1, 3, 5])
+level_values = Array[int]([2, 3, 4])
 extra = {
-"awakened_hits": 3
+"awakened_arc_stacks": 2,
+"branch_counts": [1, 2, 3],
+"ranges": [120.0, 140.0, 160.0]
 }
