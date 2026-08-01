@@ -19,7 +19,7 @@
 - 本机定向 GUT 调用示例：
 
 ```powershell
-cmd /c "C:\Users\16085\Desktop\Godot_v4.6.1-stable_win64.exe --headless -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gtest=res://tests/Combat/status/test_phase0b_status_layers.gd -gexit -glog=2 -gdisable_colors -gconfig="
+cmd /c "C:\Users\16085\Desktop\Godot_v4.7.1-stable_win64.exe --headless -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gtest=res://tests/Combat/status/test_phase0b_status_layers.gd -gexit -glog=2 -gdisable_colors -gconfig="
 ```
 
 - 全量 GUT 命令（仅限用户明确要求时使用）：

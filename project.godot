@@ -88,6 +88,7 @@ toggle_debug_cheats={
 common/physics_ticks_per_second=120
 common/max_physics_steps_per_frame=32
 3d/physics_engine="Jolt Physics"
+common/physics_interpolation=true
 
 [rendering]
 

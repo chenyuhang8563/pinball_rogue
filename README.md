@@ -1,10 +1,10 @@
 # RoguePinball
 
-基于 Godot 4.6.1 的 2D 弹珠 Roguelike 原型。玩家在一局流程中选择节点、进入战斗、结算奖励或事件，并通过商店、遗物、弹珠和技能逐步构筑。
+基于 Godot 4.7.1 的 2D 弹珠 Roguelike 原型。玩家在一局流程中选择节点、进入战斗、结算奖励或事件，并通过商店、遗物、弹珠和技能逐步构筑。
 
 ## 运行
 
-- Godot：**4.6.1**（GL Compatibility）。
+- Godot：**4.7.1**（GL Compatibility）。
 - 启动场景：`res://Game/Bootstrap/main.tscn`，由 `project.godot` 的 UID 入口引用。
 - 使用 Godot 编辑器打开项目并运行主场景；左右方向键控制挡板。
 
