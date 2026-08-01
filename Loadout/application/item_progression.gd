@@ -19,7 +19,7 @@ const STAT_POISON_MAX_STACKS: String = "poison_max_stacks"
 const STAT_POISON_STACKS_PER_HIT: String = "poison_stacks_per_hit"
 const STAT_FIRE_BURN_MAX_STACKS: String = "fire_burn_max_stacks"
 const STAT_FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
-const STAT_ECHO_TIMEOUT: String = "echo_timeout"
+const STAT_ECHO_FLIPPER_SPEED_MULTIPLIER: String = "echo_flipper_speed_multiplier"
 const STAT_EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
 const STAT_EXPLOSION_DAMAGE: String = "explosion_damage"
 const STAT_EXPLOSION_RADIUS: String = "explosion_radius"
@@ -385,7 +385,7 @@ func _sync_stat_modifiers() -> void:
 			STAT_DARK_MARBLE_DAMAGE,
 			STAT_POISON_MAX_STACKS,
 			STAT_POISON_STACKS_PER_HIT,
-			STAT_ECHO_TIMEOUT,
+			STAT_ECHO_FLIPPER_SPEED_MULTIPLIER,
 			STAT_EXPLOSION_EFFECT_SCALE,
 			STAT_EXPLOSION_DAMAGE,
 			STAT_EXPLOSION_RADIUS,
@@ -432,7 +432,8 @@ func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
 	elif marble_type == Marble.MARBLE_TYPE.GREEN and awakened:
 		_add_override_modifier(STAT_POISON_STACKS_PER_HIT, 2.0)
 	elif marble_type == Marble.MARBLE_TYPE.BROWN and awakened:
-		_add_override_modifier(STAT_ECHO_TIMEOUT, 15.0)
+		# 觉醒：不再有旧版 15 秒计时窗口，改为挡板弹起球速倍率提升。
+		_add_override_modifier(STAT_ECHO_FLIPPER_SPEED_MULTIPLIER, 2.0)
 	elif marble_type == Marble.MARBLE_TYPE.BLUE:
 		if stored_level >= 2:
 			_add_override_modifier(STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED, 1.0)

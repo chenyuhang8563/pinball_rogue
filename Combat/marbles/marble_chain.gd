@@ -15,10 +15,12 @@
 #
 # 伤害聚合：
 #   敌人碰撞 Head → Head.get_hit_damage() → MarbleChain.get_total_damage() →
-#   遍历 Head + 所有 Body 段累加伤害（BROWN 满层加伤，BOMB 不贡献接触伤害）。
+#   遍历 Head + 所有 Body 段累加伤害（BOMB 不贡献接触伤害）。
 #
-# 炸弹 / 回声：
-#   Head.body_entered 信号统一在此连接，按碰撞目标分发到对应 Body 段的逻辑。
+# 回响弹珠（新机制）：
+#   链不再拥有蓄力条。敌人碰撞产生的共享蓄力由 TableBase 上的
+#   EchoFlipperChargeController 持有；挡板消费蓄力后通过 arm_echo_damage()
+#   武装本链的待结算回响伤害 token，下一次敌人命中消费一个 token。
 
 extends Node2D
 class_name MarbleChain
@@ -28,8 +30,6 @@ signal chain_collision(collider: Node, collision_type: String)
 const FireMarbleScript: GDScript = preload("res://Combat/marbles/fire_marble.gd")
 const LightningMarbleScript: GDScript = preload("res://Combat/marbles/lightning_marble.gd")
 const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
-const HEAD_MAX_ECHO_STACKS: int = 3
-const HEAD_ECHO_TIMEOUT: float = 5.0
 
 # ---- 导出调参 ----
 
@@ -57,8 +57,9 @@ var body: Array[ChainSegment] = []
 ## Body 段容器。
 var _body_container: Node2D
 var _registry: MarbleChainRegistry = null
-var _head_echo_stacks: int = 0
-var _head_echo_timer: Timer = null
+## 待结算回响伤害 token：由 EchoFlipperChargeController 在挡板消费蓄力后武装，
+## 敌人命中时逐个消费（墙面/挡板碰撞不消费）。
+var _echo_pending_tokens: int = 0
 
 
 # ---- 轨迹数据 ----
@@ -88,9 +89,11 @@ func _ready() -> void:
 	_prime_trail_from_spawn_positions([head.global_position])
 	_head_connect_signals()
 	_register_with_registry()
+	_bind_echo_charge_controller()
 
 
 func _exit_tree() -> void:
+	remove_from_group(&"marble_chain")
 	_unregister_from_registry()
 	_head_disconnect_signals()
 
@@ -126,6 +129,7 @@ func adopt_scene_head(scene_head: Marble) -> bool:
 	_prime_trail_from_spawn_positions([head.global_position])
 	_head_connect_signals()
 	_register_with_registry()
+	_bind_echo_charge_controller()
 	return true
 
 
@@ -161,6 +165,7 @@ func build_chain(items: Array[Item], spawn_positions: Array[Vector2]) -> void:
 	# 连接 Head 的碰撞信号
 	_head_connect_signals()
 	_register_with_registry()
+	_bind_echo_charge_controller()
 
 
 func _get_spawn_position(spawn_positions: Array[Vector2], index: int) -> Vector2:
@@ -181,7 +186,6 @@ func _prime_trail_from_spawn_positions(spawn_positions: Array[Vector2]) -> void:
 func _clear_chain() -> void:
 	_unregister_from_registry()
 	_head_disconnect_signals()
-	_clear_head_echo_stacks()
 
 	if head != null and is_instance_valid(head):
 		head.queue_free()
@@ -254,8 +258,8 @@ func _on_head_body_entered(collided_body: Node) -> void:
 		# 炸弹弹珠：碰敌即爆
 		_try_trigger_bomb()
 	else:
-		# 棕色弹珠：碰非敌（墙/挡板等）叠回声
-		_try_add_echo()
+		# 新回响机制：敌人碰撞充能由 EchoFlipperChargeController 经
+		# chain_collision 信号处理；非敌碰撞不再叠加回声。
 		var effect_manager: Node = _get_autoload_node(&"EffectManager")
 		if effect_manager != null and effect_manager.has_method("on_surface_bounce"):
 			var surface_type: StringName = &"flipper" if collided_body.is_in_group("flipper") else &"wall"
@@ -335,71 +339,74 @@ func _spawn_explosion_effect(center: Vector2) -> void:
 	effect.scale = Vector2(effect_scale, effect_scale)
 
 
-# ---- 回声逻辑 ----
+# ---- 回响伤害 token ----
 
-## 若链中存在 BROWN 段，为其叠加一层回声。
-func _try_add_echo() -> void:
+## 由 EchoFlipperChargeController 调用：挡板每消费一层蓄力即武装一个待结算
+## 回响伤害 token。token 随本链生命周期存在（掉球重建链后清零），蓄力保留在控制器。
+func arm_echo_damage(tokens: int = 1) -> void:
+	_echo_pending_tokens = maxi(0, _echo_pending_tokens + maxi(0, tokens))
+
+
+## 当前待结算回响伤害 token 数（测试与调试用）。
+func get_echo_pending_tokens() -> int:
+	return _echo_pending_tokens
+
+
+## 链（Head 或任一 Body 段）中是否存在 BROWN 大地弹珠。
+## EchoFlipperChargeController 据此决定回响蓄力机制是否激活。
+func has_brown_marble() -> bool:
 	if head != null and is_instance_valid(head) and head.marble_type == Marble.MARBLE_TYPE.BROWN:
-		_add_head_echo_stack()
-		return
-	var brown_segment: ChainSegment = _find_segment(Marble.MARBLE_TYPE.BROWN)
-	if brown_segment == null:
-		return
-	brown_segment.add_echo_stack()
+		return true
+	for seg: ChainSegment in body:
+		if seg != null and is_instance_valid(seg) and seg.segment_type == Marble.MARBLE_TYPE.BROWN:
+			return true
+	return false
 
 
-func _add_head_echo_stack() -> void:
-	_head_echo_stacks = mini(_head_echo_stacks + 1, HEAD_MAX_ECHO_STACKS)
-	_ensure_head_echo_timer()
-	_head_echo_timer.start(_get_stat_float("echo_timeout", HEAD_ECHO_TIMEOUT))
-	_update_head_echo_visual()
-
-
-func _get_head_echo_damage() -> int:
-	if head == null or not is_instance_valid(head) \
-			or head.marble_type != Marble.MARBLE_TYPE.BROWN \
-			or _head_echo_stacks < HEAD_MAX_ECHO_STACKS:
+## 敌人命中结算时消费一个 token 并返回回响加成伤害；墙面/挡板等非敌碰撞不消费。
+func _consume_echo_token(target: Node, packet: DamagePacket) -> int:
+	if _echo_pending_tokens <= 0:
 		return 0
-	var bonus := roundi(_get_stat_float("echo_bonus_damage", 2.0))
-	if bonus <= 0:
+	if target == null or not target.is_in_group("enemies"):
 		return 0
-	if _get_stat_float("echo_timeout", HEAD_ECHO_TIMEOUT) >= 15.0:
-		_head_echo_stacks = maxi(0, _head_echo_stacks - 1)
-		if _head_echo_stacks > 0 and _head_echo_timer != null and is_instance_valid(_head_echo_timer):
-			_head_echo_timer.start(_get_stat_float("echo_timeout", HEAD_ECHO_TIMEOUT))
-		_update_head_echo_visual()
-	else:
-		_clear_head_echo_stacks()
-	return bonus
+	_echo_pending_tokens -= 1
+	if packet != null:
+		packet.is_echo = true
+	return roundi(_get_stat_float("echo_bonus_damage", 2.0))
 
 
-func _ensure_head_echo_timer() -> void:
-	if _head_echo_timer != null and is_instance_valid(_head_echo_timer):
-		return
-	_head_echo_timer = Timer.new()
-	_head_echo_timer.one_shot = true
-	_head_echo_timer.timeout.connect(_clear_head_echo_stacks)
-	add_child(_head_echo_timer)
+# ---- 回响控制器绑定 ----
+
+## 将本链登记到 group 并绑定当前 TableBase 的 EchoFlipperChargeController。
+## 掉球重建链（新节点或同节点重建）都会重新调用，蓄力保留在控制器侧。
+func _bind_echo_charge_controller() -> void:
+	add_to_group(&"marble_chain")
+	var controller := _find_echo_charge_controller()
+	if controller != null:
+		controller.call("bind_chain", self)
 
 
-func _clear_head_echo_stacks() -> void:
-	_head_echo_stacks = 0
-	if _head_echo_timer != null and is_instance_valid(_head_echo_timer):
-		_head_echo_timer.stop()
-	_update_head_echo_visual()
+func _find_echo_charge_controller() -> Node:
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return null
+	for node: Node in tree.get_nodes_in_group(&"echo_charge_controller"):
+		if node == null or not is_instance_valid(node) or _is_doomed(node):
+			continue
+		if not node.has_method("bind_chain"):
+			continue
+		return node
+	return null
 
 
-func _update_head_echo_visual() -> void:
-	if head == null or not is_instance_valid(head):
-		return
-	var sprite: Sprite2D = head.get_node_or_null("Sprite2D") as Sprite2D
-	if sprite == null:
-		return
-	if head.marble_type != Marble.MARBLE_TYPE.BROWN:
-		sprite.modulate = Color.WHITE
-		return
-	var charge_ratio := float(_head_echo_stacks) / float(HEAD_MAX_ECHO_STACKS)
-	sprite.modulate = Color(1.0, 1.0 + charge_ratio * 0.25, 1.0 - charge_ratio * 0.2)
+## queue_free() 只标记根节点；子节点需向上检查祖先。返回自身或任一祖先已排入删除。
+static func _is_doomed(node: Node) -> bool:
+	var current: Node = node
+	while current != null:
+		if current.is_queued_for_deletion():
+			return true
+		current = current.get_parent()
+	return false
 
 
 # ---- 伤害聚合 ----
@@ -411,14 +418,14 @@ func get_total_damage(target: Node, packet: DamagePacket = null) -> int:
 	if head != null and is_instance_valid(head):
 		total += _head_contact_damage()
 		total += _apply_hit_effect(head.marble_type, target, packet)
-		total += _get_head_echo_damage()
 
 	for seg: ChainSegment in body:
 		if seg == null or not is_instance_valid(seg):
 			continue
 		total += _apply_hit_effect(seg.segment_type, target, packet)
 		total += _segment_contact_damage(seg)
-		total += seg.get_echo_damage()
+
+	total += _consume_echo_token(target, packet)
 
 	return total
 

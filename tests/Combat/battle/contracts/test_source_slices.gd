@@ -2,6 +2,7 @@ extends GutTest
 
 const EnemyScene: PackedScene = preload("res://Combat/battle/enemies/enemy.tscn")
 const KillZoneScript: GDScript = preload("res://Game/Bootstrap/kill_zone.gd")
+const FlipperScene: PackedScene = preload("res://Combat/battle/table/flipper/flipper.tscn")
 
 var _marble_bodies: Array[RigidBody2D] = []
 
@@ -129,6 +130,27 @@ func test_marble_chain_starts_without_a_legacy_bridge() -> void:
 	var chain := MarbleChain.new()
 	add_child_autofree(chain)
 	assert_eq(chain.chain_collision.get_connections().size(), 0)
+
+
+func test_real_flipper_body_classifies_as_flipper_not_wall() -> void:
+	# 真实 FlipperBody（AnimatableBody2D）必须属于 flipper group，否则链碰撞分类
+	# 会把挡板当成墙体（回响重构前的缺陷）。
+	var flipper: Node = FlipperScene.instantiate()
+	add_child_autofree(flipper)
+	var flipper_body := flipper.get_node_or_null("FlipperBody") as AnimatableBody2D
+	assert_not_null(flipper_body)
+	assert_true(flipper_body.is_in_group("flipper"), "FlipperBody 必须属于 flipper group")
+
+	var chain := MarbleChain.new()
+	add_child_autofree(chain)
+	var facts: Array[String] = []
+	chain.chain_collision.connect(func(_collider: Node, collision_type: String) -> void:
+		facts.append(collision_type)
+	)
+
+	chain._on_head_body_entered(flipper_body)
+
+	assert_eq(facts, ["flipper"], "真实挡板碰撞必须分类为 flipper")
 
 
 func _on_marble_fell(marble: RigidBody2D) -> void:

@@ -1,21 +1,31 @@
-[gd_scene format=3 uid="uid://cryddal4ywmf"]
+[gd_scene load_steps=6 format=3 uid="uid://cryddal4ywmf"]
 
 [ext_resource type="Texture2D" uid="uid://bdv4iahp3v2y5" path="res://Assets/Paddle/挡板.png" id="1_kfdq2"]
 [ext_resource type="Script" uid="uid://gc4ks25jmwe7" path="res://Combat/battle/table/flipper/flipper.gd" id="1_ld17q"]
+[ext_resource type="Shader" path="res://Combat/battle/table/flipper/echo_flipper_outline.gdshader" id="3_outline"]
 
 [sub_resource type="PhysicsMaterial" id="PhysicsMaterial_ld17q"]
 bounce = 0.8
 absorbent = true
 
+[sub_resource type="ShaderMaterial" id="ShaderMaterial_outline"]
+shader = ExtResource("3_outline")
+shader_parameter/yellow_clr = Color(1, 0.85, 0.2, 1)
+shader_parameter/red_clr = Color(1, 0.2, 0.1, 1)
+shader_parameter/yellow_progress = 0.0
+shader_parameter/red_progress = 0.0
+shader_parameter/thickness = 1.0
+
 [node name="Flipper" type="Node2D" unique_id=42033138]
 script = ExtResource("1_ld17q")
 
-[node name="FlipperBody" type="AnimatableBody2D" parent="." unique_id=1085806685]
+[node name="FlipperBody" type="AnimatableBody2D" parent="." groups=["flipper"] unique_id=1085806685]
 collision_layer = 4
 collision_mask = 2
 physics_material_override = SubResource("PhysicsMaterial_ld17q")
 
 [node name="Sprite2D" type="Sprite2D" parent="FlipperBody" unique_id=1654393451]
+material = SubResource("ShaderMaterial_outline")
 position = Vector2(16, 0)
 texture = ExtResource("1_kfdq2")
 

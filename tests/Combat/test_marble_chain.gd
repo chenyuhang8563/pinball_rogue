@@ -75,9 +75,30 @@ func test_elemental_head_applies_its_status_when_it_is_the_only_remaining_marble
 		assert_eq(enemy.received_buff_count, 1, "%d Head 命中敌人时应施加状态" % marble_type)
 
 
-func test_brown_head_builds_echo_damage_when_it_is_the_only_remaining_marble() -> void:
-	# 问题来源：卖出黑色弹珠后，棕色弹珠成为 Head 会丢失原本只存于 Body 的回声层数。
-	# 修复方式与边界：Head 也应保存回声状态；仅剩棕色弹珠时，三次非敌碰撞后必须获得回声增伤。
+func test_armed_echo_token_adds_damage_and_flags_packet_on_enemy_hit() -> void:
+	# 回响弹珠重构：伤害 token 由挡板消费蓄力后武装（arm_echo_damage），
+	# 敌人命中消费一个 token 并标记 is_echo；非敌目标不消费。
+	var chain: MarbleChain = MarbleChainScript.new()
+	var enemy := DamageableEnemy.new()
+	var brown := _marble("only_brown", Marble.MARBLE_TYPE.BROWN)
+	brown.marble_segment_damage = 5
+	add_child_autofree(chain)
+	add_child_autofree(enemy)
+	chain.build_chain([brown], [Vector2(56, 96)])
+	enemy.add_to_group("enemies")
+	var packet := DamagePacket.new(&"marble_head", 0.0)
+
+	chain.arm_echo_damage(1)
+	var total := chain.get_total_damage(enemy, packet)
+
+	assert_true(packet.is_echo, "消费 token 的命中必须标记 is_echo")
+	assert_eq(total, 7, "token 追加 echo_bonus_damage（默认 2），5 + 2 = 7")
+	assert_eq(chain.get_echo_pending_tokens(), 0, "token 消费后清零")
+	assert_eq(chain.get_total_damage(enemy), 5, "无 token 时不再追加")
+
+
+func test_echo_token_is_not_consumed_by_non_enemy_target() -> void:
+	# 墙面/挡板等非敌碰撞不消费待结算 token。
 	var chain: MarbleChain = MarbleChainScript.new()
 	var wall := StaticBody2D.new()
 	var brown := _marble("only_brown", Marble.MARBLE_TYPE.BROWN)
@@ -86,13 +107,29 @@ func test_brown_head_builds_echo_damage_when_it_is_the_only_remaining_marble() -
 	add_child_autofree(wall)
 	chain.build_chain([brown], [Vector2(56, 96)])
 
-	for _index: int in range(3):
-		chain.call("_on_head_body_entered", wall)
+	chain.arm_echo_damage(1)
+	var total := chain.get_total_damage(wall)
 
-	assert_true(
-		chain.get_total_damage(wall) > chain.head.damage,
-		"唯一的棕色 Head 蓄满回声后应增加一次命中伤害"
-	)
+	assert_eq(total, 5, "非敌目标不消费 token 也不追加伤害")
+	assert_eq(chain.get_echo_pending_tokens(), 1, "token 保留")
+
+
+func test_has_brown_marble_reflects_head_and_body() -> void:
+	# BROWN 门控：回响蓄力仅在链中存在 BROWN（大地）弹珠时激活。
+	var chain: MarbleChain = MarbleChainScript.new()
+	add_child_autofree(chain)
+
+	chain.build_chain([_marble("dark", Marble.MARBLE_TYPE.DEFAULT)], [Vector2(56, 96)])
+	assert_false(chain.has_brown_marble(), "无 BROWN 时机制不激活")
+
+	chain.build_chain([_marble("brown_head", Marble.MARBLE_TYPE.BROWN)], [Vector2(56, 96)])
+	assert_true(chain.has_brown_marble(), "BROWN 作为 Head 时激活")
+
+	chain.build_chain([
+		_marble("dark_head", Marble.MARBLE_TYPE.DEFAULT),
+		_marble("brown_body", Marble.MARBLE_TYPE.BROWN),
+	], [Vector2(56, 96), Vector2(56, 72)])
+	assert_true(chain.has_brown_marble(), "BROWN 在 Body 段时同样激活")
 
 
 func test_assassin_head_uses_assassin_damage_stat_when_it_is_the_only_remaining_marble() -> void:

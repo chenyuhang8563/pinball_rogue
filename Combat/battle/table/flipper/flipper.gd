@@ -1,5 +1,9 @@
 extends Node2D
 
+## 挡板成功执行主动冲量后发出的"事实"信号。参数为被弹起的弹珠与已施加的冲量向量。
+## EchoFlipperChargeController 据此消费共享蓄力、追加速度并武装回响伤害。
+signal marble_launched(marble: Marble, applied_impulse: Vector2)
+
 @export var keycode = "ui_left"
 
 @export var snap_angle = 90
@@ -19,6 +23,9 @@ var _motion_target_angle := 0.0
 var _motion_elapsed := 0.0
 var _motion_duration := 0.0
 var _angular_velocity := 0.0
+## AnimatableBody2D 的 transform 与物理服务器同步，设置 rotation_degrees 后立即
+## 读回会拿到上一物理步的值（滞后）。角速度改用本帧计算角度与缓存上帧角度差。
+var _last_rotation_degrees := 0.0
 var _hit_cooldowns: Dictionary = {}
 
 func _physics_process(delta: float) -> void:
@@ -40,20 +47,21 @@ func _step_rotation_toward(target_angle: float, degrees_per_second: float, delta
 		_begin_motion(target_angle, degrees_per_second)
 
 	if _motion_duration <= 0.0:
-		var instant_previous_rotation := flipper_body.rotation
 		flipper_body.rotation_degrees = target_angle
-		_update_angular_velocity(instant_previous_rotation, flipper_body.rotation, delta)
+		_update_angular_velocity(_last_rotation_degrees, target_angle, delta)
+		_last_rotation_degrees = target_angle
 		return
 
-	var previous_rotation := flipper_body.rotation
 	_motion_elapsed = minf(_motion_elapsed + delta, _motion_duration)
 	var progress := _motion_elapsed / _motion_duration
-	flipper_body.rotation_degrees = _get_eased_rotation(_motion_start_angle, target_angle, progress, easing_strength)
-	_update_angular_velocity(previous_rotation, flipper_body.rotation, delta)
+	var eased_degrees := _get_eased_rotation(_motion_start_angle, target_angle, progress, easing_strength)
+	flipper_body.rotation_degrees = eased_degrees
+	_update_angular_velocity(_last_rotation_degrees, eased_degrees, delta)
+	_last_rotation_degrees = eased_degrees
 
 
 func _begin_motion(target_angle: float, degrees_per_second: float) -> void:
-	_motion_start_angle = flipper_body.rotation_degrees
+	_motion_start_angle = _last_rotation_degrees
 	_motion_target_angle = target_angle
 	_motion_elapsed = 0.0
 
@@ -110,7 +118,19 @@ func _apply_swing_impulse(marble: Marble) -> void:
 
 	marble.set_sleeping(false)
 	marble.apply_central_impulse(tangent * impulse_strength)
+	marble_launched.emit(marble, tangent * impulse_strength)
 	_hit_cooldowns[marble.get_instance_id()] = hit_cooldown
+
+
+## 由 EchoFlipperChargeController.charge_changed 信号驱动。蓄力为连续进度
+## （0..2.0）：黄色轮廓从一端增长包裹满，随后红色轮廓增长；只写 shader 进度
+## 参数，不改节点视觉属性（颜色/可见性/位置/尺寸均由 .tscn 材质定义）。
+func set_echo_charge(progress: float) -> void:
+	var sprite := flipper_body.get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null or sprite.material == null:
+		return
+	sprite.material.set_shader_parameter("yellow_progress", clampf(progress, 0.0, 1.0))
+	sprite.material.set_shader_parameter("red_progress", clampf(progress - 1.0, 0.0, 1.0))
 
 
 func _tick_hit_cooldowns(delta: float) -> void:
