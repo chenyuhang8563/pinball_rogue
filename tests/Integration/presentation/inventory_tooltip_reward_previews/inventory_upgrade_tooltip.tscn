@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://cl3dyxeg76sfn"]
+
+[ext_resource type="Script" path="res://tests/Integration/presentation/inventory_tooltip_reward_previews/inventory_tooltip_preview.gd" id="1_t6g4n"]
+[ext_resource type="PackedScene" uid="uid://dgob675lfpkcv" path="res://Loadout/presentation/inventory_panel.tscn" id="2_p3bbn"]
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="3_s4fhs"]
+[ext_resource type="Script" uid="uid://bjfai71a1nsp2" path="res://Loadout/presentation/inventory_panel.gd" id="4_igujo"]
+
+[node name="InventoryTooltipPreview" type="Node" unique_id=1030559290]
+process_mode = 3
+script = ExtResource("1_t6g4n")
+preview_kind = 1
+locale_code = "en"
+
+[node name="InventoryPanel" type="Control" parent="." unique_id=600384015 node_paths=PackedStringArray("marble_box_container", "relic_bar_container", "skill_bar_container") instance=ExtResource("2_p3bbn")]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+layout_direction = 1
+theme = ExtResource("3_s4fhs")
+script = ExtResource("4_igujo")
+marble_box_container = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/MarbleBox")
+relic_bar_container = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/RelicBar")
+skill_bar_container = NodePath("UI/Panel/MarginContainer/Layout/Content/SkillBar")

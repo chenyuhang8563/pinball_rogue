@@ -68,6 +68,36 @@ func test_shop_slot_signal_delegates_stable_offer_once_and_sale_resyncs_presenta
 	assert_eq(shop_container.get_child_count(), 0)
 
 
+func test_shop_bottom_inventory_forwards_level_and_clears_shared_tooltip_slot() -> void:
+	var scope := _scope(100, 20)
+	var loadout: RefCounted = scope.get("loadout") as RefCounted
+	var progression: RefCounted = scope.get("progression") as RefCounted
+	var wallet: RefCounted = scope.get("wallet") as RefCounted
+	var marble: Item = (load("res://Content/data/bomb_marble.tres") as Item).duplicate(true) as Item
+	assert_true(loadout.call("add", marble))
+	assert_true(progression.call("upgrade_one", marble))
+	assert_true(progression.call("upgrade_one", marble))
+
+	var shop_scene := load("res://Commerce/presentation/normal_shop/shop.tscn") as PackedScene
+	var shop := autofree(shop_scene.instantiate()) as Control
+	assert_true(shop.call("configure", loadout, progression, wallet))
+	add_child(shop)
+	var container := shop.get("marble_box_container") as HBoxContainer
+	var slot := container.get_child(0)
+	assert_true(slot.has_method("set_item_tooltip"))
+	assert_eq(int(slot.get("_level")), 3)
+	var tooltip := slot.call("_make_custom_tooltip", "") as ItemTooltip
+	assert_not_null(tooltip)
+	if tooltip != null:
+		tooltip.free()
+
+	shop.call("_update_collection_icons", container, [])
+	assert_null(slot.get("_item"))
+	assert_eq(int(slot.get("_level")), 0)
+	assert_null(slot.call("_make_custom_tooltip", ""))
+	assert_null((slot.get_node("Icon") as ItemIconView).get_texture())
+
+
 func test_selling_item_does_not_refresh_shop_offers() -> void:
 	var scope := _scope(100, 20)
 	var loadout: RefCounted = scope.get("loadout") as RefCounted

@@ -46,8 +46,8 @@ func set_item(item: Item, level: int = 1) -> void:
 		set_text("")
 		return
 	set_text(
-		_translated_item_text(item, "TITLE", item.title),
-		_translated_level_description(item, clampi(level, 1, 4))
+		item_title(item),
+		level_description(item, level)
 	)
 
 
@@ -55,7 +55,7 @@ func set_text(title: String, description: String = "") -> void:
 	_bind_nodes()
 	if _title_label != null:
 		_title_label.text = title
-	_set_rtl_text(_description_label, _format_description(description))
+	_set_rtl_text(_description_label, format_description_bbcode(description))
 	_populate_term_card(description)
 	_apply_fit_heights()
 
@@ -69,23 +69,36 @@ func _bind_nodes() -> void:
 	_term_card_player = get_node_or_null("VisibilityPlayer") as AnimationPlayer
 
 
-func _translated_level_description(item: Item, level: int) -> String:
+static func item_title(item: Item) -> String:
+	if item == null:
+		return ""
+	return _translated_item_text(item, "TITLE", item.title)
+
+
+static func level_description(item: Item, level: int) -> String:
+	if item == null:
+		return ""
 	if item.id.is_empty():
-		return tr(item.description)
-	var key := "ITEM_%s_DESC_LV%d" % [item.id.to_upper(), level]
-	var translated := tr(key)
+		return TranslationServer.translate(item.description)
+	var safe_level := clampi(level, 1, 4)
+	var key := "ITEM_%s_DESC_LV%d" % [item.id.to_upper(), safe_level]
+	var translated := TranslationServer.translate(key)
 	return translated if translated != key else _translated_item_text(item, "DESC", item.description)
 
 
-func _translated_item_text(item: Item, suffix: String, fallback: String) -> String:
+static func description_bbcode(item: Item, level: int) -> String:
+	return format_description_bbcode(level_description(item, level))
+
+
+static func _translated_item_text(item: Item, suffix: String, fallback: String) -> String:
 	if item.id.is_empty():
-		return tr(fallback)
+		return TranslationServer.translate(fallback)
 	var key := "ITEM_%s_%s" % [item.id.to_upper(), suffix]
-	var translated := tr(key)
-	return translated if translated != key else tr(fallback)
+	var translated := TranslationServer.translate(key)
+	return translated if translated != key else TranslationServer.translate(fallback)
 
 
-func _format_description(value: String) -> String:
+static func format_description_bbcode(value: String) -> String:
 	var formatted := value
 	for damage_type: String in DAMAGE_COLORS:
 		formatted = formatted.replace("[damage_%s]" % damage_type, "[color=%s]" % DAMAGE_COLORS[damage_type])
@@ -127,7 +140,7 @@ func _set_term_card_visible(should_show: bool) -> void:
 	_term_card_player.advance(0.0)
 
 
-func _term_ids_in(description: String) -> Array[String]:
+static func _term_ids_in(description: String) -> Array[String]:
 	var result: Array[String] = []
 	for term_id: String in TERM_REPLACEMENT_ORDER:
 		for term: String in TERM_DATA[term_id]:

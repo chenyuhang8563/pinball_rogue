@@ -7,13 +7,16 @@ enum Kind {
 }
 
 enum Resolution {
-	CREDIT_GOLD,
-	ADD_ITEM,
-	UPGRADE_RELIC,
-	COMPENSATE,
-	REPLACE_SKILL,
-	REPLACE_RELIC,
+	CREDIT_GOLD = 0,
+	ADD_ITEM = 1,
+	UPGRADE_ITEM = 2,
+	COMPENSATE = 3,
+	REPLACE_SKILL = 4,
+	REPLACE_RELIC = 5,
 }
+
+const MIN_ITEM_LEVEL: int = 1
+const MAX_ITEM_LEVEL: int = 4
 
 var offer_id: StringName:
 	get:
@@ -57,6 +60,12 @@ var expected_owned_identity: String:
 var expected_level: int:
 	get:
 		return _expected_level
+var target_level: int:
+	get:
+		return _target_level
+var is_upgrade: bool:
+	get:
+		return _is_upgrade
 
 var _offer_id: StringName = &""
 var _kind: Kind = Kind.GOLD
@@ -72,6 +81,8 @@ var _wallet_revision: int = 0
 var _expected_owned_instance_id: int = 0
 var _expected_owned_identity: String = ""
 var _expected_level: int = 0
+var _target_level: int = 0
+var _is_upgrade: bool = false
 
 
 func _init(
@@ -124,6 +135,17 @@ func _configure_settlement(
 	_expected_owned_instance_id = value_owned_instance_id
 	_expected_owned_identity = value_owned_identity
 	_expected_level = value_expected_level
+	_is_upgrade = _kind == Kind.ITEM and _resolution == Resolution.UPGRADE_ITEM
+	if _is_upgrade:
+		_target_level = clampi(_expected_level + 1, MIN_ITEM_LEVEL, MAX_ITEM_LEVEL)
+	elif _kind == Kind.ITEM and _resolution in [
+		Resolution.ADD_ITEM,
+		Resolution.REPLACE_SKILL,
+		Resolution.REPLACE_RELIC,
+	]:
+		_target_level = MIN_ITEM_LEVEL
+	else:
+		_target_level = 0
 
 
 func _refresh_revisions(

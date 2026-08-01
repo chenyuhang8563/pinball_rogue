@@ -24,6 +24,29 @@ class DeterministicRandom extends RunRandomSource:
 		return best_index
 
 
+class FakeContentRegistry extends Node:
+	var _items: Array[Item] = []
+
+	func _init(items: Array) -> void:
+		for value: Variant in items:
+			var item := value as Item
+			if item != null:
+				_items.append(item)
+
+	func query(type: Item.ItemType) -> Array[Item]:
+		var result: Array[Item] = []
+		for item: Item in _items:
+			if item.type == type:
+				result.append(item)
+		return result
+
+	func by_id(item_id: StringName) -> Item:
+		for item: Item in _items:
+			if StringName(item.id) == item_id:
+				return item
+		return null
+
+
 class FailingWallet extends RefCounted:
 	var amount: int = 0
 	var restore_should_fail: bool = false
@@ -59,7 +82,7 @@ func before_each() -> void:
 	_random = DeterministicRandom.new()
 
 
-func test_node_draft_is_three_stable_identity_offers_and_filters_owned_or_full_items() -> void:
+func test_node_draft_includes_upgradable_owned_items_with_stable_identities() -> void:
 	var loadout: RefCounted = LoadoutScript.new(Callable(self, "_node_capacity"))
 	var progression: RefCounted = ProgressionScript.new(loadout)
 	var wallet: RefCounted = WalletScript.new()
@@ -84,9 +107,11 @@ func test_node_draft_is_three_stable_identity_offers_and_filters_owned_or_full_i
 		assert_ne(option.offer_id, &"")
 		assert_false(identities.has(option.item_identity))
 		identities.append(option.item_identity)
-	assert_false(identities.any(func(value: String) -> bool: return value.contains("marble:0")))
+	assert_true(identities.any(func(value: String) -> bool: return value.contains("marble:0")))
 	assert_true(identities.any(func(value: String) -> bool: return value.contains("blocked-relic")))
-	assert_eq(_item_offer(draft).resolution, RewardOption.Resolution.REPLACE_RELIC)
+	assert_eq(_item_offer(draft).resolution, RewardOption.Resolution.UPGRADE_ITEM)
+	assert_eq(_item_offer(draft).target_level, 2)
+	assert_true(_item_offer(draft).is_upgrade)
 
 
 func test_node_draft_falls_back_to_compensation_when_every_candidate_is_ineligible() -> void:
@@ -133,6 +158,8 @@ func test_normal_draft_builds_fixed_gold_and_three_unique_marble_choices() -> vo
 	for option: RewardOption in draft.options():
 		if option.kind == RewardOption.Kind.ITEM:
 			assert_eq(option.item.type, Item.ItemType.MARBLE)
+			assert_eq(option.target_level, 1)
+			assert_false(option.is_upgrade)
 			assert_false(marble_ids.has(option.item.id))
 			marble_ids.append(option.item.id)
 	assert_eq(marble_ids.size(), 3)
@@ -161,6 +188,107 @@ func test_normal_draft_always_includes_gold_even_when_item_weights_are_higher() 
 	assert_not_null(_item_offer(draft), "normal rewards retain one item choice")
 
 
+func test_normal_draft_upgrades_duplicate_marble_without_adding_quantity() -> void:
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout)
+	var wallet: RefCounted = WalletScript.new()
+	var owned := _item("owned-brown", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BROWN)
+	var duplicate := _item("reward-brown", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BROWN)
+	var green := _item("green", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.GREEN)
+	assert_true(loadout.call("add", owned))
+	var service: RefCounted = _service(loadout, progression, wallet)
+
+	var draft: RewardOffer = service.create_normal_draft(
+		_token, &"normal-duplicate-marble", [duplicate, green]
+	)
+	var upgrade_offer := _marble_offer(draft, Marble.MARBLE_TYPE.BROWN)
+	var new_offer := _marble_offer(draft, Marble.MARBLE_TYPE.GREEN)
+	assert_not_null(upgrade_offer)
+	assert_not_null(new_offer)
+	if upgrade_offer == null or new_offer == null:
+		return
+	assert_eq(upgrade_offer.resolution, RewardOption.Resolution.UPGRADE_ITEM)
+	assert_eq(upgrade_offer.expected_owned_instance_id, int(owned.get_instance_id()))
+	assert_eq(upgrade_offer.expected_owned_identity, upgrade_offer.item_identity)
+	assert_eq(upgrade_offer.expected_level, 1)
+	assert_eq(upgrade_offer.target_level, 2)
+	assert_true(upgrade_offer.is_upgrade)
+	assert_eq(new_offer.target_level, 1)
+	assert_false(new_offer.is_upgrade)
+
+	var marble_count := (loadout.call("marbles") as Array).size()
+	var result: RewardResult = service.claim(_token, draft.draft_id, upgrade_offer.offer_id)
+	assert_true(result.was_granted(), result.detail)
+	assert_eq(progression.call("level_of", owned), 2)
+	assert_eq((loadout.call("marbles") as Array).size(), marble_count)
+	assert_eq(loadout.call("find_owned", duplicate), owned)
+
+
+func test_normal_draft_filters_full_level_duplicate_marble() -> void:
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout)
+	var wallet: RefCounted = WalletScript.new()
+	var owned := _item("owned-brown", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BROWN)
+	var duplicate := _item("reward-brown", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BROWN)
+	var green := _item("green", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.GREEN)
+	assert_true(loadout.call("add", owned))
+	for _upgrade: int in range(3):
+		assert_true(progression.call("upgrade_one", owned))
+	var service: RefCounted = _service(loadout, progression, wallet)
+
+	var draft: RewardOffer = service.create_normal_draft(
+		_token, &"normal-full-marble", [duplicate, green]
+	)
+	assert_null(_marble_offer(draft, Marble.MARBLE_TYPE.BROWN))
+	var new_offer := _marble_offer(draft, Marble.MARBLE_TYPE.GREEN)
+	assert_not_null(new_offer)
+	if new_offer != null:
+		assert_eq(new_offer.target_level, 1)
+		assert_false(new_offer.is_upgrade)
+
+
+func test_elite_duplicate_marble_restores_upgrade_target_and_filters_full_level() -> void:
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout)
+	var wallet: RefCounted = WalletScript.new()
+	var owned := _item("owned-brown", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BROWN)
+	var duplicate := _item("reward-brown", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BROWN)
+	var green := _item("green", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.GREEN)
+	var relic := _item("elite-relic", Item.ItemType.RELIC)
+	assert_true(loadout.call("add", owned))
+	var registry := add_child_autofree(FakeContentRegistry.new([duplicate, green, relic])) as Node
+	var service: RefCounted = _service(loadout, progression, wallet, registry)
+	var draft: RewardOffer = service.create_elite_draft(_token, &"elite-duplicate", [relic])
+	var snapshot: Dictionary = service.call("snapshot_active")
+	assert_true(service.call("clear_active"))
+
+	service = _service(loadout, progression, wallet, registry)
+	var restored: RewardOffer = service.call("restore_active", _token, snapshot, registry)
+	assert_not_null(restored)
+	if restored == null:
+		return
+	var upgrade_offer := _marble_offer(restored, Marble.MARBLE_TYPE.BROWN)
+	assert_not_null(upgrade_offer)
+	if upgrade_offer == null:
+		return
+	assert_eq(upgrade_offer.resolution, RewardOption.Resolution.UPGRADE_ITEM)
+	assert_eq(upgrade_offer.expected_owned_instance_id, int(owned.get_instance_id()))
+	assert_eq(upgrade_offer.target_level, 2)
+	assert_true(upgrade_offer.is_upgrade)
+	var marble_count := (loadout.call("marbles") as Array).size()
+	var result: RewardResult = service.claim(_token, restored.draft_id, upgrade_offer.offer_id)
+	assert_true(result.was_granted(), result.detail)
+	assert_eq(progression.call("level_of", owned), 2)
+	assert_eq((loadout.call("marbles") as Array).size(), marble_count)
+
+	assert_true(service.call("clear_active"))
+	for _upgrade: int in range(2):
+		assert_true(progression.call("upgrade_one", owned))
+	var full_draft: RewardOffer = service.create_elite_draft(_token, &"elite-full-marble", [relic])
+	assert_null(_marble_offer(full_draft, Marble.MARBLE_TYPE.BROWN))
+	assert_not_null(_marble_offer(full_draft, Marble.MARBLE_TYPE.GREEN))
+
+
 func test_duplicate_relic_upgrades_owned_instance_then_full_level_compensates() -> void:
 	var loadout: RefCounted = LoadoutScript.new()
 	var progression: RefCounted = ProgressionScript.new(loadout)
@@ -173,7 +301,9 @@ func test_duplicate_relic_upgrades_owned_instance_then_full_level_compensates() 
 	for expected_level: int in [2, 3, 4]:
 		var draft: RewardOffer = service.create_elite_draft(_token, &"elite", [candidate])
 		var item_offer := _relic_offer(draft)
-		assert_eq(item_offer.resolution, RewardOption.Resolution.UPGRADE_RELIC)
+		assert_eq(item_offer.resolution, RewardOption.Resolution.UPGRADE_ITEM)
+		assert_eq(item_offer.target_level, expected_level)
+		assert_true(item_offer.is_upgrade)
 		var result: RewardResult = service.claim(_token, draft.draft_id, item_offer.offer_id)
 		assert_true(result.was_granted())
 		assert_eq(progression.call("level_of", owned), expected_level)
@@ -184,6 +314,8 @@ func test_duplicate_relic_upgrades_owned_instance_then_full_level_compensates() 
 	var full_draft: RewardOffer = service.create_elite_draft(_token, &"elite-full", [candidate])
 	var compensation := _relic_offer(full_draft)
 	assert_eq(compensation.resolution, RewardOption.Resolution.COMPENSATE)
+	assert_eq(compensation.target_level, 0)
+	assert_false(compensation.is_upgrade)
 	assert_eq(loadout.call("find_owned", compensation.item), owned)
 	assert_eq(compensation.item_identity, "type:%d:id:growth-relic" % Item.ItemType.RELIC)
 	assert_eq(compensation.expected_owned_instance_id, int(owned.get_instance_id()))
@@ -391,9 +523,16 @@ func test_changed_signal_synchronous_reentry_is_guarded_before_double_settlement
 	assert_eq(wallet.call("balance"), gold.gold_amount)
 
 
-func _service(loadout: Variant, progression: Variant, wallet: Variant) -> RefCounted:
+func _service(
+	loadout: Variant,
+	progression: Variant,
+	wallet: Variant,
+	content_registry: Node = null
+) -> RefCounted:
 	var service: RefCounted = RewardServiceScript.new()
-	assert_true(service.configure(loadout, progression, wallet, _config, _random))
+	assert_true(service.configure(
+		loadout, progression, wallet, _config, _random, content_registry
+	))
 	return service
 
 
@@ -420,6 +559,20 @@ func _relic_offer(draft: RewardOffer) -> RewardOption:
 	for option: RewardOption in draft.options():
 		if option.kind == RewardOption.Kind.ITEM and option.item != null \
 				and option.item.type == Item.ItemType.RELIC:
+			return option
+	return null
+
+
+func _marble_offer(
+	draft: RewardOffer,
+	marble_type: Marble.MARBLE_TYPE
+) -> RewardOption:
+	if draft == null:
+		return null
+	for option: RewardOption in draft.options():
+		if option.kind == RewardOption.Kind.ITEM and option.item != null \
+				and option.item.type == Item.ItemType.MARBLE \
+				and option.item.marble_type == marble_type:
 			return option
 	return null
 

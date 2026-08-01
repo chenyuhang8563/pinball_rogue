@@ -1,0 +1,33 @@
+[gd_scene format=3 uid="uid://buiw1smdynwso"]
+
+[ext_resource type="Script" path="res://tests/Integration/presentation/inventory_tooltip_reward_previews/inventory_tooltip_preview.gd" id="1_sqy1n"]
+[ext_resource type="PackedScene" uid="uid://fjioorpo70mx" path="res://Commerce/presentation/normal_shop/shop.tscn" id="2_u7g32"]
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="3_6mms7"]
+[ext_resource type="Script" uid="uid://buhl2nbgd233p" path="res://Commerce/presentation/normal_shop/shop.gd" id="4_hkfuu"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="5_lbp5m"]
+[ext_resource type="Resource" uid="uid://y6hstamuojv7" path="res://Content/data/lightning.tres" id="6_ks136"]
+[ext_resource type="Resource" uid="uid://bncjg26lqnokw" path="res://Content/data/bomb_marble.tres" id="7_doct0"]
+[ext_resource type="Resource" uid="uid://q7t1651xon8y" path="res://Content/data/brown_marble.tres" id="8_ogpmw"]
+[ext_resource type="Resource" uid="uid://c2jbto0wkkqhs" path="res://Content/data/green_marble.tres" id="9_52w2q"]
+[ext_resource type="Resource" uid="uid://c100pjp7ilvk2" path="res://Content/data/blue_marble.tres" id="10_0auks"]
+[ext_resource type="Resource" path="res://Content/data/magic_missile_skill.tres" id="11_projn"]
+[ext_resource type="Resource" uid="uid://djc10yo52gqep" path="res://Content/data/fire_marble.tres" id="12_ovsq2"]
+[ext_resource type="Resource" uid="uid://gnhhl1ufmvmr" path="res://Content/data/fire_bellows.tres" id="13_tfvym"]
+[ext_resource type="Resource" uid="uid://bbr7jeko8e7qe" path="res://Content/data/poison_culture.tres" id="14_y3k76"]
+[ext_resource type="Resource" uid="uid://bo4qentxbit4m" path="res://Content/data/ice_hammer.tres" id="15_fm2d5"]
+
+[node name="InventoryTooltipPreview" type="Node" unique_id=269968800]
+process_mode = 3
+script = ExtResource("1_sqy1n")
+preview_kind = 2
+
+[node name="Shop" type="Control" parent="." unique_id=395620655 node_paths=PackedStringArray("shop_container", "marble_box_container", "relic_bar_container") instance=ExtResource("2_u7g32")]
+process_mode = 3
+layout_mode = 3
+anchors_preset = 0
+theme = ExtResource("3_6mms7")
+script = ExtResource("4_hkfuu")
+shop_item_pool = Array[ExtResource("5_lbp5m")]([ExtResource("6_ks136"), ExtResource("7_doct0"), ExtResource("8_ogpmw"), ExtResource("9_52w2q"), ExtResource("10_0auks"), ExtResource("11_projn"), ExtResource("12_ovsq2"), ExtResource("13_tfvym"), ExtResource("14_y3k76"), ExtResource("15_fm2d5")])
+shop_container = NodePath("UI/Panel/ScrollContainer/ShopInventory")
+marble_box_container = NodePath("UI/Panel/CollectionRows/MarbleBox")
+relic_bar_container = NodePath("UI/Panel/CollectionRows/RelicBar")

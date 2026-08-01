@@ -107,11 +107,48 @@ func test_reward_and_inventory_tooltip_hosts_keep_the_requested_level() -> void:
 	inventory_slot.free()
 
 
-func test_upgrade_reward_uses_next_level_and_new_reward_uses_level_one() -> void:
+func test_reward_relic_row_uses_settlement_target_level_and_clears_tooltip() -> void:
+	var scene_source := FileAccess.get_file_as_string("res://Run/presentation/draft_reward_panel.tscn")
+	assert_string_contains(scene_source, "res://Run/presentation/reward_tooltip_button.gd")
+	var relic_section := scene_source.get_slice("[node name=\"RelicRewardButton\"", 1)
+	assert_string_contains(relic_section.get_slice("[node", 0), "script = ExtResource")
+
 	var panel: DraftRewardPanel = DraftRewardPanelScript.new() as DraftRewardPanel
-	var new_reward: RewardOption = RewardOptionScript.item_reward(&"new", Item.new()) as RewardOption
-	assert_eq(panel.call("_tooltip_level_for_option", new_reward), 1)
-	var upgrade: RewardOption = RewardOptionScript.item_reward(&"upgrade", Item.new()) as RewardOption
-	upgrade.call("_configure_settlement", "", RewardOption.Resolution.UPGRADE_RELIC, 0, 0, 0, 0, 0, "", 2)
-	assert_eq(panel.call("_tooltip_level_for_option", upgrade), 3)
+	var button: RewardTooltipButton = RewardTooltipButtonScript.new() as RewardTooltipButton
+	var relic := Item.new()
+	relic.id = "fire_bellows"
+	var option: RewardOption = RewardOptionScript.item_reward(&"relic-upgrade", relic) as RewardOption
+	option.call(
+		"_configure_settlement", "", RewardOption.Resolution.UPGRADE_ITEM, 0, 0, 0, 0, 0, "", 2
+	)
+	panel.call("_configure_reward_row", button, option, null, "Fire Bellows")
+	assert_eq(button.get("_item") as Item, relic)
+	assert_eq(int(button.get("_level")), option.target_level)
+	var tooltip := button.call("_make_custom_tooltip", "") as ItemTooltip
+	assert_not_null(tooltip)
+	if tooltip != null:
+		var description := tooltip.get_node(
+			"MainPanel/TooltipMargin/TooltipLayout/DescriptionLabel"
+		) as RichTextLabel
+		assert_eq(description.text, ItemTooltip.description_bbcode(relic, option.target_level))
+		tooltip.free()
+	panel.call("_configure_reward_row", button, null, null, "")
+	assert_null(button.get("_item"))
+	assert_null(button.call("_make_custom_tooltip", ""))
+	button.free()
 	panel.free()
+
+
+func test_reward_settlement_exposes_target_level_instead_of_ui_guessing() -> void:
+	var new_reward: RewardOption = RewardOptionScript.item_reward(&"new", Item.new()) as RewardOption
+	new_reward.call(
+		"_configure_settlement", "", RewardOption.Resolution.ADD_ITEM, 0, 0, 0, 0, 0, "", 0
+	)
+	assert_eq(new_reward.target_level, 1)
+	assert_false(new_reward.is_upgrade)
+	var upgrade: RewardOption = RewardOptionScript.item_reward(&"upgrade", Item.new()) as RewardOption
+	upgrade.call(
+		"_configure_settlement", "", RewardOption.Resolution.UPGRADE_ITEM, 0, 0, 0, 0, 0, "", 2
+	)
+	assert_eq(upgrade.target_level, 3)
+	assert_true(upgrade.is_upgrade)

@@ -548,13 +548,18 @@ func _update_collection_icons(container: HBoxContainer, collection_items: Array)
 			continue
 		if slot.has_meta("item"):
 			slot.remove_meta("item")
+		if slot.has_method("set_item_tooltip"):
+			slot.call("set_item_tooltip", null, 0)
 		_clear_icon_view(icon_view)
 		if index < collection_items.size():
 			var item: Item = collection_items[index] as Item
 			if item != null:
+				var level := _get_presentation_item_level(item)
 				slot.set_meta("item", item)
+				if slot.has_method("set_item_tooltip"):
+					slot.call("set_item_tooltip", item, level)
 				_set_icon_view_texture(icon_view, item.icon)
-				_set_icon_view_level(icon_view, _get_presentation_item_level(item))
+				_set_icon_view_level(icon_view, level)
 
 
 func _get_presentation_item_level(item: Item) -> int:

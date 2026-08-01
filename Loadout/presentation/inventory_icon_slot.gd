@@ -7,9 +7,9 @@ var _item: Item = null
 var _level: int = 1
 
 
-func set_item_tooltip(item: Item, level: int) -> void:
+func set_item_tooltip(item: Item, level: int = 1) -> void:
 	_item = item
-	_level = maxi(1, level)
+	_level = clampi(level, 1, 4) if item != null else 0
 
 
 func _make_custom_tooltip(_for_text: String) -> Control:

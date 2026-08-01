@@ -14,16 +14,22 @@
 [ext_resource type="Resource" uid="uid://c100pjp7ilvk2" path="res://Content/data/blue_marble.tres" id="9_blue"]
 [ext_resource type="Resource" uid="uid://gnhhl1ufmvmr" path="res://Content/data/fire_bellows.tres" id="10_b5trs"]
 [ext_resource type="Resource" uid="uid://bbr7jeko8e7qe" path="res://Content/data/poison_culture.tres" id="11_16e15"]
-[ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/shared/item_icon_view.tscn" id="11_eu4ty"]
 [ext_resource type="Resource" uid="uid://bo4qentxbit4m" path="res://Content/data/ice_hammer.tres" id="12_6qmg5"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://Loadout/presentation/skill_replace_dialog.tscn" id="13_b5trs"]
 [ext_resource type="FontVariation" uid="uid://bdw1vnmpmotmx" path="res://Themes/Fonts/quaver_fusion_12.tres" id="15_16e15"]
-[ext_resource type="StyleBox" uid="uid://bxbadmo7oui7u" path="res://Themes/black_panel.tres" id="17_6qmg5"]
-[ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/shared/item_icon_view.gd" id="19_m6wq7"]
-[ext_resource type="Script" uid="uid://dyflbtf0gphq1" path="res://Loadout/presentation/skill_replace_dialog.gd" id="21_6dpvd"]
+[ext_resource type="PackedScene" uid="uid://cumjmyy6homsj" path="res://Loadout/presentation/inventory_icon_slot.tscn" id="17_p5iek"]
+[ext_resource type="Script" uid="uid://cg481ei3ht6nr" path="res://Loadout/presentation/inventory_icon_slot.gd" id="18_ur5fy"]
 [ext_resource type="Texture2D" uid="uid://dmbp7c0eawt0a" path="res://Assets/UI/normal_shop_refresh.png" id="21_mce8x"]
 [ext_resource type="Theme" uid="uid://dmoevauujrn3r" path="res://Themes/normal_shop_refresh_button.tres" id="21_p5iek"]
 [ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="22_m6wq7"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
+bg_color = Color(0.08, 0.08, 0.1, 0.85)
+border_width_left = 1
+border_width_top = 1
+border_width_right = 1
+border_width_bottom = 1
+border_color = Color(0.55, 0.53, 0.47, 1)
 
 [node name="Shop" type="Control" unique_id=395620655 node_paths=PackedStringArray("shop_container", "marble_box_container", "relic_bar_container")]
 process_mode = 3
@@ -95,47 +101,29 @@ theme_override_constants/h_separation = 8
 theme_override_constants/v_separation = 8
 columns = 3
 
-[node name="CollectionRows" type="VBoxContainer" parent="UI/Panel" unique_id=1783459460 instance=ExtResource("5_inventory")]
+[node name="CollectionRows" parent="UI/Panel" unique_id=1783459460 instance=ExtResource("5_inventory")]
 layout_mode = 1
-anchors_preset = 12
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
+offset_left = 0.0
 offset_top = -104.0
-grow_horizontal = 2
-grow_vertical = 0
-theme = ExtResource("1_16e15")
-theme_override_constants/separation = 4
+offset_right = 0.0
+offset_bottom = 0.0
 
 [node name="SkillBox" type="HBoxContainer" parent="UI/Panel/CollectionRows" unique_id=230630312]
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="SkillSlot" type="Panel" parent="UI/Panel/CollectionRows/SkillBox" unique_id=1773440516]
+[node name="SkillSlot" type="Panel" parent="UI/Panel/CollectionRows/SkillBox" unique_id=1515930044 instance=ExtResource("17_p5iek")]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
-theme_override_styles/panel = ExtResource("17_6qmg5")
-
-[node name="Icon" type="Control" parent="UI/Panel/CollectionRows/SkillBox/SkillSlot" unique_id=299050868 instance=ExtResource("11_eu4ty")]
-custom_minimum_size = Vector2(32, 32)
-anchors_preset = 0
-offset_right = 32.0
-offset_bottom = 32.0
-mouse_filter = 2
+size_flags_horizontal = 4
+size_flags_vertical = 4
+tooltip_text = " "
 theme = ExtResource("1_16e15")
-script = ExtResource("19_m6wq7")
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
+script = ExtResource("18_ur5fy")
 
-[node name="SkillReplaceDialog" type="Control" parent="UI/Panel" unique_id=1955345262 instance=ExtResource("13_b5trs")]
-process_mode = 3
-visible = false
+[node name="SkillReplaceDialog" parent="UI/Panel" unique_id=1955345262 instance=ExtResource("13_b5trs")]
 layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme = ExtResource("1_16e15")
-script = ExtResource("21_6dpvd")
 
 [node name="ShopStatus" type="Label" parent="UI/Panel" unique_id=1208888835]
 layout_mode = 0

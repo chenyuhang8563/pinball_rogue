@@ -570,7 +570,7 @@ func _validate_option_state(option: RewardOption) -> RewardResult.Code:
 			return _invalid_option(RewardResult.Code.OWNERSHIP_CHANGED, "new reward is now owned")
 		if not bool(_loadout.call("can_add", option.item)):
 			return RewardResult.Code.CAPACITY_CHANGED
-	elif option.resolution == RewardOptionScript.Resolution.UPGRADE_RELIC:
+	elif option.resolution == RewardOptionScript.Resolution.UPGRADE_ITEM:
 		if not _matches_expected_owned(owned, option):
 			return _invalid_option(RewardResult.Code.OWNERSHIP_CHANGED, "upgrade target ownership changed")
 		if int(_progression.call("level_of", owned)) != option.expected_level \
@@ -668,7 +668,7 @@ func _commit_option(option: RewardOption) -> RewardResult:
 			steps.append(Callable(_wallet, "credit").bind(granted_gold))
 		RewardOptionScript.Resolution.ADD_ITEM:
 			steps.append(Callable(_loadout, "add").bind(option.item))
-		RewardOptionScript.Resolution.UPGRADE_RELIC:
+		RewardOptionScript.Resolution.UPGRADE_ITEM:
 			var owned := _loadout.call("find_owned", option.item) as Item
 			steps.append(Callable(_progression, "upgrade_one").bind(owned))
 		_:
@@ -781,11 +781,14 @@ func _resolution_for_item(item: Item, allow_compensation: bool) -> int:
 		return -1
 	var owned := _loadout.call("find_owned", item) as Item
 	if owned != null:
-		if owned.type != Item.ItemType.RELIC:
-			return -1
-		return RewardOptionScript.Resolution.UPGRADE_RELIC \
-			if bool(_progression.call("can_upgrade", owned)) \
-			else RewardOptionScript.Resolution.COMPENSATE
+		if owned.type == Item.ItemType.MARBLE:
+			return RewardOptionScript.Resolution.UPGRADE_ITEM \
+				if bool(_progression.call("can_upgrade", owned)) else -1
+		if owned.type == Item.ItemType.RELIC:
+			return RewardOptionScript.Resolution.UPGRADE_ITEM \
+				if bool(_progression.call("can_upgrade", owned)) \
+				else RewardOptionScript.Resolution.COMPENSATE
+		return -1
 	if item.type == Item.ItemType.SKILL and _loadout.call("current_skill") != null:
 		return RewardOptionScript.Resolution.REPLACE_SKILL
 	if bool(_loadout.call("can_add", item)):
@@ -932,9 +935,12 @@ func _identity_key(item: Item) -> String:
 
 
 func _matches_expected_owned(owned: Item, option: RewardOption) -> bool:
-	# Revisions are stable across processes. Settlement still resolves the
-	# currently owned instance and compares it to the saved semantic identity.
-	return owned != null and _identity_key(owned) == option.expected_owned_identity
+	return owned != null \
+		and _identity_key(owned) == option.expected_owned_identity \
+		and (
+			option.expected_owned_instance_id == 0 \
+			or int(owned.get_instance_id()) == option.expected_owned_instance_id
+		)
 
 
 func _has_api(value: Variant, methods: Array[StringName]) -> bool:

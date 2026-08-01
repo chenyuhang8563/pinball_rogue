@@ -8,13 +8,7 @@ signal relic_replacement_selection_requested(token: RunFlowToken, replacement_to
 
 const CoinTexture: Texture2D = preload("res://Assets/Items/Coin.png")
 const MarbleTexture: Texture2D = preload("res://Assets/Marbles/marble_icon.png")
-const DAMAGE_TAG_COLORS := {
-	"damage_explosion": "#F4A261",
-	"damage_fire": "#E76F51",
-	"damage_frost": "#8ECAE6",
-	"damage_lightning": "#F4D35E",
-	"damage_poison": "#8AC926",
-}
+const ItemTooltipScript: GDScript = preload("res://UI/shared/item_tooltip.gd")
 
 var _active_offer: RewardOffer = null
 var _pending_replacement: RewardResult = null
@@ -27,10 +21,7 @@ var _next_floor_button: Button
 var _marble_selection: Control
 var _dismiss_button: Button
 var _back_button: Button
-var _marble_cards: Array[Button] = []
-var _marble_icons: Array[TextureRect] = []
-var _marble_titles: Array[Label] = []
-var _marble_descriptions: Array[RichTextLabel] = []
+var _marble_cards: Array[RewardMarbleCard] = []
 var _skill_replace_dialog: SkillReplaceDialog
 
 
@@ -133,6 +124,10 @@ func _render_offer() -> void:
 func _configure_reward_row(button: Button, option: RewardOption, icon: Texture2D, text: String) -> void:
 	if button == null:
 		return
+	if button.has_method(&"set_item_tooltip"):
+		var tooltip_item: Item = option.item if option != null else null
+		var tooltip_level: int = option.target_level if option != null else 1
+		button.call(&"set_item_tooltip", tooltip_item, tooltip_level)
 	button.icon = icon
 	button.expand_icon = true
 	button.text = text
@@ -142,22 +137,14 @@ func _configure_reward_row(button: Button, option: RewardOption, icon: Texture2D
 
 func _render_marble_cards(options: Array[RewardOption]) -> void:
 	for index in range(_marble_cards.size()):
-		var card := _marble_cards[index]
+		var card: RewardMarbleCard = _marble_cards[index]
 		if index >= options.size():
+			card.clear_reward()
 			card.hide()
 			continue
-		var option := options[index]
-		var item := option.item
-		var level := _tooltip_level_for_option(option)
+		var option: RewardOption = options[index]
 		card.show()
-		card.icon = null
-		card.text = ""
-		if index < _marble_icons.size():
-			_marble_icons[index].texture = item.icon if item != null else null
-		if index < _marble_titles.size():
-			_marble_titles[index].text = _item_title(item)
-		if index < _marble_descriptions.size():
-			_marble_descriptions[index].text = _format_description_bbcode(_item_description(item, level))
+		card.set_reward(option.item, option.target_level, option.is_upgrade)
 		card.disabled = _intent_pending
 
 
@@ -244,36 +231,8 @@ func _gold_text(option: RewardOption) -> String:
 	return "x %d" % option.gold_amount if option != null else ""
 
 
-func _tooltip_level_for_option(option: RewardOption) -> int:
-	if option == null:
-		return 1
-	if option.resolution == RewardOption.Resolution.UPGRADE_RELIC:
-		return clampi(option.expected_level + 1, 1, 4)
-	return 1
-
-
-func _item_description(item: Item, level: int) -> String:
-	if item == null:
-		return ""
-	var key := "ITEM_%s_DESC_LV%d" % [item.id.to_upper(), level]
-	var translated := tr(key)
-	return translated if translated != key else tr(item.description)
-
-
-func _format_description_bbcode(description: String) -> String:
-	var formatted := description
-	for tag: String in DAMAGE_TAG_COLORS:
-		formatted = formatted.replace("[%s]" % tag, "[color=%s]" % DAMAGE_TAG_COLORS[tag])
-		formatted = formatted.replace("[/%s]" % tag, "[/color]")
-	return formatted
-
-
 func _item_title(item: Item) -> String:
-	if item == null:
-		return ""
-	var key := "ITEM_%s_TITLE" % item.id.to_upper()
-	var translated := tr(key)
-	return translated if translated != key else tr(item.title)
+	return ItemTooltipScript.item_title(item)
 
 
 func _bind_nodes() -> void:
@@ -291,12 +250,9 @@ func _bind_nodes() -> void:
 	if card_row == null:
 		return
 	for child in card_row.get_children():
-		if child is Button:
-			var card := child as Button
+		if child is RewardMarbleCard:
+			var card := child as RewardMarbleCard
 			_marble_cards.append(card)
-			_marble_icons.append(card.get_node_or_null("Content/Icon") as TextureRect)
-			_marble_titles.append(card.get_node_or_null("Content/TitleLabel") as Label)
-			_marble_descriptions.append(card.get_node_or_null("Content/DescriptionLabel") as RichTextLabel)
 
 
 func _connect_nodes() -> void:

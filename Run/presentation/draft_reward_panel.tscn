@@ -2,7 +2,9 @@
 
 [ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_cj858"]
 [ext_resource type="Script" uid="uid://py1m8dh3ltnk" path="res://Run/presentation/draft_reward_panel.gd" id="1_script"]
+[ext_resource type="Script" uid="uid://chd50r6caxc7i" path="res://Run/presentation/reward_tooltip_button.gd" id="4_6ijcp"]
 [ext_resource type="Texture2D" uid="uid://dq8mb6w3k55t4" path="res://Assets/UI/next_floor.png" id="4_45m0g"]
+[ext_resource type="PackedScene" uid="uid://cluhmsihly46u" path="res://Run/presentation/reward_marble_card.tscn" id="4_wtao3"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://Loadout/presentation/skill_replace_dialog.tscn" id="5_s5edj"]
 
 [node name="DraftRewardPanel" type="Control" unique_id=1712510819]
@@ -24,6 +26,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 color = Color(0, 0, 0, 0.54901963)
 
 [node name="Center" type="CenterContainer" parent="." unique_id=1617586441]
@@ -31,6 +35,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="Center" unique_id=1930535142]
 custom_minimum_size = Vector2(210, 160)
@@ -67,6 +73,8 @@ layout_mode = 2
 [node name="RelicRewardButton" type="Button" parent="Center/Panel/Margin/Layout/RewardRows" unique_id=1206415543]
 custom_minimum_size = Vector2(0, 28)
 layout_mode = 2
+tooltip_text = " "
+script = ExtResource("4_6ijcp")
 
 [node name="MarbleSelection" type="Control" parent="." unique_id=1437091157]
 layout_mode = 1
@@ -81,6 +89,8 @@ layout_mode = 1
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
 
 [node name="Center" type="CenterContainer" parent="MarbleSelection" unique_id=242419059]
 layout_mode = 1
@@ -91,7 +101,7 @@ grow_horizontal = 2
 grow_vertical = 2
 
 [node name="Panel" type="PanelContainer" parent="MarbleSelection/Center" unique_id=2060913547]
-custom_minimum_size = Vector2(224, 204)
+custom_minimum_size = Vector2(232, 232)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="MarbleSelection/Center/Panel" unique_id=1800633812]
@@ -113,104 +123,14 @@ horizontal_alignment = 1
 [node name="CardRow" type="HBoxContainer" parent="MarbleSelection/Center/Panel/Margin/Layout" unique_id=774911315]
 layout_mode = 2
 
-[node name="MarbleCard1" type="Button" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow" unique_id=528954729]
-custom_minimum_size = Vector2(66, 148)
+[node name="MarbleCard1" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow" unique_id=482831887 instance=ExtResource("4_wtao3")]
 layout_mode = 2
-size_flags_horizontal = 3
 
-[node name="Content" type="VBoxContainer" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard1" unique_id=1117767726]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/separation = 2
-
-[node name="Icon" type="TextureRect" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard1/Content" unique_id=1184761519]
-custom_minimum_size = Vector2(24, 24)
+[node name="MarbleCard2" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow" unique_id=360422862 instance=ExtResource("4_wtao3")]
 layout_mode = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
 
-[node name="TitleLabel" type="Label" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard1/Content" unique_id=561624879]
+[node name="MarbleCard3" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow" unique_id=37760689 instance=ExtResource("4_wtao3")]
 layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DescriptionLabel" type="RichTextLabel" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard1/Content" unique_id=1914147739]
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 1
-bbcode_enabled = true
-horizontal_alignment = 1
-
-[node name="MarbleCard2" type="Button" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow" unique_id=853328583]
-custom_minimum_size = Vector2(66, 148)
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Content" type="VBoxContainer" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard2" unique_id=2016841384]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/separation = 2
-
-[node name="Icon" type="TextureRect" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard2/Content" unique_id=2127582522]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TitleLabel" type="Label" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard2/Content" unique_id=900339303]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DescriptionLabel" type="RichTextLabel" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard2/Content" unique_id=301805878]
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 1
-bbcode_enabled = true
-horizontal_alignment = 1
-
-[node name="MarbleCard3" type="Button" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow" unique_id=728842676]
-custom_minimum_size = Vector2(66, 148)
-layout_mode = 2
-size_flags_horizontal = 3
-
-[node name="Content" type="VBoxContainer" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard3" unique_id=763397209]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
-theme_override_constants/separation = 2
-
-[node name="Icon" type="TextureRect" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard3/Content" unique_id=323287802]
-custom_minimum_size = Vector2(24, 24)
-layout_mode = 2
-mouse_filter = 2
-expand_mode = 1
-stretch_mode = 5
-
-[node name="TitleLabel" type="Label" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard3/Content" unique_id=376390782]
-layout_mode = 2
-horizontal_alignment = 1
-
-[node name="DescriptionLabel" type="RichTextLabel" parent="MarbleSelection/Center/Panel/Margin/Layout/CardRow/MarbleCard3/Content" unique_id=1434180604]
-layout_mode = 2
-size_flags_vertical = 3
-mouse_filter = 1
-bbcode_enabled = true
-horizontal_alignment = 1
 
 [node name="BackButton" type="Button" parent="MarbleSelection/Center/Panel/Margin/Layout" unique_id=1548085798]
 custom_minimum_size = Vector2(0, 18)

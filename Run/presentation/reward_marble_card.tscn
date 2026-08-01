@@ -1,0 +1,100 @@
+[gd_scene format=3 uid="uid://cluhmsihly46u"]
+
+[ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="1_8suim"]
+[ext_resource type="Script" uid="uid://bk2y21aova1uq" path="res://Run/presentation/reward_marble_card.gd" id="2_wegtx"]
+[ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/shared/item_icon_view.tscn" id="3_h6p2p"]
+[ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/shared/item_icon_view.gd" id="4_itvag"]
+[ext_resource type="Texture2D" uid="uid://wkfame4pvlqx" path="res://Assets/UI/level_up.png" id="5_41sd1"]
+[ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="6_jv5yc"]
+
+[sub_resource type="Animation" id="Animation_a0qv1"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Content/IconArea/LevelUp:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_wttl6"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Content/IconArea/LevelUp:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ftpyw"]
+_data = {
+&"regular": SubResource("Animation_a0qv1"),
+&"upgrade": SubResource("Animation_wttl6")
+}
+
+[node name="RewardMarbleCard" type="Button" unique_id=482831887]
+custom_minimum_size = Vector2(68, 174)
+size_flags_horizontal = 3
+theme = ExtResource("1_8suim")
+script = ExtResource("2_wegtx")
+
+[node name="Content" type="VBoxContainer" parent="." unique_id=2079785833]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="IconArea" type="Control" parent="Content" unique_id=1890207556]
+custom_minimum_size = Vector2(40, 32)
+layout_mode = 2
+mouse_filter = 2
+
+[node name="Icon" type="Control" parent="Content/IconArea" unique_id=637470541 instance=ExtResource("3_h6p2p")]
+custom_minimum_size = Vector2(32, 32)
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -16.0
+offset_top = -16.0
+offset_right = 16.0
+offset_bottom = 16.0
+mouse_filter = 2
+theme = ExtResource("1_8suim")
+script = ExtResource("4_itvag")
+
+[node name="LevelUp" type="Sprite2D" parent="Content/IconArea" unique_id=425684273]
+visible = false
+position = Vector2(8, 8)
+texture = ExtResource("5_41sd1")
+
+[node name="TitleLabel" type="Label" parent="Content" unique_id=1936095018]
+layout_mode = 2
+label_settings = ExtResource("6_jv5yc")
+horizontal_alignment = 1
+clip_text = true
+
+[node name="DescriptionLabel" type="RichTextLabel" parent="Content" unique_id=420300917]
+custom_minimum_size = Vector2(64, 118)
+layout_mode = 2
+size_flags_vertical = 3
+mouse_filter = 2
+bbcode_enabled = true
+scroll_active = false
+
+[node name="UpgradeStatePlayer" type="AnimationPlayer" parent="." unique_id=860832110]
+libraries/ = SubResource("AnimationLibrary_ftpyw")

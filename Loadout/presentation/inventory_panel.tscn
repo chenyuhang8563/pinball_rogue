@@ -4,10 +4,9 @@
 [ext_resource type="Script" uid="uid://bjfai71a1nsp2" path="res://Loadout/presentation/inventory_panel.gd" id="1_inventory_panel"]
 [ext_resource type="PackedScene" uid="uid://bx6h7a1u1u7xb" path="res://Loadout/presentation/inventory_scene/inventory.tscn" id="2_collection_rows"]
 [ext_resource type="LabelSettings" uid="uid://bdcmnx0npnilw" path="res://Themes/Fonts/text_12.tres" id="3_jc538"]
-[ext_resource type="PackedScene" uid="uid://bycgmssj60isb" path="res://UI/shared/item_icon_view.tscn" id="4_item_icon_view"]
-[ext_resource type="Script" uid="uid://cptjfqpox8qo4" path="res://UI/shared/item_icon_view.gd" id="6_f8byy"]
+[ext_resource type="PackedScene" uid="uid://cumjmyy6homsj" path="res://Loadout/presentation/inventory_icon_slot.tscn" id="5_f6l6w"]
+[ext_resource type="Script" uid="uid://cg481ei3ht6nr" path="res://Loadout/presentation/inventory_icon_slot.gd" id="6_f8byy"]
 [ext_resource type="PackedScene" uid="uid://61hx8rxkhnyx" path="res://Loadout/presentation/skill_replace_dialog.tscn" id="7_cead4"]
-[ext_resource type="Script" uid="uid://dyflbtf0gphq1" path="res://Loadout/presentation/skill_replace_dialog.gd" id="8_jp2uf"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_slot"]
 bg_color = Color(0.08, 0.08, 0.1, 0.85)
@@ -151,13 +150,13 @@ _data = {
 
 [node name="InventoryPanel" type="Control" unique_id=600384015 node_paths=PackedStringArray("marble_box_container", "relic_bar_container", "skill_bar_container")]
 process_mode = 3
-layout_direction = 1
 layout_mode = 3
 anchors_preset = 15
 anchor_right = 1.0
 anchor_bottom = 1.0
 grow_horizontal = 2
 grow_vertical = 2
+layout_direction = 1
 theme = ExtResource("1_cead4")
 script = ExtResource("1_inventory_panel")
 marble_box_container = NodePath("UI/Panel/MarginContainer/Layout/Content/CollectionRows/MarbleBox")
@@ -218,10 +217,8 @@ layout_mode = 2
 size_flags_vertical = 3
 theme_override_constants/separation = 8
 
-[node name="CollectionRows" type="VBoxContainer" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=1594412291 instance=ExtResource("2_collection_rows")]
+[node name="CollectionRows" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=1594412291 instance=ExtResource("2_collection_rows")]
 layout_mode = 2
-theme = ExtResource("1_cead4")
-theme_override_constants/separation = 4
 
 [node name="SkillLabel" type="Label" parent="UI/Panel/MarginContainer/Layout/Content" unique_id=324016682]
 layout_mode = 2
@@ -232,36 +229,17 @@ label_settings = ExtResource("3_jc538")
 layout_mode = 2
 theme_override_constants/separation = 4
 
-[node name="SkillSlot1" type="Panel" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar" unique_id=1421158285]
+[node name="SkillSlot1" type="Panel" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar" unique_id=1515930044 instance=ExtResource("5_f6l6w")]
 custom_minimum_size = Vector2(32, 32)
 layout_mode = 2
 size_flags_horizontal = 4
 size_flags_vertical = 4
-theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
-
-[node name="Icon" type="Control" parent="UI/Panel/MarginContainer/Layout/Content/SkillBar/SkillSlot1" unique_id=1818088685 instance=ExtResource("4_item_icon_view")]
-custom_minimum_size = Vector2(32, 32)
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-mouse_filter = 2
+tooltip_text = " "
 theme = ExtResource("1_cead4")
+theme_override_styles/panel = SubResource("StyleBoxFlat_slot")
 script = ExtResource("6_f8byy")
 
-[node name="SkillReplaceDialog" type="Control" parent="UI" unique_id=1955345262 instance=ExtResource("7_cead4")]
-process_mode = 3
-visible = false
-layout_mode = 3
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme = ExtResource("1_cead4")
-script = ExtResource("8_jp2uf")
+[node name="SkillReplaceDialog" parent="UI" unique_id=1955345262 instance=ExtResource("7_cead4")]
 
 [node name="RelicSelectionModePlayer" type="AnimationPlayer" parent="." unique_id=547740773]
 libraries/ = SubResource("AnimationLibrary_uvg6b")
