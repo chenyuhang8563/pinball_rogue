@@ -55,7 +55,7 @@ func set_text(title: String, description: String = "") -> void:
 	_bind_nodes()
 	if _title_label != null:
 		_title_label.text = title
-	_set_rtl_text(_description_label, _format_description(description))
+	_set_rtl_text(_description_label, format_description(description))
 	_populate_term_card(description)
 	_apply_fit_heights()
 
@@ -85,7 +85,7 @@ func _translated_item_text(item: Item, suffix: String, fallback: String) -> Stri
 	return translated if translated != key else tr(fallback)
 
 
-func _format_description(value: String) -> String:
+static func format_description(value: String) -> String:
 	var formatted := value
 	for damage_type: String in DAMAGE_COLORS:
 		formatted = formatted.replace("[damage_%s]" % damage_type, "[color=%s]" % DAMAGE_COLORS[damage_type])

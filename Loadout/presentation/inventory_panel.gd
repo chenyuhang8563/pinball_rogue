@@ -329,7 +329,11 @@ func _on_slot_gui_input(event: InputEvent, slot: Node) -> void:
 		return
 	get_viewport().set_input_as_handled()
 	if _upgrade_dialog != null:
-		_upgrade_dialog.request_upgrade(item)
+		_upgrade_dialog.request_upgrade(
+			item,
+			candidate.expected_level,
+			mini(candidate.expected_level + 1, 4)
+		)
 
 
 func _setup_upgrade_dialog() -> void:
