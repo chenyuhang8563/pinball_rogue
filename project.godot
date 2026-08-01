@@ -33,8 +33,8 @@ MCPRuntimeProbe="*uid://bsg12huaf1u5i"
 
 window/size/viewport_width=240
 window/size/viewport_height=320
-window/size/window_width_override=600
-window/size/window_height_override=800
+window/size/window_width_override=720
+window/size/window_height_override=960
 window/subwindows/embed_subwindows=false
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"
