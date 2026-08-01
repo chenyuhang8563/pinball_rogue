@@ -344,6 +344,57 @@ func test_reward_panel_emits_typed_identity_once_without_settling_reward() -> vo
 	assert_false(offer.consumed)
 
 
+func test_boss_battle_start_clears_previous_reward_before_terminal_settlement() -> void:
+	var main: Node = autofree(MainScene.instantiate())
+	main.set("skill_controller", main.get_node("SkillController") as SkillController)
+	main.set("active_skill_slot", main.get_node("CanvasLayer/SkillSlot") as ActiveSkillSlot)
+	var stats: Node = autofree(_stats())
+	var effect_manager: Node = autofree(EffectManagerScript.new())
+	var controller := TrackingRunFlowController.new()
+	assert_true(main.call(
+		"_setup_run_flow",
+		stats,
+		effect_manager,
+		{&"run_flow_controller": controller}
+	))
+	(main.get("skill_controller") as SkillController).disconnect_lifecycle()
+
+	var token := RunFlowToken.new(9, 12, 4)
+	var reward_panel := main.get("draft_reward_panel") as DraftRewardPanel
+	var option := RewardOption.gold(&"previous-gold", 25)
+	var offer := RewardOffer.new(
+		token,
+		BattlePlan.RewardPolicy.NORMAL,
+		&"previous-battle",
+		[option] as Array[RewardOption],
+		&"previous-draft",
+		RewardOffer.Mode.NORMAL_CLAIM_ALL_MARBLE_CHOICE
+	)
+	assert_true(reward_panel.present_offer(offer))
+	assert_true(reward_panel.visible)
+
+	var boss_group := BattleGroupDef.new()
+	boss_group.id = "boss:boss:12"
+	var boss_plan := BattlePlan.new(
+		&"boss:boss:12",
+		boss_group,
+		BattlePlan.Origin.BOSS,
+		BattlePlan.RewardPolicy.NONE
+	)
+	controller.battle_started.emit(token, boss_plan)
+	assert_false(reward_panel.visible, "进入 Boss 战必须清掉上一场的战利品界面")
+	assert_null(reward_panel.get("_active_offer"))
+
+	controller.battle_completed.emit(token, boss_plan.battle_id, boss_plan)
+	controller.run_completed.emit(token)
+	var node_panel := main.get("node_choice_panel") as NodeChoicePanel
+	assert_false(reward_panel.visible, "Boss 完成后不得重新显示战利品界面")
+	assert_true(node_panel.visible, "Boss 完成后应直接显示终局结算")
+	assert_eq(node_panel.get("_terminal_token"), token)
+
+	main.call("_dispose_run_flow_composition")
+
+
 func test_setup_uses_preplaced_scene_bootstrap_nodes_not_new_instances() -> void:
 	var main: Node = autofree(MainScene.instantiate())
 	var stats: Node = autofree(_stats())

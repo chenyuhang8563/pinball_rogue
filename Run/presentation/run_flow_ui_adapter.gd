@@ -223,6 +223,7 @@ func _on_floor_changed(floor_number: int) -> void:
 
 
 func _on_battle_started(token: RunFlowToken, plan: BattlePlan) -> void:
+	_clear_transient_presentations()
 	_skill_slot.present_battle_started(token, plan)
 
 

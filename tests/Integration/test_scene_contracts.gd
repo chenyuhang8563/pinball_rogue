@@ -3,6 +3,7 @@ extends GutTest
 
 const MAIN_SCENE: PackedScene = preload("res://Game/Bootstrap/main.tscn")
 const MAIN_MENU_SCENE: PackedScene = preload("res://UI/MainMenu/main_menu.tscn")
+const DRAFT_REWARD_SCENE: PackedScene = preload("res://Run/presentation/draft_reward_panel.tscn")
 const LEVEL_SCENES: Array[PackedScene] = [
 	preload("res://Combat/levels/level_001_weak.tscn"),
 	preload("res://Combat/levels/level_strong_normal.tscn"),
@@ -60,6 +61,24 @@ func test_main_scene_exposes_required_composition_nodes() -> void:
 	assert_not_null(shop_backdrop)
 	if shop_backdrop != null:
 		assert_eq(shop_backdrop.color.a, 1.0)
+
+
+# 回归：遗物槽已满时弹出的更换确认对话框必须渲染在战利品界面之上，
+# 否则遮罩与奖励面板会盖住“是/否”按钮导致无法点击。
+func test_draft_reward_panel_render_order_keeps_replace_dialog_on_top() -> void:
+	var panel := DRAFT_REWARD_SCENE.instantiate()
+	autofree(panel)
+	var dialog := panel.get_node_or_null("SkillReplaceDialog") as Control
+	var backdrop := panel.get_node_or_null("Backdrop") as Control
+	var center := panel.get_node_or_null("Center") as Control
+	assert_not_null(dialog)
+	assert_not_null(backdrop)
+	assert_not_null(center)
+	if dialog == null or backdrop == null or center == null:
+		return
+	# 兄弟节点无 z_index 时，Godot 按树顺序渲染，后渲染者覆盖先渲染者。
+	assert_gt(dialog.get_index(), backdrop.get_index(), "更换确认对话框必须渲染在遮罩之上")
+	assert_gt(dialog.get_index(), center.get_index(), "更换确认对话框必须渲染在奖励面板之上")
 
 
 func test_main_menu_keeps_continue_available_while_save_support_is_pending() -> void:
