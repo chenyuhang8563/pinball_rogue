@@ -26,6 +26,8 @@ const STAT_EXPLOSION_RADIUS: String = "explosion_radius"
 const STAT_ECHO_BONUS_DAMAGE: String = "echo_bonus_damage"
 const STAT_ASSASSIN_SEGMENT_DAMAGE: String = "assassin_segment_damage"
 const STAT_ASSASSIN_WEAK_POINT_COUNT: String = "assassin_weak_point_count"
+const STAT_LIGHTNING_DISCHARGE_DAMAGE: String = "lightning_discharge_damage_per_stack"
+const STAT_LIGHTNING_REPEAT_ARC_STACKS: String = "lightning_repeat_arc_stacks"
 
 const UPGRADE_VALUES: Dictionary = {
 	Marble.MARBLE_TYPE.DEFAULT: {
@@ -100,6 +102,17 @@ const UPGRADE_VALUES: Dictionary = {
 			"UPGRADE_ASSASSIN_DAMAGE_2_DESC",
 			"UPGRADE_ASSASSIN_DAMAGE_3_DESC",
 			"UPGRADE_ASSASSIN_AWAKEN_DESC",
+		],
+	},
+	Marble.MARBLE_TYPE.LIGHTNING: {
+		"title": "ITEM_LIGHTNING_MARBLE_TITLE",
+		"stat": STAT_LIGHTNING_DISCHARGE_DAMAGE,
+		"values": [2.0, 3.0, 4.0],
+		"awakened_value": 4.0,
+		"descriptions": [
+			"UPGRADE_LIGHTNING_DAMAGE_3_DESC",
+			"UPGRADE_LIGHTNING_DAMAGE_4_DESC",
+			"UPGRADE_LIGHTNING_AWAKEN_DESC",
 		],
 	},
 }
@@ -384,6 +397,8 @@ func _sync_stat_modifiers() -> void:
 			STAT_FIRE_BURN_DAMAGE_PER_LAYER,
 			STAT_ASSASSIN_SEGMENT_DAMAGE,
 			STAT_ASSASSIN_WEAK_POINT_COUNT,
+			STAT_LIGHTNING_DISCHARGE_DAMAGE,
+			STAT_LIGHTNING_REPEAT_ARC_STACKS,
 		])
 	var types_to_sync: Array[int] = []
 	for raw_type: Variant in _marble_levels.keys():
@@ -426,6 +441,8 @@ func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
 	elif marble_type == Marble.MARBLE_TYPE.FIRE:
 		if stored_level >= 3:
 			_add_override_modifier(STAT_FIRE_BURN_DAMAGE_PER_LAYER, 3.0)
+	elif marble_type == Marble.MARBLE_TYPE.LIGHTNING and awakened:
+		_add_override_modifier(STAT_LIGHTNING_REPEAT_ARC_STACKS, 2.0)
 
 
 ## Assassin weak-point presence reflects the live chain: 0 when no assassin marble

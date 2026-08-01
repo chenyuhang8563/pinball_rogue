@@ -11,6 +11,7 @@ const BUFF_DEFS: Dictionary = {
 	"frost_debuff": preload("res://Combat/status/buffs/frost_debuff.gd"),
 	"frozen_debuff": preload("res://Combat/status/buffs/frozen_debuff.gd"),
 	"fire_burn_debuff": preload("res://Combat/status/buffs/fire_burn_debuff.gd"),
+	"arc_debuff": preload("res://Combat/status/buffs/arc_debuff.gd"),
 }
 
 

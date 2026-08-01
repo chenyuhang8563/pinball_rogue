@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="StatDef" format=3]
+
+[ext_resource type="Script" path="res://Core/stats/stat_def.gd" id="1_stat"]
+
+[resource]
+script = ExtResource("1_stat")
+id = "lightning_discharge_damage_per_stack"
+display_name = "Lightning Discharge Damage Per Stack"
+category = "marble"
+base_value = 2.0
+min_value = 0.0
+max_value = 999.0
+integer = true

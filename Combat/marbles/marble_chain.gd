@@ -26,6 +26,7 @@ class_name MarbleChain
 signal chain_collision(collider: Node, collision_type: String)
 
 const FireMarbleScript: GDScript = preload("res://Combat/marbles/fire_marble.gd")
+const LightningMarbleScript: GDScript = preload("res://Combat/marbles/lightning_marble.gd")
 const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
 const HEAD_MAX_ECHO_STACKS: int = 3
 const HEAD_ECHO_TIMEOUT: float = 5.0
@@ -445,6 +446,10 @@ func _apply_hit_effect(
 			return BlueMarble.get_frost_bonus_damage(stacks_after_hit)
 		Marble.MARBLE_TYPE.FIRE:
 			FireMarbleScript.apply_burn_to_enemy(target, packet)
+		Marble.MARBLE_TYPE.LIGHTNING:
+			LightningMarbleScript.prepare_direct_hit(target, packet)
+			if packet != null and head != null and is_instance_valid(head):
+				packet.metadata[LightningMarble.META_ORIGIN_POSITION] = head.global_position
 	return 0
 
 

@@ -24,6 +24,8 @@ const EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
 const FIRE_BURN_MAX_STACKS: String = "fire_burn_max_stacks"
 const FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
 const FIRE_BURN_TICK_SECONDS: String = "fire_burn_tick_seconds"
+const LIGHTNING_DISCHARGE_DAMAGE_PER_STACK: String = "lightning_discharge_damage_per_stack"
+const LIGHTNING_REPEAT_ARC_STACKS: String = "lightning_repeat_arc_stacks"
 
 const DAMAGE_MULTIPLIER: String = "damage_multiplier"
 const FINAL_DAMAGE: String = "final_damage"
@@ -85,6 +87,8 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Core/stats/data/marble/fire_burn_max_stacks.tres",
 	"res://Core/stats/data/marble/fire_burn_damage_per_layer.tres",
 	"res://Core/stats/data/marble/fire_burn_tick_seconds.tres",
+	"res://Core/stats/data/marble/lightning_discharge_damage_per_stack.tres",
+	"res://Core/stats/data/marble/lightning_repeat_arc_stacks.tres",
 	"res://Core/stats/data/combat/damage_multiplier.tres",
 	"res://Core/stats/data/combat/final_damage.tres",
 	"res://Core/stats/data/combat/damage_received.tres",

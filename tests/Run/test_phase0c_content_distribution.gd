@@ -95,11 +95,12 @@ func test_registry_scan_order_and_ids_are_stable() -> void:
 		[] as Array[StringName]
 	).size())
 	assert_eq(ids, [
-		&"accelerant", &"assassin_marble", &"assassins_whetstone", &"blue_marble", &"bomb_marble",
+		&"accelerant", &"arc_relay", &"assassin_marble", &"assassins_whetstone", &"blue_marble", &"bomb_marble",
 		&"brown_marble", &"carrion", &"cremation", &"cryoclasm", &"dark_marble", &"dash", &"execution_decree",
-		&"fire_bellows", &"fire_marble", &"fortuna_dice", &"green_marble", &"ice_hammer", &"lightning",
+		&"fire_bellows", &"fire_marble", &"fortuna_dice", &"green_marble", &"ice_hammer", &"leyden_jar", &"lightning",
+		&"lightning_marble",
 		&"magic_missile", &"many_faced_prism", &"miasma", &"parasite", &"permafrost", &"poison_culture",
-		&"pustule", &"scarlet_thread", &"scorpion_tail", &"thermal_shock", &"venom_knife", &"witch_hat",
+		&"pustule", &"scarlet_thread", &"scorpion_tail", &"thermal_shock", &"thunderstorm", &"venom_knife", &"witch_hat",
 	] as Array[StringName])
 
 
@@ -191,11 +192,7 @@ func test_shop_channels_use_registry_and_one_shared_random_source() -> void:
 	var devil_offers: Array = devil.call("open", config, [])
 	assert_eq(devil_offers.size(), 6)
 	assert_true(_offer_ids(devil_offers).all(func(offer_id: String) -> bool:
-		return offer_id in [
-			"accelerant", "carrion", "cremation", "cryoclasm", "fire_bellows", "fortuna_dice",
-			"ice_hammer", "lightning", "parasite", "poison_culture", "pustule", "scorpion_tail",
-			"venom_knife", "witch_hat",
-		]
+		return eligible_ids.has(offer_id)
 	))
 	assert_eq(devil.get("_random_source"), random)
 	assert_eq(devil.get("_content_registry"), registry)

@@ -8,6 +8,9 @@ const ProgressionScript: GDScript = preload("res://Loadout/application/item_prog
 
 const RELIC_IDS: Array[StringName] = [
 	&"lightning",
+	&"leyden_jar",
+	&"arc_relay",
+	&"thunderstorm",
 	&"fire_bellows",
 	&"accelerant",
 	&"poison_culture",
@@ -52,7 +55,7 @@ func test_effect_registry_is_the_single_relic_script_source() -> void:
 
 func test_effect_manager_instantiates_owned_relic_effects_from_registry() -> void:
 	var loadout: RefCounted = LoadoutScript.new(
-		func(_type: int, _fallback: int) -> int: return 10
+		func(_type: int, _fallback: int) -> int: return RELIC_IDS.size()
 	)
 	for relic_id: StringName in RELIC_IDS:
 		var relic := Item.new()
