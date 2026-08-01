@@ -58,8 +58,11 @@ func is_exit_safe(head: Marble, destination: Vector2) -> bool:
 func minimum_exit_offset(head_collision_radius: float) -> float:
 	var trigger_radius := 0.0
 	var trigger_shape_node := get_node_or_null("CollisionShape2D") as CollisionShape2D
-	if trigger_shape_node != null and trigger_shape_node.shape is CircleShape2D:
-		trigger_radius = (trigger_shape_node.shape as CircleShape2D).radius
+	if trigger_shape_node != null and trigger_shape_node.shape != null:
+		if trigger_shape_node.shape is CircleShape2D:
+			trigger_radius = (trigger_shape_node.shape as CircleShape2D).radius
+		elif trigger_shape_node.shape is CapsuleShape2D:
+			trigger_radius = (trigger_shape_node.shape as CapsuleShape2D).radius
 	return head_collision_radius + trigger_radius + exit_clearance_pixels
 
 

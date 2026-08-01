@@ -263,7 +263,10 @@ func test_fire_bellows_defers_spark_area_spawn_until_after_physics_callback() ->
 	await get_tree().process_frame
 	assert_eq(_count_spark_projectiles(scene), 1, "spark Area2D joins on the following frame")
 	get_tree().current_scene = previous_scene
-	scene.queue_free()
+	# queue_free() 延迟到帧末，测试结束瞬间 scene 与两个 BellowsEnemy（均在
+	# enemies group）仍残留在 root 下，会污染后续测试（如 poison_culture 的
+	# 传播目标选择）。立即释放避免跨测试泄漏。
+	scene.free()
 
 
 func test_fire_bellows_spark_uses_a_world_space_particle_trail() -> void:

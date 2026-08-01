@@ -420,10 +420,17 @@ func test_portal_scene_routes_endpoint_signal_through_registry_to_chain_transfer
 	var controller := add_child_autofree(PortalPairScene.instantiate()) as PortalPairController
 	assert_true(controller.configure(registry, MarbleTeleportService.new()))
 	var entry := controller.get_node("EndpointA") as PortalEndpoint
+	var commit := {&"destination": Vector2.ZERO}
+	head.portal_teleport_applied.connect(func(destination: Vector2, velocity: Vector2) -> void:
+		commit[&"destination"] = destination
+	)
 	entry.portal_transfer_requested.emit(entry.pair_id, head)
 	await wait_physics_frames(1)
-	assert_almost_eq(head.global_position.x, 96.0, 0.001)
-	assert_almost_eq(head.global_position.y, -24.0, 0.001)
+	# 物理插值开启后，等待帧后直接读 global_position 会得到渲染插值位置；
+	# 断言 _integrate_forces 里发出的物理提交坐标。
+	var committed: Vector2 = commit[&"destination"] as Vector2
+	assert_almost_eq(committed.x, 96.0, 0.001)
+	assert_almost_eq(committed.y, -24.0, 0.001)
 
 
 func test_portal_visual_is_an_eight_frame_looping_animated_sprite() -> void:
@@ -463,7 +470,7 @@ func test_portal_commit_updates_exit_physics_overlap_after_next_frame() -> void:
 	var head: Marble = fixture[&"head"] as Marble
 	var exit: PortalEndpoint = fixture[&"exit"] as PortalEndpoint
 	var exit_shape := exit.get_node("CollisionShape2D") as CollisionShape2D
-	var expanded_shape := (exit_shape.shape as CircleShape2D).duplicate() as CircleShape2D
+	var expanded_shape := (exit_shape.shape as CapsuleShape2D).duplicate() as CapsuleShape2D
 	expanded_shape.radius = 64.0
 	exit_shape.shape = expanded_shape
 	watch_signals(controller)
@@ -484,7 +491,7 @@ func test_portal_locked_exit_entry_is_discarded_without_reverse_replay() -> void
 	var exit: PortalEndpoint = fixture[&"exit"] as PortalEndpoint
 	controller.pending_timeout_seconds = 1.0
 	var exit_shape := exit.get_node("CollisionShape2D") as CollisionShape2D
-	var expanded_shape := (exit_shape.shape as CircleShape2D).duplicate() as CircleShape2D
+	var expanded_shape := (exit_shape.shape as CapsuleShape2D).duplicate() as CapsuleShape2D
 	expanded_shape.radius = 80.0
 	exit_shape.shape = expanded_shape
 	watch_signals(controller)
@@ -500,12 +507,16 @@ func test_portal_locked_exit_entry_is_discarded_without_reverse_replay() -> void
 func test_portal_waits_for_busy_exit_then_transfers_once_while_head_remains_in_entry() -> void:
 	# 问题来源：设计文档 3.5 要求出口占用时最多等待 0.2 秒。
 	# 修复契约：在窗口内清空出口应经真实 Area2D 重叠路径整链传送一次；边界是入口仍被 Head 占用。
-	var fixture := _registered_portal_fixture()
+	# Head 先停在入口外，等 blocker 注册进物理空间后再移入，否则 blocker 与 Head 同帧注册时
+	# is_exit_safe 的安全传感器重叠列表还看不到 blocker。
+	var fixture := _registered_portal_fixture(Vector2.UP * 100.0)
 	var controller: PortalPairController = fixture[&"controller"] as PortalPairController
 	var head: Marble = fixture[&"head"] as Marble
 	var exit: PortalEndpoint = fixture[&"exit"] as PortalEndpoint
 	var blocker := _frozen_marble(exit.global_position + Vector2.UP * 32.0)
 	watch_signals(controller)
+	await wait_physics_frames(2)
+	head.global_position = Vector2.ZERO
 	await wait_physics_frames(2)
 	assert_signal_not_emitted(controller, "component_activated")
 	assert_almost_eq(head.global_position.x, 0.0, 0.001)
@@ -521,14 +532,17 @@ func test_portal_waits_for_busy_exit_then_transfers_once_while_head_remains_in_e
 func test_portal_discards_busy_exit_request_after_timeout_until_head_reenters() -> void:
 	# 问题来源：设计文档 3.5 的 0.2 秒出口安全等待上限。
 	# 修复契约：超时请求必须取消而非在出口稍后清空时迟发；边界是新的入门事件可再次申请传送。
-	var fixture := _registered_portal_fixture()
+	var fixture := _registered_portal_fixture(Vector2.UP * 100.0)
 	var controller: PortalPairController = fixture[&"controller"] as PortalPairController
 	var head: Marble = fixture[&"head"] as Marble
 	var entry: PortalEndpoint = fixture[&"entry"] as PortalEndpoint
 	var exit: PortalEndpoint = fixture[&"exit"] as PortalEndpoint
 	var blocker := _frozen_marble(exit.global_position + Vector2.UP * 32.0)
 	watch_signals(controller)
-	await wait_physics_frames(27)
+	await wait_physics_frames(2)
+	head.global_position = Vector2.ZERO
+	await wait_physics_frames(2)
+	await wait_physics_frames(25)
 	blocker.queue_free()
 	await wait_physics_frames(2)
 	assert_signal_not_emitted(controller, "component_activated")
@@ -546,12 +560,14 @@ func test_portal_discards_busy_exit_request_after_timeout_until_head_reenters() 
 func test_portal_cancels_busy_exit_request_when_head_leaves_entry() -> void:
 	# 问题来源：设计文档 3.5 指定 Head 离开入口时取消等待。
 	# 修复契约：离开入口会撤销待传送请求；边界是出口随后在原等待窗口内恢复安全。
-	var fixture := _registered_portal_fixture()
+	var fixture := _registered_portal_fixture(Vector2.UP * 100.0)
 	var controller: PortalPairController = fixture[&"controller"] as PortalPairController
 	var head: Marble = fixture[&"head"] as Marble
 	var exit: PortalEndpoint = fixture[&"exit"] as PortalEndpoint
 	var blocker := _frozen_marble(exit.global_position + Vector2.UP * 32.0)
 	watch_signals(controller)
+	await wait_physics_frames(2)
+	head.global_position = Vector2.ZERO
 	await wait_physics_frames(2)
 	assert_true(head.queue_portal_teleport(Vector2.LEFT * 30.0, Vector2.ZERO))
 	await wait_physics_frames(2)
@@ -570,11 +586,11 @@ func test_portal_controller_disables_invalid_pair() -> void:
 
 func test_portal_controller_rejects_exit_offset_that_cannot_clear_trigger_geometry() -> void:
 	# 问题来源：出口偏移小于 Head 半径、出口检测半径与安全间隙之和时，会立即重叠 B 门。
-	# 修复契约：边界值 22 px 必须禁用该对；默认的合格偏移仍由其他 Portal 场景测试覆盖。
+	# 修复契约：边界值 21 px（Head 8 + Capsule 触发半径 11 + 间隙 2）必须禁用该对；默认的合格偏移仍由其他 Portal 场景测试覆盖。
 	var registry := add_child_autofree(MarbleChainRegistry.new()) as MarbleChainRegistry
 	var controller := add_child_autofree(PortalPairScene.instantiate()) as PortalPairController
 	var service := MarbleTeleportService.new()
-	service.exit_offset = 22.0
+	service.exit_offset = 21.0
 	assert_false(controller.configure(registry, service))
 	assert_ne(controller.validation_error, "")
 
@@ -586,7 +602,7 @@ func _head_marble(velocity: Vector2) -> Marble:
 	return marble
 
 
-func _registered_portal_fixture() -> Dictionary:
+func _registered_portal_fixture(head_offset: Vector2 = Vector2.ZERO) -> Dictionary:
 	var registry := add_child_autofree(MarbleChainRegistry.new()) as MarbleChainRegistry
 	var chain := add_child_autofree(MarbleChain.new()) as MarbleChain
 	var head := MarbleScene.instantiate() as Marble
@@ -596,6 +612,7 @@ func _registered_portal_fixture() -> Dictionary:
 	head.linear_velocity = Vector2.ZERO
 	chain.head = head
 	chain.add_child(head)
+	head.global_position = head_offset
 	assert_true(registry.register_chain(chain))
 	var controller := add_child_autofree(PortalPairScene.instantiate()) as PortalPairController
 	assert_true(controller.configure(registry, MarbleTeleportService.new()))

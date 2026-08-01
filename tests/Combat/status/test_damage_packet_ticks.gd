@@ -21,6 +21,8 @@ func test_poison_tick_uses_armor_but_not_global_damage_multiplier() -> void:
 func test_burn_tick_uses_armor_but_not_global_damage_multiplier() -> void:
 	# Regression source: Phase 0b removed pending/instant burn ticks. Boundary:
 	# the first elapsed-second tick still bypasses the marble global multiplier.
+	# Per-layer damage follows fire_burn_damage_per_layer base_value (1 after the
+	# d5f12ba burn nerf), not the global multiplier.
 	var enemy: Enemy = _enemy()
 	_set_high_global_multiplier()
 	var burn := FireBurnDebuff.new()
@@ -28,7 +30,7 @@ func test_burn_tick_uses_armor_but_not_global_damage_multiplier() -> void:
 	burn.on_apply(enemy, state)
 	burn.on_process(enemy, state, 1.0)
 
-	assert_eq(enemy.health, 98, "one fuel layer deals the configured 2 per-layer damage")
+	assert_eq(enemy.health, 99, "one fuel layer deals the configured 1 per-layer damage")
 
 
 func after_each() -> void:
