@@ -6,9 +6,9 @@
 ## Godot
 
 - Project uses Godot 4.7.1.
-- Godot executable: `C:\Users\16085\Desktop\Godot_v4.7.1-stable_win64.exe`.
+- Godot executable: `E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe`.
 - `godot` is not on `PATH`.
-- AI/Agent 在新增或移动/重命名 `.gd`、`.gdshader`、`.tscn`、`.tres` 或资源文件后，必须执行 `cmd /c "C:\Users\16085\Desktop\Godot_v4.7.1-stable_win64.exe --headless --import --path E:\Projects\pinball_rogue"` 更新导入与 UID 缓存。
+- AI/Agent 在新增或移动/重命名 `.gd`、`.gdshader`、`.tscn`、`.tres` 或资源文件后，必须执行 `cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headless --import --path E:\Projects\pinball_rogue"` 更新导入与 UID 缓存。
 - Prefer the running editor plus Hastur tools when live inspection or screenshots are needed.
 - Never stop Godot by broad process-name commands such as `Stop-Process Godot_v4.7.1-stable_win64` or killing all matching Godot processes. If a process must be stopped, record the PID returned by the launch command and stop only that specific process, or use Godot/editor APIs to stop the running game.
 
@@ -19,13 +19,13 @@
 - 本机定向 GUT 调用示例：
 
 ```powershell
-cmd /c "C:\Users\16085\Desktop\Godot_v4.7.1-stable_win64.exe --headless -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gtest=res://tests/Combat/status/test_phase0b_status_layers.gd -gexit -glog=2 -gdisable_colors -gconfig="
+cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headless -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gtest=res://tests/Combat/status/test_phase0b_status_layers.gd -gexit -glog=2 -gdisable_colors -gconfig="
 ```
 
 - 全量 GUT 命令（仅限用户明确要求时使用）：
 
 ```powershell
-cmd /c "C:\Users\16085\Desktop\Godot_v4.7.1-stable_win64.exe --headless -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gdir=res://tests -ginclude_subdirs -gexit -glog=2 -gdisable_colors -gconfig="
+cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headless -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gdir=res://tests -ginclude_subdirs -gexit -glog=2 -gdisable_colors -gconfig="
 ```
 
 - 命令行 GUT 默认不使用 `-d`，避免解析错误进入交互式 `debug>` 而阻塞；需要断点调试时使用 Godot 编辑器中的 GUT 面板。
