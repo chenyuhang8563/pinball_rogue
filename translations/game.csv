@@ -73,7 +73,7 @@ ITEM_BLUE_MARBLE_DESC,Adds frost to enemies on hit.,命中敌人时施加冰霜�
 ITEM_GREEN_MARBLE_TITLE,Green Marble,毒液弹珠
 ITEM_GREEN_MARBLE_DESC,Poisons enemies and refreshes a shared 5 second timer on each hit.,命中敌人施加中毒，每次命中刷新共享的 5 秒计时。
 ITEM_BROWN_MARBLE_TITLE,Brown Marble,大地弹珠
-ITEM_BROWN_MARBLE_DESC,Higher damage with more collisions.,碰撞次数越多，伤害越高。
+ITEM_BROWN_MARBLE_DESC,Enemy hits charge both flippers; charged launches deal echo bonus damage.,命中敌人为左右挡板充能；带蓄力弹起时对下次命中追加回响伤害。
 ITEM_BOMB_MARBLE_TITLE,Bomb Marble,炸弹弹珠
 ITEM_BOMB_MARBLE_DESC,Explodes on hit and damages nearby enemies.,命中时爆炸，伤害附近敌人。
 ITEM_LIGHTNING_TITLE,Lightning,闪电链
@@ -111,7 +111,7 @@ UPGRADE_GREEN_POISON_4_DESC,Poison cap increased to 20,毒上限提升至 20
 UPGRADE_GREEN_AWAKEN_DESC,Awaken: apply 2 poison per hit,觉醒：每次命中施加 2 层毒
 UPGRADE_BROWN_ECHO_2_DESC,Echo damage 2,回响伤害 2
 UPGRADE_BROWN_ECHO_4_DESC,Echo damage 4,回响伤害 4
-UPGRADE_BROWN_AWAKEN_DESC,"Awaken: Echo 8, 15s, spend 1 stack","觉醒：回响 8，15 秒，消耗 1 层"
+UPGRADE_BROWN_AWAKEN_DESC,"Awaken: Echo 8, flipper launch speed x2","觉醒：回响 8，挡板弹起球速 ×2"
 UPGRADE_BLUE_DURATION_DESC,Frost duration +2s,冰霜持续时间 +2 秒
 UPGRADE_BLUE_BONUS_DESC,Bonus damage equals frost stacks,额外伤害等于冰霜层数
 UPGRADE_BLUE_AWAKEN_DESC,Awaken: +1 frost stack on Blue hit,觉醒：冰霜命中额外叠加 1 层

@@ -371,7 +371,18 @@ func _on_session_completed(
 	var completed_plan: BattlePlan = _active_plan
 	_active_token = null
 	_active_plan = null
+	_reset_active_table_echo_charge()
 	battle_completed.emit(completed_token, completed_plan.battle_id, completed_plan)
+
+
+## 战斗结束时将当前表的回响蓄力条重置为 0（挡板视觉恢复无蓄力）。
+## 下一场战斗由新实例化的 TableBase 控制器从 0 开始，这里保证战斗结束后立即归零。
+func _reset_active_table_echo_charge() -> void:
+	if active_level_scene == null or not is_instance_valid(active_level_scene):
+		return
+	var controller := active_level_scene.get_node_or_null("TableBase/EchoCharge") as Node
+	if controller != null and controller.has_method(&"reset"):
+		controller.call(&"reset")
 
 
 func _on_session_marble_fell(token: RunFlowToken, marble: RigidBody2D) -> void:

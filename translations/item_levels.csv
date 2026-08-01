@@ -4,7 +4,7 @@ TERM_BURN_DESC,"Takes fire damage each second equal to fuel stacks then loses 1 
 TERM_LIGHTNING_CHAIN_NAME,Lightning Chain,闪电链
 TERM_LIGHTNING_CHAIN_DESC,"On marble hit jumps once to the nearest other enemy for 1 lightning damage then ends.","弹珠命中敌人时触发；立即跳向最近的另 1 名敌人并造成 1 点雷电伤害，本次跳跃后结束。"
 TERM_ECHO_NAME,Echo,回响
-TERM_ECHO_DESC,"Earth-marble hits add stacks. Reach 3 within 5 seconds to deal 2 bonus damage and clear them; timeout also clears.","大地弹珠命中时叠 1 层；5 秒内达到 3 层时立即追加 2 点伤害并清空，超时也会清空。"
+TERM_ECHO_DESC,"With Brown Marble in the chain, enemy hits charge both flippers (4 hits fill 1 layer, up to 2). Launching consumes 1 layer to boost speed and arm bonus damage; at full red charge the launch consumes everything for a bigger speed boost and 2 bonus hits. Charge resets after each battle.","链中存在大地弹珠时，命中敌人为左右挡板蓄力（4 次命中累计 1 层，上限 2 层）；带蓄力弹起弹珠时消耗 1 层，提升球速并武装下一次敌人命中的追加伤害。红条满 2 层时发射一次性全部消耗，获得更大球速并武装 2 次追加伤害。每场战斗结束蓄力重置为 0。"
 TERM_POISON_NAME,Poison,中毒
 TERM_POISON_DESC,"Each layer deals 1 poison damage per second for 5 seconds. Applying it again refreshes the 5-second timer.","目标获得中毒层数时生效；每 1 秒每层造成 1 点毒素伤害，持续 5 秒，再次施加会刷新 5 秒。"
 TERM_INFECTION_NAME,Infection,感染

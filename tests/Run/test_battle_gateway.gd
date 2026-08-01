@@ -237,6 +237,26 @@ func test_clear_restores_base_and_dispose_removes_session_consumers() -> void:
 	assert_false(_spawner.has_signal(&"battle_completed"))
 
 
+func test_battle_completion_resets_table_echo_charge() -> void:
+	# 每次战斗结束时重置蓄力条到初始状态 0（挡板视觉恢复无蓄力）。
+	var plan: BattlePlan = _real_level_plan(&"battle:echo_reset", 1)
+	var token := RunFlowToken.new(21, 1, 1)
+	assert_true(_gateway.start(plan, token))
+	var controller: Node = _gateway.active_level_scene.get_node("TableBase/EchoCharge")
+	assert_not_null(controller)
+	var chain := MarbleChain.new()
+	add_child_autofree(chain)
+	chain.build_chain([_brown_marble()], [Vector2(56, 96)])
+	assert_true(controller.has_brown())
+	controller.add_charge()
+	assert_eq(controller.get_progress(), 0.25, "战斗中蓄力已累计")
+
+	var enemy: Enemy = _spawner.enemy_container.get_child(0) as Enemy
+	assert_true(enemy.defeat(&"gateway_success"))
+
+	assert_eq(controller.get_progress(), 0.0, "战斗结束时蓄力条重置为 0")
+
+
 func _real_level_plan(battle_id: StringName, enemy_count: int) -> BattlePlan:
 	var plan: BattlePlan = _plan_with_level(battle_id, RealLevel.level_scene)
 	for index: int in range(enemy_count):
@@ -273,3 +293,11 @@ func _packed_level_without_fixed_zone() -> PackedScene:
 	assert_eq(packed.pack(root), OK)
 	root.free()
 	return packed
+
+
+func _brown_marble() -> Item:
+	var item := Item.new()
+	item.id = "echo_test_brown"
+	item.type = Item.ItemType.MARBLE
+	item.marble_type = Marble.MARBLE_TYPE.BROWN
+	return item

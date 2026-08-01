@@ -4,10 +4,10 @@
 
 [resource]
 script = ExtResource("1_stat")
-id = "echo_stacks"
-display_name = "Echo Stacks"
+id = "echo_flipper_speed_multiplier"
+display_name = "Echo Flipper Speed Multiplier"
 category = "marble"
-base_value = 0.0
+base_value = 1.5
 min_value = 0.0
 max_value = 999999999.0
-integer = true
+integer = false

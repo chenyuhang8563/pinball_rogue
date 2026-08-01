@@ -1,9 +1,10 @@
-[gd_scene load_steps=9 format=3]
+[gd_scene load_steps=10 format=3]
 
 [ext_resource type="Texture2D" path="res://Assets/Walls/walls.png" id="1_walls"]
 [ext_resource type="PackedScene" path="res://Combat/battle/table/flipper/flipper.tscn" id="2_flipper"]
 [ext_resource type="PackedScene" path="res://Combat/battle/table/platform/platform.tscn" id="3_platform"]
 [ext_resource type="Script" path="res://Game/Bootstrap/kill_zone.gd" id="4_kill"]
+[ext_resource type="Script" path="res://Combat/battle/table/flipper/echo_flipper_charge_controller.gd" id="5_echo"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_flipper"]
 size = Vector2(80, 16)
@@ -22,6 +23,9 @@ bounce = 1.0
 absorbent = true
 
 [node name="TableBase" type="Node2D"]
+
+[node name="EchoCharge" type="Node" parent="."]
+script = ExtResource("5_echo")
 
 [node name="TableComponents" type="Node2D" parent="."]
 

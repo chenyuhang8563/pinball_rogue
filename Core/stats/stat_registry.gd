@@ -7,8 +7,8 @@ const MAX_SPEED: String = "max_speed"
 const DASH_IMPULSE: String = "dash_impulse"
 const DASH_MAX_SPEED: String = "dash_max_speed"
 const DASH_DURATION: String = "dash_duration"
-const ECHO_STACKS: String = "echo_stacks"
 const ECHO_BONUS_DAMAGE: String = "echo_bonus_damage"
+const ECHO_FLIPPER_SPEED_MULTIPLIER: String = "echo_flipper_speed_multiplier"
 const EXPLOSION_RADIUS: String = "explosion_radius"
 const EXPLOSION_DAMAGE: String = "explosion_damage"
 const DARK_MARBLE_DAMAGE: String = "dark_marble_damage"
@@ -19,7 +19,6 @@ const POISON_DAMAGE_PER_LAYER: String = "poison_damage_per_layer"
 const POISON_MAX_STACKS: String = "poison_max_stacks"
 const POISON_STACKS_PER_HIT: String = "poison_stacks_per_hit"
 const POISON_TICK_SECONDS: String = "poison_tick_seconds"
-const ECHO_TIMEOUT: String = "echo_timeout"
 const EXPLOSION_EFFECT_SCALE: String = "explosion_effect_scale"
 const FIRE_BURN_MAX_STACKS: String = "fire_burn_max_stacks"
 const FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
@@ -68,8 +67,8 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Core/stats/data/marble/dash_impulse.tres",
 	"res://Core/stats/data/marble/dash_max_speed.tres",
 	"res://Core/stats/data/marble/dash_duration.tres",
-	"res://Core/stats/data/marble/echo_stacks.tres",
 	"res://Core/stats/data/marble/echo_bonus_damage.tres",
+	"res://Core/stats/data/marble/echo_flipper_speed_multiplier.tres",
 	"res://Core/stats/data/marble/explosion_radius.tres",
 	"res://Core/stats/data/marble/explosion_damage.tres",
 	"res://Core/stats/data/marble/dark_marble_damage.tres",
@@ -80,7 +79,6 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Core/stats/data/marble/poison_max_stacks.tres",
 	"res://Core/stats/data/marble/poison_stacks_per_hit.tres",
 	"res://Core/stats/data/marble/poison_tick_seconds.tres",
-	"res://Core/stats/data/marble/echo_timeout.tres",
 	"res://Core/stats/data/marble/explosion_effect_scale.tres",
 	"res://Core/stats/data/marble/fire_burn_max_stacks.tres",
 	"res://Core/stats/data/marble/fire_burn_damage_per_layer.tres",
