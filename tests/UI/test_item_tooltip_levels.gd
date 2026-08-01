@@ -1,6 +1,7 @@
 extends GutTest
 
 const ItemTooltipScene: PackedScene = preload("res://UI/shared/item_tooltip.tscn")
+const UpgradeDialogScene: PackedScene = preload("res://Loadout/presentation/skill_replace_dialog.tscn")
 const RewardTooltipButtonScript: GDScript = preload("res://Run/presentation/reward_tooltip_button.gd")
 const DraftRewardPanelScript: GDScript = preload("res://Run/presentation/draft_reward_panel.gd")
 const InventoryIconSlotScript: GDScript = preload("res://Loadout/presentation/inventory_icon_slot.gd")
@@ -152,3 +153,65 @@ func test_reward_settlement_exposes_target_level_instead_of_ui_guessing() -> voi
 	)
 	assert_eq(upgrade.target_level, 3)
 	assert_true(upgrade.is_upgrade)
+
+
+func test_upgrade_dialog_compares_all_item_types_and_keeps_arrow_between_rows() -> void:
+	var translation := Translation.new()
+	translation.locale = "en"
+	var cases: Array[Dictionary] = [
+		{&"id": "comparison_marble", &"type": Item.ItemType.MARBLE},
+		{&"id": "comparison_relic", &"type": Item.ItemType.RELIC},
+		{&"id": "comparison_skill", &"type": Item.ItemType.SKILL},
+	]
+	for data: Dictionary in cases:
+		var item_id := String(data[&"id"])
+		translation.add_message("ITEM_%s_DESC_LV2" % item_id.to_upper(), "%s current" % item_id)
+		translation.add_message("ITEM_%s_DESC_LV3" % item_id.to_upper(), "%s upgraded" % item_id)
+	TranslationServer.add_translation(translation)
+	var previous_locale := TranslationServer.get_locale()
+	TranslationServer.set_locale("en")
+	var dialog: SkillReplaceDialog = add_child_autofree(UpgradeDialogScene.instantiate()) as SkillReplaceDialog
+	var comparison := dialog.get_node("Center/Panel/Margin/Layout/UpgradeComparison") as VBoxContainer
+	var cards_row := comparison.get_node("CardsRow") as HBoxContainer
+	assert_eq((cards_row.get_child(0) as Node).name, &"CurrentCard")
+	assert_eq((cards_row.get_child(1) as Node).name, &"Arrow")
+	assert_eq((cards_row.get_child(2) as Node).name, &"UpgradedCard")
+	assert_false(comparison.has_node("ArrowRow"))
+	var arrow := cards_row.get_node("Arrow") as Label
+	assert_eq(arrow.text, "升级 " + String.chr(0x2192))
+	for panel_path: NodePath in [
+		^"CardsRow/CurrentCard",
+		^"CardsRow/UpgradedCard",
+		^"DescriptionsRow/CurrentDescriptionPanel",
+		^"DescriptionsRow/UpgradedDescriptionPanel",
+	]:
+		var panel := comparison.get_node(panel_path) as Control
+		assert_true(panel.get_theme_stylebox(&"panel") is StyleBoxEmpty)
+	for data: Dictionary in cases:
+		var item := Item.new()
+		item.id = String(data[&"id"])
+		item.type = int(data[&"type"])
+		dialog.request_upgrade(item, 2, 3)
+		assert_true(comparison.visible)
+		assert_false((dialog.get_node("Center/Panel/Margin/Layout/Message") as Label).visible)
+		assert_eq(
+			(dialog.get_node("Center/Panel/Margin/Layout/UpgradeComparison/CardsRow/CurrentCard/Icon/LevelBadge") as Label).text,
+			"II"
+		)
+		assert_false(
+			(dialog.get_node("Center/Panel/Margin/Layout/UpgradeComparison/CardsRow/CurrentCard/Icon/LevelBadge") as Label).visible
+		)
+		assert_eq(
+			(dialog.get_node("Center/Panel/Margin/Layout/UpgradeComparison/CardsRow/UpgradedCard/Icon/LevelBadge") as Label).text,
+			"III"
+		)
+		assert_eq(
+			(dialog.get_node("Center/Panel/Margin/Layout/UpgradeComparison/DescriptionsRow/CurrentDescriptionPanel/Margin/Description") as RichTextLabel).text,
+			"%s current" % item.id
+		)
+		assert_eq(
+			(dialog.get_node("Center/Panel/Margin/Layout/UpgradeComparison/DescriptionsRow/UpgradedDescriptionPanel/Margin/Description") as RichTextLabel).text,
+			"%s upgraded" % item.id
+		)
+	TranslationServer.set_locale(previous_locale)
+	TranslationServer.remove_translation(translation)

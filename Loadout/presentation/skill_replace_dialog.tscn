@@ -4,6 +4,15 @@
 [ext_resource type="Script" uid="uid://dyflbtf0gphq1" path="res://Loadout/presentation/skill_replace_dialog.gd" id="1_p8jeu"]
 [ext_resource type="FontVariation" uid="uid://bi65xp2y217fg" path="res://Themes/Fonts/quaver_fusion_10.tres" id="1_tnbc0"]
 [ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="3_tnbc0"]
+[ext_resource type="PackedScene" uid="uid://cumjmyy6homsj" path="res://Loadout/presentation/inventory_icon_slot.tscn" id="4_255lk"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_mtkrw"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_255lk"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_ins86"]
+
+[sub_resource type="StyleBoxEmpty" id="StyleBoxEmpty_5kv8e"]
 
 [sub_resource type="Animation" id="Animation_d76pk"]
 length = 0.01
@@ -41,6 +50,66 @@ _data = {
 &"show_dialog": SubResource("Animation_mixe6")
 }
 
+[sub_resource type="Animation" id="Animation_5kv8e"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Center/Panel/Margin/Layout/Message:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Center/Panel/Margin/Layout/UpgradeComparison:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_tf72u"]
+length = 0.001
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath("Center/Panel/Margin/Layout/Message:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [false]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("Center/Panel/Margin/Layout/UpgradeComparison:visible")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 1,
+"values": [true]
+}
+
+[sub_resource type="AnimationLibrary" id="AnimationLibrary_ndafl"]
+_data = {
+&"message": SubResource("Animation_5kv8e"),
+&"upgrade": SubResource("Animation_tf72u")
+}
+
 [node name="SkillReplaceDialog" type="Control" unique_id=1955345262]
 process_mode = 3
 visible = false
@@ -65,7 +134,7 @@ anchor_right = 1.0
 anchor_bottom = 1.0
 
 [node name="Panel" type="PanelContainer" parent="Center" unique_id=1881579835]
-custom_minimum_size = Vector2(208, 108)
+custom_minimum_size = Vector2(228, 108)
 layout_mode = 2
 
 [node name="Margin" type="MarginContainer" parent="Center/Panel" unique_id=1070782948]
@@ -88,6 +157,77 @@ horizontal_alignment = 1
 vertical_alignment = 1
 autowrap_mode = 3
 
+[node name="UpgradeComparison" type="VBoxContainer" parent="Center/Panel/Margin/Layout" unique_id=502231961]
+visible = false
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CardsRow" type="HBoxContainer" parent="Center/Panel/Margin/Layout/UpgradeComparison" unique_id=1486718835]
+layout_mode = 2
+theme_override_constants/separation = 24
+alignment = 1
+
+[node name="CurrentCard" parent="Center/Panel/Margin/Layout/UpgradeComparison/CardsRow" unique_id=1515930044 instance=ExtResource("4_255lk")]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_mtkrw")
+
+[node name="Arrow" type="Label" parent="Center/Panel/Margin/Layout/UpgradeComparison/CardsRow" unique_id=1157832596]
+layout_mode = 2
+text = "升级 →"
+label_settings = ExtResource("3_tnbc0")
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="UpgradedCard" parent="Center/Panel/Margin/Layout/UpgradeComparison/CardsRow" unique_id=696359796 instance=ExtResource("4_255lk")]
+layout_mode = 2
+theme_override_styles/panel = SubResource("StyleBoxEmpty_255lk")
+
+[node name="DescriptionsRow" type="HBoxContainer" parent="Center/Panel/Margin/Layout/UpgradeComparison" unique_id=483592045]
+layout_mode = 2
+theme_override_constants/separation = 8
+
+[node name="CurrentDescriptionPanel" type="PanelContainer" parent="Center/Panel/Margin/Layout/UpgradeComparison/DescriptionsRow" unique_id=2009896118]
+custom_minimum_size = Vector2(102, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_ins86")
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel/Margin/Layout/UpgradeComparison/DescriptionsRow/CurrentDescriptionPanel" unique_id=243833975]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="Description" type="RichTextLabel" parent="Center/Panel/Margin/Layout/UpgradeComparison/DescriptionsRow/CurrentDescriptionPanel/Margin" unique_id=390947202]
+custom_minimum_size = Vector2(94, 56)
+layout_mode = 2
+mouse_filter = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
+[node name="UpgradedDescriptionPanel" type="PanelContainer" parent="Center/Panel/Margin/Layout/UpgradeComparison/DescriptionsRow" unique_id=1691636955]
+custom_minimum_size = Vector2(102, 64)
+layout_mode = 2
+size_flags_horizontal = 3
+theme_override_styles/panel = SubResource("StyleBoxEmpty_5kv8e")
+
+[node name="Margin" type="MarginContainer" parent="Center/Panel/Margin/Layout/UpgradeComparison/DescriptionsRow/UpgradedDescriptionPanel" unique_id=270919481]
+layout_mode = 2
+theme_override_constants/margin_left = 4
+theme_override_constants/margin_top = 4
+theme_override_constants/margin_right = 4
+theme_override_constants/margin_bottom = 4
+
+[node name="Description" type="RichTextLabel" parent="Center/Panel/Margin/Layout/UpgradeComparison/DescriptionsRow/UpgradedDescriptionPanel/Margin" unique_id=1758059843]
+custom_minimum_size = Vector2(94, 56)
+layout_mode = 2
+mouse_filter = 2
+bbcode_enabled = true
+fit_content = true
+scroll_active = false
+
 [node name="Buttons" type="HBoxContainer" parent="Center/Panel/Margin/Layout" unique_id=1421409026]
 layout_mode = 2
 theme_override_constants/separation = 12
@@ -109,3 +249,6 @@ text = "Cancel"
 
 [node name="AnimationPlayer" type="AnimationPlayer" parent="." unique_id=664813476]
 libraries/ = SubResource("AnimationLibrary_tobcu")
+
+[node name="ContentModePlayer" type="AnimationPlayer" parent="." unique_id=383995248]
+libraries/ = SubResource("AnimationLibrary_ndafl")
