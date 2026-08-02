@@ -6,6 +6,9 @@ const ParasiteItem: Item = preload("res://Content/data/parasite.tres")
 const VenomKnifeItem: Item = preload("res://Content/data/venom_knife.tres")
 const ScorpionTailItem: Item = preload("res://Content/data/scorpion_tail.tres")
 const WitchHatItem: Item = preload("res://Content/data/witch_hat.tres")
+const GrindstoneItem: Item = preload("res://Content/data/grindstone.tres")
+const DropHammerItem: Item = preload("res://Content/data/drop_hammer.tres")
+const BatteringRamItem: Item = preload("res://Content/data/battering_ram.tres")
 
 
 func test_pustule_description_is_chinese_in_chinese_locale() -> void:
@@ -41,3 +44,6 @@ func test_plague_relic_resources_match_the_appended_effect_type_enum_values() ->
 	assert_eq(VenomKnifeItem.effect_type, Item.EffectType.VENOM_KNIFE)
 	assert_eq(ScorpionTailItem.effect_type, Item.EffectType.SCORPION_TAIL)
 	assert_eq(WitchHatItem.effect_type, Item.EffectType.WITCH_HAT)
+	assert_eq(GrindstoneItem.effect_type, Item.EffectType.GRINDSTONE)
+	assert_eq(DropHammerItem.effect_type, Item.EffectType.DROP_HAMMER)
+	assert_eq(BatteringRamItem.effect_type, Item.EffectType.BATTERING_RAM)

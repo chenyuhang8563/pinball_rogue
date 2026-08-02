@@ -28,6 +28,9 @@ const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	&"venom_knife": preload("res://Combat/effects/venom_knife/venom_knife.gd"),
 	&"scorpion_tail": preload("res://Combat/effects/scorpion_tail/scorpion_tail.gd"),
 	&"witch_hat": preload("res://Combat/effects/witch_hat/witch_hat.gd"),
+	&"grindstone": preload("res://Combat/effects/grindstone/grindstone.gd"),
+	&"drop_hammer": preload("res://Combat/effects/drop_hammer/drop_hammer.gd"),
+	&"battering_ram": preload("res://Combat/effects/battering_ram/battering_ram.gd"),
 }
 
 

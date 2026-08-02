@@ -60,6 +60,8 @@ var _registry: MarbleChainRegistry = null
 ## 待结算回响伤害 token：由 EchoFlipperChargeController 在挡板消费蓄力后武装，
 ## 敌人命中时逐个消费（墙面/挡板碰撞不消费）。
 var _echo_pending_tokens: int = 0
+## 待结算 token 的每 token 追加伤害（锻锤按本发反弹计数武装；最后一批 token 消费完清零）。
+var _echo_token_bonus: int = 0
 
 
 # ---- 轨迹数据 ----
@@ -96,6 +98,7 @@ func _exit_tree() -> void:
 	remove_from_group(&"marble_chain")
 	_unregister_from_registry()
 	_head_disconnect_signals()
+	exit_pierce_state()
 
 
 func set_chain_registry(registry: MarbleChainRegistry) -> void:
@@ -186,6 +189,8 @@ func _prime_trail_from_spawn_positions(spawn_positions: Array[Vector2]) -> void:
 func _clear_chain() -> void:
 	_unregister_from_registry()
 	_head_disconnect_signals()
+	# 清理穿透态：避免传感器悬挂（Head 随后销毁，掩码恢复无副作用）。
+	exit_pierce_state()
 
 	if head != null and is_instance_valid(head):
 		head.queue_free()
@@ -343,8 +348,12 @@ func _spawn_explosion_effect(center: Vector2) -> void:
 
 ## 由 EchoFlipperChargeController 调用：挡板每消费一层蓄力即武装一个待结算
 ## 回响伤害 token。token 随本链生命周期存在（掉球重建链后清零），蓄力保留在控制器。
-func arm_echo_damage(tokens: int = 1) -> void:
-	_echo_pending_tokens = maxi(0, _echo_pending_tokens + maxi(0, tokens))
+## per_token_bonus 为锻锤武装的每 token 追加伤害（发射时按本发反弹计数结算）。
+func arm_echo_damage(tokens: int = 1, per_token_bonus: int = 0) -> void:
+	var added: int = maxi(0, tokens)
+	_echo_pending_tokens = maxi(0, _echo_pending_tokens + added)
+	if added > 0:
+		_echo_token_bonus = maxi(0, per_token_bonus)
 
 
 ## 当前待结算回响伤害 token 数（测试与调试用）。
@@ -363,7 +372,8 @@ func has_brown_marble() -> bool:
 	return false
 
 
-## 敌人命中结算时消费一个 token 并返回回响加成伤害；墙面/挡板等非敌碰撞不消费。
+## 敌人碰撞结算时消费一个 token 并返回回响加成伤害；墙面/挡板等非敌碰撞不消费。
+## 返回值为 echo_bonus_damage 基础值 + 锻锤武装的每 token 追加伤害。
 func _consume_echo_token(target: Node, packet: DamagePacket) -> int:
 	if _echo_pending_tokens <= 0:
 		return 0
@@ -372,7 +382,186 @@ func _consume_echo_token(target: Node, packet: DamagePacket) -> int:
 	_echo_pending_tokens -= 1
 	if packet != null:
 		packet.is_echo = true
-	return roundi(_get_stat_float("echo_bonus_damage", 2.0))
+	var base: int = roundi(_get_stat_float("echo_bonus_damage", 2.0))
+	var bonus: int = _echo_token_bonus
+	if _echo_pending_tokens <= 0:
+		_echo_token_bonus = 0
+	return base + bonus
+
+
+# ---- 破城锥穿透态 ----
+
+## Head 正常碰撞掩码（marble.tscn：mask bits 0/2/3）。穿透期间移除 enemy 层（bit 3）。
+const HEAD_COLLISION_MASK_NORMAL: int = 13
+const HEAD_COLLISION_MASK_PIERCING: int = 5
+## 穿透传感器：layer 0（不参与碰撞），仅探测 enemy 层（bit 3）。Godot 双端规则下
+## Head 侧 mask 移除 enemy 位即不再与敌人刚体碰撞，穿透成立。
+const PIERCE_SENSOR_LAYER: int = 0
+const PIERCE_SENSOR_MASK: int = 8
+## 传感器探测半径（与 Head 碰撞体半径一致）。
+const PIERCE_SENSOR_RADIUS: float = 8.0
+## 穿透耗尽后，Head 需与所有敌人保持的退出距离（接触距离 16 + 余量）。
+const PIERCE_EXIT_CLEARANCE: float = 20.0
+## 穿透耗尽后延迟退出的物理帧上限，防止 Head 被夹住时传感器悬挂。
+const PIERCE_EXIT_MAX_FRAMES: int = 60
+## 穿透态弹珠描边：金色高亮（marble_outline.gdshader 的 clr / thickness）。
+const PIERCE_OUTLINE_COLOR: Color = Color(1.0, 0.78, 0.2, 1.0)
+const PIERCE_OUTLINE_THICKNESS: float = 2.0
+const OUTLINE_THICKNESS_NORMAL: float = 1.0
+
+## 当前剩余穿透时长（秒）；0 = 非穿透态。
+var _pierce_time_left: float = 0.0
+## 穿透伤害倍率（觉醒破城锥 ×1.5，基础 1.0）。
+var _pierce_damage_multiplier: float = 1.0
+## 穿透时间耗尽、等待 Head 脱离敌人后恢复碰撞掩码。
+var _pierce_exit_pending: bool = false
+var _pierce_exit_frames: int = 0
+## 穿透传感器（挂在 Head 下，跟随弹珠；layer=0, mask=8，只探测敌人）。
+var _pierce_sensor: Area2D = null
+## 本穿透态已结算过的敌人（body_exited 清除，防止重叠区域重复结算）。
+var _pierce_hit_enemies: Array = []
+
+
+## 进入穿透态：Head 移除 enemy 碰撞层，挂 Area2D 传感器探测敌人；穿透命中复用
+## Enemy._on_body_entered(head) 完整伤害管线（消费回响 token 享受强力击加成），
+## 并维持「命中敌人 → 蓄力」核心循环。持续 duration 秒后自动退出。
+func enter_pierce_state(duration: float, damage_multiplier: float = 1.0) -> void:
+	if duration <= 0.0 or head == null or not is_instance_valid(head) or _is_doomed(head):
+		return
+	_pierce_time_left = duration
+	_pierce_damage_multiplier = maxf(1.0, damage_multiplier)
+	_pierce_hit_enemies.clear()
+	head.collision_mask = HEAD_COLLISION_MASK_PIERCING
+	_ensure_pierce_sensor()
+	_set_pierce_visual(true)
+
+
+## 退出穿透态：恢复 Head 碰撞掩码、移除传感器并还原描边。幂等，可安全重复调用。
+func exit_pierce_state() -> void:
+	_pierce_time_left = 0.0
+	_pierce_damage_multiplier = 1.0
+	_pierce_exit_pending = false
+	_pierce_exit_frames = 0
+	_pierce_hit_enemies.clear()
+	if head != null and is_instance_valid(head) and not _is_doomed(head):
+		head.collision_mask = HEAD_COLLISION_MASK_NORMAL
+	_clear_pierce_sensor()
+	_set_pierce_visual(false)
+
+
+## 当前是否处于穿透态。
+func is_piercing() -> bool:
+	return _pierce_time_left > 0.0
+
+
+## 当前剩余穿透时长（秒；0 = 非穿透态）。
+func get_pierce_time_left() -> float:
+	return _pierce_time_left
+
+
+func _ensure_pierce_sensor() -> void:
+	if _pierce_sensor != null and is_instance_valid(_pierce_sensor):
+		return
+	var sensor := Area2D.new()
+	sensor.name = "EchoPierceSensor"
+	sensor.collision_layer = PIERCE_SENSOR_LAYER
+	sensor.collision_mask = PIERCE_SENSOR_MASK
+	var shape := CollisionShape2D.new()
+	var circle := CircleShape2D.new()
+	circle.radius = PIERCE_SENSOR_RADIUS
+	shape.shape = circle
+	sensor.add_child(shape)
+	sensor.body_entered.connect(_on_pierce_sensor_body_entered)
+	sensor.body_exited.connect(_on_pierce_sensor_body_exited)
+	head.add_child(sensor)
+	_pierce_sensor = sensor
+
+
+func _clear_pierce_sensor() -> void:
+	if _pierce_sensor == null:
+		return
+	if is_instance_valid(_pierce_sensor):
+		if _pierce_sensor.body_entered.is_connected(_on_pierce_sensor_body_entered):
+			_pierce_sensor.body_entered.disconnect(_on_pierce_sensor_body_entered)
+		if _pierce_sensor.body_exited.is_connected(_on_pierce_sensor_body_exited):
+			_pierce_sensor.body_exited.disconnect(_on_pierce_sensor_body_exited)
+		_pierce_sensor.queue_free()
+	_pierce_sensor = null
+
+
+func _on_pierce_sensor_body_entered(collided: Node) -> void:
+	if _pierce_time_left <= 0.0 or collided == null or not collided.is_in_group("enemies"):
+		return
+	if _pierce_hit_enemies.has(collided):
+		return
+	_pierce_hit_enemies.append(collided)
+	# 复用 Enemy 的完整弹珠命中管线（伤害聚合、状态、死亡结算）。
+	# 时间制下命中不减少剩余时长：穿透期间可穿过任意多个敌人。
+	if collided.has_method("_on_body_entered"):
+		collided.call("_on_body_entered", head)
+	# 穿透命中也算命中：维持核心循环（命中敌人 → 挡板蓄力）。
+	_emit_chain_collision(collided)
+
+
+func _on_pierce_sensor_body_exited(collided: Node) -> void:
+	if collided != null:
+		_pierce_hit_enemies.erase(collided)
+
+
+## 每物理帧递减穿透剩余时长；归零后进入退出等待（等 Head 脱离敌人再恢复掩码）。
+func _tick_pierce_time(delta: float) -> void:
+	if _pierce_time_left <= 0.0:
+		return
+	_pierce_time_left -= delta
+	if _pierce_time_left <= 0.0:
+		# 物理回调中不能立即恢复掩码；且此时 Head 可能仍在敌人体内，
+		# 立即恢复会被物理推开。改为等待 Head 脱离所有敌人后再恢复（_tick_pierce_exit）。
+		_pierce_exit_pending = true
+		_pierce_exit_frames = 0
+
+
+## 每物理帧驱动穿透退出：时长耗尽且 Head 已脱离所有敌人（或超时兜底）时恢复碰撞。
+func _tick_pierce_exit() -> void:
+	if not _pierce_exit_pending:
+		return
+	if _pierce_time_left > 0.0:
+		_pierce_exit_pending = false
+		return
+	_pierce_exit_frames += 1
+	if _pierce_exit_frames > PIERCE_EXIT_MAX_FRAMES or not _overlapping_any_enemy():
+		_pierce_exit_pending = false
+		exit_pierce_state()
+
+
+## 穿透态视觉：金色描边（穿透中）/ 默认白色描边（退出）。
+func _set_pierce_visual(enabled: bool) -> void:
+	if head == null or not is_instance_valid(head):
+		return
+	var sprite: Sprite2D = head.get_node_or_null("Sprite2D") as Sprite2D
+	if sprite == null:
+		return
+	var material: ShaderMaterial = sprite.material as ShaderMaterial
+	if material == null:
+		return
+	material.set_shader_parameter(&"clr", PIERCE_OUTLINE_COLOR if enabled else Color.WHITE)
+	material.set_shader_parameter(
+		&"thickness", PIERCE_OUTLINE_THICKNESS if enabled else OUTLINE_THICKNESS_NORMAL
+	)
+
+
+func _overlapping_any_enemy() -> bool:
+	if head == null or not is_instance_valid(head):
+		return false
+	var tree: SceneTree = Engine.get_main_loop() as SceneTree
+	if tree == null:
+		return false
+	for enemy: Node in tree.get_nodes_in_group("enemies"):
+		if enemy == null or not is_instance_valid(enemy) or not enemy is Node2D:
+			continue
+		var enemy_node: Node2D = enemy as Node2D
+		if head.global_position.distance_to(enemy_node.global_position) < PIERCE_EXIT_CLEARANCE:
+			return true
+	return false
 
 
 # ---- 回响控制器绑定 ----
@@ -426,6 +615,10 @@ func get_total_damage(target: Node, packet: DamagePacket = null) -> int:
 		total += _segment_contact_damage(seg)
 
 	total += _consume_echo_token(target, packet)
+
+	# 破城锥觉醒：穿透伤害倍率（穿透命中享受强力击加成，觉醒 ×1.5）。
+	if _pierce_time_left > 0.0 and _pierce_damage_multiplier > 1.0:
+		total = roundi(total * _pierce_damage_multiplier)
 
 	return total
 
@@ -494,11 +687,13 @@ func _emit_chain_collision(collided_body: Node) -> void:
 
 # ---- 轨迹 & 跟随 ----
 
-func _physics_process(_delta: float) -> void:
+func _physics_process(delta: float) -> void:
 	if head == null or not is_instance_valid(head):
 		return
 	_record_trail()
 	_update_body_segments()
+	_tick_pierce_time(delta)
+	_tick_pierce_exit()
 
 
 ## 在 Head 当前位置记录轨迹点。采样密度和链段间距分离，避免视觉段一格一格跳。

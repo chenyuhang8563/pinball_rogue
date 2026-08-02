@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Item" format=3]
+
+[ext_resource type="Texture2D" path="res://Assets/Items/grindstone.png" id="1_icon"]
+[ext_resource type="Script" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "grindstone"
+title = "ITEM_GRINDSTONE_TITLE"
+icon = ExtResource("1_icon")
+price = 20
+description = "ITEM_GRINDSTONE_DESC"
+effect_type = 30
+type = 2
+rarity = 1
+tags = Array[StringName]([&"relic", &"echo"])
+weight = 50.0
+requires_tags = Array[StringName]([&"echo"])

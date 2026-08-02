@@ -31,6 +31,9 @@ const RELIC_IDS: Array[StringName] = [
 	&"venom_knife",
 	&"scorpion_tail",
 	&"witch_hat",
+	&"grindstone",
+	&"drop_hammer",
+	&"battering_ram",
 ]
 
 var _effect_manager: Node = null

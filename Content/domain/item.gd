@@ -36,6 +36,10 @@ enum EffectType {
 	LEYDEN_JAR,
 	ARC_RELAY,
 	THUNDERSTORM,
+	# --- 回响流派遗物（动能工坊） ---
+	GRINDSTONE,
+	DROP_HAMMER,
+	BATTERING_RAM,
 }
 
 enum ItemType {
