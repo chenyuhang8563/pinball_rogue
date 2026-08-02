@@ -75,7 +75,7 @@ ITEM_BLUE_MARBLE_DESC,Adds frost to enemies on hit.,命中敌人时施加冰霜�
 ITEM_GREEN_MARBLE_TITLE,Green Marble,毒液弹珠
 ITEM_GREEN_MARBLE_DESC,Poisons enemies and refreshes a shared 5 second timer on each hit.,命中敌人施加中毒，每次命中刷新共享的 5 秒计时。
 ITEM_BROWN_MARBLE_TITLE,Brown Marble,大地弹珠
-ITEM_BROWN_MARBLE_DESC,Enemy hits charge the flipper; a full charge provides a Power Strike.,命中敌人给挡板蓄力，蓄力条满提供一次强力击。
+ITEM_BROWN_MARBLE_DESC,Enemy hits charge both flippers. A Power Strike launch adds Echo damage to the next enemy hit.,命中敌人为挡板蓄力；强力击弹起时，下次命中附加回响伤害。
 ITEM_BOMB_MARBLE_TITLE,Bomb Marble,炸弹弹珠
 ITEM_BOMB_MARBLE_DESC,Explodes on hit and damages nearby enemies.,命中时爆炸，伤害附近敌人。
 ITEM_LIGHTNING_TITLE,Lightning Chain,闪电链
@@ -175,3 +175,9 @@ ITEM_THERMAL_SHOCK_TITLE,Thermal Shock,热冲击
 ITEM_THERMAL_SHOCK_DESC,"When burn and freeze coexist, shatter for fixed damage and remove both statuses.",燃烧与冻结共存时发生碎裂，造成固定伤害并解除两种状态。
 ITEM_MIASMA_TITLE,Miasma,瘴气
 ITEM_MIASMA_DESC,"When burn and poison coexist, detonate toxic fog for area damage and clear poison.",燃烧与感染共存时发生毒雾爆燃，造成范围伤害并清除感染。
+ITEM_GRINDSTONE_TITLE,Grindstone,磨轮
+ITEM_GRINDSTONE_DESC,"Wall and table bounces charge the Echo gauge; per-shot bounce charge is capped.","墙面/台面反弹为回响蓄力充能；每发反弹充能设有上限。"
+ITEM_DROP_HAMMER_TITLE,Drop Hammer,锻锤
+ITEM_DROP_HAMMER_DESC,"Launches grant bonus Echo damage per bounce this shot, capped by level.","发射时按本发反弹次数附加回响伤害；加成随等级提高上限。"
+ITEM_BATTERING_RAM_TITLE,Battering Ram,破城锥
+ITEM_BATTERING_RAM_DESC,"A Power Strike grants the marble Pierce for 3 seconds.","强力击使弹珠获得 3 秒穿透。"

@@ -238,6 +238,17 @@ func _get_active_effect(item_id: StringName) -> Variant:
 	return _active_effects.get(item_id, null)
 
 
+## 公共访问器：查询当前激活的遗物 effect 实例（回响控制器等外部模块使用）。
+## 未持有或未在 EffectRegistry 注册时返回 null。
+func get_active_effect(item_id: StringName) -> Variant:
+	return _get_active_effect(item_id)
+
+
+## 公共访问器：当前是否持有指定遗物 effect。
+func has_active_effect(item_id: StringName) -> bool:
+	return _active_effects.has(item_id)
+
+
 func _ensure_lightning_runtime() -> void:
 	if _lightning_runtime == null:
 		_lightning_runtime = LightningArchetypeRuntimeScript.new() as LightningArchetypeRuntime

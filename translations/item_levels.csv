@@ -6,9 +6,11 @@ TERM_LIGHTNING_CHAIN_DESC,"On Lightning Marble repeat discharge, branch to nearb
 TERM_ARC_NAME,Arc,电弧
 TERM_ARC_DESC,"A 5-second stacking charge; Lightning Marble repeat hits discharge its stored stacks.","持续 5 秒的可叠层电荷；闪电弹珠复击时释放已储存层数。"
 TERM_ECHO_NAME,Echo,回响
-TERM_ECHO_DESC,"With Brown Marble in the chain, enemy hits charge both flippers (4 hits fill 1 layer, up to 2). Launching consumes 1 layer to boost speed and arm bonus damage; at full red charge the launch consumes everything for a bigger speed boost and 2 bonus hits. Charge resets after each battle.","链中存在大地弹珠时，命中敌人为左右挡板蓄力（4 次命中累计 1 层，上限 2 层）；带蓄力弹起弹珠时消耗 1 层，提升球速并武装下一次敌人命中的追加伤害。红条满 2 层时发射一次性全部消耗，获得更大球速并武装 2 次追加伤害。每场战斗结束蓄力重置为 0。"
+TERM_ECHO_DESC,"Enemy hits charge the flippers; launching with charge triggers a Power Strike; multi-layer charge launches give a bigger bonus.","命中敌人为挡板蓄力；带蓄力弹起触发强力击；多层蓄力发射获得更大加成。"
 TERM_POWER_STRIKE_NAME,Power Strike,强力击
-TERM_POWER_STRIKE_DESC,On the next flipper launch the marble launches faster and deals more damage.,下一次挡板弹起时，弹珠速度更快，伤害更高。
+TERM_POWER_STRIKE_DESC,"A flipper launch that consumes charge: boosts marble speed and arms Echo bonus damage on the next enemy hit.","挡板带蓄力弹起弹珠时触发：提升球速，下次命中附加回响伤害。"
+TERM_PIERCE_NAME,Pierce,穿透
+TERM_PIERCE_DESC,"While piercing, the marble passes through enemies instead of bouncing off. Each enemy passed takes a full hit; pierce hits benefit from Power Strike exactly like normal hits.","穿透期间弹珠穿过敌人而非弹开，每穿过一名敌人造成一次完整命中；穿透伤害与普通命中一样享受强力击加成。"
 TERM_POISON_NAME,Poison,中毒
 TERM_POISON_DESC,"Each layer deals 1 poison damage per second for 5 seconds. Applying it again refreshes the 5-second timer.","目标获得中毒层数时生效；每 1 秒每层造成 1 点毒素伤害，持续 5 秒，再次施加会刷新 5 秒。"
 TERM_INFECTION_NAME,Infection,感染
@@ -39,10 +41,10 @@ ITEM_BOMB_MARBLE_DESC_LV1,"On enemy collision trigger Explosion for [damage_expl
 ITEM_BOMB_MARBLE_DESC_LV2,"On enemy collision trigger Explosion for [damage_explosion]8[/damage_explosion] damage.","碰撞敌人时触发爆炸并造成 [damage_explosion]8[/damage_explosion] 点伤害。"
 ITEM_BOMB_MARBLE_DESC_LV3,"On enemy collision trigger Explosion for [damage_explosion]8[/damage_explosion] damage.","碰撞敌人时触发爆炸并造成 [damage_explosion]8[/damage_explosion] 点伤害。"
 ITEM_BOMB_MARBLE_DESC_LV4,"Awakened: Explosion keeps [damage_explosion]8[/damage_explosion] damage with radius 100 and x4 effect scale.","觉醒：爆炸保持 [damage_explosion]8[/damage_explosion] 点伤害并获得 100 半径与 x4 效果范围。"
-ITEM_BROWN_MARBLE_DESC_LV1,Enemy hits charge the flipper; a full charge provides a Power Strike with 2 bonus damage.,命中敌人给挡板蓄力，蓄力条满提供一次强力击；追加 2 点伤害。
-ITEM_BROWN_MARBLE_DESC_LV2,Enemy hits charge the flipper; a full charge provides a Power Strike with 4 bonus damage.,命中敌人给挡板蓄力，蓄力条满提供一次强力击；追加 4 点伤害。
-ITEM_BROWN_MARBLE_DESC_LV3,Enemy hits charge the flipper; a full charge provides a Power Strike with 8 bonus damage.,命中敌人给挡板蓄力，蓄力条满提供一次强力击；追加 8 点伤害。
-ITEM_BROWN_MARBLE_DESC_LV4,"Awakened: enemy hits charge the flipper; a full charge provides a Power Strike with 8 bonus damage, and a full launch doubles the speed boost and arms 2 hits.","觉醒：命中敌人给挡板蓄力，蓄力条满提供一次强力击；追加 8 点伤害，满蓄力时双倍球速并追加 2 次。"
+ITEM_BROWN_MARBLE_DESC_LV1,"Enemy hits charge both flippers. A Power Strike launch deals 2 extra Echo damage on the next enemy hit.","命中敌人为挡板蓄力；强力击弹起时，下次命中额外造成 2 点回响伤害。"
+ITEM_BROWN_MARBLE_DESC_LV2,"Enemy hits charge both flippers. A Power Strike launch deals 4 extra Echo damage on the next enemy hit.","命中敌人为挡板蓄力；强力击弹起时，下次命中额外造成 4 点回响伤害。"
+ITEM_BROWN_MARBLE_DESC_LV3,"Enemy hits charge both flippers. A Power Strike launch deals 8 extra Echo damage on the next enemy hit.","命中敌人为挡板蓄力；强力击弹起时，下次命中额外造成 8 点回响伤害。"
+ITEM_BROWN_MARBLE_DESC_LV4,"Awakened: a full 2-layer Power Strike launch consumes everything, doubles the speed boost, and deals 8 extra Echo damage on the next 2 enemy hits.","觉醒：满 2 层强力击弹起时全部消耗，球速提升翻倍，并为接下来 2 次命中各附加 8 点回响伤害。"
 ITEM_BLUE_MARBLE_DESC_LV1,"Hits add Frost. At 6 stacks the target becomes Frozen.","命中叠加冰霜；6 层时目标冻结。"
 ITEM_BLUE_MARBLE_DESC_LV2,"Hits add Frost. Frozen duration is 4 seconds and frost stacks add bonus damage.","命中叠加冰霜；冻结持续 4 秒且冰霜层数会提供额外伤害。"
 ITEM_BLUE_MARBLE_DESC_LV3,"Hits add Frost. Frozen duration is 4 seconds and frost stacks add bonus damage.","命中叠加冰霜；冻结持续 4 秒且冰霜层数会提供额外伤害。"
@@ -167,3 +169,15 @@ ITEM_MAGIC_MISSILE_DESC_LV1,"Hold to aim then release a missile for 10 damage. R
 ITEM_MAGIC_MISSILE_DESC_LV2,"Hold to aim then release a missile for 15 damage. Recharge 3 seconds.","按住瞄准后释放魔法飞弹，造成 15 点伤害；冷却 3 秒。"
 ITEM_MAGIC_MISSILE_DESC_LV3,"Hold to aim then release a missile for 18 damage. Recharge 2.5 seconds.","按住瞄准后释放魔法飞弹，造成 18 点伤害；冷却 2.5 秒。"
 ITEM_MAGIC_MISSILE_DESC_LV4,"Hold to aim then release a missile for 24 damage. Recharge 2.5 seconds and lifetime 6 seconds.","按住瞄准后释放魔法飞弹，造成 24 点伤害；冷却 2.5 秒，存在 6 秒。"
+ITEM_GRINDSTONE_DESC_LV1,"Wall bounces charge +0.05 per bounce, up to 0.5 per shot.","墙面反弹每次充能 +0.05 层，每发累计上限 0.5 层。"
+ITEM_GRINDSTONE_DESC_LV2,"Wall bounces charge +0.06 per bounce, up to 0.5 per shot.","墙面反弹每次充能 +0.06 层，每发累计上限 0.5 层。"
+ITEM_GRINDSTONE_DESC_LV3,"Wall bounces charge +0.07 per bounce, up to 0.5 per shot.","墙面反弹每次充能 +0.07 层，每发累计上限 0.5 层。"
+ITEM_GRINDSTONE_DESC_LV4,"Awakened: wall bounces charge +0.10 per bounce, up to 0.5 per shot.","觉醒：墙面反弹每次充能 +0.10 层，每发累计上限 0.5 层。"
+ITEM_DROP_HAMMER_DESC_LV1,"Every 3 bounces this shot: +1 Echo damage on the next hit, capped at +3.","本发每反弹 3 次，下次命中回响追加伤害 +1，封顶 +3。"
+ITEM_DROP_HAMMER_DESC_LV2,"Every 3 bounces this shot: +1 Echo damage on the next hit, capped at +4.","本发每反弹 3 次，下次命中回响追加伤害 +1，封顶 +4。"
+ITEM_DROP_HAMMER_DESC_LV3,"Every 3 bounces this shot: +1 Echo damage on the next hit, capped at +5.","本发每反弹 3 次，下次命中回响追加伤害 +1，封顶 +5。"
+ITEM_DROP_HAMMER_DESC_LV4,"Awakened: every 2 bounces this shot: +1 Echo damage on the next hit, capped at +5.","觉醒：本发每反弹 2 次，下次命中回响追加伤害 +1，封顶 +5。"
+ITEM_BATTERING_RAM_DESC_LV1,"A Power Strike grants the marble Pierce for 3 seconds.","强力击使弹珠获得 3 秒穿透。"
+ITEM_BATTERING_RAM_DESC_LV2,"A Power Strike grants the marble Pierce for 3.5 seconds.","强力击使弹珠获得 3.5 秒穿透。"
+ITEM_BATTERING_RAM_DESC_LV3,"A Power Strike grants the marble Pierce for 4 seconds.","强力击使弹珠获得 4 秒穿透。"
+ITEM_BATTERING_RAM_DESC_LV4,"Awakened: a Power Strike grants Pierce for 5 seconds and pierce damage is increased by 50%.","觉醒：强力击使弹珠获得 5 秒穿透，穿透伤害 +50%。"

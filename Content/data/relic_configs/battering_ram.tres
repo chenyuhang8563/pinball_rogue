@@ -1,0 +1,11 @@
+[gd_resource type="Resource" script_class="RelicLevelConfig" format=3]
+
+[ext_resource type="Script" path="res://Combat/effects/relic_level_config.gd" id="1_config"]
+
+[resource]
+script = ExtResource("1_config")
+level_values = Array[int]([30, 35, 40])
+extra = {
+"awakened_duration_seconds": 5.0,
+"awakened_damage_multiplier": 1.5
+}

@@ -12,6 +12,7 @@ const ITEM_IDS: Array[String] = [
 	"lightning", "leyden_jar", "arc_relay", "thunderstorm", "fire_bellows", "accelerant", "cremation", "poison_culture", "ice_hammer", "permafrost", "cryoclasm",
 	"carrion", "parasite", "pustule", "venom_knife", "scorpion_tail", "witch_hat", "assassins_whetstone", "fortuna_dice",
 	"many_faced_prism", "scarlet_thread", "execution_decree", "thermal_shock", "miasma", "dash", "magic_missile",
+	"grindstone", "drop_hammer", "battering_ram",
 ]
 
 
