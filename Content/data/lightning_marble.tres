@@ -1,13 +1,13 @@
-[gd_resource type="Resource" script_class="Item" format=3]
+[gd_resource type="Resource" script_class="Item" format=3 uid="uid://3gmtqncaxrxs"]
 
-[ext_resource type="Texture2D" path="res://Assets/Marbles/lightning_marble.png" id="1_icon"]
-[ext_resource type="Script" path="res://Content/domain/item.gd" id="2_item"]
+[ext_resource type="Texture2D" uid="uid://3gkavo51qydv" path="res://Combat/marbles/lightning_marble.png" id="1_awkyv"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="2_item"]
 
 [resource]
 script = ExtResource("2_item")
 id = "lightning_marble"
 title = "ITEM_LIGHTNING_MARBLE_TITLE"
-icon = ExtResource("1_icon")
+icon = ExtResource("1_awkyv")
 price = 25
 description = "ITEM_LIGHTNING_MARBLE_DESC"
 effect_type = 26
@@ -15,4 +15,3 @@ type = 1
 tags = Array[StringName]([&"marble", &"lightning", &"lightning_marble", &"producer"])
 weight = 100.0
 marble_type = 7
-marble_segment_damage = 1

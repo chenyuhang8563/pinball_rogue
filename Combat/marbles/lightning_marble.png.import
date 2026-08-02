@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://rmrjmmxpxowe"
-path="res://.godot/imported/lightning_marble.png-5cd93af89fb2a507d0a3ab5fe6610709.ctex"
+uid="uid://3gkavo51qydv"
+path="res://.godot/imported/lightning_marble.png-a1012aa3745c65407d2b800565bb385e.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://Assets/Marbles/lightning_marble.png"
-dest_files=["res://.godot/imported/lightning_marble.png-5cd93af89fb2a507d0a3ab5fe6610709.ctex"]
+source_file="res://Combat/marbles/lightning_marble.png"
+dest_files=["res://.godot/imported/lightning_marble.png-a1012aa3745c65407d2b800565bb385e.ctex"]
 
 [params]
 

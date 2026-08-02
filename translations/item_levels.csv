@@ -7,6 +7,8 @@ TERM_ARC_NAME,Arc,电弧
 TERM_ARC_DESC,"A 5-second stacking charge; Lightning Marble repeat hits discharge its stored stacks.","持续 5 秒的可叠层电荷；闪电弹珠复击时释放已储存层数。"
 TERM_ECHO_NAME,Echo,回响
 TERM_ECHO_DESC,"With Brown Marble in the chain, enemy hits charge both flippers (4 hits fill 1 layer, up to 2). Launching consumes 1 layer to boost speed and arm bonus damage; at full red charge the launch consumes everything for a bigger speed boost and 2 bonus hits. Charge resets after each battle.","链中存在大地弹珠时，命中敌人为左右挡板蓄力（4 次命中累计 1 层，上限 2 层）；带蓄力弹起弹珠时消耗 1 层，提升球速并武装下一次敌人命中的追加伤害。红条满 2 层时发射一次性全部消耗，获得更大球速并武装 2 次追加伤害。每场战斗结束蓄力重置为 0。"
+TERM_POWER_STRIKE_NAME,Power Strike,强力击
+TERM_POWER_STRIKE_DESC,On the next flipper launch the marble launches faster and deals more damage.,下一次挡板弹起时，弹珠速度更快，伤害更高。
 TERM_POISON_NAME,Poison,中毒
 TERM_POISON_DESC,"Each layer deals 1 poison damage per second for 5 seconds. Applying it again refreshes the 5-second timer.","目标获得中毒层数时生效；每 1 秒每层造成 1 点毒素伤害，持续 5 秒，再次施加会刷新 5 秒。"
 TERM_INFECTION_NAME,Infection,感染
@@ -37,10 +39,10 @@ ITEM_BOMB_MARBLE_DESC_LV1,"On enemy collision trigger Explosion for [damage_expl
 ITEM_BOMB_MARBLE_DESC_LV2,"On enemy collision trigger Explosion for [damage_explosion]8[/damage_explosion] damage.","碰撞敌人时触发爆炸并造成 [damage_explosion]8[/damage_explosion] 点伤害。"
 ITEM_BOMB_MARBLE_DESC_LV3,"On enemy collision trigger Explosion for [damage_explosion]8[/damage_explosion] damage.","碰撞敌人时触发爆炸并造成 [damage_explosion]8[/damage_explosion] 点伤害。"
 ITEM_BOMB_MARBLE_DESC_LV4,"Awakened: Explosion keeps [damage_explosion]8[/damage_explosion] damage with radius 100 and x4 effect scale.","觉醒：爆炸保持 [damage_explosion]8[/damage_explosion] 点伤害并获得 100 半径与 x4 效果范围。"
-ITEM_BROWN_MARBLE_DESC_LV1,"Enemy hits charge both flippers (4 hits fill 1 layer, up to 2). A charged launch consumes 1 layer to boost speed and arm 2 Echo bonus damage.","命中敌人为左右挡板蓄力（4 次命中累计 1 层，上限 2 层）；带蓄力弹起时消耗 1 层，提升球速并武装下次命中的 2 点回响追加伤害。"
-ITEM_BROWN_MARBLE_DESC_LV2,"Enemy hits charge both flippers (4 hits fill 1 layer, up to 2). A charged launch consumes 1 layer to boost speed and arm 4 Echo bonus damage.","命中敌人为左右挡板蓄力（4 次命中累计 1 层，上限 2 层）；带蓄力弹起时消耗 1 层，提升球速并武装下次命中的 4 点回响追加伤害。"
-ITEM_BROWN_MARBLE_DESC_LV3,"Enemy hits charge both flippers (4 hits fill 1 layer, up to 2). A charged launch consumes 1 layer to boost speed and arm 8 Echo bonus damage.","命中敌人为左右挡板蓄力（4 次命中累计 1 层，上限 2 层）；带蓄力弹起时消耗 1 层，提升球速并武装下次命中的 8 点回响追加伤害。"
-ITEM_BROWN_MARBLE_DESC_LV4,"Awakened: Echo bonus damage is 8 and a full 2-layer launch consumes everything for double the speed boost and 2 armed hits.","觉醒：回响追加伤害为 8 点；满 2 层弹起时一次性全部消耗，获得双倍球速提升并武装 2 次追加伤害。"
+ITEM_BROWN_MARBLE_DESC_LV1,Enemy hits charge the flipper; a full charge provides a Power Strike with 2 bonus damage.,命中敌人给挡板蓄力，蓄力条满提供一次强力击；追加 2 点伤害。
+ITEM_BROWN_MARBLE_DESC_LV2,Enemy hits charge the flipper; a full charge provides a Power Strike with 4 bonus damage.,命中敌人给挡板蓄力，蓄力条满提供一次强力击；追加 4 点伤害。
+ITEM_BROWN_MARBLE_DESC_LV3,Enemy hits charge the flipper; a full charge provides a Power Strike with 8 bonus damage.,命中敌人给挡板蓄力，蓄力条满提供一次强力击；追加 8 点伤害。
+ITEM_BROWN_MARBLE_DESC_LV4,"Awakened: enemy hits charge the flipper; a full charge provides a Power Strike with 8 bonus damage, and a full launch doubles the speed boost and arms 2 hits.","觉醒：命中敌人给挡板蓄力，蓄力条满提供一次强力击；追加 8 点伤害，满蓄力时双倍球速并追加 2 次。"
 ITEM_BLUE_MARBLE_DESC_LV1,"Hits add Frost. At 6 stacks the target becomes Frozen.","命中叠加冰霜；6 层时目标冻结。"
 ITEM_BLUE_MARBLE_DESC_LV2,"Hits add Frost. Frozen duration is 4 seconds and frost stacks add bonus damage.","命中叠加冰霜；冻结持续 4 秒且冰霜层数会提供额外伤害。"
 ITEM_BLUE_MARBLE_DESC_LV3,"Hits add Frost. Frozen duration is 4 seconds and frost stacks add bonus damage.","命中叠加冰霜；冻结持续 4 秒且冰霜层数会提供额外伤害。"

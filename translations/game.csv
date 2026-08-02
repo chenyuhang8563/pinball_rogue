@@ -75,7 +75,7 @@ ITEM_BLUE_MARBLE_DESC,Adds frost to enemies on hit.,命中敌人时施加冰霜�
 ITEM_GREEN_MARBLE_TITLE,Green Marble,毒液弹珠
 ITEM_GREEN_MARBLE_DESC,Poisons enemies and refreshes a shared 5 second timer on each hit.,命中敌人施加中毒，每次命中刷新共享的 5 秒计时。
 ITEM_BROWN_MARBLE_TITLE,Brown Marble,大地弹珠
-ITEM_BROWN_MARBLE_DESC,Enemy hits charge both flippers; charged launches deal echo bonus damage.,命中敌人为左右挡板充能；带蓄力弹起时对下次命中追加回响伤害。
+ITEM_BROWN_MARBLE_DESC,Enemy hits charge the flipper; a full charge provides a Power Strike.,命中敌人给挡板蓄力，蓄力条满提供一次强力击。
 ITEM_BOMB_MARBLE_TITLE,Bomb Marble,炸弹弹珠
 ITEM_BOMB_MARBLE_DESC,Explodes on hit and damages nearby enemies.,命中时爆炸，伤害附近敌人。
 ITEM_LIGHTNING_TITLE,Lightning Chain,闪电链
