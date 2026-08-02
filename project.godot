@@ -27,7 +27,7 @@ FloatDamageTextPool="*res://Combat/presentation/float_damage_text_pool.gd"
 ContentRegistry="*res://Content/application/content_registry.gd"
 RunSaveRepository="*res://Run/save/run_save_repository.gd"
 AudioManager="*res://Core/audio/audio_manager.gd"
-MCPRuntimeProbe="*uid://bsg12huaf1u5i"
+MCPRuntimeProbe="*res://addons/godot_mcp/runtime/mcp_runtime_probe.gd"
 
 [display]
 
