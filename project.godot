@@ -20,7 +20,6 @@ config/icon="res://icon.svg"
 Localization="*res://Core/localization/localization.gd"
 EffectManager="*res://Combat/effects/effect_manager.gd"
 EffectRegistry="*res://Combat/effects/effect_registry.gd"
-GameExecutor="*uid://7yjc3ixh2laf"
 StatSystem="*res://Core/stats/stat_system.gd"
 BuffRegistry="*res://Combat/status/buff_registry.gd"
 FloatDamageTextPool="*res://Combat/presentation/float_damage_text_pool.gd"
@@ -41,7 +40,7 @@ window/stretch/aspect="expand"
 
 [editor_plugins]
 
-enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg", "res://addons/gut/plugin.cfg", "res://addons/hasturoperationgd/plugin.cfg")
+enabled=PackedStringArray("res://addons/godot_mcp/plugin.cfg", "res://addons/gut/plugin.cfg")
 
 [global_group]
 

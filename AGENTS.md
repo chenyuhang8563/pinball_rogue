@@ -8,8 +8,9 @@
 - Project uses Godot 4.7.1.
 - Godot executable: `E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe`.
 - `godot` is not on `PATH`.
+- gdmcp CLI: `.\.gdmcp\bin\gdmcp.exe`（项目本地，不在 PATH）；配合 addons/godot_mcp 插件与运行中的编辑器使用。
 - AI/Agent 在新增或移动/重命名 `.gd`、`.gdshader`、`.tscn`、`.tres` 或资源文件后，必须执行 `cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headless --import --path E:\Projects\pinball_rogue"` 更新导入与 UID 缓存。
-- Prefer the running editor plus Hastur tools when live inspection or screenshots are needed.
+- Prefer the running editor plus the gdmcp CLI when live inspection or screenshots are needed.
 - Never stop Godot by broad process-name commands such as `Stop-Process Godot_v4.7.1-stable_win64` or killing all matching Godot processes. If a process must be stopped, record the PID returned by the launch command and stop only that specific process, or use Godot/editor APIs to stop the running game.
 
 ## Verification
@@ -34,9 +35,9 @@ cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headles
 - 只有在测试可正常执行时才运行 GUT：GUT 失败时 Godot 可能卡死且不产生有效输出，应先通过静态检查或代码审阅定位并消除该风险。
 
 - After GUT passes, run the game in Godot when runtime validation is relevant.
-- Capture screenshots from a running game only when a `game` executor is connected.
+- Capture screenshots from a running game only when gdmcp can reach the running game runtime.
 - Save screenshot evidence under `E:\Projects\pinball_rogue\.codex\hud_screenshots`; do not use `.codex_validation`.
-- 生成多个测试场景，每个测试场景单独用 `godot-remote-executor` 运行并且截图保存，必须有证据支持。
+- 生成多个测试场景，每个测试场景单独用 `gdmcp` 运行并且截图保存，必须有证据支持。
 
 ## Autoloads And Tests
 
@@ -45,7 +46,7 @@ cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headles
 - Free test-created Nodes/Resources when possible to avoid RID/ObjectDB leak warnings.
 
 ## UI 搭建与架构规范 (UI Construction & Architecture)
-- **UI 约束:** 严禁使用代码（如 `Control.new()`）搭建、组装 UI 结构。所有 UI 必须在 Godot 编辑器中作为场景（.tscn）可视化创建（需要使用 hastur broker mcp）。
+- **UI 约束:** 严禁使用代码（如 `Control.new()`）搭建、组装 UI 结构。所有 UI 必须在 Godot 编辑器中作为场景（.tscn）可视化创建（需要使用 gdmcp）。
 - **代码职责:** 逻辑脚本仅允许处理数据传递、UI 状态刷新、信号（Signals）绑定与分发。动态生成的 UI 元素必须通过 `preload` 编辑器导出的场景并 `instantiate()` 载入，禁止代码硬编码布局。
 - **禁止在代码中编辑 UI 属性:** 所有 UI 属性（位置、大小、颜色、字体、间距、可见性等）必须在 `.tscn` 场景文件或 `.tres` 主题/资源中设置，不得通过 GDScript 修改。代码中写 `rect_position`、`size`、`color`、`visible` 等 UI 属性赋值视为违规。运行时动态样式需求应通过主题（Theme）或场景预制变体实现。
 
