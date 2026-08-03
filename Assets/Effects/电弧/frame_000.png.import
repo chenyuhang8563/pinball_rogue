@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://bxnfh4spn41ns"
-path="res://.godot/imported/magic_missile_aim_arrow_transparent.png-22bc3c983a01b214f2f75b159527048c.ctex"
+uid="uid://dchpeimy4jvrs"
+path="res://.godot/imported/frame_000.png-83aab13d9a644ebff88c9d49c268e2a7.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://output/imagegen/magic_missile/transparent/magic_missile_aim_arrow_transparent.png"
-dest_files=["res://.godot/imported/magic_missile_aim_arrow_transparent.png-22bc3c983a01b214f2f75b159527048c.ctex"]
+source_file="res://Assets/Effects/电弧/frame_000.png"
+dest_files=["res://.godot/imported/frame_000.png-83aab13d9a644ebff88c9d49c268e2a7.ctex"]
 
 [params]
 

@@ -11,7 +11,7 @@ const DAMAGE_COLORS := {
 }
 const TERM_DATA := {
 	"BURN": ["燃烧", "Burn"],
-	"LIGHTNING_CHAIN": ["闪电链", "Lightning Chain"],
+	"LIGHTNING_CHAIN": ["闪电法杖", "Lightning Staff"],
 	"ARC": ["电弧", "Arc"],
 	"ECHO": ["回响", "Echo"],
 	"POWER_STRIKE": ["强力击", "Power Strike"],

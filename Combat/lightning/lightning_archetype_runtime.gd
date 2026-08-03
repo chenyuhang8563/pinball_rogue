@@ -115,7 +115,6 @@ func _deal_discharge(enemy: Node2D, stacks: int, breakthrough: bool, parent: Dam
 		&"lightning_discharge", roundi(damage), parent, false
 	)
 	_apply_damage(enemy, discharge_packet)
-	_spawn_link(enemy.global_position + Vector2(0.0, -12.0), enemy.global_position, Color.WHITE)
 
 
 func _trigger_chain(source: Node2D, chain: Variant, parent: DamagePacket) -> void:
@@ -151,7 +150,6 @@ func _trigger_thunderstorm(effect: Variant, origin: Vector2, parent: DamagePacke
 			&"relic_thunderstorm", int(effect.call("get_damage")), parent, true
 		)
 		_apply_damage(target, storm_packet)
-		_spawn_vertical_bolt(target.global_position, Color(0.72, 0.86, 1.0, 1.0))
 	if not bool(effect.call("is_awakened")) or targets.is_empty():
 		return
 	var tree: SceneTree = Engine.get_main_loop() as SceneTree
@@ -178,7 +176,6 @@ func _resolve_thunderstorm_second_round(targets: Array[Node2D], damage: int, par
 		_apply_damage(target, packet)
 		if _is_alive(target):
 			_apply_arc(target, 1, packet)
-		_spawn_vertical_bolt(target.global_position, Color(0.78, 0.56, 1.0, 0.9))
 
 
 func _apply_arc(enemy: Node2D, requested_stacks: int, packet: DamagePacket) -> void:
@@ -344,7 +341,3 @@ func _spawn_link(from_position: Vector2, to_position: Vector2, tint: Color) -> v
 	effect.global_position = (from_position + to_position) * 0.5
 	effect.rotation = direction.angle()
 	effect.modulate = tint
-
-
-func _spawn_vertical_bolt(target_position: Vector2, tint: Color) -> void:
-	_spawn_link(target_position + Vector2(0.0, -48.0), target_position, tint)

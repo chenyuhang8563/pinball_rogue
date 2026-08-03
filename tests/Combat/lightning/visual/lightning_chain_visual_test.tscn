@@ -1,0 +1,14 @@
+[gd_scene format=3]
+
+[ext_resource type="PackedScene" path="res://Combat/effects/lightning_effect/lightning_effect.tscn" id="1_chain"]
+
+[node name="LightningChainVisualTest" type="Node2D"]
+
+[node name="Backdrop" type="Polygon2D" parent="."]
+polygon = PackedVector2Array(0, 0, 320, 0, 320, 180, 0, 180)
+color = Color(0.02, 0.04, 0.12, 1)
+
+[node name="Chain" parent="." instance=ExtResource("1_chain")]
+position = Vector2(160, 90)
+speed_scale = 0.0
+frame = 3

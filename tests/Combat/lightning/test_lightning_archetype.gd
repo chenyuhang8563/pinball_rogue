@@ -1,6 +1,7 @@
 extends GutTest
 
 const EnemyScene: PackedScene = preload("res://Combat/battle/enemies/enemy.tscn")
+const LightningChainEffectScene: PackedScene = preload("res://Combat/effects/lightning_effect/lightning_effect.tscn")
 const LoadoutScript: GDScript = preload("res://Loadout/domain/loadout.gd")
 const ProgressionScript: GDScript = preload("res://Loadout/application/item_progression.gd")
 
@@ -34,6 +35,16 @@ func test_enemy_marble_chain_integration_applies_base_hit_before_discharge() -> 
 	enemy._on_body_entered(chain.head)
 	assert_eq(enemy.health, 96, "second contact resolves 1 physical then 2 discharge damage")
 	assert_eq(enemy.get_buff_stacks(ArcDebuff.ARC_ID), 2)
+
+
+func test_lightning_chain_effect_restores_the_original_seven_frame_animation() -> void:
+	var effect: AnimatedSprite2D = LightningChainEffectScene.instantiate() as AnimatedSprite2D
+	assert_not_null(effect)
+	add_child_autofree(effect)
+	assert_not_null(effect.sprite_frames)
+	assert_eq(effect.sprite_frames.get_frame_count(&"default"), 7)
+	assert_eq(effect.sprite_frames.get_animation_speed(&"default"), 15.0)
+	assert_false(effect.sprite_frames.get_animation_loop(&"default"))
 
 
 func test_first_hit_charges_then_repeat_hits_discharge_and_cap_at_three() -> void:

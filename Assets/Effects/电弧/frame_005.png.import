@@ -2,16 +2,16 @@
 
 importer="texture"
 type="CompressedTexture2D"
-uid="uid://ibyh03figtvt"
-path="res://.godot/imported/magic_missile_trail_particle_transparent.png-539d1c4bb042ff20010a6db7ae431935.ctex"
+uid="uid://ddrirxxj832lc"
+path="res://.godot/imported/frame_005.png-343e55915c8dfc011b9adc84c4514d80.ctex"
 metadata={
 "vram_texture": false
 }
 
 [deps]
 
-source_file="res://output/imagegen/magic_missile/transparent/magic_missile_trail_particle_transparent.png"
-dest_files=["res://.godot/imported/magic_missile_trail_particle_transparent.png-539d1c4bb042ff20010a6db7ae431935.ctex"]
+source_file="res://Assets/Effects/电弧/frame_005.png"
+dest_files=["res://.godot/imported/frame_005.png-343e55915c8dfc011b9adc84c4514d80.ctex"]
 
 [params]
 

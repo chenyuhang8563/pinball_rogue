@@ -78,7 +78,7 @@ ITEM_BROWN_MARBLE_TITLE,Brown Marble,大地弹珠
 ITEM_BROWN_MARBLE_DESC,Enemy hits charge both flippers. A Power Strike launch adds Echo damage to the next enemy hit.,命中敌人为挡板蓄力；强力击弹起时，下次命中附加回响伤害。
 ITEM_BOMB_MARBLE_TITLE,Bomb Marble,炸弹弹珠
 ITEM_BOMB_MARBLE_DESC,Explodes on hit and damages nearby enemies.,命中时爆炸，伤害附近敌人。
-ITEM_LIGHTNING_TITLE,Lightning Chain,闪电链
+ITEM_LIGHTNING_TITLE,Lightning Staff,闪电法杖
 ITEM_LIGHTNING_DESC,Repeat discharges branch to nearby enemies and apply Arc.,复击放电向附近敌人分叉并施加电弧。
 ITEM_LIGHTNING_MARBLE_TITLE,Lightning Marble,闪电弹珠
 ITEM_LIGHTNING_MARBLE_DESC,First hits apply Arc; repeat hits discharge stored Arc for lightning damage.,首击施加电弧；复击释放已储存电弧并造成雷电伤害。

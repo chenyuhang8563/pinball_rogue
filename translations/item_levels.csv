@@ -1,7 +1,7 @@
 keys,en,zh_CN
 TERM_BURN_NAME,Burn,燃烧
 TERM_BURN_DESC,"Takes fire damage each second equal to fuel stacks then loses 1 fuel. Ends at 0 fuel.","目标获得燃料时生效；每 1 秒按燃料层数造成火焰伤害并消耗 1 层，燃料归零时结束。"
-TERM_LIGHTNING_CHAIN_NAME,Lightning Chain,闪电链
+TERM_LIGHTNING_CHAIN_NAME,Lightning Staff,闪电法杖
 TERM_LIGHTNING_CHAIN_DESC,"On Lightning Marble repeat discharge, branch to nearby enemies and apply Arc.","闪电弹珠复击放电时向附近敌人分叉，并施加电弧。"
 TERM_ARC_NAME,Arc,电弧
 TERM_ARC_DESC,"A 5-second stacking charge; Lightning Marble repeat hits discharge its stored stacks.","持续 5 秒的可叠层电荷；闪电弹珠复击时释放已储存层数。"
