@@ -1,0 +1,9 @@
+﻿item_id,stat,min_level,value
+dark_marble,dark_marble_damage,1,1.0
+bomb_marble,explosion_damage,1,5.0
+brown_marble,echo_bonus_damage,1,2.0
+blue_marble,blue_frost_duration,1,4.0
+green_marble,poison_max_stacks,1,10.0
+fire_marble,fire_burn_max_stacks,1,10.0
+assassin_marble,assassin_segment_damage,1,1.0
+lightning_marble,lightning_discharge_damage_per_stack,1,2.0

@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://beerwwkf3020x"
+
+[deps]
+
+files=["res://tests/Content/fixtures/level_config/bom_crlf_marbles.stat.translation", "res://tests/Content/fixtures/level_config/bom_crlf_marbles.min.translation", "res://tests/Content/fixtures/level_config/bom_crlf_marbles.value.translation"]
+
+source_file="res://tests/Content/fixtures/level_config/bom_crlf_marbles.csv"
+dest_files=["res://tests/Content/fixtures/level_config/bom_crlf_marbles.stat.translation", "res://tests/Content/fixtures/level_config/bom_crlf_marbles.min.translation", "res://tests/Content/fixtures/level_config/bom_crlf_marbles.value.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

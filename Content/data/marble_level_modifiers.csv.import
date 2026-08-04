@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://dglegydl5g4lr"
+
+[deps]
+
+files=["res://Content/data/marble_level_modifiers.stat.translation", "res://Content/data/marble_level_modifiers.min.translation", "res://Content/data/marble_level_modifiers.value.translation"]
+
+source_file="res://Content/data/marble_level_modifiers.csv"
+dest_files=["res://Content/data/marble_level_modifiers.stat.translation", "res://Content/data/marble_level_modifiers.min.translation", "res://Content/data/marble_level_modifiers.value.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true

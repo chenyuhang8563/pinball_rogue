@@ -125,14 +125,14 @@ Content/data/*.tres                 translations/*.csv              UI/shared/it
 
 ## 5. 散落程度与重复维护点
 
-canonical 源文件：37 个 `.tres` + 3 个 CSV = **40**；技能定义 `description_key` 镜像再加 2 = 42；`*.translation` 为生成物不计。
+canonical 源文件：37 个 `.tres` + 3 个文案 CSV + 2 个数值 CSV（`Content/data/marble_level_modifiers.csv`、`skill_level_values.csv`）= **42**；技能定义 `description_key` 镜像再加 2 = 44；`*.translation` 与 `*.csv.import` 为生成物不计。
 
 重复/风险清单：
 
 1. **技能正文双份**：`SKILL_*_DESC` 与 `ITEM_*_DESC` 并存于 `skills.csv`，内容相同需同步（Dash、Magic Missile）。
 2. **技能 key 三层保存**：Item 的 `description`、SkillDefinition 的 `description_key`、CSV 正文。
 3. **tooltip 与技能替换对话框重复实现**查找逻辑：`item_tooltip.gd:79-87` vs `skill_replace_dialog.gd:188-199`。
-4. **`UPGRADE_*_DESC` 旧数据层**：`item_progression.gd:38-115` 硬编码 24 个 key，对应正文在 `game.csv` 多段；当前无读取路径，等级文案实际走 `item_levels.csv`。
+4. **升级数值已迁移 CSV（原 `UPGRADE_*_DESC` 旧数据层已移除）**：`item_progression.gd` 原硬编码的 `UPGRADE_VALUES`（含 24 个 `UPGRADE_*_DESC` 死数据 key 与 title/descriptions）与 `SKILL_LEVELS` 已删除，弹珠等级数值（37 行）与技能每级数值（8 行）改由 `Content/data/` 下两个 CSV 驱动，加载器为 `Content/application/level_config_loader.gd`（原子失败，坏配置不交付部分数据）。`game.csv` 中 `UPGRADE_*_DESC` 正文保留但无读取路径，等级文案实际走 `item_levels.csv`。
 5. **术语三处维护面**：`item_tooltip.gd:12-34`（别名）、`item_levels.csv:2-33`（正文）、`docs/design/tooltip/CONTEXT.md`（口径）。
 
 ## 6. 设计文档滞后

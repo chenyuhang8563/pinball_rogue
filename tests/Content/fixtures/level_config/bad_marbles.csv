@@ -1,0 +1,7 @@
+item_id,stat,min_level,value
+dark_marble,dark_marble_damage,1,1.0
+mystery_marble,foo,1,1.0
+dark_marble,empty_level,,1.0
+dark_marble,bad_value,1,abc
+bomb_marble,explosion_damage,1,5.0
+bomb_marble,explosion_damage,1,6.0

@@ -1,6 +1,7 @@
 extends RefCounted
 
 const StatModifierScript: GDScript = preload("res://Core/stats/stat_modifier.gd")
+const LevelConfigLoaderScript: GDScript = preload("res://Content/application/level_config_loader.gd")
 
 signal item_progressed(item: Item, level: int, awakened: bool)
 signal skill_progressed(skill_id: String, level: int)
@@ -29,108 +30,29 @@ const STAT_ASSASSIN_WEAK_POINT_COUNT: String = "assassin_weak_point_count"
 const STAT_LIGHTNING_DISCHARGE_DAMAGE: String = "lightning_discharge_damage_per_stack"
 const STAT_LIGHTNING_REPEAT_ARC_STACKS: String = "lightning_repeat_arc_stacks"
 
-const UPGRADE_VALUES: Dictionary = {
-	Marble.MARBLE_TYPE.DEFAULT: {
-		"title": "ITEM_DARK_MARBLE_TITLE",
-		"stat": STAT_DARK_MARBLE_DAMAGE,
-		"values": [1.0, 2.0, 3.0],
-		"awakened_value": 4.0,
-		"descriptions": [
-			"UPGRADE_DARK_DAMAGE_2_DESC",
-			"UPGRADE_DARK_DAMAGE_3_DESC",
-			"UPGRADE_DARK_AWAKEN_DESC",
-		],
-	},
-	Marble.MARBLE_TYPE.BOMB: {
-		"title": "ITEM_BOMB_MARBLE_TITLE",
-		"stat": STAT_EXPLOSION_DAMAGE,
-		"values": [5.0, 8.0, 8.0],
-		"descriptions": [
-			"UPGRADE_BOMB_DAMAGE_5_DESC",
-			"UPGRADE_BOMB_DAMAGE_8_DESC",
-			"UPGRADE_BOMB_AWAKEN_DESC",
-		],
-	},
-	Marble.MARBLE_TYPE.GREEN: {
-		"title": "ITEM_GREEN_MARBLE_TITLE",
-		"stat": STAT_POISON_MAX_STACKS,
-		"values": [10.0, 15.0, 20.0],
-		"awakened_value": 20.0,
-		"descriptions": [
-			"UPGRADE_GREEN_POISON_2_DESC",
-			"UPGRADE_GREEN_POISON_4_DESC",
-			"UPGRADE_GREEN_AWAKEN_DESC",
-		],
-	},
-	Marble.MARBLE_TYPE.BROWN: {
-		"title": "ITEM_BROWN_MARBLE_TITLE",
-		"stat": STAT_ECHO_BONUS_DAMAGE,
-		"values": [2.0, 4.0, 8.0],
-		"descriptions": [
-			"UPGRADE_BROWN_ECHO_2_DESC",
-			"UPGRADE_BROWN_ECHO_4_DESC",
-			"UPGRADE_BROWN_AWAKEN_DESC",
-		],
-	},
-	Marble.MARBLE_TYPE.BLUE: {
-		"title": "ITEM_BLUE_MARBLE_TITLE",
-		"stat": STAT_BLUE_FROST_DURATION,
-		"values": [4.0, 4.0, 4.0],
-		"descriptions": [
-			"UPGRADE_BLUE_DURATION_DESC",
-			"UPGRADE_BLUE_BONUS_DESC",
-			"UPGRADE_BLUE_AWAKEN_DESC",
-		],
-	},
-	Marble.MARBLE_TYPE.FIRE: {
-		"title": "ITEM_FIRE_MARBLE_TITLE",
-		"stat": STAT_FIRE_BURN_MAX_STACKS,
-		"values": [10.0, 15.0, 20.0],
-		"awakened_value": 20.0,
-		"descriptions": [
-			"UPGRADE_FIRE_DURATION_4_DESC",
-			"UPGRADE_FIRE_DURATION_5_DESC",
-			"UPGRADE_FIRE_AWAKEN_DESC",
-		],
-	},
-	Marble.MARBLE_TYPE.ASSASSIN: {
-		"title": "ITEM_ASSASSIN_MARBLE_TITLE",
-		"stat": STAT_ASSASSIN_SEGMENT_DAMAGE,
-		"values": [1.0, 2.0, 3.0],
-		"awakened_value": 3.0,
-		"descriptions": [
-			"UPGRADE_ASSASSIN_DAMAGE_2_DESC",
-			"UPGRADE_ASSASSIN_DAMAGE_3_DESC",
-			"UPGRADE_ASSASSIN_AWAKEN_DESC",
-		],
-	},
-	Marble.MARBLE_TYPE.LIGHTNING: {
-		"title": "ITEM_LIGHTNING_MARBLE_TITLE",
-		"stat": STAT_LIGHTNING_DISCHARGE_DAMAGE,
-		"values": [2.0, 3.0, 4.0],
-		"awakened_value": 4.0,
-		"descriptions": [
-			"UPGRADE_LIGHTNING_DAMAGE_3_DESC",
-			"UPGRADE_LIGHTNING_DAMAGE_4_DESC",
-			"UPGRADE_LIGHTNING_AWAKEN_DESC",
-		],
-	},
-}
-
-const SKILL_LEVELS: Dictionary = {
-	"dash": [
-		{"recharge_time": 5.0, "dash_damage_multiplier": 1.0, "dash_damage_duration": 0.0},
-		{"recharge_time": 4.0, "dash_damage_multiplier": 1.0, "dash_damage_duration": 0.0},
-		{"recharge_time": 3.0, "dash_damage_multiplier": 1.2, "dash_damage_duration": 2.0},
-		{"recharge_time": 3.0, "dash_damage_multiplier": 1.4, "dash_damage_duration": 2.0},
-	],
-	"magic_missile": [
-		{"recharge_time": 4.0, "base_damage": 10, "projectile_lifetime": 4.0},
-		{"recharge_time": 3.0, "base_damage": 15, "projectile_lifetime": 4.0},
-		{"recharge_time": 2.5, "base_damage": 18, "projectile_lifetime": 4.0},
-		{"recharge_time": 2.5, "base_damage": 24, "projectile_lifetime": 6.0},
-	],
-}
+## Stat ids the marble_chain entity registers. This list is the StatSystem
+## contract for marble upgrades: a bad CSV must never change what gets
+## registered. assassin_weak_point_count is intentionally not in the CSV — it
+## depends on the live chain and is applied separately.
+const REGISTERED_MARBLE_STAT_IDS: Array = [
+	STAT_DARK_MARBLE_DAMAGE,
+	STAT_POISON_MAX_STACKS,
+	STAT_POISON_STACKS_PER_HIT,
+	STAT_ECHO_FLIPPER_SPEED_MULTIPLIER,
+	STAT_EXPLOSION_EFFECT_SCALE,
+	STAT_EXPLOSION_DAMAGE,
+	STAT_EXPLOSION_RADIUS,
+	STAT_ECHO_BONUS_DAMAGE,
+	STAT_BLUE_FROST_DURATION,
+	STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED,
+	STAT_BLUE_FROST_STACKS_PER_HIT,
+	STAT_FIRE_BURN_MAX_STACKS,
+	STAT_FIRE_BURN_DAMAGE_PER_LAYER,
+	STAT_ASSASSIN_SEGMENT_DAMAGE,
+	STAT_ASSASSIN_WEAK_POINT_COUNT,
+	STAT_LIGHTNING_DISCHARGE_DAMAGE,
+	STAT_LIGHTNING_REPEAT_ARC_STACKS,
+]
 
 var _loadout: RefCounted = null
 var _stat_system: Object = null
@@ -139,12 +61,36 @@ var _marble_awakened: Dictionary = {}
 var _relic_levels: Dictionary = {}
 var _relic_awakened: Dictionary = {}
 var _skill_levels: Dictionary = {}
+## CSV data (marble_type_int -> {stat_id -> [{min_level, value}]}) and
+## (skill_id -> [{stat fields} ...] ordered by level 1..4).
+var _marble_level_modifiers: Dictionary = {}
+var _skill_level_values: Dictionary = {}
 
 
-func _init(loadout: RefCounted = null, stat_system: Object = null) -> void:
+func _init(loadout: RefCounted = null, stat_system: Object = null, level_config: Dictionary = {}) -> void:
 	_loadout = loadout
 	_stat_system = stat_system
+	if level_config.is_empty():
+		var result: Dictionary = LevelConfigLoaderScript.load_config()
+		if bool(result.get(&"ok", false)):
+			_install_level_config(result[&"config"] as Dictionary)
+		else:
+			# Fail closed: bad config leaves _marble_level_modifiers empty and
+			# level_of() returns 0 rather than falling back to stale numbers.
+			for message in result.get(&"errors", PackedStringArray()):
+				push_error("ItemProgression config: %s" % message)
+	else:
+		_install_level_config(level_config)
 	_connect_loadout_signals()
+
+
+func _install_level_config(config: Dictionary) -> void:
+	var marble_modifiers: Variant = config.get(&"marble_modifiers", {})
+	if marble_modifiers is Dictionary:
+		_marble_level_modifiers = marble_modifiers
+	var skill_values: Variant = config.get(&"skill_level_values", {})
+	if skill_values is Dictionary:
+		_skill_level_values = skill_values
 
 
 ## Assassin weak-point presence depends on the live chain (an owned marble that is
@@ -173,7 +119,7 @@ func level_of(item: Item) -> int:
 		return 0
 	match item.type:
 		Item.ItemType.MARBLE:
-			if not UPGRADE_VALUES.has(item.marble_type):
+			if not _marble_level_modifiers.has(int(item.marble_type)):
 				return 0
 			return AWAKENED_LEVEL if bool(_marble_awakened.get(int(item.marble_type), false)) \
 				else clampi(int(_marble_levels.get(int(item.marble_type), 1)), 1, MAX_LEVEL)
@@ -182,7 +128,7 @@ func level_of(item: Item) -> int:
 			return AWAKENED_LEVEL if bool(_relic_awakened.get(relic_key, false)) \
 				else clampi(int(_relic_levels.get(relic_key, 1)), 1, MAX_LEVEL)
 		Item.ItemType.SKILL:
-			if not SKILL_LEVELS.has(item.id):
+			if not _skill_level_values.has(item.id):
 				return 0
 			return clampi(int(_skill_levels.get(item.id, 1)), 1, AWAKENED_LEVEL)
 	return 0
@@ -225,7 +171,7 @@ func upgrade_one(item: Item) -> bool:
 
 
 func reset_skill(skill_id: String) -> bool:
-	if skill_id == "" or not SKILL_LEVELS.has(skill_id):
+	if skill_id == "" or not _skill_level_values.has(skill_id):
 		return false
 	_skill_levels.erase(skill_id)
 	skill_progressed.emit(skill_id, 1)
@@ -237,7 +183,7 @@ func reset_item(item: Item) -> bool:
 		return false
 	match item.type:
 		Item.ItemType.MARBLE:
-			if not UPGRADE_VALUES.has(item.marble_type):
+			if not _marble_level_modifiers.has(int(item.marble_type)):
 				return false
 			_marble_levels.erase(int(item.marble_type))
 			_marble_awakened.erase(int(item.marble_type))
@@ -317,7 +263,7 @@ func _valid_snapshot(state: Dictionary) -> bool:
 				or not (state[&"relic_awakened"] as Dictionary)[key] is bool:
 			return false
 	for key: Variant in (state[&"skill_levels"] as Dictionary):
-		if not key is String or not SKILL_LEVELS.has(String(key)) \
+		if not key is String or not _skill_level_values.has(String(key)) \
 				or not (state[&"skill_levels"] as Dictionary)[key] is int \
 				or int((state[&"skill_levels"] as Dictionary)[key]) < 1 \
 				or int((state[&"skill_levels"] as Dictionary)[key]) > AWAKENED_LEVEL:
@@ -345,7 +291,7 @@ func reset_for_run() -> void:
 	if not _loadout_available():
 		return
 	for item: Item in _loadout.call("owned_items") as Array[Item]:
-		if item.type == Item.ItemType.SKILL and SKILL_LEVELS.has(item.id):
+		if item.type == Item.ItemType.SKILL and _skill_level_values.has(item.id):
 			skill_progressed.emit(item.id, 1)
 		elif item.type in [Item.ItemType.MARBLE, Item.ItemType.RELIC] and level_of(item) > 0:
 			item_progressed.emit(item, 1, false)
@@ -362,9 +308,9 @@ func upgradable_owned_items() -> Array[Item]:
 
 
 func get_skill_values(skill_id: String) -> Dictionary:
-	if not SKILL_LEVELS.has(skill_id):
+	if not _skill_level_values.has(skill_id):
 		return {}
-	var values: Array = SKILL_LEVELS[skill_id]
+	var values: Array = _skill_level_values[skill_id]
 	var level := clampi(int(_skill_levels.get(skill_id, 1)), 1, AWAKENED_LEVEL)
 	return (values[level - 1] as Dictionary).duplicate(true)
 
@@ -381,25 +327,7 @@ func _sync_stat_modifiers() -> void:
 		return
 	_clear_upgrade_modifiers()
 	if _stat_system.has_method("register_entity"):
-		_stat_system.call("register_entity", STAT_ENTITY_MARBLE_CHAIN, [
-			STAT_DARK_MARBLE_DAMAGE,
-			STAT_POISON_MAX_STACKS,
-			STAT_POISON_STACKS_PER_HIT,
-			STAT_ECHO_FLIPPER_SPEED_MULTIPLIER,
-			STAT_EXPLOSION_EFFECT_SCALE,
-			STAT_EXPLOSION_DAMAGE,
-			STAT_EXPLOSION_RADIUS,
-			STAT_ECHO_BONUS_DAMAGE,
-			STAT_BLUE_FROST_DURATION,
-			STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED,
-			STAT_BLUE_FROST_STACKS_PER_HIT,
-			STAT_FIRE_BURN_MAX_STACKS,
-			STAT_FIRE_BURN_DAMAGE_PER_LAYER,
-			STAT_ASSASSIN_SEGMENT_DAMAGE,
-			STAT_ASSASSIN_WEAK_POINT_COUNT,
-			STAT_LIGHTNING_DISCHARGE_DAMAGE,
-			STAT_LIGHTNING_REPEAT_ARC_STACKS,
-		])
+		_stat_system.call("register_entity", STAT_ENTITY_MARBLE_CHAIN, REGISTERED_MARBLE_STAT_IDS)
 	var types_to_sync: Array[int] = []
 	for raw_type: Variant in _marble_levels.keys():
 		var marble_type := int(raw_type)
@@ -415,35 +343,23 @@ func _sync_stat_modifiers() -> void:
 
 
 func _apply_level_modifiers(marble_type: Marble.MARBLE_TYPE) -> void:
-	var data: Dictionary = UPGRADE_VALUES.get(marble_type, {})
-	if data.is_empty():
+	var stat_rows_by_id: Dictionary = _marble_level_modifiers.get(int(marble_type), {})
+	if stat_rows_by_id.is_empty():
 		return
 	var stored_level := clampi(int(_marble_levels.get(int(marble_type), 1)), 1, MAX_LEVEL)
-	var values: Array = data.get("values", [])
-	var stat_id := String(data.get("stat", ""))
-	var awakened := bool(_marble_awakened.get(int(marble_type), false))
-	if awakened and stat_id != "" and data.has("awakened_value"):
-		_add_override_modifier(stat_id, float(data["awakened_value"]))
-	elif stat_id != "" and stored_level - 1 < values.size():
-		_add_override_modifier(stat_id, float(values[stored_level - 1]))
-	if marble_type == Marble.MARBLE_TYPE.BOMB and awakened:
-		_add_override_modifier(STAT_EXPLOSION_RADIUS, 100.0)
-		_add_override_modifier(STAT_EXPLOSION_EFFECT_SCALE, 4.0)
-	elif marble_type == Marble.MARBLE_TYPE.GREEN and awakened:
-		_add_override_modifier(STAT_POISON_STACKS_PER_HIT, 2.0)
-	elif marble_type == Marble.MARBLE_TYPE.BROWN and awakened:
-		# 觉醒：不再有旧版 15 秒计时窗口，改为挡板弹起球速倍率提升。
-		_add_override_modifier(STAT_ECHO_FLIPPER_SPEED_MULTIPLIER, 2.0)
-	elif marble_type == Marble.MARBLE_TYPE.BLUE:
-		if stored_level >= 2:
-			_add_override_modifier(STAT_BLUE_FROST_BONUS_DAMAGE_ENABLED, 1.0)
-		if awakened:
-			_add_override_modifier(STAT_BLUE_FROST_STACKS_PER_HIT, 2.0)
-	elif marble_type == Marble.MARBLE_TYPE.FIRE:
-		if stored_level >= 3:
-			_add_override_modifier(STAT_FIRE_BURN_DAMAGE_PER_LAYER, 3.0)
-	elif marble_type == Marble.MARBLE_TYPE.LIGHTNING and awakened:
-		_add_override_modifier(STAT_LIGHTNING_REPEAT_ARC_STACKS, 2.0)
+	var effective_level := AWAKENED_LEVEL if bool(_marble_awakened.get(int(marble_type), false)) else stored_level
+	# 每个 stat 取 min_level <= effective_level 中 min_level 最大的一行。
+	# 显式求最大值，不依赖 loader 的行序（其排序只是可审计性的保证）。
+	for raw_stat_id: Variant in stat_rows_by_id:
+		var best_min_level := 0
+		var best_value := 0.0
+		for row: Dictionary in stat_rows_by_id[raw_stat_id] as Array:
+			var min_level := int(row.get("min_level", 0))
+			if min_level <= effective_level and min_level > best_min_level:
+				best_min_level = min_level
+				best_value = float(row.get("value", 0.0))
+		if best_min_level > 0:
+			_add_override_modifier(String(raw_stat_id), best_value)
 
 
 ## Assassin weak-point presence reflects the live chain: 0 when no assassin marble

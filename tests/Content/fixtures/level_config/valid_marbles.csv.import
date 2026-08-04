@@ -1,0 +1,19 @@
+[remap]
+
+importer="csv_translation"
+type="Translation"
+uid="uid://bdaif4sulipoq"
+
+[deps]
+
+files=["res://tests/Content/fixtures/level_config/valid_marbles.stat.translation", "res://tests/Content/fixtures/level_config/valid_marbles.min.translation", "res://tests/Content/fixtures/level_config/valid_marbles.value.translation"]
+
+source_file="res://tests/Content/fixtures/level_config/valid_marbles.csv"
+dest_files=["res://tests/Content/fixtures/level_config/valid_marbles.stat.translation", "res://tests/Content/fixtures/level_config/valid_marbles.min.translation", "res://tests/Content/fixtures/level_config/valid_marbles.value.translation"]
+
+[params]
+
+compress=1
+delimiter=0
+unescape_keys=false
+unescape_translations=true
