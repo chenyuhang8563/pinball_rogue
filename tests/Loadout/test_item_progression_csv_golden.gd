@@ -26,10 +26,10 @@ func test_dark_marble_curve() -> void:
 
 func test_bomb_marble_curve() -> void:
 	_assert_marble_curve("bomb_marble", Marble.MARBLE_TYPE.BOMB, [
-		{"explosion_damage": 5.0},
+		{"explosion_damage": 4.0},
+		{"explosion_damage": 6.0},
 		{"explosion_damage": 8.0},
-		{"explosion_damage": 8.0},
-		{"explosion_damage": 8.0, "explosion_radius": 100.0, "explosion_effect_scale": 4.0},
+		{"explosion_damage": 8.0, "explosion_radius": 75.0, "explosion_effect_scale": 4.0},
 	])
 
 

@@ -28,7 +28,7 @@ func test_default_loads_full_production_data() -> void:
 		{"min_level": 4, "value": 4.0},
 	])
 	assert_eq(marble_modifiers[by_id["bomb_marble"]]["explosion_radius"],
-		[{"min_level": 4, "value": 100.0}])
+		[{"min_level": 4, "value": 75.0}])
 	assert_eq(marble_modifiers[by_id["lightning_marble"]]["lightning_repeat_arc_stacks"],
 		[{"min_level": 4, "value": 2.0}])
 
