@@ -169,6 +169,27 @@ func test_fire_marble_growth_publishes_cap_and_damage_without_changing_hit_fuel(
 	assert_true((stats.get("modifiers") as Array).is_empty())
 
 
+func test_bomb_marble_growth_publishes_weakened_damage_and_awakened_radius_scale() -> void:
+	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout, stats)
+	var bomb := _item("bomb", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BOMB)
+	assert_true(loadout.call("add", bomb))
+
+	# UPGRADE_VALUES 以 1-based 索引应用（values[1] = Lv2）：Lv1 走 stat 基础 4 伤。
+	assert_true(progression.call("upgrade_one", bomb))
+	assert_eq(stats.call("modifier_value", "explosion_damage"), 6.0, "Lv2 爆炸伤害 6")
+	assert_null(stats.call("modifier_value", "explosion_radius"))
+	assert_true(progression.call("upgrade_one", bomb))
+	assert_eq(stats.call("modifier_value", "explosion_damage"), 8.0, "Lv3 爆炸伤害 8")
+	assert_true(progression.call("upgrade_one", bomb))
+	assert_eq(stats.call("modifier_value", "explosion_damage"), 8.0, "觉醒仍为 Lv3 的 8 伤（不加成）")
+	assert_eq(stats.call("modifier_value", "explosion_radius"), 75.0, "觉醒爆炸半径 75")
+	assert_eq(stats.call("modifier_value", "explosion_effect_scale"), 4.0, "觉醒特效 ×4")
+	progression.call("dispose")
+	assert_true((stats.get("modifiers") as Array).is_empty())
+
+
 func test_lightning_marble_growth_publishes_discharge_damage_and_awakened_stacks() -> void:
 	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
 	var loadout: RefCounted = LoadoutScript.new()

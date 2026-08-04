@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Item" format=3]
+
+[ext_resource type="Texture2D" uid="uid://c22utdavjt5k2" path="res://Assets/Items/relic_high_explosive.png" id="1_icon"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "high_explosive"
+title = "ITEM_HIGH_EXPLOSIVE_TITLE"
+icon = ExtResource("1_icon")
+price = 20
+description = "ITEM_HIGH_EXPLOSIVE_DESC"
+effect_type = 35
+type = 2
+rarity = 0
+tags = Array[StringName]([&"relic", &"bomb", &"ammo"])
+weight = 60
+requires_tags = Array[StringName]([&"bomb"])

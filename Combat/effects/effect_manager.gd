@@ -14,15 +14,23 @@ var _active_effects: Dictionary = {}
 var _loadout: RefCounted = null
 var _progression: RefCounted = null
 var _lightning_runtime: LightningArchetypeRuntime = null
+## 弹药系统注入：每次 configure 覆盖旧注入；双参数调用清空（防 autoload 跨测试泄漏）。
+var _ammo_state: Node = null
+## 产出服务注入：独立可选方法 configure_spawner 分发，双参数调用缺省即置 null。
+var _produced_marble_spawner: Node = null
 
 
-func configure(loadout: RefCounted, progression: RefCounted) -> bool:
+## 弹药系统注入点。四参调用携带 ammo_state 与产出服务，
+## 双参调用（旧接口/测试）会把两者清空。
+func configure(loadout: RefCounted, progression: RefCounted, ammo_state: Node = null, produced_marble_spawner: Node = null) -> bool:
 	if not _has_port_api(loadout, [&"relics"]) \
 			or not _has_port_api(progression, [&"level_of"]):
 		return false
 	_disconnect_port_signals()
 	_loadout = loadout
 	_progression = progression
+	_ammo_state = ammo_state
+	_produced_marble_spawner = produced_marble_spawner
 	_ensure_lightning_runtime()
 	_lightning_runtime.reset_shot()
 	_connect_port_signals()
@@ -103,6 +111,16 @@ func on_explosion(center: Vector2, radius: float) -> void:
 	_dispatch("on_explosion", [center, radius])
 
 
+## 遗物在扣弹/结算前改写爆炸参数（伤害、半径、弹药消耗、元数据）。
+func modify_explosion(context: ExplosionContext) -> void:
+	_dispatch("modify_explosion", [context])
+
+
+## 爆炸完整结算后分发（含弹药消耗），遗物可据此计数或掷概率（如回收器）。
+func on_explosion_resolved(context: ExplosionContext) -> void:
+	_dispatch("on_explosion_resolved", [context])
+
+
 func on_skill_hit(enemy: Node2D, skill_id: StringName, packet: DamagePacket) -> void:
 	_dispatch("on_skill_hit", [enemy, skill_id, packet])
 
@@ -134,6 +152,12 @@ func _sync_active_effects() -> void:
 			effect.call("set_level", int(effect_state.get("level", 1)))
 			if effect.has_method("set_awakened"):
 				effect.call("set_awakened", bool(effect_state.get("awakened", false)))
+		# 弹药系统运行时注入：在等级/觉醒确定后统一分发，遗物按需持有。
+		if effect != null and effect.has_method("configure_runtime"):
+			effect.call("configure_runtime", _ammo_state)
+		# 产出服务注入：独立可选方法，不影响现有 configure_runtime 单参调用。
+		if effect != null and effect.has_method("configure_spawner"):
+			effect.call("configure_spawner", _produced_marble_spawner)
 
 	for effect_type in _active_effects.keys():
 		if not owned_effects.has(effect_type):

@@ -112,6 +112,14 @@ func test_p3a_composition_shares_scope_random_configs_and_main_runtime_ports_wit
 	assert_eq(controller.get("_node_policy").get("_random"), random)
 	assert_eq(controller.get("_event_flow").get("_random"), random)
 	assert_eq(controller.get("_event_flow").get("_factory"), factory)
+	var ammo_state: AmmoState = main.get_node_or_null("AmmoState") as AmmoState
+	assert_not_null(ammo_state, "预置 AmmoState 被组合使用")
+	assert_eq(ammo_state.get_max_ammo(), 5, "FakeStatSystem 无 max_ammo 时回退默认 5")
+	assert_eq(ammo_state.get_ammo(), 5, "configure 后弹药即满")
+	assert_true(
+		controller.is_connected(&"battle_started", Callable(ammo_state, "_on_battle_started")),
+		"弹药状态接入战斗生命周期（battle_started 回满）"
+	)
 	assert_eq(
 		(main.get("battle_reward_config") as Resource).resource_path,
 		"res://Run/data/default_battle_reward_config.tres"
@@ -138,6 +146,8 @@ func test_p3a_composition_shares_scope_random_configs_and_main_runtime_ports_wit
 
 	main.call("_dispose_run_flow_composition")
 	_assert_composition_cleared(main)
+	# dispose 会释放 controller 节点，连接断言改从弹药侧验证生命周期已清空。
+	assert_null(ammo_state.get("_lifecycle_source"), "dispose 断开弹药生命周期")
 	main.call("_dispose_run_flow_composition")
 	_assert_composition_cleared(main)
 

@@ -3,10 +3,10 @@ dark_marble,dark_marble_damage,1,1.0
 dark_marble,dark_marble_damage,2,2.0
 dark_marble,dark_marble_damage,3,3.0
 dark_marble,dark_marble_damage,4,4.0
-bomb_marble,explosion_damage,1,5.0
-bomb_marble,explosion_damage,2,8.0
+bomb_marble,explosion_damage,1,4.0
+bomb_marble,explosion_damage,2,6.0
 bomb_marble,explosion_damage,3,8.0
-bomb_marble,explosion_radius,4,100.0
+bomb_marble,explosion_radius,4,75.0
 bomb_marble,explosion_effect_scale,4,4.0
 green_marble,poison_max_stacks,1,10.0
 green_marble,poison_max_stacks,2,15.0

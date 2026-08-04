@@ -25,6 +25,7 @@ const FIRE_BURN_DAMAGE_PER_LAYER: String = "fire_burn_damage_per_layer"
 const FIRE_BURN_TICK_SECONDS: String = "fire_burn_tick_seconds"
 const LIGHTNING_DISCHARGE_DAMAGE_PER_STACK: String = "lightning_discharge_damage_per_stack"
 const LIGHTNING_REPEAT_ARC_STACKS: String = "lightning_repeat_arc_stacks"
+const MAX_AMMO: String = "max_ammo"
 
 const DAMAGE_MULTIPLIER: String = "damage_multiplier"
 const FINAL_DAMAGE: String = "final_damage"
@@ -115,6 +116,7 @@ const DEFAULT_STAT_PATHS: Array[String] = [
 	"res://Core/stats/data/capacity/relic_slot_count.tres",
 	"res://Core/stats/data/run/run_health.tres",
 	"res://Core/stats/data/relic/lightning_chain_damage.tres",
+	"res://Core/stats/data/ammo/max_ammo.tres",
 ]
 
 

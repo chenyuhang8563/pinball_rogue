@@ -2,16 +2,23 @@ extends GutTest
 
 const MarbleChainScript: GDScript = preload("res://Combat/marbles/marble_chain.gd")
 const StatModifierScript: GDScript = preload("res://Core/stats/stat_modifier.gd")
+const AmmoStateScript: GDScript = preload("res://Combat/ammo/ammo_state.gd")
+const FakeStatSystemScript: GDScript = preload("res://tests/Loadout/fake_stat_system.gd")
 const ASSASSIN_HEAD_TEST_SOURCE: StringName = &"marble_chain_assassin_head_test"
 
 
 class DamageableEnemy extends Node2D:
 	var received_damage: int = 0
 	var received_buff_count: int = 0
+	var packets: Array[DamagePacket] = []
 
 
 	func take_damage(amount: int) -> void:
 		received_damage += amount
+
+
+	func apply_damage_packet(packet: DamagePacket) -> void:
+		packets.append(packet)
 
 
 	func add_buff(_buff: BuffDef, _stacks: int, _packet: DamagePacket = null) -> void:
@@ -43,6 +50,7 @@ func test_first_equipped_marble_defines_head_type() -> void:
 func test_bomb_head_explodes_when_it_is_the_only_remaining_marble() -> void:
 	# 问题来源：卖出黑色弹珠后，炸弹弹珠成为 Head 却不会在命中敌人时爆炸。
 	# 修复方式与边界：Head 与 Body 必须共享特殊效果判定；仅剩一颗炸弹弹珠也应造成爆炸伤害。
+	# 弹药机制：爆炸走 packet 流水线（apply_damage_packet）并消耗 1 发弹药。
 	var chain: MarbleChain = MarbleChainScript.new()
 	var enemy := DamageableEnemy.new()
 	add_child_autofree(chain)
@@ -50,10 +58,34 @@ func test_bomb_head_explodes_when_it_is_the_only_remaining_marble() -> void:
 	chain.build_chain([_marble("only_bomb", Marble.MARBLE_TYPE.BOMB)], [Vector2(56, 96)])
 	enemy.global_position = chain.head.global_position
 	enemy.add_to_group("enemies")
+	var ammo := _ammo_with(5)
+	chain.set_ammo_state(ammo)
 
 	chain.call("_on_head_body_entered", enemy)
 
-	assert_true(enemy.received_damage > 0, "唯一的炸弹 Head 命中敌人时应触发爆炸伤害")
+	assert_eq(enemy.packets.size(), 1, "唯一的炸弹 Head 命中敌人时应触发爆炸")
+	if enemy.packets.size() == 1:
+		assert_eq(int(enemy.packets[0].base), 4, "基础爆炸伤害 4（4/6/8 回调）")
+	assert_eq(ammo.get_ammo(), 4, "爆炸消耗 1 发弹药")
+
+
+func test_bomb_at_zero_ammo_does_not_explode_and_deals_one_contact_damage() -> void:
+	# 弹药 0：炸弹不再爆炸，普通碰撞保留 1 点保底伤害；整链只补一次。
+	var chain: MarbleChain = MarbleChainScript.new()
+	var enemy := DamageableEnemy.new()
+	add_child_autofree(chain)
+	add_child_autofree(enemy)
+	chain.build_chain([_marble("only_bomb", Marble.MARBLE_TYPE.BOMB)], [Vector2(56, 96)])
+	enemy.global_position = chain.head.global_position
+	enemy.add_to_group("enemies")
+	var ammo := _ammo_with(0)
+	chain.set_ammo_state(ammo)
+
+	var exploded: bool = bool(chain.call("_try_trigger_bomb"))
+
+	assert_false(exploded, "0 弹药不爆炸")
+	assert_eq(enemy.packets.size(), 0, "无爆炸伤害包")
+	assert_eq(chain.get_total_damage(enemy), 1, "0 弹药普通碰撞补 1 伤")
 
 
 func test_elemental_head_applies_its_status_when_it_is_the_only_remaining_marble() -> void:
@@ -161,4 +193,18 @@ func _marble(id: String, marble_type: Marble.MARBLE_TYPE) -> Item:
 	item.id = id
 	item.type = Item.ItemType.MARBLE
 	item.marble_type = marble_type
+	if marble_type == Marble.MARBLE_TYPE.BOMB:
+		item.marble_segment_damage = 0
 	return item
+
+
+class FakeLifecycle extends Node:
+	signal battle_started(token, plan)
+
+
+func _ammo_with(count: int) -> Node:
+	var stats: Node = autofree(FakeStatSystemScript.new())
+	var ammo: Node = autofree(AmmoStateScript.new())
+	ammo.configure(stats, add_child_autofree(FakeLifecycle.new()))
+	ammo.consume(ammo.get_ammo() - count)
+	return ammo

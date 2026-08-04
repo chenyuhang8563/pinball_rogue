@@ -31,6 +31,11 @@ const RELIC_EFFECT_SCRIPTS: Dictionary = {
 	&"grindstone": preload("res://Combat/effects/grindstone/grindstone.gd"),
 	&"drop_hammer": preload("res://Combat/effects/drop_hammer/drop_hammer.gd"),
 	&"battering_ram": preload("res://Combat/effects/battering_ram/battering_ram.gd"),
+	&"ammo_pouch": preload("res://Combat/effects/ammo_pouch/ammo_pouch.gd"),
+	&"ammo_recycler": preload("res://Combat/effects/ammo_recycler/ammo_recycler.gd"),
+	&"high_explosive": preload("res://Combat/effects/high_explosive/high_explosive.gd"),
+	&"last_shot": preload("res://Combat/effects/last_shot/last_shot.gd"),
+	&"ammo_dump": preload("res://Combat/effects/ammo_dump/ammo_dump.gd"),
 }
 
 

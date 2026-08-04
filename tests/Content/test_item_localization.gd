@@ -9,6 +9,11 @@ const WitchHatItem: Item = preload("res://Content/data/witch_hat.tres")
 const GrindstoneItem: Item = preload("res://Content/data/grindstone.tres")
 const DropHammerItem: Item = preload("res://Content/data/drop_hammer.tres")
 const BatteringRamItem: Item = preload("res://Content/data/battering_ram.tres")
+const AmmoPouchItem: Item = preload("res://Content/data/ammo_pouch.tres")
+const AmmoRecyclerItem: Item = preload("res://Content/data/ammo_recycler.tres")
+const HighExplosiveItem: Item = preload("res://Content/data/high_explosive.tres")
+const LastShotItem: Item = preload("res://Content/data/last_shot.tres")
+const AmmoDumpItem: Item = preload("res://Content/data/ammo_dump.tres")
 
 
 func test_pustule_description_is_chinese_in_chinese_locale() -> void:
@@ -47,3 +52,11 @@ func test_plague_relic_resources_match_the_appended_effect_type_enum_values() ->
 	assert_eq(GrindstoneItem.effect_type, Item.EffectType.GRINDSTONE)
 	assert_eq(DropHammerItem.effect_type, Item.EffectType.DROP_HAMMER)
 	assert_eq(BatteringRamItem.effect_type, Item.EffectType.BATTERING_RAM)
+
+
+func test_bomb_ammo_relic_resources_match_the_appended_effect_type_enum_values() -> void:
+	assert_eq(AmmoPouchItem.effect_type, Item.EffectType.AMMO_POUCH)
+	assert_eq(AmmoRecyclerItem.effect_type, Item.EffectType.AMMO_RECYCLER)
+	assert_eq(HighExplosiveItem.effect_type, Item.EffectType.HIGH_EXPLOSIVE)
+	assert_eq(LastShotItem.effect_type, Item.EffectType.LAST_SHOT)
+	assert_eq(AmmoDumpItem.effect_type, Item.EffectType.AMMO_DUMP)

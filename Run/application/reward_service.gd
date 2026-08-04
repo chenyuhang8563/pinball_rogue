@@ -33,6 +33,11 @@ const DEFAULT_NODE_ITEM_PATHS: PackedStringArray = [
 	"res://Content/data/venom_knife.tres",
 	"res://Content/data/scorpion_tail.tres",
 	"res://Content/data/witch_hat.tres",
+	"res://Content/data/ammo_pouch.tres",
+	"res://Content/data/ammo_recycler.tres",
+	"res://Content/data/high_explosive.tres",
+	"res://Content/data/last_shot.tres",
+	"res://Content/data/ammo_dump.tres",
 ]
 const DEFAULT_RELIC_PATHS: PackedStringArray = [
 	"res://Content/data/lightning.tres",
@@ -50,6 +55,11 @@ const DEFAULT_RELIC_PATHS: PackedStringArray = [
 	"res://Content/data/venom_knife.tres",
 	"res://Content/data/scorpion_tail.tres",
 	"res://Content/data/witch_hat.tres",
+	"res://Content/data/ammo_pouch.tres",
+	"res://Content/data/ammo_recycler.tres",
+	"res://Content/data/high_explosive.tres",
+	"res://Content/data/last_shot.tres",
+	"res://Content/data/ammo_dump.tres",
 ]
 const DEFAULT_NORMAL_MARBLE_PATHS: PackedStringArray = [
 	"res://Content/data/brown_marble.tres",

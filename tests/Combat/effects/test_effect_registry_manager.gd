@@ -34,6 +34,11 @@ const RELIC_IDS: Array[StringName] = [
 	&"grindstone",
 	&"drop_hammer",
 	&"battering_ram",
+	&"ammo_pouch",
+	&"ammo_recycler",
+	&"ammo_dump",
+	&"high_explosive",
+	&"last_shot",
 ]
 
 var _effect_manager: Node = null

@@ -11,6 +11,8 @@ const MAIN_MENU_SCENE: String = "res://UI/MainMenu/main_menu.tscn"
 
 @onready var marbles: Node2D = $Marbles
 @onready var marble_chain_registry: MarbleChainRegistry = $MarbleChainRegistry
+@onready var ammo_state: AmmoState = $AmmoState
+@onready var produced_marble_spawner: ProducedMarbleSpawner = $ProducedMarbleSpawner
 @onready var skill_controller: SkillController = $SkillController
 @onready var active_skill_slot: ActiveSkillSlot = $CanvasLayer/SkillSlot
 @onready var debug_grant_panel: Control = $DebugCanvasLayer/DebugGrantPanel
@@ -98,6 +100,9 @@ func _spawn_chain() -> void:
 	marble_chain.set_chain_registry(marble_chain_registry)
 	marbles.add_child(marble_chain)
 	marble_chain.build_chain(chain_items, starting_marble_spawn_positions)
+	if ammo_state != null:
+		marble_chain.set_ammo_state(ammo_state)
+	_sync_ammo_hud()
 
 
 ## 用当前 RunScope 的 MarbleLoadout 顺序构建弹珠链。
@@ -136,6 +141,83 @@ func reset_battle_state() -> void:
 		skill_controller.cancel_active_skill("battle_reset")
 		skill_controller.clear_projectiles()
 	_spawn_chain()
+	# 台面已在 gateway.start() → _activate_level_for() 中实例化，此刻绑挡板发射信号。
+	if ammo_state != null and battle_gateway != null \
+			and is_instance_valid(battle_gateway) and battle_gateway.active_level_scene != null:
+		ammo_state.bind_launch_sources(battle_gateway.active_level_scene)
+
+
+# ---- 弹药系统 ----
+
+## 战斗流程组合成功后启用弹药状态：连接 battle_started 与 HUD 刷新。
+## 预置 AmmoState 节点：@onready 未就绪（组合测试不进场景树）时按名回退查找。
+func _preplaced_ammo_state() -> AmmoState:
+	if ammo_state != null and is_instance_valid(ammo_state):
+		return ammo_state
+	return get_node_or_null("AmmoState") as AmmoState
+
+
+## 产出服务节点回退查找：预置 ProducedMarbleSpawner 节点，@onready 未就绪
+## （组合测试不进场景树）时按名回退。
+func _preplaced_spawner() -> ProducedMarbleSpawner:
+	if produced_marble_spawner != null and is_instance_valid(produced_marble_spawner):
+		return produced_marble_spawner
+	return get_node_or_null("ProducedMarbleSpawner") as ProducedMarbleSpawner
+
+
+## 当前关卡父节点（battle_gateway.active_level_scene），产出服务实例化挂靠点。
+func _current_level_scene() -> Node:
+	if battle_gateway == null or not is_instance_valid(battle_gateway):
+		return null
+	return battle_gateway.active_level_scene
+
+
+func _configure_ammo_state(stat_system: Node, lifecycle_source: Node) -> void:
+	var ammo := _preplaced_ammo_state()
+	if ammo == null or stat_system == null or lifecycle_source == null:
+		return
+	ammo.configure(stat_system, lifecycle_source)
+	if ammo.has_signal(&"changed") \
+			and not ammo.is_connected(&"changed", Callable(self, "_sync_ammo_hud")):
+		ammo.connect(&"changed", Callable(self, "_sync_ammo_hud"))
+
+
+## 产出服务接入战斗生命周期：配置关卡提供者并连接 battle_started 清场。
+func _configure_produced_marble_spawner(lifecycle_source: Node) -> void:
+	var spawner := _preplaced_spawner()
+	if spawner == null or lifecycle_source == null or not is_instance_valid(lifecycle_source):
+		return
+	spawner.configure(Callable(self, "_current_level_scene"))
+	var reset_callable := Callable(spawner, "reset_for_battle")
+	if lifecycle_source.has_signal(&"battle_started") \
+			and not lifecycle_source.is_connected(&"battle_started", reset_callable):
+		lifecycle_source.connect(&"battle_started", reset_callable)
+
+
+## 断开产出服务生命周期连接并清空关卡提供者（与 AmmoState.unconfigure 同模式）。
+func _dispose_produced_marble_spawner() -> void:
+	var spawner := _preplaced_spawner()
+	if spawner == null:
+		return
+	var reset_callable := Callable(spawner, "reset_for_battle")
+	if run_flow_controller != null and is_instance_valid(run_flow_controller) \
+			and run_flow_controller.has_signal(&"battle_started") \
+			and run_flow_controller.is_connected(&"battle_started", reset_callable):
+		run_flow_controller.disconnect(&"battle_started", reset_callable)
+	spawner.configure(Callable())
+
+
+## HUD 弹药行刷新：bomb 弹珠存在才显示，文本与警示色交给 HUD 动画状态。
+## 挂在 ammo_state.changed(current, maximum) 信号上，参数可选以免签名不匹配。
+func _sync_ammo_hud(_current: int = 0, _maximum: int = 0) -> void:
+	if ammo_state == null or battle_hud == null or not is_instance_valid(battle_hud):
+		return
+	if not battle_hud.has_method("set_ammo"):
+		return
+	var has_bomb: bool = marble_chain != null and is_instance_valid(marble_chain) \
+		and marble_chain.has_method("has_bomb_marble") \
+		and bool(marble_chain.call("has_bomb_marble"))
+	battle_hud.call("set_ammo", ammo_state.get_ammo(), ammo_state.get_max_ammo(), has_bomb)
 
 
 # ---- 辅助方法 ----
@@ -216,7 +298,13 @@ func _setup_run_scope(
 	if effect_manager == null:
 		effect_manager = _get_autoload_node(&"EffectManager")
 	if effect_manager == null or not effect_manager.has_method("configure") \
-			or not bool(effect_manager.call("configure", run_scope.loadout, run_scope.progression)):
+			or not bool(effect_manager.call(
+				"configure",
+				run_scope.loadout,
+				run_scope.progression,
+				ammo_state,
+				_preplaced_spawner()
+			)):
 		_discard_run_scope()
 		return false
 	return true
@@ -393,6 +481,8 @@ func _setup_run_flow_composition(
 		return false
 
 	_run_flow_composition_configured = true
+	_configure_ammo_state(stat_system, run_flow_controller)
+	_configure_produced_marble_spawner(run_flow_controller)
 	return true
 
 
@@ -400,6 +490,10 @@ func _setup_run_flow_composition(
 ## ownership release.
 func _dispose_run_flow_composition() -> void:
 	_run_flow_composition_configured = false
+	var ammo := _preplaced_ammo_state()
+	if ammo != null:
+		ammo.unconfigure()
+	_dispose_produced_marble_spawner()
 	if run_ui_adapter != null:
 		run_ui_adapter.dispose()
 	run_ui_adapter = null

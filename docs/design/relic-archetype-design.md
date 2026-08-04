@@ -79,7 +79,7 @@ class_name DamagePacket
 # source: marble_head | chain_segment | bomb | dot | relic_* | skill_dash | skill_missile | payoff_*
 # element: physical|fire|poison|frost|lightning|arcane
 # base / flat / is_dot / is_skill / is_relic / is_crit_eligible
-# proc_coefficient (默认1.0) / generation (默认0)
+# generation (默认0)
 # target: Enemy
 ```
 

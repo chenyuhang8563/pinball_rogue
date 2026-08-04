@@ -21,5 +21,4 @@ func test_packet_defaults_preserve_neutral_combat_metadata() -> void:
 	assert_false(packet.is_dot)
 	assert_false(packet.is_skill)
 	assert_false(packet.is_relic)
-	assert_eq(packet.proc_coefficient, 1.0)
 	assert_eq(packet.generation, 0)

@@ -57,6 +57,8 @@ func test_main_scene_exposes_required_composition_nodes() -> void:
 	assert_true(main.get_node_or_null("Enemies") is Node2D)
 	assert_true(main.get_node_or_null("BattleGateway") is BattleGateway)
 	assert_true(main.get_node_or_null("RunFlowController") is RunFlowController)
+	# 炸弹弹药系统：Main 下预置 AmmoState 状态持有节点。
+	assert_true(main.get_node_or_null("AmmoState") is AmmoState)
 	var shop_backdrop := main.get_node_or_null("Shop/UI/ShopBackdrop") as ColorRect
 	assert_not_null(shop_backdrop)
 	if shop_backdrop != null:

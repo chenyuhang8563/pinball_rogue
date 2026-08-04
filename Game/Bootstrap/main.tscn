@@ -1,6 +1,7 @@
 [gd_scene format=3 uid="uid://cbbk5l2e1na0y"]
 
 [ext_resource type="Script" uid="uid://bsino3h1ad0fx" path="res://Game/Bootstrap/main.gd" id="1_eunhr"]
+[ext_resource type="Script" path="res://Combat/ammo/ammo_state.gd" id="2_ammo"]
 [ext_resource type="Theme" uid="uid://c5yfpu05x03g3" path="res://Themes/ui_font_10.tres" id="3_sfxvq"]
 [ext_resource type="LabelSettings" uid="uid://mxcocbqp833n" path="res://Themes/Fonts/text_10.tres" id="4_0gq1e"]
 [ext_resource type="Script" uid="uid://chim3ilwxgpw0" path="res://Combat/presentation/battle_hud.gd" id="4_o6133"]
@@ -45,9 +46,16 @@
 [ext_resource type="Resource" uid="uid://bbr7jeko8e7qe" path="res://Content/data/poison_culture.tres" id="41_e0pmg"]
 [ext_resource type="Resource" uid="uid://bo4qentxbit4m" path="res://Content/data/ice_hammer.tres" id="42_1pfvk"]
 [ext_resource type="Script" uid="uid://bjfai71a1nsp2" path="res://Loadout/presentation/inventory_panel.gd" id="44_bhn2q"]
+[ext_resource type="Script" path="res://Combat/marbles/produced_marble_spawner.gd" id="45_spawner"]
 
 [node name="Main" type="Node2D" unique_id=1204434413]
 script = ExtResource("1_eunhr")
+
+[node name="AmmoState" type="Node" parent="."]
+script = ExtResource("2_ammo")
+
+[node name="ProducedMarbleSpawner" type="Node" parent="."]
+script = ExtResource("45_spawner")
 
 [node name="MarbleChainRegistry" type="Node" parent="."]
 script = ExtResource("23_chain_registry")
@@ -62,7 +70,7 @@ process_mode = 3
 layout_mode = 3
 anchors_preset = 0
 offset_right = 54.0
-offset_bottom = 46.0
+offset_bottom = 65.0
 mouse_filter = 2
 theme = ExtResource("3_sfxvq")
 script = ExtResource("4_o6133")

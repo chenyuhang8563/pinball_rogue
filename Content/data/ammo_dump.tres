@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Item" format=3]
+
+[ext_resource type="Texture2D" uid="uid://dn18dqvrd2m6g" path="res://Assets/Items/relic_ammo_dump.png" id="1_icon"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "ammo_dump"
+title = "ITEM_AMMO_DUMP_TITLE"
+icon = ExtResource("1_icon")
+price = 30
+description = "ITEM_AMMO_DUMP_DESC"
+effect_type = 37
+type = 2
+rarity = 2
+tags = Array[StringName]([&"relic", &"bomb", &"ammo"])
+weight = 60
+requires_tags = Array[StringName]([&"bomb"])

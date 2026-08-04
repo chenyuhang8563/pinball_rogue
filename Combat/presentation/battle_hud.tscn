@@ -5,13 +5,83 @@
 [ext_resource type="PackedScene" uid="uid://c4sf4r73fwjvw" path="res://Combat/presentation/heart.tscn" id="3_heart"]
 [ext_resource type="Texture2D" uid="uid://du2jk7gtqvcd1" path="res://Assets/Items/Coin.png" id="4_coin"]
 [ext_resource type="Texture2D" uid="uid://b0vr161vd7xsi" path="res://Assets/Items/fb24.png" id="6_euvrq"]
+[ext_resource type="Texture2D" uid="uid://gsjeaoplfocu" path="res://Assets/Marbles/bomb_marble.png" id="7_bomb"]
+
+[sub_resource type="Animation" id="Animation_ammo_hidden"]
+length = 0.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [false]
+}
+
+[sub_resource type="Animation" id="Animation_ammo_normal"]
+length = 0.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [true]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("ValueLabel:theme_override_colors/font_color")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 1, 1, 1)]
+}
+
+[sub_resource type="Animation" id="Animation_ammo_empty"]
+length = 0.0
+tracks/0/type = "value"
+tracks/0/imported = false
+tracks/0/enabled = true
+tracks/0/path = NodePath(".:visible")
+tracks/0/interp = 1
+tracks/0/loop_wrap = true
+tracks/0/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [true]
+}
+tracks/1/type = "value"
+tracks/1/imported = false
+tracks/1/enabled = true
+tracks/1/path = NodePath("ValueLabel:theme_override_colors/font_color")
+tracks/1/interp = 1
+tracks/1/loop_wrap = true
+tracks/1/keys = {
+"times": PackedFloat32Array(0),
+"transitions": PackedFloat32Array(1),
+"update": 0,
+"values": [Color(1, 0.42, 0.37, 1)]
+}
 
 [node name="BattleHud" type="Control" unique_id=1027706886]
 process_mode = 3
 layout_mode = 3
 anchors_preset = 0
 offset_right = 54.0
-offset_bottom = 46.0
+offset_bottom = 65.0
 mouse_filter = 2
 theme = ExtResource("1_fhvtm")
 script = ExtResource("1_hud")
@@ -20,9 +90,9 @@ script = ExtResource("1_hud")
 layout_mode = 0
 offset_top = 1.0
 offset_right = 54.0
-offset_bottom = 45.0
+offset_bottom = 64.0
 mouse_filter = 2
-theme_override_constants/separation = 1
+theme_override_constants/separation = 2
 
 [node name="HealthRow" type="HBoxContainer" parent="ResourceRows" unique_id=307670159]
 layout_mode = 2
@@ -82,3 +152,28 @@ custom_minimum_size = Vector2(32, 0)
 layout_mode = 2
 size_flags_horizontal = 6
 text = "0"
+
+[node name="AmmoRow" type="HBoxContainer" parent="ResourceRows" unique_id=1428065567]
+visible = false
+layout_mode = 2
+mouse_filter = 2
+theme_override_constants/separation = 2
+
+[node name="AmmoIcon" type="TextureRect" parent="ResourceRows/AmmoRow" unique_id=1428065568]
+custom_minimum_size = Vector2(14, 14)
+layout_mode = 2
+mouse_filter = 2
+texture = ExtResource("7_bomb")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="ValueLabel" type="Label" parent="ResourceRows/AmmoRow" unique_id=1428065569]
+custom_minimum_size = Vector2(32, 0)
+layout_mode = 2
+size_flags_horizontal = 6
+text = "0/5"
+
+[node name="AmmoAnimation" type="AnimationPlayer" parent="ResourceRows/AmmoRow" unique_id=1428065570]
+anims/ammo_hidden = SubResource("Animation_ammo_hidden")
+anims/ammo_normal = SubResource("Animation_ammo_normal")
+anims/ammo_empty = SubResource("Animation_ammo_empty")

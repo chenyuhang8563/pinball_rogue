@@ -6,8 +6,8 @@
 
 [node name="BombMarble" unique_id=2021599556 instance=ExtResource("1_84eq8")]
 script = ExtResource("2_psmfl")
-explosion_radius = 100.0
-explosion_damage = 5
+explosion_radius = 75.0
+explosion_damage = 4
 
 [node name="Sprite2D" parent="." index="0" unique_id=1959844409]
 texture = ExtResource("2_yweuo")

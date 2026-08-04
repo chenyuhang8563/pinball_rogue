@@ -5,8 +5,8 @@ class_name BombMarble
 
 const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
 
-@export var explosion_radius: float = 50.0
-@export var explosion_damage: int = 5
+@export var explosion_radius: float = 75.0
+@export var explosion_damage: int = 4
 
 @onready var explosion_effect_scene: PackedScene = preload("res://Combat/effects/explosion_effect/explosion_effect.tscn")
 
@@ -16,6 +16,10 @@ func _ready() -> void:
 	body_entered.connect(_on_body_entered)
 
 func get_hit_damage(_target: Node, _packet: DamagePacket = null) -> int:
+	# 0 弹药兜底：普通接触补 1 伤（爆炸失效时仍可打）。
+	var ammo_state: AmmoState = AmmoState.find_current()
+	if ammo_state != null and ammo_state.get_ammo() <= 0:
+		return 1
 	return roundi(_get_stat_float("explosion_damage", float(explosion_damage)))
 
 func _on_body_entered(body: Node) -> void:
@@ -25,6 +29,10 @@ func _on_body_entered(body: Node) -> void:
 		_explode()
 
 func _explode() -> void:
+	# 弹药 0 时不爆炸（链模式由 _try_trigger_bomb 统一扣弹；独立场景经此检查）。
+	var ammo_state: AmmoState = AmmoState.find_current()
+	if ammo_state != null and ammo_state.get_ammo() <= 0:
+		return
 	var explosion_center: Vector2 = global_position
 	_damage_enemies_in_radius(explosion_center)
 	_spawn_explosion_effect(explosion_center)

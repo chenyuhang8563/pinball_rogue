@@ -1,0 +1,29 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://Combat/marbles/small_bomb_marble.gd" id="1_script"]
+[ext_resource type="Texture2D" path="res://Assets/Marbles/bomb_marble.png" id="1_tex"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_small"]
+friction = 0.0
+bounce = 1.0
+
+[sub_resource type="CircleShape2D" id="CircleShape2D_small"]
+radius = 8.0
+
+[node name="SmallBombMarble" type="RigidBody2D"]
+collision_layer = 2
+collision_mask = 15
+mass = 0.2
+physics_material_override = SubResource("PhysicsMaterial_small")
+gravity_scale = 0.3
+continuous_cd = 2
+contact_monitor = true
+max_contacts_reported = 8
+script = ExtResource("1_script")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+scale = Vector2(0.75, 0.75)
+texture = ExtResource("1_tex")
+
+[node name="CollisionShape2D" type="CollisionShape2D" parent="."]
+shape = SubResource("CircleShape2D_small")

@@ -29,18 +29,20 @@ TERM_CRIT_NAME,Crit,暴击
 TERM_CRIT_DESC,"Triggered by a weak point. This hit deals x2 damage.","触发破绽时暴击；本次伤害 ×2。"
 TERM_PERFECT_CRIT_NAME,Perfect Crit,完美暴击
 TERM_PERFECT_CRIT_DESC,"Triggered by precisely striking a weak point. This hit deals x2.25 damage.","精确触发破绽时触发；本次伤害 ×2.25。"
+TERM_DETONATE_NAME,Detonate,引爆
+TERM_DETONATE_DESC,"Consumes Bombs to trigger an Explosion when a Bomb Marble collides with an enemy; it cannot trigger at 0 Bombs.","炸弹弹珠碰撞敌人时消耗炸弹数并触发爆炸；炸弹数为 0 时无法引爆。"
 TERM_EXPLOSION_NAME,Explosion,爆炸
-TERM_EXPLOSION_DESC,"A bomb marble collision deals 5 explosion damage to targets within radius 100 immediately.","炸弹弹珠碰撞敌人时触发；立即对半径 100 内目标造成 5 点爆炸伤害。"
+TERM_EXPLOSION_DESC,"A bomb marble collision deals 4 explosion damage to targets within radius 75 immediately.","炸弹弹珠碰撞敌人时触发；立即对半径 75 内目标造成 4 点爆炸伤害。"
 UI_TOOLTIP_TERMS_TITLE,Terms,术语说明
 UI_TOOLTIP_NO_TERMS_DESC,No terms are used in this description.,此描述未使用术语。
 ITEM_DARK_MARBLE_DESC_LV1,"Each collision deals 1 physical damage.","每次碰撞造成 1 点物理伤害。"
 ITEM_DARK_MARBLE_DESC_LV2,"Each collision deals 2 physical damage.","每次碰撞造成 2 点物理伤害。"
 ITEM_DARK_MARBLE_DESC_LV3,"Each collision deals 3 physical damage.","每次碰撞造成 3 点物理伤害。"
 ITEM_DARK_MARBLE_DESC_LV4,"Awakened: each collision deals 4 physical damage.","觉醒：每次碰撞造成 4 点物理伤害。"
-ITEM_BOMB_MARBLE_DESC_LV1,"On enemy collision trigger Explosion for [damage_explosion]5[/damage_explosion] damage.","碰撞敌人时触发爆炸并造成 [damage_explosion]5[/damage_explosion] 点伤害。"
-ITEM_BOMB_MARBLE_DESC_LV2,"On enemy collision trigger Explosion for [damage_explosion]8[/damage_explosion] damage.","碰撞敌人时触发爆炸并造成 [damage_explosion]8[/damage_explosion] 点伤害。"
+ITEM_BOMB_MARBLE_DESC_LV1,"On enemy collision trigger Explosion for [damage_explosion]4[/damage_explosion] damage.","碰撞敌人时触发爆炸并造成 [damage_explosion]4[/damage_explosion] 点伤害。"
+ITEM_BOMB_MARBLE_DESC_LV2,"On enemy collision trigger Explosion for [damage_explosion]6[/damage_explosion] damage.","碰撞敌人时触发爆炸并造成 [damage_explosion]6[/damage_explosion] 点伤害。"
 ITEM_BOMB_MARBLE_DESC_LV3,"On enemy collision trigger Explosion for [damage_explosion]8[/damage_explosion] damage.","碰撞敌人时触发爆炸并造成 [damage_explosion]8[/damage_explosion] 点伤害。"
-ITEM_BOMB_MARBLE_DESC_LV4,"Awakened: Explosion keeps [damage_explosion]8[/damage_explosion] damage with radius 100 and x4 effect scale.","觉醒：爆炸保持 [damage_explosion]8[/damage_explosion] 点伤害并获得 100 半径与 x4 效果范围。"
+ITEM_BOMB_MARBLE_DESC_LV4,"Awakened: Explosion keeps [damage_explosion]8[/damage_explosion] damage with radius 75 and x4 effect scale.","觉醒：爆炸保持 [damage_explosion]8[/damage_explosion] 点伤害并获得 75 半径与 x4 效果范围。"
 ITEM_BROWN_MARBLE_DESC_LV1,"Enemy hits charge both flippers. A Power Strike launch deals 2 extra Echo damage on the next enemy hit.","命中敌人为挡板蓄力；强力击弹起时，下次命中额外造成 2 点回响伤害。"
 ITEM_BROWN_MARBLE_DESC_LV2,"Enemy hits charge both flippers. A Power Strike launch deals 4 extra Echo damage on the next enemy hit.","命中敌人为挡板蓄力；强力击弹起时，下次命中额外造成 4 点回响伤害。"
 ITEM_BROWN_MARBLE_DESC_LV3,"Enemy hits charge both flippers. A Power Strike launch deals 8 extra Echo damage on the next enemy hit.","命中敌人为挡板蓄力；强力击弹起时，下次命中额外造成 8 点回响伤害。"
@@ -181,3 +183,23 @@ ITEM_BATTERING_RAM_DESC_LV1,"A Power Strike grants the marble Pierce for 3 secon
 ITEM_BATTERING_RAM_DESC_LV2,"A Power Strike grants the marble Pierce for 3.5 seconds.","强力击使弹珠获得 3.5 秒穿透。"
 ITEM_BATTERING_RAM_DESC_LV3,"A Power Strike grants the marble Pierce for 4 seconds.","强力击使弹珠获得 4 秒穿透。"
 ITEM_BATTERING_RAM_DESC_LV4,"Awakened: a Power Strike grants Pierce for 5 seconds and pierce damage is increased by 50%.","觉醒：强力击使弹珠获得 5 秒穿透，穿透伤害 +50%。"
+ITEM_AMMO_POUCH_DESC_LV1,Max bombs +1.,炸弹数上限 +1。
+ITEM_AMMO_POUCH_DESC_LV2,Max bombs +2.,炸弹数上限 +2。
+ITEM_AMMO_POUCH_DESC_LV3,Max bombs +3.,炸弹数上限 +3。
+ITEM_AMMO_POUCH_DESC_LV4,"Awakened: battle starts with 2 extra bombs.","觉醒：战斗开始时额外获得 2 枚炸弹。"
+ITEM_AMMO_RECYCLER_DESC_LV1,Each explosion has a 10% chance to recover 1 bomb.,每次爆炸后有 10% 概率回收 1 枚炸弹。
+ITEM_AMMO_RECYCLER_DESC_LV2,Each explosion has a 20% chance to recover 1 bomb.,每次爆炸后有 20% 概率回收 1 枚炸弹。
+ITEM_AMMO_RECYCLER_DESC_LV3,Each explosion has a 30% chance to recover 1 bomb.,每次爆炸后有 30% 概率回收 1 枚炸弹。
+ITEM_AMMO_RECYCLER_DESC_LV4,"Awakened: 45% chance to recover 1 bomb after each explosion.","觉醒：每次爆炸后有 45% 概率回收 1 枚炸弹。"
+ITEM_HIGH_EXPLOSIVE_DESC_LV1,"Each explosion has a 15% chance to spawn a small bomb marble (dealing 50% damage).",每次爆炸有 15% 概率额外炸出一颗小炸弹弹珠（造成 50% 伤害）。
+ITEM_HIGH_EXPLOSIVE_DESC_LV2,"Each explosion has a 25% chance to spawn a small bomb marble (dealing 50% damage).",每次爆炸有 25% 概率额外炸出一颗小炸弹弹珠（造成 50% 伤害）。
+ITEM_HIGH_EXPLOSIVE_DESC_LV3,"Each explosion has a 35% chance to spawn a small bomb marble (dealing 50% damage).",每次爆炸有 35% 概率额外炸出一颗小炸弹弹珠（造成 50% 伤害）。
+ITEM_HIGH_EXPLOSIVE_DESC_LV4,"Awakened: small bombs deal 100% damage.","觉醒：小炸弹造成 100% 伤害。"
+ITEM_LAST_SHOT_DESC_LV1,"With exactly 1 bomb before Detonate, explosions deal x1.5 damage.",引爆前炸弹数恰为 1 时，爆炸伤害 ×1.5。
+ITEM_LAST_SHOT_DESC_LV2,"With exactly 1 bomb before Detonate, explosions deal x2 damage.",引爆前炸弹数恰为 1 时，爆炸伤害 ×2。
+ITEM_LAST_SHOT_DESC_LV3,"With exactly 1 bomb before Detonate, explosions deal x2.5 damage.",引爆前炸弹数恰为 1 时，爆炸伤害 ×2.5。
+ITEM_LAST_SHOT_DESC_LV4,"Awakened: also x1.5 explosion radius at 1 bomb.","觉醒：炸弹数恰为 1 时，爆炸半径 ×1.5。"
+ITEM_AMMO_DUMP_DESC_LV1,Each Detonate deals bonus damage equal to current bombs x1.,每次引爆按当前炸弹数造成 x1 的额外伤害。
+ITEM_AMMO_DUMP_DESC_LV2,Each Detonate deals bonus damage equal to current bombs x1.5.,每次引爆按当前炸弹数造成 x1.5 的额外伤害。
+ITEM_AMMO_DUMP_DESC_LV3,Each Detonate deals bonus damage equal to current bombs x2.,每次引爆按当前炸弹数造成 x2 的额外伤害。
+ITEM_AMMO_DUMP_DESC_LV4,"Awakened: also x1.5 explosion radius.","觉醒：爆炸半径 ×1.5。"

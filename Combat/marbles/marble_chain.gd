@@ -21,6 +21,11 @@
 #   链不再拥有蓄力条。敌人碰撞产生的共享蓄力由 TableBase 上的
 #   EchoFlipperChargeController 持有；挡板消费蓄力后通过 arm_echo_damage()
 #   武装本链的待结算回响伤害 token，下一次敌人命中消费一个 token。
+#
+# 炸弹弹药（新机制）：
+#   爆炸由 ExplosionContext 事务驱动：碰敌时若链含 BOMB 且弹药 > 0 则
+#   modify_explosion → finalize → 扣弹 → 伤害 → VFX → on_explosion_resolved。
+#   弹药 0 时不爆炸，普通碰撞补 1 点伤害（_dry_bomb_contact_damage）。
 
 extends Node2D
 class_name MarbleChain
@@ -30,6 +35,8 @@ signal chain_collision(collider: Node, collision_type: String)
 const FireMarbleScript: GDScript = preload("res://Combat/marbles/fire_marble.gd")
 const LightningMarbleScript: GDScript = preload("res://Combat/marbles/lightning_marble.gd")
 const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
+const ExplosionContextScript: GDScript = preload("res://Combat/explosion/explosion_context.gd")
+const RadialDamageScript: GDScript = preload("res://Combat/explosion/radial_damage.gd")
 
 # ---- 导出调参 ----
 
@@ -62,6 +69,9 @@ var _registry: MarbleChainRegistry = null
 var _echo_pending_tokens: int = 0
 ## 待结算 token 的每 token 追加伤害（锻锤按本发反弹计数武装；最后一批 token 消费完清零）。
 var _echo_token_bonus: int = 0
+
+## 弹药状态（Main 注入）。null 时按旧行为：爆炸不扣弹、无 0 弹药检查。
+var _ammo_state: AmmoState = null
 
 
 # ---- 轨迹数据 ----
@@ -273,14 +283,53 @@ func _on_head_body_entered(collided_body: Node) -> void:
 
 # ---- 炸弹逻辑 ----
 
-## 若链中存在 BOMB 段，执行爆炸。
-func _try_trigger_bomb() -> void:
-	if not _contains_marble_type(Marble.MARBLE_TYPE.BOMB):
-		return
+## 链中是否存在 BOMB 弹珠（HUD 弹药行显隐等使用）。
+func has_bomb_marble() -> bool:
+	return _contains_marble_type(Marble.MARBLE_TYPE.BOMB)
 
-	var explosion_center: Vector2 = head.global_position
-	_damage_enemies_in_radius(explosion_center)
-	_spawn_explosion_effect(explosion_center)
+
+func set_ammo_state(ammo: AmmoState) -> void:
+	_ammo_state = ammo
+
+
+func _get_ammo_state() -> AmmoState:
+	if _ammo_state != null and is_instance_valid(_ammo_state):
+		return _ammo_state
+	return null
+
+
+## 若链中存在 BOMB 段且弹药 > 0，构建主爆炸上下文并执行。
+## 弹药 0 时不爆炸（普通碰撞 1 伤由 get_total_damage 补）。
+func _try_trigger_bomb() -> bool:
+	if not _contains_marble_type(Marble.MARBLE_TYPE.BOMB):
+		return false
+	var ammo_state := _get_ammo_state()
+	if ammo_state != null and ammo_state.get_ammo() <= 0:
+		return false
+
+	var context: ExplosionContext = ExplosionContextScript.new() as ExplosionContext
+	context.center = head.global_position
+	context.base_damage = roundi(_get_stat_float("explosion_damage", 4.0))
+	context.base_radius = _get_stat_float("explosion_radius", 75.0)
+	context.ammo_before = ammo_state.get_ammo() if ammo_state != null else 0
+	return _execute_explosion(context)
+
+
+## 爆炸事务流水线：modify_explosion → finalize → 扣弹 → 伤害 → VFX → resolved。
+## 扣弹失败（弹药不足）返回 false，爆炸不生效。
+func _execute_explosion(context: ExplosionContext) -> bool:
+	var effect_manager: Node = _get_autoload_node(&"EffectManager")
+	if effect_manager != null and effect_manager.has_method("modify_explosion"):
+		effect_manager.call("modify_explosion", context)
+	var resolved: Dictionary = context.finalize()
+	var ammo_state := _get_ammo_state()
+	if ammo_state != null and not ammo_state.consume(int(resolved["ammo_cost"])):
+		return false
+	_damage_enemies_in_radius(context, resolved)
+	_spawn_explosion_effect(context, resolved)
+	if effect_manager != null and effect_manager.has_method("on_explosion_resolved"):
+		effect_manager.call("on_explosion_resolved", context)
+	return true
 
 
 func _find_segment(marble_type: Marble.MARBLE_TYPE) -> ChainSegment:
@@ -296,51 +345,36 @@ func _contains_marble_type(marble_type: Marble.MARBLE_TYPE) -> bool:
 	return _find_segment(marble_type) != null
 
 
-func _damage_enemies_in_radius(center: Vector2) -> void:
-	var explosion_radius: float = _get_stat_float("explosion_radius", 100.0)
-	var explosion_damage: int = roundi(_get_stat_float("explosion_damage", 5.0))
+## 范围扫描与伤害。resolved 为 finalize 后的最终参数（含遗物改写）。
+## VFX 分发（EffectManager.on_explosion）保留在本链，目标收集/造伤事件语义
+## 委托给共享工具 RadialDamage（小炸弹复用，保证 event_id/过滤不变量一致）。
+func _damage_enemies_in_radius(context: ExplosionContext, resolved: Dictionary) -> void:
+	var explosion_radius: float = float(resolved["radius"])
+	var explosion_damage: int = int(resolved["damage"])
 	var effect_manager: Node = _get_autoload_node(&"EffectManager")
 	if effect_manager != null and effect_manager.has_method("on_explosion"):
-		effect_manager.call("on_explosion", center, explosion_radius)
-
-	var targets: Array[Node2D] = []
-	for enemy: Node in get_tree().get_nodes_in_group("enemies"):
-		if enemy == null or not is_instance_valid(enemy):
-			continue
-		if not enemy is Node2D:
-			continue
-		var enemy_node: Node2D = enemy as Node2D
-		if enemy_node.global_position.distance_to(center) > explosion_radius:
-			continue
-		targets.append(enemy_node)
-	var event_id: int = DamagePacket.next_event_id()
-	var main_target: Node2D = null
-	for target: Node2D in targets:
-		if main_target == null or target.global_position.distance_squared_to(center) < main_target.global_position.distance_squared_to(center):
-			main_target = target
-	for enemy_node: Node2D in targets:
-		if enemy_node.has_method("apply_damage_packet"):
-			var packet: DamagePacket = DamagePacketScript.new(&"bomb", float(explosion_damage), &"physical")
-			packet.is_marble = true
-			packet.target = enemy_node
-			packet.event_id = event_id
-			packet.is_event_main = enemy_node == main_target
-			enemy_node.call("apply_damage_packet", packet)
-		elif enemy_node.has_method("take_damage"):
-			# Compatibility for non-Enemy test doubles. Real enemies use the packet
-			# path above and retain the old multiplier-before-armor result.
-			var direct_damage := roundi(float(explosion_damage) * _get_stat_float("damage_multiplier", 1.0))
-			enemy_node.call("take_damage", direct_damage)
+		effect_manager.call("on_explosion", context.center, explosion_radius)
+	RadialDamageScript.damage_enemies_in_radius(
+		context.center,
+		explosion_radius,
+		explosion_damage,
+		false,
+		true,
+	)
 
 
-func _spawn_explosion_effect(center: Vector2) -> void:
+## 特效缩放 = effect_scale stat × 实际半径/基础半径：觉醒 ×4 保持，
+## 背水/弹药倾泻的半径放大同步放大视觉。
+func _spawn_explosion_effect(context: ExplosionContext, resolved: Dictionary) -> void:
 	var scene: Node = Engine.get_main_loop().current_scene
 	if scene == null:
 		return
 	var effect: Node2D = _explosion_effect_scene.instantiate() as Node2D
 	scene.add_child(effect)
-	effect.global_position = center
+	effect.global_position = context.center
 	var effect_scale: float = _get_stat_float("explosion_effect_scale", 1.0)
+	if context.base_radius > 0.0:
+		effect_scale *= float(resolved["radius"]) / context.base_radius
 	effect.scale = Vector2(effect_scale, effect_scale)
 
 
@@ -614,6 +648,7 @@ func get_total_damage(target: Node, packet: DamagePacket = null) -> int:
 		total += _apply_hit_effect(seg.segment_type, target, packet)
 		total += _segment_contact_damage(seg)
 
+	total += _dry_bomb_contact_damage(target, packet)
 	total += _consume_echo_token(target, packet)
 
 	# 破城锥觉醒：穿透伤害倍率（穿透命中享受强力击加成，觉醒 ×1.5）。
@@ -621,6 +656,24 @@ func get_total_damage(target: Node, packet: DamagePacket = null) -> int:
 		total = roundi(total * _pierce_damage_multiplier)
 
 	return total
+
+
+## 0 弹药兜底：链含 BOMB 且弹药为 0 时，整链普通碰撞补 1 点伤害
+## （爆炸已失效，保底可打）。目标必须是敌人；多个炸弹段不重复补。
+## 弹药 > 0 时返回 0——碰撞伤害由爆炸负责。
+func _dry_bomb_contact_damage(target: Node, packet: DamagePacket = null) -> int:
+	if target == null or not is_instance_valid(target):
+		return 0
+	if not target.is_in_group("enemies"):
+		return 0
+	if not _contains_marble_type(Marble.MARBLE_TYPE.BOMB):
+		return 0
+	var ammo_state := _get_ammo_state()
+	if ammo_state != null and ammo_state.get_ammo() > 0:
+		return 0
+	if packet != null:
+		packet.metadata["dry_bomb"] = true
+	return 1
 
 
 func _head_contact_damage() -> int:

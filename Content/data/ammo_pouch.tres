@@ -1,0 +1,18 @@
+[gd_resource type="Resource" script_class="Item" format=3]
+
+[ext_resource type="Texture2D" uid="uid://lgw2o5lrl74x" path="res://Assets/Items/relic_ammo_pouch.png" id="1_icon"]
+[ext_resource type="Script" uid="uid://cbxvjrptlxvsm" path="res://Content/domain/item.gd" id="2_item"]
+
+[resource]
+script = ExtResource("2_item")
+id = "ammo_pouch"
+title = "ITEM_AMMO_POUCH_TITLE"
+icon = ExtResource("1_icon")
+price = 24
+description = "ITEM_AMMO_POUCH_DESC"
+effect_type = 33
+type = 2
+rarity = 1
+tags = Array[StringName]([&"relic", &"bomb", &"ammo"])
+weight = 60
+requires_tags = Array[StringName]([&"bomb"])

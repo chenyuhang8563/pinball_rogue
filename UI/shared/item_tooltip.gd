@@ -25,12 +25,13 @@ const TERM_DATA := {
 	"WEAK_POINT": ["破绽", "Weak Point"],
 	"PERFECT_CRIT": ["完美暴击", "Perfect Crit"],
 	"CRIT": ["暴击", "Crit"],
+	"DETONATE": ["引爆", "Detonate"],
 	"EXPLOSION": ["爆炸", "Explosion"],
 }
 const TERM_REPLACEMENT_ORDER: Array[String] = [
 	"PERFECT_CRIT", "LIGHTNING_CHAIN", "POWER_STRIKE", "WEAK_POINT", "INFECTION",
-	"EXPLOSION", "ARC", "FROZEN", "FROST", "PLAGUE", "POISON", "BURN", "ECHO",
-	"PIERCE", "FLY", "CRIT",
+	"DETONATE", "EXPLOSION", "ARC", "FROZEN", "FROST", "PLAGUE", "POISON", "BURN",
+	"ECHO", "PIERCE", "FLY", "CRIT",
 ]
 
 # 与场景里 RichTextLabel 的 custom_minimum_size.x 保持一致，作为预算换行高度的固定宽度。

@@ -40,6 +40,13 @@ enum EffectType {
 	GRINDSTONE,
 	DROP_HAMMER,
 	BATTERING_RAM,
+	# --- 炸弹系弹药遗物（追加到末尾，勿插入中间——枚举整数序列化） ---
+	# 索引自 33 起，避开回响系已占用的 30-32；弹药遗物 .tres 的 effect_type 与此对齐。
+	AMMO_POUCH,
+	AMMO_RECYCLER,
+	HIGH_EXPLOSIVE,
+	LAST_SHOT,
+	AMMO_DUMP,
 }
 
 enum ItemType {

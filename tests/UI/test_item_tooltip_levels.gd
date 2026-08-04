@@ -12,7 +12,7 @@ const ITEM_IDS: Array[String] = [
 	"lightning", "leyden_jar", "arc_relay", "thunderstorm", "fire_bellows", "accelerant", "cremation", "poison_culture", "ice_hammer", "permafrost", "cryoclasm",
 	"carrion", "parasite", "pustule", "venom_knife", "scorpion_tail", "witch_hat", "assassins_whetstone", "fortuna_dice",
 	"many_faced_prism", "scarlet_thread", "execution_decree", "thermal_shock", "miasma", "dash", "magic_missile",
-	"grindstone", "drop_hammer", "battering_ram",
+	"grindstone", "drop_hammer", "battering_ram", "ammo_pouch", "ammo_recycler", "ammo_dump", "high_explosive", "last_shot",
 ]
 
 
@@ -36,6 +36,34 @@ func test_level_csv_has_exactly_four_unique_descriptions_for_each_item() -> void
 		for level: int in range(1, 5):
 			assert_true(keys.has("ITEM_%s_DESC_LV%d" % [item_id.to_upper(), level]))
 	assert_eq(keys.size(), ITEM_IDS.size() * 4)
+
+
+func test_detonate_term_registered_before_explosion_in_replacement_order() -> void:
+	var source := FileAccess.get_file_as_string("res://UI/shared/item_tooltip.gd")
+	# 条目行在 const 声明行之后，取声明之后整段源码保证读到完整列表。
+	var order_region := source.substr(source.find("TERM_REPLACEMENT_ORDER"))
+	assert_true(order_region.find("DETONATE") >= 0, "DETONATE 已注册替换顺序")
+	assert_true(order_region.find("EXPLOSION") >= 0, "EXPLOSION 在替换顺序中")
+	assert_true(
+		order_region.find("DETONATE") < order_region.find("EXPLOSION"),
+		"DETONATE（引爆）必须先于 EXPLOSION（爆炸）替换，避免更长的术语被截断"
+	)
+
+
+func test_detonate_term_rows_exist_in_level_csv() -> void:
+	var file := FileAccess.open("res://translations/item_levels.csv", FileAccess.READ)
+	assert_not_null(file)
+	if file == null:
+		return
+	var keys: Dictionary = {}
+	file.get_csv_line()
+	while not file.eof_reached():
+		var row := file.get_csv_line()
+		if row.size() < 3:
+			continue
+		keys[String(row[0])] = true
+	assert_true(keys.has("TERM_DETONATE_NAME"), "TERM_DETONATE_NAME 存在")
+	assert_true(keys.has("TERM_DETONATE_DESC"), "TERM_DETONATE_DESC 存在")
 
 
 func test_tooltip_selects_level_text_and_formats_hoverable_term() -> void:
