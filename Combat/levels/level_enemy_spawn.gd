@@ -17,3 +17,4 @@ enum PoolOverride {
 @export var role: Role = Role.NORMAL
 @export var pool_override: PoolOverride = PoolOverride.LEVEL_DEFAULT
 @export var health_override: int = -1
+@export var attack_profile_override: Resource = null

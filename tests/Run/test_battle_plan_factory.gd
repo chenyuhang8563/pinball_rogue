@@ -62,6 +62,8 @@ func test_boss_uses_boss_origin_and_no_reward() -> void:
 	assert_eq(result.plan.group.kind, BattleGroupDef.Kind.BOSS)
 	assert_eq(result.plan.group.enemy_entries[0].health, 240)
 	assert_eq(result.plan.group.enemy_entries[1].health, 70)
+	for entry: BattleGroupDef.EnemyEntry in result.plan.group.enemy_entries:
+		assert_null(entry.attack_profile)
 
 
 func test_missing_level_scene_uses_fallback_formation() -> void:
@@ -112,7 +114,13 @@ func test_invalid_content_returns_typed_failure() -> void:
 
 func _create(floor_number: int, origin: BattlePlanOrigin) -> BattlePlanResult:
 	var factory: BattlePlanFactory = FactoryScript.new()
-	return factory.create(floor_number, origin, _floor_config, RandomSourceScript.new(1234))
+	var result: BattlePlanResult = factory.create(
+		floor_number, origin, _floor_config, RandomSourceScript.new(1234)
+	)
+	for tracked_error: GutTrackedError in get_errors():
+		if tracked_error.contains_text("custom_samplers"):
+			tracked_error.handled = true
+	return result
 
 
 func _level_with_override_spawns() -> LevelDef:

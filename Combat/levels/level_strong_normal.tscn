@@ -2,7 +2,7 @@
 
 [ext_resource type="PackedScene" path="res://Combat/levels/table_base.tscn" id="1_table"]
 [ext_resource type="Script" path="res://Combat/levels/level_enemy_spawn.gd" id="2_spawn"]
-[ext_resource type="PackedScene" path="res://Combat/battle/enemies/enemy.tscn" id="3_enemy"]
+[ext_resource type="PackedScene" uid="uid://ddj7jjfgt0ibc" path="res://Combat/battle/enemies/slime.tscn" id="3_enemy"]
 
 [node name="LevelStrongNormal" type="Node2D"]
 

@@ -5,6 +5,7 @@ class_name BattleGateway
 ## All global/runtime dependencies are supplied by the composition root.
 
 signal battle_completed(token: RunFlowToken, battle_id: StringName, plan: BattlePlan)
+signal enemy_attack_hit(token: RunFlowToken, enemy: Enemy, amount: int)
 signal marble_fell(token: RunFlowToken, marble: RigidBody2D)
 
 const BOUNCELESS_WALL_BOUNCE: StringName = &"bounceless_wall_bounce"
@@ -70,6 +71,7 @@ func configure(
 		_clear_configuration()
 		return false
 	_session.completed.connect(_on_session_completed)
+	_session.enemy_attack_hit.connect(_on_session_enemy_attack_hit)
 	_session.marble_fell.connect(_on_session_marble_fell)
 	_configured = true
 	return true
@@ -203,6 +205,8 @@ func _destroy_session() -> void:
 		return
 	if _session.completed.is_connected(_on_session_completed):
 		_session.completed.disconnect(_on_session_completed)
+	if _session.enemy_attack_hit.is_connected(_on_session_enemy_attack_hit):
+		_session.enemy_attack_hit.disconnect(_on_session_enemy_attack_hit)
 	if _session.marble_fell.is_connected(_on_session_marble_fell):
 		_session.marble_fell.disconnect(_on_session_marble_fell)
 	_session.dispose()
@@ -373,6 +377,18 @@ func _on_session_completed(
 	_active_plan = null
 	_reset_active_table_echo_charge()
 	battle_completed.emit(completed_token, completed_plan.battle_id, completed_plan)
+
+
+func _on_session_enemy_attack_hit(
+	token: RunFlowToken,
+	enemy: Enemy,
+	amount: int
+) -> void:
+	if _active_token == null or token == null or not _active_token.matches(token):
+		return
+	if _active_plan == null or enemy == null or not is_instance_valid(enemy) or amount <= 0:
+		return
+	enemy_attack_hit.emit(token, enemy, amount)
 
 
 ## 战斗结束时将当前表的回响蓄力条重置为 0（挡板视觉恢复无蓄力）。

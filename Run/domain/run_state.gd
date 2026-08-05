@@ -272,6 +272,8 @@ static func serialize_battle_plan(plan: BattlePlan) -> Dictionary:
 			&"scene_path": entry.scene.resource_path,
 			&"position": entry.position,
 			&"health": entry.health,
+			&"attack_profile_path": entry.attack_profile.resource_path \
+				if entry.attack_profile != null else "",
 		})
 	return {
 		&"battle_id": plan.battle_id,
@@ -316,12 +318,21 @@ static func deserialize_battle_plan(value: Dictionary) -> BattlePlan:
 		var scene_path := String(entry_data.get(&"scene_path", ""))
 		var scene := load(scene_path) as PackedScene
 		var health := int(entry_data.get(&"health", 0))
+		var attack_profile_path := String(entry_data.get(&"attack_profile_path", ""))
+		var attack_profile: Resource = null
+		if not attack_profile_path.is_empty():
+			if not ResourceLoader.exists(attack_profile_path):
+				return null
+			attack_profile = load(attack_profile_path) as Resource
+			if attack_profile == null:
+				return null
 		if scene == null or health <= 0 or not entry_data.get(&"position") is Vector2:
 			return null
 		var entry := BattleGroupDef.EnemyEntry.new()
 		entry.scene = scene
 		entry.position = entry_data[&"position"] as Vector2
 		entry.health = health
+		entry.attack_profile = attack_profile
 		entries.append(entry)
 	if entries.is_empty():
 		return null

@@ -39,6 +39,7 @@ const RESTART: StringName = &"restart"
 const SELECT_NODE: StringName = &"select_node"
 const SKIP_CURRENT_BATTLE: StringName = &"skip_current_battle"
 const BATTLE_COMPLETE: StringName = &"battle_complete"
+const ENEMY_ATTACK_HIT: StringName = &"enemy_attack_hit"
 const MARBLE_FALL: StringName = &"marble_fall"
 const SELECT_REWARD: StringName = &"select_reward"
 const ACKNOWLEDGE_REWARD: StringName = &"reward_acknowledge"
@@ -76,6 +77,7 @@ var _terminal_acknowledged: bool = false
 
 func _init() -> void:
 	_battle_flow.completed.connect(_on_battle_completed)
+	_battle_flow.enemy_attack_hit.connect(_on_enemy_attack_hit)
 	_battle_flow.marble_fell.connect(_on_marble_fell)
 	_battle_flow.callback_rejected.connect(_on_battle_callback_rejected)
 
@@ -707,6 +709,29 @@ func _on_marble_fell(token: RunFlowToken, marble: RigidBody2D) -> void:
 	if marble == null or not is_instance_valid(marble) or not marble.is_in_group("marbles") \
 			or int(_health.call("current")) <= 0 or not bool(_health.call("damage", 1)):
 		_reject(MARBLE_FALL, "marble or current health is invalid")
+		_release_internal_guard(owned_guard)
+		return
+	if int(_health.call("current")) == 0:
+		_fail_run(&"health_depleted")
+	_release_internal_guard(owned_guard)
+
+
+func _on_enemy_attack_hit(token: RunFlowToken, enemy: Enemy, amount: int) -> void:
+	var owned_guard := not _command_guard
+	_command_guard = true
+	if not _configured or _state.is_terminal() \
+			or _state.phase != RunState.Phase.BATTLE_ACTIVE \
+			or token == null or not _state.accepts(token):
+		_reject(ENEMY_ATTACK_HIT, "enemy attack phase or token is stale")
+		_release_internal_guard(owned_guard)
+		return
+	if enemy == null or not is_instance_valid(enemy) or amount <= 0 \
+			or int(_health.call("current")) <= 0:
+		_reject(ENEMY_ATTACK_HIT, "enemy attack payload is invalid")
+		_release_internal_guard(owned_guard)
+		return
+	if not bool(_health.call("damage", amount)):
+		_reject(ENEMY_ATTACK_HIT, "run health rejected enemy attack")
 		_release_internal_guard(owned_guard)
 		return
 	if int(_health.call("current")) == 0:

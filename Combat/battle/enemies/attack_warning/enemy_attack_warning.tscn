@@ -1,0 +1,25 @@
+[gd_scene format=3 uid="uid://c45b3lr311et5"]
+
+[ext_resource type="Script" uid="uid://da7ueqgkwdoxe" path="res://Combat/battle/enemies/attack_warning/enemy_attack_warning.gd" id="1_66cw5"]
+
+[node name="enemy_attack_warning" type="Node2D" unique_id=518590205]
+script = ExtResource("1_66cw5")
+
+[node name="Area2D" type="Area2D" parent="." unique_id=864397119]
+collision_layer = 0
+collision_mask = 2
+monitorable = false
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Area2D" unique_id=647815298]
+polygon = PackedVector2Array(0, 0, 0, 0, 0, 0, 0, 0)
+
+[node name="Fill" type="Polygon2D" parent="." unique_id=931416676]
+z_index = 2
+color = Color(1, 0.2, 0.26666668, 0.6)
+polygon = PackedVector2Array(0, 0, 0, 0, 0, 0, 0, 0)
+
+[node name="Border" type="Line2D" parent="." unique_id=911312924]
+z_index = 3
+points = PackedVector2Array(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+width = 1.0
+default_color = Color(1, 0.2, 0.26666668, 1)

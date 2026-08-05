@@ -1,0 +1,16 @@
+[gd_scene format=3]
+
+[ext_resource type="Script" path="res://tests/Combat/enemies/validation/slime_attack_validation.gd" id="1_script"]
+[ext_resource type="PackedScene" path="res://Combat/levels/table_base.tscn" id="2_table"]
+[ext_resource type="PackedScene" path="res://Combat/battle/enemies/slime.tscn" id="3_slime"]
+[ext_resource type="Resource" path="res://Combat/battle/enemies/attack_warning/normal_profile.tres" id="4_profile"]
+
+[node name="SlimeAttackNormalCase" type="Node2D"]
+script = ExtResource("1_script")
+attack_profile = ExtResource("4_profile")
+
+[node name="TableBase" parent="." instance=ExtResource("2_table")]
+
+[node name="Slime" parent="." instance=ExtResource("3_slime")]
+position = Vector2(120, 88)
+health = 99

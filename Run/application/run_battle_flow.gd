@@ -4,6 +4,7 @@ class_name RunBattleFlow
 ## Owns only BattleGateway session identity. RunState and reward routing remain
 ## controller concerns.
 signal completed(token: RunFlowToken, battle_id: StringName, plan: BattlePlan)
+signal enemy_attack_hit(token: RunFlowToken, enemy: Enemy, amount: int)
 signal marble_fell(token: RunFlowToken, marble: RigidBody2D)
 signal callback_rejected(command: StringName, reason: String)
 
@@ -18,6 +19,7 @@ func configure(gateway: BattleGateway) -> bool:
 		return false
 	_gateway = gateway
 	_gateway.battle_completed.connect(_on_gateway_completed)
+	_gateway.enemy_attack_hit.connect(_on_gateway_enemy_attack_hit)
 	_gateway.marble_fell.connect(_on_gateway_marble_fell)
 	return true
 
@@ -63,6 +65,8 @@ func dispose() -> void:
 	if _gateway != null and is_instance_valid(_gateway):
 		if _gateway.battle_completed.is_connected(_on_gateway_completed):
 			_gateway.battle_completed.disconnect(_on_gateway_completed)
+		if _gateway.enemy_attack_hit.is_connected(_on_gateway_enemy_attack_hit):
+			_gateway.enemy_attack_hit.disconnect(_on_gateway_enemy_attack_hit)
 		if _gateway.marble_fell.is_connected(_on_gateway_marble_fell):
 			_gateway.marble_fell.disconnect(_on_gateway_marble_fell)
 	_gateway = null
@@ -93,3 +97,20 @@ func _on_gateway_marble_fell(token: RunFlowToken, marble: RigidBody2D) -> void:
 		callback_rejected.emit(&"marble_fall", "marble fall token is stale")
 		return
 	marble_fell.emit(token, marble)
+
+
+func _on_gateway_enemy_attack_hit(
+	token: RunFlowToken,
+	enemy: Enemy,
+	amount: int
+) -> void:
+	if token == null or _active_token == null or not _active_token.matches(token):
+		callback_rejected.emit(&"enemy_attack_hit", "enemy attack token is stale")
+		return
+	if _active_plan == null or enemy == null or not is_instance_valid(enemy):
+		callback_rejected.emit(&"enemy_attack_hit", "enemy attack identity is invalid")
+		return
+	if amount <= 0:
+		callback_rejected.emit(&"enemy_attack_hit", "enemy attack damage is invalid")
+		return
+	enemy_attack_hit.emit(token, enemy, amount)

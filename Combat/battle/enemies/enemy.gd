@@ -2,6 +2,8 @@ class_name Enemy
 extends RigidBody2D
 
 signal defeated(enemy: Enemy, cause: StringName)
+signal marble_hit(enemy: Enemy, marble: RigidBody2D)
+signal player_damage_requested(enemy: Enemy, amount: int)
 
 const StatContextScript: GDScript = preload("res://Core/stats/stat_context.gd")
 const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
@@ -62,10 +64,14 @@ var _velocity_history_cursor: int = 0
 var _infection_visual: Node2D = null
 ## 当前受击晃动 tween；重触发前先 kill，避免多条 tween 争用 sprite.position。
 var _hit_shake_tween: Tween
+var _attack_warning: Node = null
+var _attack_warning_damage_callback: Callable = Callable()
+var _attack_warning_interrupt_callback: Callable = Callable()
 
 
 func _ready() -> void:
 	add_to_group("enemies")
+	_connect_attack_warning()
 	_entity_id = "enemy_%d" % get_instance_id()
 	_register_stat_entity()
 	_update_health_label()
@@ -76,6 +82,7 @@ func _ready() -> void:
 
 
 func _exit_tree() -> void:
+	_disconnect_attack_warning()
 	if buff_host != null and buff_host.buff_ticked.is_connected(_on_buff_ticked):
 		buff_host.buff_ticked.disconnect(_on_buff_ticked)
 	var stat_system: Node = _get_stat_system()
@@ -102,6 +109,9 @@ func _on_body_entered(body: Node) -> void:
 		if not is_alive():
 			return
 	if body.is_in_group("marbles"):
+		var marble: RigidBody2D = body as RigidBody2D
+		if marble != null:
+			marble_hit.emit(self, marble)
 		_play_marble_hit_sfx()
 		var was_burning: bool = has_buff("fire_burn_debuff")
 		var was_frozen: bool = has_buff("frozen_debuff")
@@ -127,6 +137,65 @@ func _on_body_entered(body: Node) -> void:
 		_apply_frozen_push_from_body(body)
 		return
 	_try_report_frozen_impact(body)
+
+
+func configure_attack(profile: Resource) -> bool:
+	_connect_attack_warning()
+	if _attack_warning == null:
+		return profile == null
+	if profile == null:
+		return true
+	if not _attack_warning.has_method(&"configure"):
+		return false
+	return bool(_attack_warning.call(&"configure", profile))
+
+
+func _connect_attack_warning() -> void:
+	var warning: Node = get_node_or_null(^"AttackWarning")
+	if warning != _attack_warning:
+		_disconnect_attack_warning()
+	_attack_warning = warning
+	if _attack_warning == null:
+		return
+	_attack_warning_damage_callback = Callable(self, "_relay_player_damage_requested")
+	if _attack_warning.has_signal(&"player_damage_requested") \
+			and not _attack_warning.is_connected(
+				&"player_damage_requested", _attack_warning_damage_callback
+			):
+		_attack_warning.connect(&"player_damage_requested", _attack_warning_damage_callback)
+	_attack_warning_interrupt_callback = Callable(self, "_relay_marble_hit_interrupt")
+	if _attack_warning.has_method(&"interrupt") \
+			and not marble_hit.is_connected(_attack_warning_interrupt_callback):
+		marble_hit.connect(_attack_warning_interrupt_callback)
+
+
+func _disconnect_attack_warning() -> void:
+	if _attack_warning != null and is_instance_valid(_attack_warning):
+		if _attack_warning_damage_callback.is_valid() \
+				and _attack_warning.has_signal(&"player_damage_requested") \
+				and _attack_warning.is_connected(
+					&"player_damage_requested", _attack_warning_damage_callback
+				):
+			_attack_warning.disconnect(
+				&"player_damage_requested", _attack_warning_damage_callback
+			)
+		if _attack_warning_interrupt_callback.is_valid() \
+				and marble_hit.is_connected(_attack_warning_interrupt_callback):
+			marble_hit.disconnect(_attack_warning_interrupt_callback)
+	_attack_warning = null
+	_attack_warning_damage_callback = Callable()
+	_attack_warning_interrupt_callback = Callable()
+
+
+func _relay_player_damage_requested(amount: int) -> void:
+	if is_alive() and amount > 0:
+		player_damage_requested.emit(self, amount)
+
+
+func _relay_marble_hit_interrupt(_enemy: Enemy, _marble: RigidBody2D) -> void:
+	if _attack_warning != null and is_instance_valid(_attack_warning) \
+			and _attack_warning.has_method(&"interrupt"):
+		_attack_warning.call(&"interrupt")
 
 
 ## Frozen 敌人的任意 body_entered 接触固定结算 1 点自身伤害。使用 DamagePacket 以

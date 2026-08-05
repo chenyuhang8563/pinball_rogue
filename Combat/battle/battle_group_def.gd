@@ -14,6 +14,7 @@ class EnemyEntry:
 	@export var scene: PackedScene
 	@export var position: Vector2 = Vector2.ZERO
 	@export var health: int = 10
+	@export var attack_profile: Resource = null
 
 
 @export var id: String = ""

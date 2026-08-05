@@ -4,6 +4,7 @@ extends Node
 signal started(token: RunFlowToken, plan: BattlePlan)
 signal enemy_registered(token: RunFlowToken, enemy: Enemy)
 signal enemy_defeated(token: RunFlowToken, enemy: Enemy, cause: StringName)
+signal enemy_attack_hit(token: RunFlowToken, enemy: Enemy, amount: int)
 signal marble_fell(token: RunFlowToken, marble: RigidBody2D)
 signal completed(token: RunFlowToken, battle_id: StringName, plan: BattlePlan)
 signal callback_rejected(kind: StringName, reason: String)
@@ -26,7 +27,8 @@ var _batch_state: BatchState = BatchState.IDLE
 var _registered_enemies: Dictionary[int, Enemy] = {}
 var _registered_enemy_count: int = 0
 var _live_enemies: Dictionary[int, Enemy] = {}
-var _enemy_callbacks: Dictionary[int, Callable] = {}
+var _enemy_defeat_callbacks: Dictionary[int, Callable] = {}
+var _enemy_attack_callbacks: Dictionary[int, Callable] = {}
 var _accepted_marble_instance_ids: Dictionary[int, bool] = {}
 var _spawner_connected: bool = false
 var _kill_zone_callback: Callable = Callable()
@@ -185,12 +187,18 @@ func _register_enemy(
 	if _registered_enemies.has(instance_id):
 		_reject(&"enemy_register", "enemy instance is already registered")
 		return false
-	var callback: Callable = Callable(self, "_on_enemy_defeated").bind(
+	var defeat_callback: Callable = Callable(self, "_on_enemy_defeated").bind(
 		token, batch_id, entry_index
 	)
-	if not enemy.defeated.is_connected(callback):
-		enemy.defeated.connect(callback)
-	_enemy_callbacks[instance_id] = callback
+	if not enemy.defeated.is_connected(defeat_callback):
+		enemy.defeated.connect(defeat_callback)
+	var attack_callback: Callable = Callable(self, "_on_enemy_attack_hit").bind(
+		token, batch_id
+	)
+	if not enemy.player_damage_requested.is_connected(attack_callback):
+		enemy.player_damage_requested.connect(attack_callback)
+	_enemy_defeat_callbacks[instance_id] = defeat_callback
+	_enemy_attack_callbacks[instance_id] = attack_callback
 	_registered_enemies[instance_id] = enemy
 	_registered_enemy_count += 1
 	_live_enemies[instance_id] = enemy
@@ -223,6 +231,31 @@ func _on_enemy_defeated(
 	enemy_defeated.emit(token, enemy, cause)
 	if _try_complete():
 		_disconnect_session_sources()
+
+
+func _on_enemy_attack_hit(
+	enemy: Enemy,
+	amount: int,
+	token: RunFlowToken,
+	batch_id: int
+) -> void:
+	if _disposed or token != _active_token or batch_id != _batch_id:
+		_reject(&"enemy_attack_hit", "enemy attack callback is stale")
+		return
+	if _batch_state != BatchState.OPEN and _batch_state != BatchState.SEALED:
+		_reject(&"enemy_attack_hit", "batch is terminal")
+		return
+	if enemy == null or not is_instance_valid(enemy):
+		_reject(&"enemy_attack_hit", "enemy is invalid")
+		return
+	var instance_id: int = enemy.get_instance_id()
+	if not _live_enemies.has(instance_id) or _live_enemies[instance_id] != enemy:
+		_reject(&"enemy_attack_hit", "enemy is not live in this batch")
+		return
+	if amount <= 0:
+		_reject(&"enemy_attack_hit", "damage amount must be positive")
+		return
+	enemy_attack_hit.emit(token, enemy, amount)
 
 
 func _on_spawn_batch_sealed(batch_id: int, enemy_count: int) -> void:
@@ -336,14 +369,19 @@ func _disconnect_session_sources() -> void:
 
 
 func _disconnect_live_enemies() -> void:
-	for enemy: Enemy in _live_enemies.values():
-		_disconnect_enemy(enemy)
+	for enemy_value: Variant in _live_enemies.values():
+		if not is_instance_valid(enemy_value):
+			continue
+		var enemy: Enemy = enemy_value as Enemy
+		if enemy != null:
+			_disconnect_enemy(enemy)
 
 
 func _clear_enemy_tracking() -> void:
 	_disconnect_live_enemies()
 	_live_enemies.clear()
-	_enemy_callbacks.clear()
+	_enemy_defeat_callbacks.clear()
+	_enemy_attack_callbacks.clear()
 	_registered_enemies.clear()
 	_registered_enemy_count = 0
 
@@ -352,10 +390,14 @@ func _disconnect_enemy(enemy: Enemy) -> void:
 	if enemy == null or not is_instance_valid(enemy):
 		return
 	var instance_id: int = enemy.get_instance_id()
-	var callback: Callable = _enemy_callbacks.get(instance_id, Callable())
-	if callback.is_valid() and enemy.defeated.is_connected(callback):
-		enemy.defeated.disconnect(callback)
-	_enemy_callbacks.erase(instance_id)
+	var defeat_callback: Callable = _enemy_defeat_callbacks.get(instance_id, Callable())
+	if defeat_callback.is_valid() and enemy.defeated.is_connected(defeat_callback):
+		enemy.defeated.disconnect(defeat_callback)
+	var attack_callback: Callable = _enemy_attack_callbacks.get(instance_id, Callable())
+	if attack_callback.is_valid() and enemy.player_damage_requested.is_connected(attack_callback):
+		enemy.player_damage_requested.disconnect(attack_callback)
+	_enemy_defeat_callbacks.erase(instance_id)
+	_enemy_attack_callbacks.erase(instance_id)
 
 
 func _reset_active_identity(reset_state: bool) -> void:

@@ -4,7 +4,14 @@ class_name BattlePlanFactory
 const BattlePlanScript: GDScript = preload("res://Run/domain/battle_plan.gd")
 const BattlePlanResultScript: GDScript = preload("res://Run/domain/battle_plan_result.gd")
 const BattleGroupDefScript: GDScript = preload("res://Combat/battle/battle_group_def.gd")
-const DefaultEnemyScene: PackedScene = preload("res://Combat/battle/enemies/enemy.tscn")
+const DefaultEnemyScene: PackedScene = preload("res://Combat/battle/enemies/slime.tscn")
+const DefaultPassiveEnemyScene: PackedScene = preload("res://Combat/battle/enemies/enemy.tscn")
+const NormalAttackProfile: Resource = preload(
+	"res://Combat/battle/enemies/attack_warning/normal_profile.tres"
+)
+const EliteAttackProfile: Resource = preload(
+	"res://Combat/battle/enemies/attack_warning/elite_profile.tres"
+)
 
 const WEAK_LEVEL_DEF_PATH: String = "res://Combat/levels/level_001_weak.tres"
 const STRONG_LEVEL_DEF_PATH: String = "res://Combat/levels/level_strong_normal.tres"
@@ -162,8 +169,29 @@ func _build_enemy_entries(
 			enemy_scene = _content.get(&"enemy_scene") as PackedScene
 		if enemy_scene == null:
 			continue
-		entries.append(_enemy_entry(enemy_scene, spawn.global_position, _spawn_health(level_def, spawn, floor_number)))
+		entries.append(_enemy_entry(
+			enemy_scene,
+			spawn.global_position,
+			_spawn_health(level_def, spawn, floor_number),
+			_attack_profile_for_spawn(spawn, level_def.kind)
+		))
 	return entries
+
+
+func _attack_profile_for_spawn(
+	spawn: LevelEnemySpawn,
+	group_kind: BattleGroupDef.Kind
+) -> Resource:
+	if spawn.attack_profile_override != null:
+		return spawn.attack_profile_override
+	if group_kind == BattleGroupDef.Kind.BOSS:
+		return null
+	match spawn.role:
+		LevelEnemySpawn.Role.ELITE:
+			return EliteAttackProfile
+		LevelEnemySpawn.Role.BOSS:
+			return null
+	return NormalAttackProfile
 
 
 func _spawn_health(level_def: LevelDef, spawn: LevelEnemySpawn, floor_number: int) -> int:
@@ -195,29 +223,31 @@ func _make_fallback_group(content_key: StringName, floor_number: int) -> BattleG
 	match content_key:
 		&"weak":
 			return _make_group("RUN_WEAK_FIGHT_TITLE", BattleGroupDef.Kind.WEAK_NORMAL, [
-				_enemy_entry(enemy_scene, Vector2(72, 48), weak_health),
-				_enemy_entry(enemy_scene, Vector2(120, 72), weak_health),
-				_enemy_entry(enemy_scene, Vector2(168, 48), weak_health),
+				_enemy_entry(enemy_scene, Vector2(72, 48), weak_health, NormalAttackProfile),
+				_enemy_entry(enemy_scene, Vector2(120, 72), weak_health, NormalAttackProfile),
+				_enemy_entry(enemy_scene, Vector2(168, 48), weak_health, NormalAttackProfile),
 			])
 		&"normal":
 			return _make_group("RUN_STRONG_FIGHT_TITLE", BattleGroupDef.Kind.STRONG_NORMAL, [
-				_enemy_entry(enemy_scene, Vector2(64, 48), strong_health),
-				_enemy_entry(enemy_scene, Vector2(104, 88), strong_health),
-				_enemy_entry(enemy_scene, Vector2(144, 48), strong_health),
-				_enemy_entry(enemy_scene, Vector2(184, 88), strong_health),
-				_enemy_entry(enemy_scene, Vector2(120, 132), strong_health),
+				_enemy_entry(enemy_scene, Vector2(64, 48), strong_health, NormalAttackProfile),
+				_enemy_entry(enemy_scene, Vector2(104, 88), strong_health, NormalAttackProfile),
+				_enemy_entry(enemy_scene, Vector2(144, 48), strong_health, NormalAttackProfile),
+				_enemy_entry(enemy_scene, Vector2(184, 88), strong_health, NormalAttackProfile),
+				_enemy_entry(enemy_scene, Vector2(120, 132), strong_health, NormalAttackProfile),
 			])
 		&"elite":
 			return _make_group("RUN_ELITE_FIGHT_TITLE", BattleGroupDef.Kind.ELITE, [
-				_enemy_entry(enemy_scene, Vector2(120, 64), floori(strong_health * 1.5)),
-				_enemy_entry(enemy_scene, Vector2(80, 124), strong_health),
-				_enemy_entry(enemy_scene, Vector2(160, 124), strong_health),
+				_enemy_entry(
+					enemy_scene, Vector2(120, 64), floori(strong_health * 1.5), EliteAttackProfile
+				),
+				_enemy_entry(enemy_scene, Vector2(80, 124), strong_health, NormalAttackProfile),
+				_enemy_entry(enemy_scene, Vector2(160, 124), strong_health, NormalAttackProfile),
 			])
 		&"boss":
 			return _make_group("RUN_BOSS_FIGHT_TITLE", BattleGroupDef.Kind.BOSS, [
-				_enemy_entry(enemy_scene, Vector2(120, 64), BOSS_HEALTH),
-				_enemy_entry(enemy_scene, Vector2(72, 128), weak_health),
-				_enemy_entry(enemy_scene, Vector2(168, 128), weak_health),
+				_enemy_entry(DefaultPassiveEnemyScene, Vector2(120, 64), BOSS_HEALTH, null),
+				_enemy_entry(DefaultPassiveEnemyScene, Vector2(72, 128), weak_health, null),
+				_enemy_entry(DefaultPassiveEnemyScene, Vector2(168, 128), weak_health, null),
 			])
 	return null
 
@@ -238,11 +268,17 @@ func _make_group(
 	return group
 
 
-func _enemy_entry(scene: PackedScene, position: Vector2, health: int) -> BattleGroupDef.EnemyEntry:
+func _enemy_entry(
+	scene: PackedScene,
+	position: Vector2,
+	health: int,
+	attack_profile: Resource = null
+) -> BattleGroupDef.EnemyEntry:
 	var entry: BattleGroupDef.EnemyEntry = BattleGroupDef.EnemyEntry.new()
 	entry.scene = scene
 	entry.position = position
 	entry.health = health
+	entry.attack_profile = attack_profile
 	return entry
 
 

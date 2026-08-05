@@ -1,0 +1,14 @@
+[gd_resource type="Resource" script_class="EnemyAttackProfile" format=3]
+
+[ext_resource type="Script" path="res://Combat/battle/enemies/attack_warning/enemy_attack_profile.gd" id="1_profile"]
+
+[resource]
+script = ExtResource("1_profile")
+warning_radius = 24.0
+warning_angle_degrees = 90.0
+fill_seconds = 3.0
+damage = 1
+attack_cooldown_seconds = 1.5
+stun_seconds = 0.8
+interrupt_immunity_seconds = 2.0
+knockback_impulse = 100.0

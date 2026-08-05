@@ -62,8 +62,9 @@ func start_batch(
 			instance.free()
 			return _fail_batch(batch_id, entry_index, &"root_not_enemy", prepared)
 		var enemy: Enemy = instance as Enemy
-		_configure_enemy(enemy, entry, entry_index)
 		prepared.append(enemy)
+		if not _configure_enemy(enemy, entry, entry_index):
+			return _fail_batch(batch_id, entry_index, &"attack_config_rejected", prepared)
 
 	# Phase two: Session must connect defeated and record every live identity.
 	for entry_index: int in range(prepared.size()):
@@ -110,10 +111,11 @@ func _configure_enemy(
 	enemy: Enemy,
 	entry: BattleGroupDef.EnemyEntry,
 	entry_index: int
-) -> void:
+) -> bool:
 	enemy.position = entry.position
 	enemy.health = entry.health
 	enemy.name = "Enemy_%d" % entry_index
+	return enemy.configure_attack(entry.attack_profile)
 
 
 func _fail_batch(
