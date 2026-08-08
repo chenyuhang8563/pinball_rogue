@@ -6,10 +6,10 @@ uid="uid://d4nhbphqas7ke"
 
 [deps]
 
-files=["res://tests/Content/fixtures/level_config/bad_skills.level.translation", "res://tests/Content/fixtures/level_config/bad_skills.recharge.translation", "res://tests/Content/fixtures/level_config/bad_skills.base.translation", "res://tests/Content/fixtures/level_config/bad_skills.projectile.translation", "res://tests/Content/fixtures/level_config/bad_skills.dash.translation", "res://tests/Content/fixtures/level_config/bad_skills.dash.translation"]
+files=["res://tests/Content/fixtures/level_config/bad_skills.level.translation", "res://tests/Content/fixtures/level_config/bad_skills.recharge.translation", "res://tests/Content/fixtures/level_config/bad_skills.base.translation", "res://tests/Content/fixtures/level_config/bad_skills.projectile.translation", "res://tests/Content/fixtures/level_config/bad_skills.dash.translation", "res://tests/Content/fixtures/level_config/bad_skills.dash.translation", "res://tests/Content/fixtures/level_config/bad_skills.blast.translation", "res://tests/Content/fixtures/level_config/bad_skills.fuse.translation"]
 
 source_file="res://tests/Content/fixtures/level_config/bad_skills.csv"
-dest_files=["res://tests/Content/fixtures/level_config/bad_skills.level.translation", "res://tests/Content/fixtures/level_config/bad_skills.recharge.translation", "res://tests/Content/fixtures/level_config/bad_skills.base.translation", "res://tests/Content/fixtures/level_config/bad_skills.projectile.translation", "res://tests/Content/fixtures/level_config/bad_skills.dash.translation", "res://tests/Content/fixtures/level_config/bad_skills.dash.translation"]
+dest_files=["res://tests/Content/fixtures/level_config/bad_skills.level.translation", "res://tests/Content/fixtures/level_config/bad_skills.recharge.translation", "res://tests/Content/fixtures/level_config/bad_skills.base.translation", "res://tests/Content/fixtures/level_config/bad_skills.projectile.translation", "res://tests/Content/fixtures/level_config/bad_skills.dash.translation", "res://tests/Content/fixtures/level_config/bad_skills.dash.translation", "res://tests/Content/fixtures/level_config/bad_skills.blast.translation", "res://tests/Content/fixtures/level_config/bad_skills.fuse.translation"]
 
 [params]
 

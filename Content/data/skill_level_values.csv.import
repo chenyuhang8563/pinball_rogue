@@ -6,10 +6,10 @@ uid="uid://cpp4n4rvo2e8"
 
 [deps]
 
-files=["res://Content/data/skill_level_values.level.translation", "res://Content/data/skill_level_values.recharge.translation", "res://Content/data/skill_level_values.base.translation", "res://Content/data/skill_level_values.projectile.translation", "res://Content/data/skill_level_values.dash.translation", "res://Content/data/skill_level_values.dash.translation"]
+files=["res://Content/data/skill_level_values.level.translation", "res://Content/data/skill_level_values.recharge.translation", "res://Content/data/skill_level_values.base.translation", "res://Content/data/skill_level_values.projectile.translation", "res://Content/data/skill_level_values.dash.translation", "res://Content/data/skill_level_values.dash.translation", "res://Content/data/skill_level_values.blast.translation", "res://Content/data/skill_level_values.fuse.translation"]
 
 source_file="res://Content/data/skill_level_values.csv"
-dest_files=["res://Content/data/skill_level_values.level.translation", "res://Content/data/skill_level_values.recharge.translation", "res://Content/data/skill_level_values.base.translation", "res://Content/data/skill_level_values.projectile.translation", "res://Content/data/skill_level_values.dash.translation", "res://Content/data/skill_level_values.dash.translation"]
+dest_files=["res://Content/data/skill_level_values.level.translation", "res://Content/data/skill_level_values.recharge.translation", "res://Content/data/skill_level_values.base.translation", "res://Content/data/skill_level_values.projectile.translation", "res://Content/data/skill_level_values.dash.translation", "res://Content/data/skill_level_values.dash.translation", "res://Content/data/skill_level_values.blast.translation", "res://Content/data/skill_level_values.fuse.translation"]
 
 [params]
 

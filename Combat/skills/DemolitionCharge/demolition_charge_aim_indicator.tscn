@@ -1,0 +1,7 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://Combat/skills/DemolitionCharge/demolition_charge_aim_indicator.gd" id="1"]
+
+[node name="DemolitionChargeAimIndicator" type="Node2D" groups=["skill_aim_indicators"]]
+z_index = 8
+script = ExtResource("1")

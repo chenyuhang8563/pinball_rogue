@@ -407,7 +407,7 @@ func _apply_skill_upgrade_values(target: SkillDefinition) -> void:
 		return
 	for property_name: String in (values as Dictionary).keys():
 		match property_name:
-			"recharge_time", "base_damage", "projectile_lifetime", "dash_damage_multiplier", "dash_damage_duration":
+			"recharge_time", "base_damage", "projectile_lifetime", "dash_damage_multiplier", "dash_damage_duration", "blast_radius", "fuse_time":
 				target.set(property_name, values[property_name])
 
 

@@ -18,7 +18,7 @@ const DEFAULT_SKILL_CSV_PATH: String = "res://Content/data/skill_level_values.cs
 const MARBLE_CSV_HEADER: PackedStringArray = ["item_id", "stat", "min_level", "value"]
 const SKILL_CSV_HEADER: PackedStringArray = [
 	"skill_id", "level", "recharge_time", "base_damage", "projectile_lifetime",
-	"dash_damage_multiplier", "dash_damage_duration",
+	"dash_damage_multiplier", "dash_damage_duration", "blast_radius", "fuse_time",
 ]
 
 ## item id -> int(Marble.MARBLE_TYPE). Kept as explicit constants instead of
@@ -34,7 +34,7 @@ const MARBLE_TYPE_BY_ITEM_ID: Dictionary = {
 	"lightning_marble": 7,
 }
 
-const KNOWN_SKILL_IDS: PackedStringArray = ["dash", "magic_missile"]
+const KNOWN_SKILL_IDS: PackedStringArray = ["dash", "magic_missile", "demolition_charge"]
 
 const MAX_MARBLE_LEVEL: int = 4
 const MAX_SKILL_LEVEL: int = 4
@@ -218,7 +218,7 @@ static func _load_skill_level_values(path: String, errors: PackedStringArray) ->
 			continue
 		var values: Dictionary = {"level": int(level), "recharge_time": float(recharge)}
 		var row_valid := true
-		for column: int in range(3, 7):
+		for column: int in range(3, SKILL_CSV_HEADER.size()):
 			var raw := String(row[column])
 			if raw.is_empty():
 				continue

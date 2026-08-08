@@ -16,6 +16,7 @@ const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.
 
 ## 快照目标 → 过滤待删除 → 共享 event_id → 唯一 main target → 构造 DamagePacket。
 ## is_relic：小炸弹为 true；is_marble 原样写入 packet，与调用方事件语义一致。
+## is_skill：技能炸弹等技能伤害置 true，写入 packet.is_skill（当前无消费方，为数据完整性）。
 ## 不构造/分发 ExplosionContext。
 static func damage_enemies_in_radius(
 	center: Vector2,
@@ -23,6 +24,7 @@ static func damage_enemies_in_radius(
 	damage: int,
 	is_relic: bool = false,
 	is_marble: bool = true,
+	is_skill: bool = false,
 ) -> void:
 	var tree: SceneTree = Engine.get_main_loop() as SceneTree
 	if tree == null:
@@ -48,6 +50,7 @@ static func damage_enemies_in_radius(
 			var packet: DamagePacket = DamagePacketScript.new(&"bomb", float(damage), &"physical")
 			packet.is_marble = is_marble
 			packet.is_relic = is_relic
+			packet.is_skill = is_skill
 			packet.target = enemy_node
 			packet.event_id = event_id
 			packet.is_event_main = enemy_node == main_target

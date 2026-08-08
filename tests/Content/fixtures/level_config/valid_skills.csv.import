@@ -6,10 +6,10 @@ uid="uid://b48oelis0f4hf"
 
 [deps]
 
-files=["res://tests/Content/fixtures/level_config/valid_skills.level.translation", "res://tests/Content/fixtures/level_config/valid_skills.recharge.translation", "res://tests/Content/fixtures/level_config/valid_skills.base.translation", "res://tests/Content/fixtures/level_config/valid_skills.projectile.translation", "res://tests/Content/fixtures/level_config/valid_skills.dash.translation", "res://tests/Content/fixtures/level_config/valid_skills.dash.translation"]
+files=["res://tests/Content/fixtures/level_config/valid_skills.level.translation", "res://tests/Content/fixtures/level_config/valid_skills.recharge.translation", "res://tests/Content/fixtures/level_config/valid_skills.base.translation", "res://tests/Content/fixtures/level_config/valid_skills.projectile.translation", "res://tests/Content/fixtures/level_config/valid_skills.dash.translation", "res://tests/Content/fixtures/level_config/valid_skills.dash.translation", "res://tests/Content/fixtures/level_config/valid_skills.blast.translation", "res://tests/Content/fixtures/level_config/valid_skills.fuse.translation"]
 
 source_file="res://tests/Content/fixtures/level_config/valid_skills.csv"
-dest_files=["res://tests/Content/fixtures/level_config/valid_skills.level.translation", "res://tests/Content/fixtures/level_config/valid_skills.recharge.translation", "res://tests/Content/fixtures/level_config/valid_skills.base.translation", "res://tests/Content/fixtures/level_config/valid_skills.projectile.translation", "res://tests/Content/fixtures/level_config/valid_skills.dash.translation", "res://tests/Content/fixtures/level_config/valid_skills.dash.translation"]
+dest_files=["res://tests/Content/fixtures/level_config/valid_skills.level.translation", "res://tests/Content/fixtures/level_config/valid_skills.recharge.translation", "res://tests/Content/fixtures/level_config/valid_skills.base.translation", "res://tests/Content/fixtures/level_config/valid_skills.projectile.translation", "res://tests/Content/fixtures/level_config/valid_skills.dash.translation", "res://tests/Content/fixtures/level_config/valid_skills.dash.translation", "res://tests/Content/fixtures/level_config/valid_skills.blast.translation", "res://tests/Content/fixtures/level_config/valid_skills.fuse.translation"]
 
 [params]
 

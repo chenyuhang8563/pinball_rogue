@@ -114,7 +114,7 @@ ITEM_CRYOCLASM_DESC_LV4,"Awakened: shards apply Frost and the shattered target r
 ITEM_CARRION_DESC_LV1,"Plague flies last 2 seconds longer.","瘟疫苍蝇额外存在 2 秒。"
 ITEM_CARRION_DESC_LV2,"Plague flies last 4 seconds longer.","瘟疫苍蝇额外存在 4 秒。"
 ITEM_CARRION_DESC_LV3,"Plague flies last 6 seconds longer.","瘟疫苍蝇额外存在 6 秒。"
-ITEM_CARRION_DESC_LV4,"Awakened: retain +6 seconds and flies deal 1 more damage.","觉醒：保留 +6 秒，苍蝇每次叮咬额外造成 1 点伤害。"
+ITEM_CARRION_DESC_LV4,"Awakened: retain +6 seconds and flies deal 1 more poison damage.","觉醒：保留 +6 秒，苍蝇每次叮咬额外造成 1 点毒素伤害。"
 ITEM_PARASITE_DESC_LV1,"Each Plague fly bite applies 1 Poison stack.","每次瘟疫苍蝇叮咬施加 1 层中毒。"
 ITEM_PARASITE_DESC_LV2,"Each Plague fly bite applies 2 Poison stacks.","每次瘟疫苍蝇叮咬施加 2 层中毒。"
 ITEM_PARASITE_DESC_LV3,"Each Plague fly bite applies 3 Poison stacks.","每次瘟疫苍蝇叮咬施加 3 层中毒。"
@@ -203,3 +203,7 @@ ITEM_AMMO_DUMP_DESC_LV1,Each Detonate deals bonus damage equal to current bombs 
 ITEM_AMMO_DUMP_DESC_LV2,Each Detonate deals bonus damage equal to current bombs x1.5.,每次引爆按当前炸弹数造成 x1.5 的额外伤害。
 ITEM_AMMO_DUMP_DESC_LV3,Each Detonate deals bonus damage equal to current bombs x2.,每次引爆按当前炸弹数造成 x2 的额外伤害。
 ITEM_AMMO_DUMP_DESC_LV4,"Awakened: also x1.5 explosion radius.","觉醒：爆炸半径 ×1.5。"
+ITEM_DEMOLITION_CHARGE_DESC_LV1,"Lob a bomb to a targeted spot, detonating after 3s fuse for [damage_explosion]12[/damage_explosion] blast damage (radius 70). Recharge 6 seconds.","抛射一枚炸弹，3秒后引爆，造成[damage_explosion]12[/damage_explosion]点爆破伤害（半径70），冷却6秒。"
+ITEM_DEMOLITION_CHARGE_DESC_LV2,"Lob a bomb to a targeted spot, detonating after 3s fuse for [damage_explosion]18[/damage_explosion] blast damage (radius 78). Recharge 5 seconds.","抛射一枚炸弹，3秒后引爆，造成[damage_explosion]18[/damage_explosion]点爆破伤害（半径78），冷却5秒。"
+ITEM_DEMOLITION_CHARGE_DESC_LV3,"Lob a bomb to a targeted spot, detonating after 2.6s fuse for [damage_explosion]24[/damage_explosion] blast damage (radius 86). Recharge 4 seconds.","抛射一枚炸弹，2.6秒后引爆，造成[damage_explosion]24[/damage_explosion]点爆破伤害（半径86），冷却4秒。"
+ITEM_DEMOLITION_CHARGE_DESC_LV4,"Lob a bomb to a targeted spot, detonating after 2.6s fuse for [damage_explosion]32[/damage_explosion] blast damage (radius 96). Recharge 4 seconds.","抛射一枚炸弹，2.6秒后引爆，造成[damage_explosion]32[/damage_explosion]点爆破伤害（半径96），冷却4秒。"

@@ -425,8 +425,8 @@ func _consume_echo_token(target: Node, packet: DamagePacket) -> int:
 
 # ---- 破城锥穿透态 ----
 
-## Head 正常碰撞掩码（marble.tscn：mask bits 0/2/3）。穿透期间移除 enemy 层（bit 3）。
-const HEAD_COLLISION_MASK_NORMAL: int = 13
+## Head 正常碰撞掩码（marble.tscn：mask 1+4+8+32，含 bomb 层 bit 32）。穿透期间移除 enemy 层（bit 3）。
+const HEAD_COLLISION_MASK_NORMAL: int = 45
 const HEAD_COLLISION_MASK_PIERCING: int = 5
 ## 穿透传感器：layer 0（不参与碰撞），仅探测 enemy 层（bit 3）。Godot 双端规则下
 ## Head 侧 mask 移除 enemy 位即不再与敌人刚体碰撞，穿透成立。

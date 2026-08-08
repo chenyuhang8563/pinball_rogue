@@ -97,7 +97,7 @@ func test_registry_scan_order_and_ids_are_stable() -> void:
 	assert_eq(ids, [
 		&"accelerant", &"ammo_dump", &"ammo_pouch", &"ammo_recycler", &"arc_relay", &"assassin_marble", &"assassins_whetstone", &"battering_ram",
 		&"blue_marble", &"bomb_marble", &"brown_marble", &"carrion", &"cremation", &"cryoclasm", &"dark_marble",
-		&"dash", &"drop_hammer", &"execution_decree", &"fire_bellows", &"fire_marble", &"fortuna_dice",
+		&"dash", &"demolition_charge", &"drop_hammer", &"execution_decree", &"fire_bellows", &"fire_marble", &"fortuna_dice",
 		&"green_marble", &"grindstone", &"high_explosive", &"ice_hammer", &"last_shot", &"leyden_jar", &"lightning",
 		&"lightning_marble",
 		&"magic_missile", &"many_faced_prism", &"miasma", &"parasite", &"permafrost", &"poison_culture",

@@ -12,7 +12,7 @@ func test_default_loads_full_production_data() -> void:
 	var skill_level_values: Dictionary = config[&"skill_level_values"] as Dictionary
 
 	assert_eq(marble_modifiers.size(), 8, "8 种弹珠")
-	assert_eq(skill_level_values.size(), 2, "2 个技能")
+	assert_eq(skill_level_values.size(), 3, "3 个技能")
 
 	var total_rows := 0
 	for stats_by_id: Dictionary in marble_modifiers.values():
@@ -34,6 +34,13 @@ func test_default_loads_full_production_data() -> void:
 
 	assert_eq(skill_level_values["dash"].size(), 4)
 	assert_eq(skill_level_values["magic_missile"].size(), 4)
+	assert_eq(skill_level_values["demolition_charge"].size(), 4)
+	assert_eq(skill_level_values["demolition_charge"][0], {
+		"recharge_time": 6.0,
+		"base_damage": 12,
+		"blast_radius": 70.0,
+		"fuse_time": 3.0,
+	})
 	assert_eq(skill_level_values["dash"][0], {
 		"recharge_time": 5.0,
 		"dash_damage_multiplier": 1.0,
@@ -59,7 +66,7 @@ func test_valid_fixtures_load_clean() -> void:
 	var marble_modifiers: Dictionary = config[&"marble_modifiers"] as Dictionary
 	var skill_level_values: Dictionary = config[&"skill_level_values"] as Dictionary
 	assert_eq(marble_modifiers.size(), 8)
-	assert_eq(skill_level_values.size(), 2)
+	assert_eq(skill_level_values.size(), 3)
 	assert_true((result.get(&"errors", PackedStringArray()) as PackedStringArray).is_empty())
 
 

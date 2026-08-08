@@ -9,7 +9,7 @@ const MarbleScene: PackedScene = preload("res://Combat/marbles/marble.tscn")
 const EnemyScene: PackedScene = preload("res://Combat/battle/enemies/enemy.tscn")
 const DamagePacketScript: GDScript = preload("res://Combat/damage/damage_packet.gd")
 
-const HEAD_COLLISION_MASK_NORMAL: int = 13
+const HEAD_COLLISION_MASK_NORMAL: int = 45
 const HEAD_COLLISION_MASK_PIERCING: int = 5
 ## BROWN Head 接触伤害（无 StatSystem 时 = head.damage）。
 const HEAD_BASE_DAMAGE: int = 5

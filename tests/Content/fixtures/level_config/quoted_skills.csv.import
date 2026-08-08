@@ -6,10 +6,10 @@ uid="uid://b6x3a87mvy1wm"
 
 [deps]
 
-files=["res://tests/Content/fixtures/level_config/quoted_skills.level.translation", "res://tests/Content/fixtures/level_config/quoted_skills.recharge.translation", "res://tests/Content/fixtures/level_config/quoted_skills.base.translation", "res://tests/Content/fixtures/level_config/quoted_skills.projectile.translation", "res://tests/Content/fixtures/level_config/quoted_skills.dash.translation", "res://tests/Content/fixtures/level_config/quoted_skills.dash.translation"]
+files=["res://tests/Content/fixtures/level_config/quoted_skills.level.translation", "res://tests/Content/fixtures/level_config/quoted_skills.recharge.translation", "res://tests/Content/fixtures/level_config/quoted_skills.base.translation", "res://tests/Content/fixtures/level_config/quoted_skills.projectile.translation", "res://tests/Content/fixtures/level_config/quoted_skills.dash.translation", "res://tests/Content/fixtures/level_config/quoted_skills.dash.translation", "res://tests/Content/fixtures/level_config/quoted_skills.blast.translation", "res://tests/Content/fixtures/level_config/quoted_skills.fuse.translation"]
 
 source_file="res://tests/Content/fixtures/level_config/quoted_skills.csv"
-dest_files=["res://tests/Content/fixtures/level_config/quoted_skills.level.translation", "res://tests/Content/fixtures/level_config/quoted_skills.recharge.translation", "res://tests/Content/fixtures/level_config/quoted_skills.base.translation", "res://tests/Content/fixtures/level_config/quoted_skills.projectile.translation", "res://tests/Content/fixtures/level_config/quoted_skills.dash.translation", "res://tests/Content/fixtures/level_config/quoted_skills.dash.translation"]
+dest_files=["res://tests/Content/fixtures/level_config/quoted_skills.level.translation", "res://tests/Content/fixtures/level_config/quoted_skills.recharge.translation", "res://tests/Content/fixtures/level_config/quoted_skills.base.translation", "res://tests/Content/fixtures/level_config/quoted_skills.projectile.translation", "res://tests/Content/fixtures/level_config/quoted_skills.dash.translation", "res://tests/Content/fixtures/level_config/quoted_skills.dash.translation", "res://tests/Content/fixtures/level_config/quoted_skills.blast.translation", "res://tests/Content/fixtures/level_config/quoted_skills.fuse.translation"]
 
 [params]
 

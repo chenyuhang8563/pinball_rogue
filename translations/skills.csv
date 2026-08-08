@@ -16,3 +16,7 @@ ITEM_DASH_TITLE,Dash,冲刺
 ITEM_DASH_DESC,Instantly dash toward the nearest enemy.,立即向最近的敌人冲刺。
 ITEM_MAGIC_MISSILE_TITLE,Magic Missile,魔法飞弹
 ITEM_MAGIC_MISSILE_DESC,"Hold to aim, release to fire.",按住瞄准，释放发射。
+SKILL_DEMOLITION_CHARGE_NAME,Demolition Charge,定点爆破
+SKILL_DEMOLITION_CHARGE_DESC,"Aim with the mouse, release to lob an armed bomb. It explodes after a short fuse, dealing area damage.",用鼠标瞄准，松开抛出一颗引燃炸弹。短暂导火索后爆炸造成范围伤害。
+ITEM_DEMOLITION_CHARGE_TITLE,Demolition Charge,定点爆破
+ITEM_DEMOLITION_CHARGE_DESC,"Aim with the mouse, release to lob an armed bomb. It explodes after a short fuse, dealing area damage.",用鼠标瞄准，松开抛出一颗引燃炸弹。短暂导火索后爆炸造成范围伤害。

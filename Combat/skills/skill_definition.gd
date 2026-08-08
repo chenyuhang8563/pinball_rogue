@@ -31,3 +31,17 @@ enum ActivationMode {
 @export_group("Dash")
 @export var dash_damage_multiplier: float = 1.0
 @export var dash_damage_duration: float = 0.0
+
+@export_group("Demolition Charge")
+## 爆炸 AOE 半径（px）。升级列 blast_radius。
+@export var blast_radius: float = 70.0
+## 导火索时长（秒），从抛射瞬间开始计时。升级列 fuse_time。
+@export_range(0.5, 10.0, 0.1) var fuse_time: float = 3.0
+## 抛射飞行时长（秒）。
+@export_range(0.2, 2.0, 0.05) var flight_duration: float = 0.6
+## 瞄准时鼠标落点距 Head 的最大距离（px）。
+@export var aim_max_distance: float = 160.0
+## 抛物线拱高（px）。
+@export var aim_arc_height: float = 60.0
+## 抛物线预览虚线段数。
+@export_range(8, 64, 1) var aim_arc_steps: int = 24

@@ -1,12 +1,12 @@
 keys,en,zh_CN
 ITEM_FIRE_MARBLE_TITLE,Fire Marble,火焰弹珠
-ITEM_FIRE_MARBLE_DESC,First hit applies 4 burn fuel; later hits add 1. Each second, burn deals damage based on remaining fuel and consumes 1 fuel.,首次命中附着 4 层燃烧；燃烧期间命中追加 1 层。每秒根据剩余燃料层数造成伤害并消耗 1 层燃烧。
+ITEM_FIRE_MARBLE_DESC,"First hit applies 4 burn fuel; later hits add 1. Each second, burn deals damage based on remaining fuel and consumes 1 fuel.",首次命中附着 4 层燃烧；燃烧期间命中追加 1 层。每秒根据剩余燃料层数造成伤害并消耗 1 层燃烧。
 STATUS_BURN_NAME,Burn,燃烧
 STATUS_BURN_DESC,Each second deals damage based on remaining fuel and consumes 1 fuel; extinguishes at zero.,每秒根据剩余燃料层数造成伤害，并消耗 1 层燃料；燃料归零时熄灭。
 STATUS_ARC_NAME,Arc,电弧
 STATUS_ARC_DESC,"Stacks for 5 seconds; Lightning Marble repeat hits discharge stored Arc.",持续 5 秒并可叠层；闪电弹珠复击时释放已储存的电弧。
 UPGRADE_FIRE_DURATION_4_DESC,Burn fuel cap increased to 15,燃烧燃料上限提升至 15
-UPGRADE_FIRE_DURATION_5_DESC,Burn fuel cap increased to 20 and deals 3 damage per fuel,燃烧燃料上限提升至 20，且每燃料造成 3 点伤害
+UPGRADE_FIRE_DURATION_5_DESC,Burn fuel cap increased to 20 and deals [damage_fire]3[/damage_fire] damage per fuel,燃烧燃料上限提升至 20，且每燃料造成 [damage_fire]3[/damage_fire] 点伤害
 UPGRADE_FIRE_AWAKEN_DESC,Awaken: retains the level III burn damage,觉醒：保留 III 级燃烧伤害
 UI_INVENTORY_TITLE,Inventory,物品栏
 UI_SKILLS_TITLE,Skills,技能
@@ -88,8 +88,8 @@ ITEM_ARC_RELAY_TITLE,Arc Relay,续弧继电器
 ITEM_ARC_RELAY_DESC,Charged enemies relay Arc to nearby targets when defeated.,带有电弧的敌人死亡时向附近目标续弧。
 ITEM_THUNDERSTORM_TITLE,Thunderstorm Core,雷暴核心
 ITEM_THUNDERSTORM_DESC,Enough direct discharges in one shot call lightning onto charged enemies.,单发内完成足够多次直接复击后，对带电敌人落雷。
-UPGRADE_LIGHTNING_DAMAGE_3_DESC,Repeat discharge damage increased to 3 per Arc stack,复击放电提升至每层电弧 3 点伤害
-UPGRADE_LIGHTNING_DAMAGE_4_DESC,Repeat discharge damage increased to 4 per Arc stack,复击放电提升至每层电弧 4 点伤害
+UPGRADE_LIGHTNING_DAMAGE_3_DESC,Repeat discharge damage increased to [damage_lightning]3[/damage_lightning] per Arc stack,复击放电提升至每层电弧 [damage_lightning]3[/damage_lightning] 点伤害
+UPGRADE_LIGHTNING_DAMAGE_4_DESC,Repeat discharge damage increased to [damage_lightning]4[/damage_lightning] per Arc stack,复击放电提升至每层电弧 [damage_lightning]4[/damage_lightning] 点伤害
 UPGRADE_LIGHTNING_AWAKEN_DESC,Awaken: repeat hits apply 2 Arc stacks after discharge,觉醒：复击放电后施加 2 层电弧
 ITEM_FIRE_BELLOWS_TITLE,Bellows Core,风箱核心
 ITEM_FIRE_BELLOWS_DESC,Every few hits on a burning enemy grants it 1 extra fuel.,每隔几次命中燃烧中的敌人会额外施加 1 燃料。
@@ -116,11 +116,11 @@ ITEM_WITCH_HAT_DESC,Poison can build to higher stack counts.,中毒可叠加至�
 ITEM_AMMO_POUCH_TITLE,Bomb Pouch,炸弹袋
 ITEM_AMMO_POUCH_DESC,Max bombs +1/+2/+3. Awakened: battle starts with 2 extra bombs.,炸弹数上限+1/+2/+3。觉醒：战斗开始时额外获得 2 枚炸弹。
 ITEM_AMMO_RECYCLER_TITLE,Bomb Recycler,炸弹回收器
-ITEM_AMMO_RECYCLER_DESC,After each explosion, 10/20/30% chance to recover 1 bomb. Awakened: 45%.,每次爆炸后有 10/20/30% 概率回收 1 枚炸弹。觉醒：45%。
+ITEM_AMMO_RECYCLER_DESC,"After each explosion, 10/20/30% chance to recover 1 bomb. Awakened: 45%.",每次爆炸后有 10/20/30% 概率回收 1 枚炸弹。觉醒：45%。
 ITEM_HIGH_EXPLOSIVE_TITLE,High Explosive,高爆弹头
 ITEM_HIGH_EXPLOSIVE_DESC,"Each explosion has a 15/25/35% chance to spawn a small bomb marble (max 3 active, dealing 50% damage). Awakened: small bombs deal 100% damage.",每次炸弹爆炸有 15/25/35% 概率额外炸出一颗小炸弹弹珠（同时最多 3 颗，造成 50% 伤害）。觉醒：小炸弹造成 100% 伤害。
 ITEM_LAST_SHOT_TITLE,Last Shot,背水一击
-ITEM_LAST_SHOT_DESC,With exactly 1 bomb before Detonate, explosions deal x1.5/x2/x2.5 damage. Awakened: radius x1.5.,引爆前炸弹数恰为 1 时，爆炸伤害 ×1.5/×2/×2.5。觉醒：半径 ×1.5。
+ITEM_LAST_SHOT_DESC,"With exactly 1 bomb before Detonate, explosions deal x1.5/x2/x2.5 damage. Awakened: radius x1.5.",引爆前炸弹数恰为 1 时，爆炸伤害 ×1.5/×2/×2.5。觉醒：半径 ×1.5。
 ITEM_AMMO_DUMP_TITLE,Ammo Dump,弹药倾泻
 ITEM_AMMO_DUMP_DESC,Each Detonate deals bonus damage equal to current bombs x1/x1.5/x2. Awakened: radius x1.5.,每次引爆按当前炸弹数造成 x1/x1.5/x2 的额外伤害。觉醒：半径 ×1.5。
 UPGRADE_DARK_DAMAGE_2_DESC,Damage 2,伤害 2

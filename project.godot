@@ -81,6 +81,7 @@ toggle_debug_cheats={
 2d_physics/layer_3="flipper"
 2d_physics/layer_4="enemy"
 2d_physics/layer_5="projectile"
+2d_physics/layer_6="bomb"
 
 [physics]
 

@@ -9,6 +9,23 @@ const DAMAGE_COLORS := {
 	"poison": "#8bc76a",
 	"explosion": "#f49c4e",
 }
+# 自动属性伤害着色关键词：描述里出现"数字 + 点 + 属性词 + 伤害"（中/英）时，
+# 自动把数字包进 [damage_<type>] 标记。新增物品只要按"X 点爆炸伤害"措辞写描述，
+# 数字就会自动上色，无需手写标记。
+const AUTO_DAMAGE_KEYWORDS_ZH := {
+	"fire": "火焰|燃烧",
+	"frost": "冰霜|冻结",
+	"lightning": "闪电|电弧",
+	"poison": "毒素|中毒",
+	"explosion": "爆炸|爆破",
+}
+const AUTO_DAMAGE_KEYWORDS_EN := {
+	"fire": "fire|burn",
+	"frost": "frost|ice",
+	"lightning": "lightning|arc",
+	"poison": "poison|venom",
+	"explosion": "explosion|blast",
+}
 const TERM_DATA := {
 	"BURN": ["燃烧", "Burn"],
 	"LIGHTNING_CHAIN": ["闪电法杖", "Lightning Staff"],
@@ -104,7 +121,7 @@ static func _translated_item_text(item: Item, suffix: String, fallback: String) 
 
 
 static func format_description_bbcode(value: String) -> String:
-	var formatted := value
+	var formatted := _auto_color_damage(value)
 	for damage_type: String in DAMAGE_COLORS:
 		formatted = formatted.replace("[damage_%s]" % damage_type, "[color=%s]" % DAMAGE_COLORS[damage_type])
 		formatted = formatted.replace("[/damage_%s]" % damage_type, "[/color]")
@@ -114,6 +131,21 @@ static func format_description_bbcode(value: String) -> String:
 				term,
 				"[color=%s]%s[/color]" % [TERM_COLOR, term]
 			)
+	return formatted
+
+
+## 自动属性伤害着色：把"数字 + 点 + 属性词 + 伤害"（如"3点爆炸伤害"/"4 poison damage"）
+## 里的数字包进 [damage_<type>] 标记。显式手写的 [damage_x] 标记不会命中（数字与
+## "点伤害"之间隔着 [/damage_x]），因此手写优先、自动兜底。
+static func _auto_color_damage(value: String) -> String:
+	var formatted := value
+	for damage_type: String in AUTO_DAMAGE_KEYWORDS_ZH:
+		var zh_regex := RegEx.new()
+		zh_regex.compile("(\\d+(?:\\.\\d+)?)(\\s*点\\s*)?(%s)(伤害)" % AUTO_DAMAGE_KEYWORDS_ZH[damage_type])
+		formatted = zh_regex.sub(formatted, "[damage_%s]$1[/damage_%s]$2$3$4" % [damage_type, damage_type], true)
+		var en_regex := RegEx.new()
+		en_regex.compile("(\\d+(?:\\.\\d+)?)(\\s+(?:more|extra))?(\\s+)?(%s)(\\s+damage)" % AUTO_DAMAGE_KEYWORDS_EN[damage_type])
+		formatted = en_regex.sub(formatted, "[damage_%s]$1[/damage_%s]$2$3$4$5" % [damage_type, damage_type], true)
 	return formatted
 
 
