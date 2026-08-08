@@ -1,7 +1,7 @@
-[gd_resource type="Resource" script_class="SkillDefinition" load_steps=4 format=3]
+[gd_resource type="Resource" script_class="SkillDefinition" format=3 uid="uid://bj1ygsjv6e78k"]
 
-[ext_resource type="Script" path="res://Combat/skills/skill_definition.gd" id="1"]
-[ext_resource type="Texture2D" uid="uid://gsjeaoplfocu" path="res://Assets/Marbles/bomb_marble.png" id="2"]
+[ext_resource type="Script" uid="uid://cxx4g135202hs" path="res://Combat/skills/skill_definition.gd" id="1"]
+[ext_resource type="Texture2D" uid="uid://bs5rtirwge0rm" path="res://Assets/Skills/DemolitionCharge/demolition_charge_icon.png" id="2_keece"]
 [ext_resource type="PackedScene" path="res://Combat/skills/DemolitionCharge/demolition_charge_skill_executor.tscn" id="3"]
 
 [resource]
@@ -9,17 +9,10 @@ script = ExtResource("1")
 id = "demolition_charge"
 name_key = "SKILL_DEMOLITION_CHARGE_NAME"
 description_key = "SKILL_DEMOLITION_CHARGE_DESC"
-icon = ExtResource("2")
+icon = ExtResource("2_keece")
 price = 55
 activation_mode = 1
 max_charges = 3
 recharge_time = 6.0
 executor_scene = ExtResource("3")
 base_damage = 12
-aiming_time_scale = 0.15
-blast_radius = 70.0
-fuse_time = 3.0
-flight_duration = 0.6
-aim_max_distance = 160.0
-aim_arc_height = 60.0
-aim_arc_steps = 24
