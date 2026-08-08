@@ -331,6 +331,10 @@ func _setup_debug_cheats() -> void:
 	debug_grant_panel.configure_items(debug_grant_service.item_ids())
 	_connect_once(debug_grant_panel, &"skip_battle_requested", Callable(self, "_on_debug_skip_battle_requested"))
 	_connect_once(debug_grant_panel, &"grant_requested", Callable(self, "_on_debug_grant_requested"))
+	_connect_once(debug_grant_panel, &"gold_requested", Callable(self, "_on_debug_gold_requested"))
+	_connect_once(debug_grant_panel, &"health_requested", Callable(self, "_on_debug_health_requested"))
+	_connect_debug_resource_hud()
+	_refresh_debug_resources()
 
 
 func _on_debug_skip_battle_requested() -> void:
@@ -342,23 +346,61 @@ func _on_debug_skip_battle_requested() -> void:
 	)
 
 
-func _on_debug_grant_requested(item_id: StringName) -> void:
+func _on_debug_grant_requested(item_id: StringName, level: int) -> void:
 	if debug_grant_service == null:
 		return
-	var result: int = int(debug_grant_service.call("grant", item_id))
+	var result: int = int(debug_grant_service.call("grant", item_id, level))
 	var detail := "发放失败"
 	match result:
 		DebugGrantServiceScript.Result.GRANTED:
-			detail = "发放成功"
+			detail = "发放成功（Lv%d）" % level
 		DebugGrantServiceScript.Result.UNKNOWN_ID:
 			detail = "未知物品"
-		DebugGrantServiceScript.Result.DUPLICATE:
-			detail = "已拥有该物品"
+		DebugGrantServiceScript.Result.SAME_LEVEL:
+			detail = "已处于该等级"
 		DebugGrantServiceScript.Result.CAPACITY_REACHED:
 			detail = "对应栏位已满"
 		DebugGrantServiceScript.Result.COMMIT_FAILED:
 			detail = "替换技能失败"
 	debug_grant_panel.present_result("%s：%s" % [detail, item_id])
+
+
+func _on_debug_gold_requested(amount: int) -> void:
+	if run_scope == null or run_scope.wallet == null:
+		debug_grant_panel.present_result("金币：运行钱包未就绪")
+		return
+	var credited := bool(run_scope.wallet.call("credit", amount))
+	debug_grant_panel.present_result("金币 +%d" % amount if credited else "金币：操作失败")
+
+
+func _on_debug_health_requested(amount: int) -> void:
+	if run_scope == null or run_scope.health == null:
+		debug_grant_panel.present_result("血量：运行生命未就绪")
+		return
+	var credited := bool(run_scope.health.call("credit", amount))
+	debug_grant_panel.present_result("血量 +%d" % amount if credited else "血量：操作失败")
+
+
+func _connect_debug_resource_hud() -> void:
+	if run_scope == null:
+		return
+	if run_scope.wallet != null:
+		_connect_once(run_scope.wallet, &"changed", Callable(self, "_on_debug_resource_changed"))
+	if run_scope.health != null:
+		_connect_once(run_scope.health, &"changed", Callable(self, "_on_debug_resource_changed"))
+
+
+func _on_debug_resource_changed(_value: int = 0) -> void:
+	_refresh_debug_resources()
+
+
+func _refresh_debug_resources() -> void:
+	if debug_grant_panel == null or run_scope == null:
+		return
+	debug_grant_panel.present_resources(
+		int(run_scope.wallet.call("balance")),
+		int(run_scope.health.call("current"))
+	)
 
 
 ## Builds the modular composition without starting it. Focused tests call this

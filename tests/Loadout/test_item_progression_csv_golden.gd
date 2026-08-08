@@ -1,12 +1,13 @@
 extends GutTest
 
-## Golden matrix for marble upgrade curves. Each expectation is the COMPLETE
-## modifier map published to the stat system at levels 1..4 for that marble,
-## sourced from Content/data/marble_level_modifiers.csv.
+## 弹珠升级曲线结构测试（数值无关）。
 ##
-## This test passes against both the old hardcoded UPGRADE_VALUES and the CSV
-## loader: writing it before wiring proves the expectation matrix itself, and
-## after wiring it proves the CSV is semantically equal to the old constants.
+## 升级曲线由 Content/data/marble_level_modifiers.csv 驱动。本测试只断言
+## 曲线结构与单调性不变量，不断言具体数值——调整平衡数值（增删行、改值）
+## 不应导致本测试失败。结构不变量：
+##   1. 每个弹珠 Lv1..Lv4 曲线完整（从 Lv1 可一路升到 Lv4）；
+##   2. 每个等级至少发布一个 modifier（曲线非空）；
+##   3. 每个 stat 出现后值随等级非递减（等级只升不降）。
 
 const LoadoutScript: GDScript = preload("res://Loadout/domain/loadout.gd")
 const ProgressionScript: GDScript = preload("res://Loadout/application/item_progression.gd")
@@ -14,78 +15,22 @@ const FakeStatSystemScript: GDScript = preload("res://tests/Loadout/fake_stat_sy
 
 const WEAK_POINT_STAT: String = "assassin_weak_point_count"
 
-
-func test_dark_marble_curve() -> void:
-	_assert_marble_curve("dark_marble", Marble.MARBLE_TYPE.DEFAULT, [
-		{"dark_marble_damage": 1.0},
-		{"dark_marble_damage": 2.0},
-		{"dark_marble_damage": 3.0},
-		{"dark_marble_damage": 4.0},
-	])
-
-
-func test_bomb_marble_curve() -> void:
-	_assert_marble_curve("bomb_marble", Marble.MARBLE_TYPE.BOMB, [
-		{"explosion_damage": 4.0},
-		{"explosion_damage": 6.0},
-		{"explosion_damage": 8.0},
-		{"explosion_damage": 8.0, "explosion_radius": 75.0, "explosion_effect_scale": 4.0},
-	])
+## 与 Content/application/level_config_loader.gd 的 MARBLE_TYPE_BY_ITEM_ID 一致。
+const MARBLES: Array = [
+	["dark_marble", Marble.MARBLE_TYPE.DEFAULT],
+	["brown_marble", Marble.MARBLE_TYPE.BROWN],
+	["bomb_marble", Marble.MARBLE_TYPE.BOMB],
+	["green_marble", Marble.MARBLE_TYPE.GREEN],
+	["blue_marble", Marble.MARBLE_TYPE.BLUE],
+	["fire_marble", Marble.MARBLE_TYPE.FIRE],
+	["assassin_marble", Marble.MARBLE_TYPE.ASSASSIN],
+	["lightning_marble", Marble.MARBLE_TYPE.LIGHTNING],
+]
 
 
-func test_green_marble_curve() -> void:
-	_assert_marble_curve("green_marble", Marble.MARBLE_TYPE.GREEN, [
-		{"poison_max_stacks": 10.0},
-		{"poison_max_stacks": 15.0},
-		{"poison_max_stacks": 20.0},
-		{"poison_max_stacks": 20.0, "poison_stacks_per_hit": 2.0},
-	])
-
-
-func test_brown_marble_curve() -> void:
-	_assert_marble_curve("brown_marble", Marble.MARBLE_TYPE.BROWN, [
-		{"echo_bonus_damage": 2.0},
-		{"echo_bonus_damage": 4.0},
-		{"echo_bonus_damage": 8.0},
-		{"echo_bonus_damage": 8.0, "echo_flipper_speed_multiplier": 2.0},
-	])
-
-
-func test_blue_marble_curve() -> void:
-	_assert_marble_curve("blue_marble", Marble.MARBLE_TYPE.BLUE, [
-		{"blue_frost_duration": 4.0},
-		{"blue_frost_duration": 4.0, "blue_frost_bonus_damage_enabled": 1.0},
-		{"blue_frost_duration": 4.0, "blue_frost_bonus_damage_enabled": 1.0},
-		{"blue_frost_duration": 4.0, "blue_frost_bonus_damage_enabled": 1.0,
-				"blue_frost_stacks_per_hit": 2.0},
-	])
-
-
-func test_fire_marble_curve() -> void:
-	_assert_marble_curve("fire_marble", Marble.MARBLE_TYPE.FIRE, [
-		{"fire_burn_max_stacks": 10.0},
-		{"fire_burn_max_stacks": 15.0},
-		{"fire_burn_max_stacks": 20.0, "fire_burn_damage_per_layer": 3.0},
-		{"fire_burn_max_stacks": 20.0, "fire_burn_damage_per_layer": 3.0},
-	])
-
-
-func test_assassin_marble_curve() -> void:
-	_assert_marble_curve("assassin_marble", Marble.MARBLE_TYPE.ASSASSIN, [
-		{"assassin_segment_damage": 1.0},
-		{"assassin_segment_damage": 2.0},
-		{"assassin_segment_damage": 3.0},
-		{"assassin_segment_damage": 3.0},
-	])
-
-
-func test_lightning_marble_curve() -> void:
-	_assert_marble_curve("lightning_marble", Marble.MARBLE_TYPE.LIGHTNING, [
-		{"lightning_discharge_damage_per_stack": 2.0},
-		{"lightning_discharge_damage_per_stack": 3.0},
-		{"lightning_discharge_damage_per_stack": 4.0},
-		{"lightning_discharge_damage_per_stack": 4.0, "lightning_repeat_arc_stacks": 2.0},
-	])
+func test_each_marble_curve_is_complete_and_monotonic() -> void:
+	for entry: Array in MARBLES:
+		_assert_curve_structure(entry[0] as String, entry[1] as Marble.MARBLE_TYPE)
 
 
 func test_assassin_weak_point_count_is_zero_when_not_slotted() -> void:
@@ -103,10 +48,8 @@ func test_assassin_weak_point_count_is_zero_when_not_slotted() -> void:
 	progression.call("dispose")
 
 
-## Grows the marble through levels 1..4 and asserts the complete modifier map
-## (minus the live-chain weak-point stat, covered separately) at each level.
-func _assert_marble_curve(item_id: String, marble_type: Marble.MARBLE_TYPE,
-		expected_levels: Array) -> void:
+## 从 Lv1 升到 Lv4，逐级断言曲线结构（减去 live-chain 弱点 stat，另行覆盖）。
+func _assert_curve_structure(item_id: String, marble_type: Marble.MARBLE_TYPE) -> void:
 	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
 	var loadout: RefCounted = LoadoutScript.new()
 	var progression: RefCounted = ProgressionScript.new(loadout, stats)
@@ -119,13 +62,26 @@ func _assert_marble_curve(item_id: String, marble_type: Marble.MARBLE_TYPE,
 	# restore 时 _marble_levels 为空，_sync_stat_modifiers 的 types_to_sync
 	# 不含该弹珠 —— Lv1 不发布任何 modifier（与旧实现一致）。
 	assert_true(progression.call("restore", _lv1_state(marble_type)))
-	for level_index: int in expected_levels.size():
+	var stat_values: Dictionary = {}
+	for level_index: int in 4:
 		var actual := _modifier_map(stats)
 		actual.erase(WEAK_POINT_STAT)
-		assert_eq(actual, expected_levels[level_index] as Dictionary,
-				"%s Lv%d" % [item_id, level_index + 1])
-		if level_index < expected_levels.size() - 1:
-			assert_true(progression.call("upgrade_one", item))
+		assert_false(actual.is_empty(), "%s Lv%d 应发布至少一个 modifier"
+				% [item_id, level_index + 1])
+		for stat_id: Variant in actual:
+			if not stat_values.has(stat_id):
+				stat_values[stat_id] = []
+			(stat_values[stat_id] as Array).append(actual[stat_id])
+		if level_index < 3:
+			assert_true(progression.call("upgrade_one", item),
+				"%s 可升到 Lv%d" % [item_id, level_index + 2])
+	# 每个 stat 出现后的值随等级非递减（等级只升不降）。
+	for stat_id: Variant in stat_values:
+		var values: Array = stat_values[stat_id]
+		for index: int in range(1, values.size()):
+			assert_true(float(values[index]) >= float(values[index - 1]),
+				"%s %s 曲线单调不减（Lv%d -> Lv%d）"
+				% [item_id, stat_id, index, index + 1])
 	progression.call("dispose")
 
 

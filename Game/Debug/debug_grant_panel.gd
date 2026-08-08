@@ -2,14 +2,21 @@ class_name DebugGrantPanel
 extends Control
 
 signal skip_battle_requested
-signal grant_requested(item_id: StringName)
+signal grant_requested(item_id: StringName, level: int)
+signal gold_requested(amount: int)
+signal health_requested(amount: int)
 
 const DEBUG_PANEL_ACTION: StringName = &"toggle_debug_cheats"
 const DebugGrantServiceScript: GDScript = preload("res://Game/Debug/debug_grant_service.gd")
+const GOLD_GRANT_AMOUNT: int = 1000
+const HEALTH_GRANT_AMOUNT: int = 10
 
 @onready var _category_option: OptionButton = $Center/Panel/Margin/Layout/CategoryRow/CategoryOption
 @onready var _item_option: OptionButton = $Center/Panel/Margin/Layout/ItemRow/ItemOption
+@onready var _level_option: OptionButton = $Center/Panel/Margin/Layout/LevelRow/LevelOption
 @onready var _status_label: Label = $Center/Panel/Margin/Layout/StatusLabel
+@onready var _gold_value_label: Label = $Center/Panel/Margin/Layout/GoldRow/GoldValueLabel
+@onready var _health_value_label: Label = $Center/Panel/Margin/Layout/HealthRow/HealthValueLabel
 @onready var _visibility_player: AnimationPlayer = $VisibilityPlayer
 
 var _item_ids: PackedStringArray = []
@@ -42,6 +49,11 @@ func present_result(message: String) -> void:
 	_status_label.text = message
 
 
+func present_resources(gold: int, health: int) -> void:
+	_gold_value_label.text = "%d" % gold
+	_health_value_label.text = "%d" % health
+
+
 func _bind_signals() -> void:
 	if not _category_option.item_selected.is_connected(_on_category_selected):
 		_category_option.item_selected.connect(_on_category_selected)
@@ -51,6 +63,12 @@ func _bind_signals() -> void:
 	var skip_button: Button = $Center/Panel/Margin/Layout/SkipBattleButton
 	if not skip_button.pressed.is_connected(skip_battle_requested.emit):
 		skip_button.pressed.connect(skip_battle_requested.emit)
+	var gold_button: Button = $Center/Panel/Margin/Layout/GoldRow/GoldAddButton
+	if not gold_button.pressed.is_connected(_on_gold_pressed):
+		gold_button.pressed.connect(_on_gold_pressed)
+	var health_button: Button = $Center/Panel/Margin/Layout/HealthRow/HealthAddButton
+	if not health_button.pressed.is_connected(_on_health_pressed):
+		health_button.pressed.connect(_on_health_pressed)
 
 
 func _on_category_selected(_index: int) -> void:
@@ -60,7 +78,23 @@ func _on_category_selected(_index: int) -> void:
 func _on_grant_pressed() -> void:
 	if _item_option.selected < 0:
 		return
-	grant_requested.emit(StringName(_item_option.get_item_metadata(_item_option.selected)))
+	grant_requested.emit(
+		StringName(_item_option.get_item_metadata(_item_option.selected)),
+		_selected_level()
+	)
+
+
+func _on_gold_pressed() -> void:
+	gold_requested.emit(GOLD_GRANT_AMOUNT)
+
+
+func _on_health_pressed() -> void:
+	health_requested.emit(HEALTH_GRANT_AMOUNT)
+
+
+## 等级下拉选中项映射：第 0..3 项对应等级 1..4（第 4 项为觉醒）。
+func _selected_level() -> int:
+	return maxi(1, _level_option.selected + 1)
 
 
 func _refresh_item_options() -> void:

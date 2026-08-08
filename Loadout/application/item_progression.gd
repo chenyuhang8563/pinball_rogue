@@ -178,6 +178,45 @@ func reset_skill(skill_id: String) -> bool:
 	return true
 
 
+## 直接将已拥有物品设为指定等级（调试修改器用）。觉醒等级 4 写入 _awakened 标记；
+## 其余 1..3 写入普通等级并清除觉醒标记。要求物品已拥有，与 upgrade_one 一致。
+func set_level(item: Item, level: int) -> bool:
+	if item == null or not _loadout_available():
+		return false
+	var owned := _loadout.call("find_owned", item) as Item
+	if owned == null:
+		return false
+	match owned.type:
+		Item.ItemType.MARBLE:
+			if not _marble_level_modifiers.has(int(owned.marble_type)):
+				return false
+			if level >= AWAKENED_LEVEL:
+				_marble_levels[int(owned.marble_type)] = MAX_LEVEL
+				_marble_awakened[int(owned.marble_type)] = true
+			else:
+				_marble_levels[int(owned.marble_type)] = clampi(level, 1, MAX_LEVEL)
+				_marble_awakened.erase(int(owned.marble_type))
+			_sync_stat_modifiers()
+			item_progressed.emit(owned, level_of(owned), level_of(owned) == AWAKENED_LEVEL)
+		Item.ItemType.RELIC:
+			var relic_key := _relic_key(owned)
+			if level >= AWAKENED_LEVEL:
+				_relic_levels[relic_key] = MAX_LEVEL
+				_relic_awakened[relic_key] = true
+			else:
+				_relic_levels[relic_key] = clampi(level, 1, MAX_LEVEL)
+				_relic_awakened.erase(relic_key)
+			item_progressed.emit(owned, level_of(owned), level_of(owned) == AWAKENED_LEVEL)
+		Item.ItemType.SKILL:
+			if not _skill_level_values.has(owned.id):
+				return false
+			_skill_levels[owned.id] = clampi(level, 1, AWAKENED_LEVEL)
+			skill_progressed.emit(owned.id, level_of(owned))
+		_:
+			return false
+	return true
+
+
 func reset_item(item: Item) -> bool:
 	if item == null:
 		return false

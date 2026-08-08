@@ -76,7 +76,7 @@ anchor_bottom = 1.0
 mouse_filter = 2
 
 [node name="Panel" type="PanelContainer" parent="Center" unique_id=26789763]
-custom_minimum_size = Vector2(190, 0)
+custom_minimum_size = Vector2(210, 0)
 layout_mode = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_xgdlt")
 
@@ -150,12 +150,86 @@ layout_mode = 2
 theme_override_fonts/font = ExtResource("4_42a8d")
 theme_override_font_sizes/font_size = 12
 
+[node name="LevelRow" type="HBoxContainer" parent="Center/Panel/Margin/Layout" unique_id=1000000001]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="LevelLabel" type="Label" parent="Center/Panel/Margin/Layout/LevelRow" unique_id=1000000002]
+custom_minimum_size = Vector2(58, 22)
+layout_mode = 2
+text = "等级"
+label_settings = ExtResource("2_fnu7d")
+
+[node name="LevelOption" type="OptionButton" parent="Center/Panel/Margin/Layout/LevelRow" unique_id=1000000003]
+custom_minimum_size = Vector2(104, 22)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_42a8d")
+theme_override_font_sizes/font_size = 12
+selected = 0
+item_count = 4
+popup/item_0/text = "1"
+popup/item_0/id = 1
+popup/item_1/text = "2"
+popup/item_1/id = 2
+popup/item_2/text = "3"
+popup/item_2/id = 3
+popup/item_3/text = "觉醒"
+popup/item_3/id = 4
+
 [node name="GrantButton" type="Button" parent="Center/Panel/Margin/Layout" unique_id=1476872429]
 custom_minimum_size = Vector2(0, 22)
 layout_mode = 2
 theme_override_fonts/font = ExtResource("4_42a8d")
 theme_override_font_sizes/font_size = 12
 text = "获得指定物品"
+
+[node name="GoldRow" type="HBoxContainer" parent="Center/Panel/Margin/Layout" unique_id=1000000004]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="GoldLabel" type="Label" parent="Center/Panel/Margin/Layout/GoldRow" unique_id=1000000005]
+custom_minimum_size = Vector2(58, 22)
+layout_mode = 2
+text = "金币"
+label_settings = ExtResource("2_fnu7d")
+
+[node name="GoldValueLabel" type="Label" parent="Center/Panel/Margin/Layout/GoldRow" unique_id=1000000006]
+custom_minimum_size = Vector2(44, 22)
+layout_mode = 2
+text = "0"
+label_settings = ExtResource("2_fnu7d")
+horizontal_alignment = 1
+
+[node name="GoldAddButton" type="Button" parent="Center/Panel/Margin/Layout/GoldRow" unique_id=1000000007]
+custom_minimum_size = Vector2(60, 22)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_42a8d")
+theme_override_font_sizes/font_size = 12
+text = "+1000"
+
+[node name="HealthRow" type="HBoxContainer" parent="Center/Panel/Margin/Layout" unique_id=1000000008]
+layout_mode = 2
+theme_override_constants/separation = 6
+
+[node name="HealthLabel" type="Label" parent="Center/Panel/Margin/Layout/HealthRow" unique_id=1000000009]
+custom_minimum_size = Vector2(58, 22)
+layout_mode = 2
+text = "血量"
+label_settings = ExtResource("2_fnu7d")
+
+[node name="HealthValueLabel" type="Label" parent="Center/Panel/Margin/Layout/HealthRow" unique_id=1000000010]
+custom_minimum_size = Vector2(44, 22)
+layout_mode = 2
+text = "0"
+label_settings = ExtResource("2_fnu7d")
+horizontal_alignment = 1
+
+[node name="HealthAddButton" type="Button" parent="Center/Panel/Margin/Layout/HealthRow" unique_id=1000000011]
+custom_minimum_size = Vector2(60, 22)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("4_42a8d")
+theme_override_font_sizes/font_size = 12
+text = "+10"
 
 [node name="StatusLabel" type="Label" parent="Center/Panel/Margin/Layout" unique_id=823734874]
 layout_mode = 2

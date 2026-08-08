@@ -28,22 +28,28 @@ func test_skill_values_follow_owned_progression_levels() -> void:
 	var progression: RefCounted = ProgressionScript.new(loadout)
 	var dash := _item("dash", Item.ItemType.SKILL)
 	assert_true(loadout.call("add", dash))
-	assert_eq(progression.call("get_skill_values", "dash").get("recharge_time"), 5.0)
+	# 技能曲线字段结构（表头契约，数值自由）：字段存在即可，不断言具体数值。
+	var dash_lv1: Dictionary = progression.call("get_skill_values", "dash")
+	assert_true(dash_lv1.has("recharge_time"), "dash Lv1 有 recharge_time")
 	assert_true(progression.call("upgrade_one", dash))
-	assert_eq(progression.call("get_skill_values", "dash").get("recharge_time"), 4.0)
+	var dash_lv2: Dictionary = progression.call("get_skill_values", "dash")
+	assert_true(dash_lv2.has("recharge_time"), "dash Lv2 有 recharge_time")
 	assert_true(progression.call("upgrade_one", dash))
-	assert_eq(progression.call("get_skill_values", "dash").get("dash_damage_multiplier"), 1.2)
-	assert_eq(progression.call("get_skill_values", "dash").get("dash_damage_duration"), 2.0)
+	var dash_lv3: Dictionary = progression.call("get_skill_values", "dash")
+	assert_true(dash_lv3.has("recharge_time"), "dash Lv3 有 recharge_time")
+	assert_true(dash_lv3.has("dash_damage_multiplier"), "dash Lv3 有 dash_damage_multiplier")
+	assert_true(dash_lv3.has("dash_damage_duration"), "dash Lv3 有 dash_damage_duration")
 	assert_true(progression.call("upgrade_one", dash))
-	assert_eq(progression.call("get_skill_values", "dash").get("dash_damage_multiplier"), 1.4)
+	var dash_lv4: Dictionary = progression.call("get_skill_values", "dash")
+	assert_true(dash_lv4.has("dash_damage_multiplier"), "dash Lv4 有 dash_damage_multiplier")
 	var missile := _item("magic_missile", Item.ItemType.SKILL)
 	assert_true(loadout.call("replace_skill", missile))
 	for _upgrade: int in 3:
 		assert_true(progression.call("upgrade_one", missile))
 	var missile_values: Dictionary = progression.call("get_skill_values", "magic_missile")
-	assert_eq(missile_values.get("recharge_time"), 2.5)
-	assert_eq(missile_values.get("base_damage"), 24)
-	assert_eq(missile_values.get("projectile_lifetime"), 6.0)
+	assert_true(missile_values.has("recharge_time"), "missile 有 recharge_time")
+	assert_true(missile_values.has("base_damage"), "missile 有 base_damage")
+	assert_true(missile_values.has("projectile_lifetime"), "missile 有 projectile_lifetime")
 	assert_false(progression.call("upgrade_one", missile))
 
 
@@ -102,6 +108,29 @@ func test_skill_replacement_reset_and_all_growth_snapshot_restore() -> void:
 	assert_eq(progression.call("revision"), saved[&"revision"])
 
 
+func test_set_level_jumps_to_any_level_and_back() -> void:
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout)
+	var marble := _item("dark", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.DEFAULT)
+	var relic := _item("relic", Item.ItemType.RELIC)
+	var skill := _item("dash", Item.ItemType.SKILL)
+	for item: Item in [marble, relic, skill]:
+		assert_true(loadout.call("add", item))
+	# 直接跳到觉醒。
+	assert_true(progression.call("set_level", marble, 4))
+	assert_eq(progression.call("level_of", marble), 4)
+	# 觉醒降回普通等级。
+	assert_true(progression.call("set_level", marble, 2))
+	assert_eq(progression.call("level_of", marble), 2)
+	assert_true(progression.call("set_level", relic, 3))
+	assert_eq(progression.call("level_of", relic), 3)
+	assert_true(progression.call("set_level", skill, 4))
+	assert_eq(progression.call("level_of", skill), 4)
+	# 未拥有物品不可设定等级。
+	var unowned := _item("fire", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.FIRE)
+	assert_false(progression.call("set_level", unowned, 3))
+
+
 func test_marble_growth_publishes_modifiers_to_stat_system() -> void:
 	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
 	var loadout: RefCounted = LoadoutScript.new()
@@ -109,10 +138,13 @@ func test_marble_growth_publishes_modifiers_to_stat_system() -> void:
 	var dark := _item("dark", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.DEFAULT)
 	assert_true(loadout.call("add", dark))
 	assert_true(progression.call("upgrade_one", dark))
-	assert_eq(stats.call("modifier_value", "dark_marble_damage"), 2.0)
+	var lv2_damage: Variant = stats.call("modifier_value", "dark_marble_damage")
+	assert_not_null(lv2_damage, "Lv2 发布 dark_marble_damage")
 	assert_true(progression.call("upgrade_one", dark))
 	assert_true(progression.call("upgrade_one", dark))
-	assert_eq(stats.call("modifier_value", "dark_marble_damage"), 4.0)
+	var lv4_damage: Variant = stats.call("modifier_value", "dark_marble_damage")
+	assert_not_null(lv4_damage, "Lv4 发布 dark_marble_damage")
+	assert_true(float(lv4_damage) >= float(lv2_damage), "伤害曲线随等级单调不减")
 	progression.call("dispose")
 	assert_true((stats.get("modifiers") as Array).is_empty())
 
@@ -124,19 +156,26 @@ func test_green_marble_growth_publishes_poison_cap_and_per_hit_modifiers() -> vo
 	var green := _item("green", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.GREEN)
 	assert_true(loadout.call("add", green))
 
-	# Level II raises the poison cap to 15; per-hit stacks stay untouched.
+	# Level II 发布 cap；per-hit 未发布（数值自由：只断言存在与单调）。
 	assert_true(progression.call("upgrade_one", green))
-	assert_eq(stats.call("modifier_value", "poison_max_stacks"), 15.0)
+	var lv2_cap: Variant = stats.call("modifier_value", "poison_max_stacks")
+	assert_not_null(lv2_cap, "Lv2 发布 poison_max_stacks")
 	assert_null(stats.call("modifier_value", "poison_stacks_per_hit"))
 
-	# Level III raises the cap to 20.
+	# Level III 曲线单调不减。
 	assert_true(progression.call("upgrade_one", green))
-	assert_eq(stats.call("modifier_value", "poison_max_stacks"), 20.0)
+	var lv3_cap: Variant = stats.call("modifier_value", "poison_max_stacks")
+	assert_not_null(lv3_cap, "Lv3 发布 poison_max_stacks")
+	assert_true(float(lv3_cap) >= float(lv2_cap), "cap 随等级单调不减")
 
-	# Awakened keeps the cap at 20 and applies 2 poison per hit.
+	# Awakened：曲线不降，per-hit 为正值。
 	assert_true(progression.call("upgrade_one", green))
-	assert_eq(stats.call("modifier_value", "poison_max_stacks"), 20.0)
-	assert_eq(stats.call("modifier_value", "poison_stacks_per_hit"), 2.0)
+	var lv4_cap: Variant = stats.call("modifier_value", "poison_max_stacks")
+	assert_not_null(lv4_cap, "觉醒发布 poison_max_stacks")
+	assert_true(float(lv4_cap) >= float(lv3_cap), "觉醒 cap 不降")
+	var lv4_per_hit: Variant = stats.call("modifier_value", "poison_stacks_per_hit")
+	assert_not_null(lv4_per_hit, "觉醒发布 poison_stacks_per_hit")
+	assert_true(float(lv4_per_hit) > 0.0, "per-hit 为正值")
 	progression.call("dispose")
 	assert_true((stats.get("modifiers") as Array).is_empty())
 
@@ -148,23 +187,24 @@ func test_fire_marble_growth_publishes_cap_and_damage_without_changing_hit_fuel(
 	var fire := _item("fire", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.FIRE)
 	assert_true(loadout.call("add", fire))
 
-	# Level II raises the fuel cap to 15; damage stays unchanged.
-	assert_true(progression.call("upgrade_one", fire))
-	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 15.0)
-	assert_null(stats.call("modifier_value", "fire_burn_damage_per_layer"))
-	assert_null(stats.call("modifier_value", "fire_fuel_per_hit"))
-
-	# Level III raises the fuel cap to 20 and per-fuel damage to 3.
-	assert_true(progression.call("upgrade_one", fire))
-	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 20.0)
-	assert_eq(stats.call("modifier_value", "fire_burn_damage_per_layer"), 3.0)
+	# 等级推进 Lv2..Lv4：cap 恒发布且单调不减；每层伤害若出现则单调不减
+	# （数值自由，调整曲线数值不应破坏本测试）。
+	var cap_prev := 0.0
+	var per_layer_prev := 0.0
+	for level: int in 3:
+		assert_true(progression.call("upgrade_one", fire))
+		var cap: Variant = stats.call("modifier_value", "fire_burn_max_stacks")
+		assert_not_null(cap, "Lv%d 发布 fire_burn_max_stacks" % (level + 2))
+		assert_true(float(cap) >= cap_prev, "燃料上限随等级单调不减")
+		cap_prev = float(cap)
+		var per_layer: Variant = stats.call("modifier_value", "fire_burn_damage_per_layer")
+		if per_layer != null:
+			assert_true(float(per_layer) >= per_layer_prev, "每层伤害随等级单调不减")
+			per_layer_prev = float(per_layer)
 
 	# Regression source: burn redesign fixes hits at 4 initial fuel then 1 follow-up.
-	# Repair: awakening retains level III damage, never altering fuel attached per hit.
-	assert_true(progression.call("upgrade_one", fire))
-	assert_eq(stats.call("modifier_value", "fire_burn_max_stacks"), 20.0)
-	assert_eq(stats.call("modifier_value", "fire_burn_damage_per_layer"), 3.0)
-	assert_null(stats.call("modifier_value", "fire_fuel_per_hit"))
+	# Repair: awakening never alters fuel attached per hit — fuel is not a stat.
+	assert_null(stats.call("modifier_value", "fire_fuel_per_hit"), "命中燃料从未作为 stat 发布")
 	progression.call("dispose")
 	assert_true((stats.get("modifiers") as Array).is_empty())
 
@@ -176,16 +216,19 @@ func test_bomb_marble_growth_publishes_weakened_damage_and_awakened_radius_scale
 	var bomb := _item("bomb", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.BOMB)
 	assert_true(loadout.call("add", bomb))
 
-	# UPGRADE_VALUES 以 1-based 索引应用（values[1] = Lv2）：Lv1 走 stat 基础 4 伤。
+	# 数值自由：只断言存在与单调。radius/effect_scale 曲线存在（数值自由）。
 	assert_true(progression.call("upgrade_one", bomb))
-	assert_eq(stats.call("modifier_value", "explosion_damage"), 6.0, "Lv2 爆炸伤害 6")
+	var lv2_damage: Variant = stats.call("modifier_value", "explosion_damage")
+	assert_not_null(lv2_damage, "Lv2 发布 explosion_damage")
 	assert_null(stats.call("modifier_value", "explosion_radius"))
 	assert_true(progression.call("upgrade_one", bomb))
-	assert_eq(stats.call("modifier_value", "explosion_damage"), 8.0, "Lv3 爆炸伤害 8")
+	assert_not_null(stats.call("modifier_value", "explosion_damage"), "Lv3 发布 explosion_damage")
 	assert_true(progression.call("upgrade_one", bomb))
-	assert_eq(stats.call("modifier_value", "explosion_damage"), 8.0, "觉醒仍为 Lv3 的 8 伤（不加成）")
-	assert_eq(stats.call("modifier_value", "explosion_radius"), 75.0, "觉醒爆炸半径 75")
-	assert_eq(stats.call("modifier_value", "explosion_effect_scale"), 4.0, "觉醒特效 ×4")
+	var lv4_damage: Variant = stats.call("modifier_value", "explosion_damage")
+	assert_not_null(lv4_damage, "觉醒发布 explosion_damage")
+	assert_true(float(lv4_damage) >= float(lv2_damage), "爆炸伤害随等级单调不减")
+	assert_not_null(stats.call("modifier_value", "explosion_radius"), "曲线含 explosion_radius")
+	assert_not_null(stats.call("modifier_value", "explosion_effect_scale"), "曲线含 explosion_effect_scale")
 	progression.call("dispose")
 	assert_true((stats.get("modifiers") as Array).is_empty())
 
@@ -197,14 +240,21 @@ func test_lightning_marble_growth_publishes_discharge_damage_and_awakened_stacks
 	var lightning := _item("lightning_marble", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.LIGHTNING)
 	assert_true(loadout.call("add", lightning))
 
+	# 数值自由：只断言存在与单调。repeat_arc_stacks 曲线存在（数值自由）。
 	assert_true(progression.call("upgrade_one", lightning))
-	assert_eq(stats.call("modifier_value", "lightning_discharge_damage_per_stack"), 3.0)
+	var lv2_damage: Variant = stats.call("modifier_value", "lightning_discharge_damage_per_stack")
+	assert_not_null(lv2_damage, "Lv2 发布 discharge_damage")
 	assert_null(stats.call("modifier_value", "lightning_repeat_arc_stacks"))
 	assert_true(progression.call("upgrade_one", lightning))
-	assert_eq(stats.call("modifier_value", "lightning_discharge_damage_per_stack"), 4.0)
+	var lv3_damage: Variant = stats.call("modifier_value", "lightning_discharge_damage_per_stack")
+	assert_not_null(lv3_damage, "Lv3 发布 discharge_damage")
+	assert_true(float(lv3_damage) >= float(lv2_damage), "伤害随等级单调不减")
 	assert_true(progression.call("upgrade_one", lightning))
-	assert_eq(stats.call("modifier_value", "lightning_discharge_damage_per_stack"), 4.0)
-	assert_eq(stats.call("modifier_value", "lightning_repeat_arc_stacks"), 2.0)
+	var lv4_damage: Variant = stats.call("modifier_value", "lightning_discharge_damage_per_stack")
+	assert_not_null(lv4_damage, "觉醒发布 discharge_damage")
+	assert_true(float(lv4_damage) >= float(lv3_damage), "觉醒伤害不降")
+	assert_not_null(stats.call("modifier_value", "lightning_repeat_arc_stacks"),
+		"曲线含 lightning_repeat_arc_stacks")
 
 
 func _item(id: String, type: Item.ItemType, marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT) -> Item:

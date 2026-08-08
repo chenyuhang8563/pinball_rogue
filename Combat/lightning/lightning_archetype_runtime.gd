@@ -334,6 +334,11 @@ func _spawn_link(from_position: Vector2, to_position: Vector2, tint: Color) -> v
 	var parent: Node = tree.current_scene if tree != null else null
 	if parent == null:
 		return
+	# [DEBUG-arc] temporary instrumentation to capture every link's endpoints.
+	print("[LNK-arc] from=%s to=%s midpoint=%s parent=%s" % [
+		from_position, to_position, (from_position + to_position) * 0.5,
+		parent.name if parent != null else "null"
+	])
 	var effect: AnimatedSprite2D = LightningEffectScene.instantiate() as AnimatedSprite2D
 	if effect == null:
 		return

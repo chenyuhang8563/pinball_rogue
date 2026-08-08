@@ -6,12 +6,12 @@
 ## Godot
 
 - Project uses Godot 4.7.1.
-- Godot executable: `E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe`.
+- Godot executable: `/Applications/Godot.app/Contents/MacOS/Godot`.
 - `godot` is not on `PATH`.
-- gdmcp CLI: `.\.gdmcp\bin\gdmcp.exe`（项目本地，不在 PATH）；配合 addons/godot_mcp 插件与运行中的编辑器使用。
-- AI/Agent 在新增或移动/重命名 `.gd`、`.gdshader`、`.tscn`、`.tres` 或资源文件后，必须执行 `cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headless --import --path E:\Projects\pinball_rogue"` 更新导入与 UID 缓存。
+- gdmcp CLI: `.gdmcp/bin/gdmcp`（项目本地，不在 PATH）；配合 addons/godot_mcp 插件与运行中的编辑器使用。
+- AI/Agent 在新增或移动/重命名 `.gd`、`.gdshader`、`.tscn`、`.tres` 或资源文件后，必须执行 `/Applications/Godot.app/Contents/MacOS/Godot --headless --import --path /Users/anlan/godot_projects/pinball_rogue` 更新导入与 UID 缓存。
 - Prefer the running editor plus the gdmcp CLI when live inspection or screenshots are needed.
-- Never stop Godot by broad process-name commands such as `Stop-Process Godot_v4.7.1-stable_win64` or killing all matching Godot processes. If a process must be stopped, record the PID returned by the launch command and stop only that specific process, or use Godot/editor APIs to stop the running game.
+- Never stop Godot by broad process-name commands such as `pkill Godot` or killing all matching Godot processes. If a process must be stopped, record the PID returned by the launch command and stop only that specific process (e.g. `kill <PID>`), or use Godot/editor APIs to stop the running game.
 
 ## Verification
 
@@ -19,14 +19,14 @@
 - 只运行与本次改动直接相关的 GUT 测试文件或测试目录；不要运行完整 GUT 测试套件。仅当用户明确要求全量测试时，才可使用下方的全量命令。
 - 本机定向 GUT 调用示例：
 
-```powershell
-cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headless -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gtest=res://tests/Combat/status/test_phase0b_status_layers.gd -gexit -glog=2 -gdisable_colors -gconfig="
+```bash
+/Applications/Godot.app/Contents/MacOS/Godot --headless -s addons/gut/gut_cmdln.gd --path /Users/anlan/godot_projects/pinball_rogue -gtest=res://tests/Combat/status/test_phase0b_status_layers.gd -gexit -glog=2 -gdisable_colors
 ```
 
 - 全量 GUT 命令（仅限用户明确要求时使用）：
 
-```powershell
-cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headless -s addons\gut\gut_cmdln.gd --path E:\Projects\pinball_rogue -gdir=res://tests -ginclude_subdirs -gexit -glog=2 -gdisable_colors -gconfig="
+```bash
+/Applications/Godot.app/Contents/MacOS/Godot --headless -s addons/gut/gut_cmdln.gd --path /Users/anlan/godot_projects/pinball_rogue -gdir=res://tests -ginclude_subdirs -gexit -glog=2 -gdisable_colors
 ```
 
 - 命令行 GUT 默认不使用 `-d`，避免解析错误进入交互式 `debug>` 而阻塞；需要断点调试时使用 Godot 编辑器中的 GUT 面板。
@@ -36,7 +36,7 @@ cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headles
 
 - After GUT passes, run the game in Godot when runtime validation is relevant.
 - Capture screenshots from a running game only when gdmcp can reach the running game runtime.
-- Save screenshot evidence under `E:\Projects\pinball_rogue\.codex\hud_screenshots`; do not use `.codex_validation`.
+- Save screenshot evidence under `/Users/anlan/godot_projects/pinball_rogue/.codex/hud_screenshots`; do not use `.codex_validation`.
 - 生成多个测试场景，每个测试场景单独用 `gdmcp` 运行并且截图保存，必须有证据支持。
 
 ## Autoloads And Tests
@@ -56,3 +56,17 @@ cmd /c "E:\Godot_v4.7.1-stable_win64.exe\Godot_v4.7.1-stable_win64.exe --headles
 - 禁止引用 Fusion Pixel 8px 字体及其派生资源（包括 `quaver_fusion_8.tres`、`text_8.tres`）；已有界面在修改时必须迁移到 10px 或 12px。
 - 10px 文本使用 `quaver_fusion_10.tres` / `text_10.tres`，12px 文本使用 `quaver_fusion_12.tres` / `text_12.tres`。
 - 中英混排必须使用 `.tres` 复合字体资源：以 Quaver 为主字体、对应字号的 Fusion Pixel 为中文 fallback，确保英文和数字不会随中文语言环境切换为 Fusion。
+
+## Agent skills
+
+### Issue tracker
+
+Issues and PRDs for this repo live as GitHub issues via the `gh` CLI. See `docs/agents/issue-tracker.md`.
+
+### Triage labels
+
+Default vocabulary: `needs-triage`, `needs-info`, `ready-for-agent`, `ready-for-human`, `wontfix`. See `docs/agents/triage-labels.md`.
+
+### Domain docs
+
+Single-context layout — root `CONTEXT.md` + `docs/adr/`. See `docs/agents/domain.md`.
