@@ -37,6 +37,11 @@ func test_scope_rng_and_battle_entry_round_trip_restores_only_checkpoint_state()
 	assert_eq(scope.health.call("current"), 7)
 	assert_eq(_item_ids(scope.loadout.call("get_chain_items")), [&"brown_marble", &"dark_marble"])
 	assert_eq(scope.progression.call("level_of", brown), 2)
+	var held: Object = scope.held_components
+	assert_not_null(held)
+	assert_eq(held.call("count_of", &"barrel"), 1)
+	assert_eq(held.call("count_of", &"booster"), 1)
+	assert_eq(held.call("count_of", &"portal"), 1)
 	var before_invalid := scope.snapshot()
 	var invalid := before_invalid.duplicate(true)
 	invalid[&"progression"][&"marble_levels"][999] = 99

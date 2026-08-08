@@ -78,6 +78,37 @@ func test_scope_providers_read_dynamic_capacity_and_price_stats() -> void:
 	assert_eq(scope.get("wallet").call("quote_price", first), 40)
 
 
+func test_initialize_seeds_initial_held_components_kit() -> void:
+	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
+	var scope: Node = add_child_autofree(RunScopeScript.new())
+	assert_true(scope.call("initialize", stats, 100, 10))
+	var held: Object = scope.get("held_components")
+	assert_not_null(held)
+	assert_eq(held.call("count_of", &"barrel"), 1)
+	assert_eq(held.call("count_of", &"booster"), 1)
+	assert_eq(held.call("count_of", &"portal"), 1)
+
+
+func test_reset_for_run_preserves_held_components() -> void:
+	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
+	var scope: Node = add_child_autofree(RunScopeScript.new())
+	assert_true(scope.call("initialize", stats, 100, 10))
+	assert_true(scope.call("reset_for_run"))
+	var held: Object = scope.get("held_components")
+	assert_not_null(held)
+	assert_eq(held.call("count_of", &"barrel"), 1)
+	assert_eq(held.call("count_of", &"booster"), 1)
+	assert_eq(held.call("count_of", &"portal"), 1)
+
+
+func test_dispose_clears_held_components() -> void:
+	var stats: Node = add_child_autofree(FakeStatSystemScript.new())
+	var scope: Node = add_child_autofree(RunScopeScript.new())
+	assert_true(scope.call("initialize", stats, 100, 10))
+	scope.call("dispose")
+	assert_null(scope.get("held_components"))
+
+
 func _item(id: String, type: Item.ItemType, marble_type: Marble.MARBLE_TYPE = Marble.MARBLE_TYPE.DEFAULT) -> Item:
 	var result := Item.new()
 	result.id = id

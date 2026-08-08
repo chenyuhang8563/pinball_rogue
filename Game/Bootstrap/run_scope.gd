@@ -5,6 +5,7 @@ const LoadoutScript: GDScript = preload("res://Loadout/domain/loadout.gd")
 const ItemProgressionScript: GDScript = preload("res://Loadout/application/item_progression.gd")
 const RunWalletScript: GDScript = preload("res://Commerce/application/run_wallet.gd")
 const RunHealthScript: GDScript = preload("res://Run/domain/run_health.gd")
+const HeldComponentsScript: GDScript = preload("res://Run/domain/held_components.gd")
 
 const STAT_BUY_PRICE_MULTIPLIER: String = "buy_price_multiplier"
 const STAT_SELL_PRICE_MULTIPLIER: String = "sell_price_multiplier"
@@ -16,6 +17,7 @@ var loadout: RefCounted = null
 var progression: RefCounted = null
 var wallet: RefCounted = null
 var health: RefCounted = null
+var held_components: RefCounted = null
 
 var initial_gold: int = 100
 var initial_health: int = 10
@@ -44,6 +46,8 @@ func initialize(stat_system: Object, starting_gold: int = 100, starting_health: 
 		Callable(self, "_sell_multiplier")
 	)
 	health = RunHealthScript.new()
+	held_components = HeldComponentsScript.new()
+	held_components.call("seed_initial_kit")
 	wallet.call("set_balance", self.initial_gold)
 	health.call("reset", self.initial_health)
 	_initialized = true
@@ -87,6 +91,7 @@ func snapshot() -> Dictionary:
 		&"progression": progression.call("snapshot"),
 		&"wallet": wallet.call("snapshot"),
 		&"health": health.call("snapshot"),
+		&"held_components": held_components.call("snapshot"),
 	}
 
 
@@ -95,12 +100,14 @@ func restore(state: Dictionary, content_registry: Node) -> bool:
 		return false
 	for key: StringName in [
 		&"owned_item_ids", &"chain_item_ids", &"progression", &"wallet", &"health",
+		&"held_components",
 	]:
 		if not state.has(key):
 			return false
 	if not state[&"owned_item_ids"] is Array or not state[&"chain_item_ids"] is Array \
 			or not state[&"progression"] is Dictionary or not state[&"wallet"] is Dictionary \
-			or not state[&"health"] is Dictionary:
+			or not state[&"health"] is Dictionary \
+			or not state[&"held_components"] is Dictionary:
 		return false
 	var owned: Array[Item] = []
 	var by_id: Dictionary[StringName, Item] = {}
@@ -126,7 +133,8 @@ func restore(state: Dictionary, content_registry: Node) -> bool:
 	if bool(loadout.call("restore", loadout_state)) \
 			and bool(progression.call("restore", state[&"progression"] as Dictionary)) \
 			and bool(wallet.call("restore", state[&"wallet"] as Dictionary)) \
-			and bool(health.call("restore", state[&"health"] as Dictionary)):
+			and bool(health.call("restore", state[&"health"] as Dictionary)) \
+			and bool(held_components.call("restore", state[&"held_components"] as Dictionary)):
 		return true
 	_restore_unchecked(previous, content_registry)
 	return false
@@ -152,6 +160,7 @@ func _restore_unchecked(state: Dictionary, content_registry: Node) -> void:
 	progression.call("restore", state.get(&"progression", {}))
 	wallet.call("restore", state.get(&"wallet", {}))
 	health.call("restore", state.get(&"health", {}))
+	held_components.call("restore", state.get(&"held_components", {}))
 
 
 ## Permanently releases this scope. A disposed RunScope cannot be initialized again.
@@ -168,6 +177,7 @@ func dispose() -> void:
 	progression = null
 	wallet = null
 	health = null
+	held_components = null
 	_stat_system = null
 	_initialized = false
 	_disposed = true
