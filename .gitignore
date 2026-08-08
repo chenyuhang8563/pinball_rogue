@@ -38,5 +38,8 @@ prompts
 # temp files
 .temp
 
+# macOS
+.DS_Store
+
 # gdmcp ignores
 .gdmcp
