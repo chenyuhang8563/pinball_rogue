@@ -40,3 +40,6 @@ prompts
 
 # gdmcp ignores
 .gdmcp
+
+# macOS Finder metadata
+.DS_Store
