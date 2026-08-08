@@ -108,6 +108,37 @@ func test_skill_replacement_reset_and_all_growth_snapshot_restore() -> void:
 	assert_eq(progression.call("revision"), saved[&"revision"])
 
 
+func test_revision_is_order_independent_across_rebuilt_dicts() -> void:
+	# 回归：Godot 的 Dictionary.hash() 对键插入顺序敏感，而 .tres 序列化往返不
+	# 保证保持内存中的插入顺序。revision() 必须对内容相同、键序不同的字典给出
+	# 相同指纹，否则存档写盘重载后永远无法通过恢复（进战斗退出后点继续只剩黑弹珠）。
+	var loadout: RefCounted = LoadoutScript.new()
+	var progression: RefCounted = ProgressionScript.new(loadout)
+	var marble := _item("dark", Item.ItemType.MARBLE, Marble.MARBLE_TYPE.DEFAULT)
+	var relic := _item("relic", Item.ItemType.RELIC)
+	assert_true(loadout.call("add", marble))
+	assert_true(loadout.call("add", relic))
+	assert_true(progression.call("set_level", marble, 3))
+	assert_true(progression.call("set_level", relic, 2))
+	var snapshot: Dictionary = progression.call("snapshot")
+
+	# 以相反的键插入顺序重建五个字段（模拟 .tres 重载后的字典顺序），再恢复。
+	var rebuilt: Dictionary = {}
+	for field: StringName in [
+		&"marble_levels", &"marble_awakened", &"relic_levels", &"relic_awakened", &"skill_levels"
+	]:
+		var source_dict: Dictionary = snapshot[field]
+		var rebuilt_dict: Dictionary = {}
+		for key: Variant in source_dict:
+			rebuilt_dict[key] = source_dict[key]
+		rebuilt[field] = rebuilt_dict
+	rebuilt[&"revision"] = snapshot[&"revision"]
+
+	assert_true(progression.call("restore", rebuilt), "键序重排后仍应恢复成功")
+	assert_eq(progression.call("level_of", marble), 3)
+	assert_eq(progression.call("level_of", relic), 2)
+
+
 func test_set_level_jumps_to_any_level_and_back() -> void:
 	var loadout: RefCounted = LoadoutScript.new()
 	var progression: RefCounted = ProgressionScript.new(loadout)

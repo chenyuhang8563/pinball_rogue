@@ -73,6 +73,56 @@ func test_scope_rng_and_battle_entry_round_trip_restores_only_checkpoint_state()
 	assert_eq(restored.battle_plan.group.enemy_entries[0].scene.resource_path, EnemyScene.resource_path)
 
 
+func test_scope_restores_after_tres_serialization_round_trip() -> void:
+	# 回归：progression.revision 曾用顺序敏感的 Dictionary.hash()，经 .tres
+	# 写盘重载后字典插入顺序改变，revision 永不匹配，导致真实存档（进战斗退出后
+	# 点继续）恢复失败、只剩默认黑弹珠。这里走仓库的真实写读路径，把 scope
+	# 快照序列化到 .tres 再加载，确认能完整恢复。
+	var registry := get_tree().root.get_node_or_null(^"ContentRegistry")
+	var repo: Node = get_tree().root.get_node_or_null(^"RunSaveRepository")
+	assert_not_null(repo, "RunSaveRepository autoload 应在测试场景中")
+	var save_path := "user://saves/test_tres_round_trip.tres"
+	repo.call("set_paths_for_test", save_path)
+	repo.call("delete_save")
+
+	var source := _scope()
+	var lightning := registry.call(&"by_id", &"lightning_marble") as Item
+	var brown := registry.call(&"by_id", &"brown_marble") as Item
+	var dark := registry.call(&"by_id", &"dark_marble") as Item
+	assert_true(source.loadout.call("add", lightning))
+	assert_true(source.loadout.call("add", brown))
+	# 链必须包含全部已拥有弹珠（_is_complete_marble_order）。
+	assert_true(source.loadout.call("set_chain_items", [lightning, brown, dark]))
+	assert_true(source.progression.call("set_level", lightning, 3))
+	assert_true(source.progression.call("set_level", brown, 4))
+	assert_true(source.wallet.call("set_balance", 321))
+	assert_true(source.health.call("set_current", 7))
+	var scope_state: Dictionary = source.snapshot()
+
+	var checkpoint := {
+		&"scope": scope_state,
+		&"random": {},
+		&"flow": {},
+		&"content_ids": scope_state[&"owned_item_ids"],
+	}
+	assert_true(repo.call("write_checkpoint", checkpoint), "checkpoint 应能写盘")
+	var loaded: RunSaveData = repo.call("load_save")
+	assert_not_null(loaded, "写盘后应能重新加载存档")
+
+	var restored := _scope()
+	assert_true(restored.restore(loaded.checkpoint[&"scope"] as Dictionary, registry),
+		"经 .tres 往返后的 scope 应可完整恢复")
+	assert_eq(restored.wallet.call("balance"), 321)
+	assert_eq(restored.health.call("current"), 7)
+	assert_eq(restored.progression.call("level_of", lightning), 3)
+	assert_eq(restored.progression.call("level_of", brown), 4)
+	assert_eq(_item_ids(restored.loadout.call("get_chain_items")),
+		[&"lightning_marble", &"brown_marble", &"dark_marble"])
+
+	repo.call("delete_save")
+	repo.call("reset_paths")
+
+
 func test_loadout_and_chain_revisions_are_stable_across_resource_instances() -> void:
 	var dark := load("res://Content/data/dark_marble.tres") as Item
 	var dash := load("res://Content/data/dash_skill.tres") as Item

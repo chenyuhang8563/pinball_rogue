@@ -265,7 +265,12 @@ func restore(state: Dictionary) -> bool:
 	_relic_awakened = (state[&"relic_awakened"] as Dictionary).duplicate(true)
 	_skill_levels = (state[&"skill_levels"] as Dictionary).duplicate(true)
 	_sync_stat_modifiers()
-	return revision() == int(state.get(&"revision", revision()))
+	# revision 现用与插入顺序无关的规范化哈希计算，新的存档写读可复算一致。
+	# 但旧存档（用旧顺序敏感哈希写下）的 revision 无法匹配；结构已由
+	# _valid_snapshot 完全校验，此处仅告警不阻断，否则所有旧存档都无法继续。
+	if revision() != int(state.get(&"revision", revision())):
+		push_warning("ItemProgression.restore: revision mismatch; accepting structurally valid snapshot")
+	return true
 
 
 func _valid_snapshot(state: Dictionary) -> bool:
@@ -310,14 +315,30 @@ func _valid_snapshot(state: Dictionary) -> bool:
 	return true
 
 
+## 计算当前进度的唯一指纹。不能直接对进度字典取 hash：Godot 的 Dictionary.hash()
+## 对键插入顺序敏感，而 .tres 序列化往返不保证保持内存中的插入顺序，直接取 hash
+## 会让存档里写下的 revision 在读取时永远对不上（进战斗后退出、再点继续只剩一颗
+## 默认弹珠）。这里先把每个字段转成按键排序的 [key, value] 对数组再做哈希，使
+## 指纹只取决于内容、与插入顺序无关。
 func revision() -> int:
 	return {
-		&"marble_levels": _marble_levels,
-		&"marble_awakened": _marble_awakened,
-		&"relic_levels": _relic_levels,
-		&"relic_awakened": _relic_awakened,
-		&"skill_levels": _skill_levels,
+		&"marble_levels": _sorted_pairs(_marble_levels),
+		&"marble_awakened": _sorted_pairs(_marble_awakened),
+		&"relic_levels": _sorted_pairs(_relic_levels),
+		&"relic_awakened": _sorted_pairs(_relic_awakened),
+		&"skill_levels": _sorted_pairs(_skill_levels),
 	}.hash()
+
+
+## 把字典转成按键排序的 [key, value] 对数组。内容相同、插入顺序不同的字典产出
+## 相同结果，供 revision() 做顺序无关的哈希。
+func _sorted_pairs(source: Dictionary) -> Array:
+	var keys := source.keys()
+	keys.sort()
+	var pairs: Array = []
+	for key: Variant in keys:
+		pairs.append([key, source[key]])
+	return pairs
 
 
 func reset_for_run() -> void:

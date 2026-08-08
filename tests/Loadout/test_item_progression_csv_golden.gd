@@ -85,8 +85,9 @@ func _assert_curve_structure(item_id: String, marble_type: Marble.MARBLE_TYPE) -
 	progression.call("dispose")
 
 
-## 构造 stored_level=1 的合法快照：restore() 校验 revision 等于五个状态字典
-## 的哈希（不含 revision 键自身），因此这里显式计算一次。
+## 构造 stored_level=1 的合法快照。restore() 会复算 revision 并与快照内值比对
+## （不匹配仅告警；硬校验是结构校验），这里按 item_progression.gd 的规范化形式
+## ——五个字段各自的 [key, value] 对数组、按键排序——构造一致的值。
 func _lv1_state(marble_type: Marble.MARBLE_TYPE) -> Dictionary:
 	var state: Dictionary = {
 		&"marble_levels": {int(marble_type): 1},
@@ -96,11 +97,11 @@ func _lv1_state(marble_type: Marble.MARBLE_TYPE) -> Dictionary:
 		&"skill_levels": {},
 	}
 	state[&"revision"] = {
-		&"marble_levels": state[&"marble_levels"],
-		&"marble_awakened": state[&"marble_awakened"],
-		&"relic_levels": state[&"relic_levels"],
-		&"relic_awakened": state[&"relic_awakened"],
-		&"skill_levels": state[&"skill_levels"],
+		&"marble_levels": [[int(marble_type), 1]],
+		&"marble_awakened": [],
+		&"relic_levels": [],
+		&"relic_awakened": [],
+		&"skill_levels": [],
 	}.hash()
 	return state
 
