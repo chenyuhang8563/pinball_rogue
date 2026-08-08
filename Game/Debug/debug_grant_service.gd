@@ -6,24 +6,34 @@ const RewardTransactionScript: GDScript = preload("res://Run/domain/reward_trans
 enum Result {
 	GRANTED,
 	UNKNOWN_ID,
-	DUPLICATE,
+	## 已拥有该物品且请求等级与当前等级相同（保留"重复提示"特性）。
+	SAME_LEVEL,
 	CAPACITY_REACHED,
 	COMMIT_FAILED,
 }
 
+## 调试面板的完整物品目录。与 ContentRegistry 的 Content/data 扫描保持一致；
+## 新增弹珠/遗物/技能必须登记到这里才能出现在修改器中。
 const ITEM_PATHS: PackedStringArray = [
+	# --- 弹珠 ---
 	"res://Content/data/dark_marble.tres",
 	"res://Content/data/brown_marble.tres",
 	"res://Content/data/bomb_marble.tres",
 	"res://Content/data/green_marble.tres",
 	"res://Content/data/blue_marble.tres",
 	"res://Content/data/fire_marble.tres",
-	"res://Content/data/lightning.tres",
 	"res://Content/data/lightning_marble.tres",
+	"res://Content/data/assassin_marble.tres",
+	# --- 遗物 ---
+	"res://Content/data/lightning.tres",
 	"res://Content/data/leyden_jar.tres",
 	"res://Content/data/arc_relay.tres",
 	"res://Content/data/thunderstorm.tres",
 	"res://Content/data/fire_bellows.tres",
+	"res://Content/data/accelerant.tres",
+	"res://Content/data/cremation.tres",
+	"res://Content/data/thermal_shock.tres",
+	"res://Content/data/miasma.tres",
 	"res://Content/data/poison_culture.tres",
 	"res://Content/data/carrion.tres",
 	"res://Content/data/parasite.tres",
@@ -31,17 +41,23 @@ const ITEM_PATHS: PackedStringArray = [
 	"res://Content/data/venom_knife.tres",
 	"res://Content/data/scorpion_tail.tres",
 	"res://Content/data/witch_hat.tres",
-	"res://Content/data/ammo_pouch.tres",
-	"res://Content/data/ammo_recycler.tres",
-	"res://Content/data/high_explosive.tres",
-	"res://Content/data/last_shot.tres",
-	"res://Content/data/ammo_dump.tres",
 	"res://Content/data/ice_hammer.tres",
+	"res://Content/data/permafrost.tres",
+	"res://Content/data/cryoclasm.tres",
+	"res://Content/data/grindstone.tres",
+	"res://Content/data/drop_hammer.tres",
+	"res://Content/data/battering_ram.tres",
 	"res://Content/data/assassins_whetstone.tres",
 	"res://Content/data/fortuna_dice.tres",
 	"res://Content/data/many_faced_prism.tres",
 	"res://Content/data/scarlet_thread.tres",
 	"res://Content/data/execution_decree.tres",
+	"res://Content/data/ammo_pouch.tres",
+	"res://Content/data/ammo_recycler.tres",
+	"res://Content/data/high_explosive.tres",
+	"res://Content/data/last_shot.tres",
+	"res://Content/data/ammo_dump.tres",
+	# --- 技能 ---
 	"res://Content/data/dash_skill.tres",
 	"res://Content/data/magic_missile_skill.tres",
 ]
@@ -72,22 +88,32 @@ func item_ids() -> PackedStringArray:
 	return ids
 
 
-func grant(item_id: StringName) -> Result:
+## 发放物品到指定等级。已拥有时：请求等级与当前等级相同返回 SAME_LEVEL（提示），
+## 不同等级直接覆盖（后者胜出）。未拥有时：先加入栏位再设定等级。
+func grant(item_id: StringName, level: int = 1) -> Result:
 	var item: Item = _items_by_id.get(item_id) as Item
 	if item == null:
 		return Result.UNKNOWN_ID
 	if _loadout == null or _progression == null:
 		return Result.COMMIT_FAILED
-	if _loadout.call("find_owned", item) != null:
-		return Result.DUPLICATE
+	var owned := _loadout.call("find_owned", item) as Item
+	if owned != null:
+		if int(_progression.call("level_of", owned)) == level:
+			return Result.SAME_LEVEL
+		return Result.GRANTED if bool(_progression.call("set_level", owned, level)) else Result.COMMIT_FAILED
 	if item.type != Item.ItemType.SKILL:
-		return Result.GRANTED if bool(_loadout.call("add", item)) else Result.CAPACITY_REACHED
+		if not bool(_loadout.call("add", item)):
+			return Result.CAPACITY_REACHED
+		return Result.GRANTED if bool(_progression.call("set_level", item, level)) else Result.COMMIT_FAILED
 	var previous_skill := _loadout.call("current_skill") as Item
 	if previous_skill == null:
-		return Result.GRANTED if bool(_loadout.call("add", item)) else Result.CAPACITY_REACHED
+		if not bool(_loadout.call("add", item)):
+			return Result.CAPACITY_REACHED
+		return Result.GRANTED if bool(_progression.call("set_level", item, level)) else Result.COMMIT_FAILED
 	var transaction: RefCounted = RewardTransactionScript.new([_loadout, _progression])
 	var steps: Array[Callable] = [
 		Callable(_loadout, "replace_skill").bind(item),
 		Callable(_progression, "reset_skill").bind(previous_skill.id),
+		Callable(_progression, "set_level").bind(item, level),
 	]
 	return Result.GRANTED if bool(transaction.call("execute", steps)) else Result.COMMIT_FAILED

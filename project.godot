@@ -32,8 +32,8 @@ MCPRuntimeProbe="*res://addons/godot_mcp/runtime/mcp_runtime_probe.gd"
 
 window/size/viewport_width=240
 window/size/viewport_height=320
-window/size/window_width_override=720
-window/size/window_height_override=960
+window/size/window_width_override=900
+window/size/window_height_override=1200
 window/subwindows/embed_subwindows=false
 window/stretch/mode="canvas_items"
 window/stretch/aspect="expand"

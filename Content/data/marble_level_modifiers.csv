@@ -24,9 +24,8 @@ blue_marble,blue_frost_bonus_damage_enabled,2,1.0
 blue_marble,blue_frost_stacks_per_hit,4,2.0
 fire_marble,fire_burn_max_stacks,1,10.0
 fire_marble,fire_burn_max_stacks,2,15.0
-fire_marble,fire_burn_max_stacks,3,20.0
 fire_marble,fire_burn_max_stacks,4,20.0
-fire_marble,fire_burn_damage_per_layer,3,3.0
+fire_marble,fire_burn_damage_per_layer,3,2.0
 assassin_marble,assassin_segment_damage,1,1.0
 assassin_marble,assassin_segment_damage,2,2.0
 assassin_marble,assassin_segment_damage,3,3.0

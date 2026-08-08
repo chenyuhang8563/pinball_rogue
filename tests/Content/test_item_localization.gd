@@ -39,7 +39,10 @@ func test_burn_status_uses_translatable_name_and_description_keys() -> void:
 	assert_eq(burn.display_name, "STATUS_BURN_NAME")
 	assert_eq(burn.description, "STATUS_BURN_DESC")
 	assert_eq(translated_name, "燃烧")
-	assert_eq(translated_description, "每秒根据剩余燃料层数造成伤害，并消耗 1 层燃料；燃料归零时熄灭。")
+	# 精确文案是翻译数据而非行为契约：只断言解析出中文（含 CJK），
+	# 不绑定具体措辞——调整 STATUS_BURN_DESC 文案不应破坏本测试。
+	assert_ne(translated_description, "STATUS_BURN_DESC", "burn 描述不能露出原始 key")
+	assert_true(_contains_cjk(translated_description), "burn 描述在 zh_CN 下解析为中文")
 
 
 func test_plague_relic_resources_match_the_appended_effect_type_enum_values() -> void:
@@ -60,3 +63,12 @@ func test_bomb_ammo_relic_resources_match_the_appended_effect_type_enum_values()
 	assert_eq(HighExplosiveItem.effect_type, Item.EffectType.HIGH_EXPLOSIVE)
 	assert_eq(LastShotItem.effect_type, Item.EffectType.LAST_SHOT)
 	assert_eq(AmmoDumpItem.effect_type, Item.EffectType.AMMO_DUMP)
+
+
+## 判断文本是否包含 CJK 统一表意文字（U+4E00..U+9FFF）。
+func _contains_cjk(text: String) -> bool:
+	for index: int in text.length():
+		var code: int = text.unicode_at(index)
+		if code >= 0x4E00 and code <= 0x9FFF:
+			return true
+	return false

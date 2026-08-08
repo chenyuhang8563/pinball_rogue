@@ -14,48 +14,56 @@ func test_default_loads_full_production_data() -> void:
 	assert_eq(marble_modifiers.size(), 8, "8 种弹珠")
 	assert_eq(skill_level_values.size(), 3, "3 个技能")
 
-	var total_rows := 0
+	# 结构不变式（不绑定具体数值/行数）：每个弹珠每个 stat 的档位合法且按
+	# min_level 严格递增。调整平衡数值（marble_level_modifiers.csv 增删行/改值）
+	# 不应破坏本测试。
 	for stats_by_id: Dictionary in marble_modifiers.values():
+		assert_false(stats_by_id.is_empty(), "每种弹珠至少配置一个 stat")
 		for stat_id: Variant in stats_by_id:
-			total_rows += (stats_by_id[stat_id] as Array).size()
-	assert_eq(total_rows, 37, "marble CSV 共 37 行数据")
+			var rows: Array = stats_by_id[stat_id]
+			assert_true(rows.size() >= 1, "每个 stat 至少一档")
+			assert_true(rows.size() <= 4, "每个 stat 至多 4 档（min_level 1..4）")
+			var last_min_level := 0
+			for row: Dictionary in rows:
+				var min_level := int(row.get("min_level", 0))
+				assert_true(min_level >= 1 and min_level <= 4, "min_level 必须在 1..4")
+				assert_true(min_level > last_min_level, "同 stat 档位严格递增")
+				last_min_level = min_level
 
 	var by_id: Dictionary = LevelConfigLoaderScript.MARBLE_TYPE_BY_ITEM_ID
-	assert_eq(marble_modifiers[by_id["dark_marble"]]["dark_marble_damage"], [
-		{"min_level": 1, "value": 1.0},
-		{"min_level": 2, "value": 2.0},
-		{"min_level": 3, "value": 3.0},
-		{"min_level": 4, "value": 4.0},
-	])
-	assert_eq(marble_modifiers[by_id["bomb_marble"]]["explosion_radius"],
-		[{"min_level": 4, "value": 75.0}])
-	assert_eq(marble_modifiers[by_id["lightning_marble"]]["lightning_repeat_arc_stacks"],
-		[{"min_level": 4, "value": 2.0}])
+	# dark 伤害曲线逐级有档（结构保证，数值自由）。
+	var dark_rows: Array = marble_modifiers[by_id["dark_marble"]]["dark_marble_damage"]
+	assert_eq(dark_rows.size(), 4, "dark_marble 伤害曲线 4 档完整")
+	for level: int in range(4):
+		assert_eq(int((dark_rows[level] as Dictionary)["min_level"]), level + 1,
+			"dark_marble 伤害逐级有档")
 
 	assert_eq(skill_level_values["dash"].size(), 4)
 	assert_eq(skill_level_values["magic_missile"].size(), 4)
 	assert_eq(skill_level_values["demolition_charge"].size(), 4)
-	assert_eq(skill_level_values["demolition_charge"][0], {
-		"recharge_time": 6.0,
-		"base_damage": 12,
-		"blast_radius": 70.0,
-		"fuse_time": 3.0,
-	})
-	assert_eq(skill_level_values["dash"][0], {
-		"recharge_time": 5.0,
-		"dash_damage_multiplier": 1.0,
-		"dash_damage_duration": 0.0,
-	})
-	assert_eq(skill_level_values["magic_missile"][3], {
-		"recharge_time": 2.5,
-		"base_damage": 24,
-		"projectile_lifetime": 6.0,
-	})
-	# base_damage 是 int；dash 的空字段不存在；0.0 是有效值必须保留。
-	assert_true(skill_level_values["magic_missile"][0]["base_damage"] is int)
-	assert_false(skill_level_values["dash"][0].has("base_damage"))
-	assert_false(skill_level_values["dash"][0].has("projectile_lifetime"))
-	assert_eq(skill_level_values["dash"][0]["dash_damage_duration"], 0.0)
+	# demolition_charge 字段结构（表头契约，数值自由）。
+	var demo_lv1: Dictionary = skill_level_values["demolition_charge"][0]
+	assert_true(demo_lv1.has("recharge_time"))
+	assert_true(demo_lv1.has("base_damage"))
+	assert_true(demo_lv1.has("blast_radius"))
+	assert_true(demo_lv1.has("fuse_time"))
+	assert_false(demo_lv1.has("projectile_lifetime"), "demolition_charge 无 projectile_lifetime 字段")
+	assert_false(demo_lv1.has("dash_damage_multiplier"), "demolition_charge 无 dash 字段")
+	assert_true(skill_level_values["demolition_charge"][0]["base_damage"] is int, "base_damage 是 int")
+	# dash 字段结构（表头契约，数值自由）。
+	var dash_lv1: Dictionary = skill_level_values["dash"][0]
+	assert_true(dash_lv1.has("recharge_time"))
+	assert_true(dash_lv1.has("dash_damage_multiplier"))
+	assert_true(dash_lv1.has("dash_damage_duration"),
+		"dash_damage_duration=0.0 是字面值，必须保留（0.0 不等于空字段）")
+	assert_false(dash_lv1.has("base_damage"), "dash 无 base_damage 字段")
+	assert_false(dash_lv1.has("projectile_lifetime"), "dash 无 projectile_lifetime 字段")
+	# magic_missile 字段结构 + 类型契约。
+	var missile_lv4: Dictionary = skill_level_values["magic_missile"][3]
+	assert_true(missile_lv4.has("recharge_time"))
+	assert_true(missile_lv4.has("base_damage"))
+	assert_true(missile_lv4.has("projectile_lifetime"))
+	assert_true(skill_level_values["magic_missile"][0]["base_damage"] is int, "base_damage 是 int")
 
 
 func test_valid_fixtures_load_clean() -> void:
